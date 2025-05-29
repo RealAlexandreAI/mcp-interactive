@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Feedback MCP</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+</head>
+<body>
+    <div class="container">
+        <h1>Interactive Feedback MCP</h1>
+        
+        <div class="session-info">
+            <h2>專案資訊</h2>
+            <p><strong>工作目錄:</strong> <span id="project-dir">{{ project_directory }}</span></p>
+            <p><strong>任務描述:</strong> <span id="summary">{{ summary }}</span></p>
+        </div>
+
+        <div class="section">
+            <button id="toggle-command" class="toggle-btn">顯示命令區塊</button>
+        </div>
+
+        <div id="command-section" class="section command-section" style="display: none;">
+            <h3>命令執行</h3>
+            
+            <div class="input-group">
+                <input type="text" id="command-input" placeholder="輸入要執行的命令...">
+                <button id="run-btn">執行</button>
+                <button id="stop-btn" style="display: none;">停止</button>
+            </div>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="auto-execute"> 下次自動執行
+                </label>
+                <button id="save-config">儲存設定</button>
+            </div>
+
+            <div class="console-section">
+                <div class="console-header">
+                    <h4>控制台輸出</h4>
+                    <button id="clear-logs">清除</button>
+                </div>
+                <div id="console" class="console"></div>
+            </div>
+        </div>
+
+        <div class="section feedback-section">
+            <h3>回饋意見</h3>
+            <p class="feedback-description">{{ summary }}</p>
+            <textarea id="feedback-input" placeholder="請在此輸入您的回饋意見... (Ctrl+Enter 提交)"></textarea>
+            <button id="submit-feedback">提交回饋 (Ctrl+Enter)</button>
+        </div>
+
+        <div class="footer">
+            <p>需要改進？聯繫 Fábio Ferreira 在 <a href="https://x.com/fabiomlferreira" target="_blank">X.com</a> 或訪問 <a href="https://dotcursorrules.com/" target="_blank">dotcursorrules.com</a></p>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>正在處理...</p>
+    </div>
+
+    <script>
+        const sessionId = "{{ session_id }}";
+        const wsUrl = `ws://${window.location.host}/ws/${sessionId}`;
+        let socket;
+        let commandRunning = false;
+
+        // DOM elements
+        const toggleCommandBtn = document.getElementById('toggle-command');
+        const commandSection = document.getElementById('command-section');
+        const commandInput = document.getElementById('command-input');
+        const runBtn = document.getElementById('run-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const autoExecuteCheck = document.getElementById('auto-execute');
+        const saveConfigBtn = document.getElementById('save-config');
+        const console = document.getElementById('console');
+        const clearLogsBtn = document.getElementById('clear-logs');
+        const feedbackInput = document.getElementById('feedback-input');
+        const submitFeedbackBtn = document.getElementById('submit-feedback');
+        const loading = document.getElementById('loading');
+
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function() {
+                console.log('WebSocket 已連接');
+            };
+            
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            socket.onclose = function() {
+                console.log('WebSocket 連接已關閉');
+                setTimeout(initWebSocket, 3000); // Reconnect after 3 seconds
+            };
+            
+            socket.onerror = function(error) {
+                console.error('WebSocket 錯誤:', error);
+            };
+        }
+
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'init':
+                    // Set initial values
+                    commandInput.value = data.config.run_command || '';
+                    autoExecuteCheck.checked = data.config.execute_automatically || false;
+                    
+                    // Load existing logs
+                    data.logs.forEach(log => {
+                        appendToConsole(log);
+                    });
+                    break;
+                    
+                case 'log':
+                    appendToConsole(data.data);
+                    break;
+                    
+                case 'process_completed':
+                    commandRunning = false;
+                    updateRunButtonState();
+                    feedbackInput.focus();
+                    break;
+                    
+                case 'logs_cleared':
+                    console.innerHTML = '';
+                    break;
+                    
+                case 'feedback_submitted':
+                    showLoading();
+                    setTimeout(() => {
+                        window.close();
+                    }, 2000);
+                    break;
+            }
+        }
+
+        function appendToConsole(text) {
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = text;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function updateRunButtonState() {
+            if (commandRunning) {
+                runBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+            } else {
+                runBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+            }
+        }
+
+        function showLoading() {
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
+        // Event listeners
+        toggleCommandBtn.addEventListener('click', () => {
+            const isVisible = commandSection.style.display !== 'none';
+            commandSection.style.display = isVisible ? 'none' : 'block';
+            toggleCommandBtn.textContent = isVisible ? '顯示命令區塊' : '隱藏命令區塊';
+        });
+
+        runBtn.addEventListener('click', () => {
+            const command = commandInput.value.trim();
+            if (command) {
+                commandRunning = true;
+                updateRunButtonState();
+                socket.send(JSON.stringify({
+                    type: 'run_command',
+                    command: command
+                }));
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            commandRunning = false;
+            updateRunButtonState();
+            socket.send(JSON.stringify({
+                type: 'stop_command'
+            }));
+        });
+
+        commandInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                runBtn.click();
+            }
+        });
+
+        saveConfigBtn.addEventListener('click', () => {
+            socket.send(JSON.stringify({
+                type: 'update_config',
+                config: {
+                    run_command: commandInput.value,
+                    execute_automatically: autoExecuteCheck.checked
+                }
+            }));
+            
+            // Visual feedback
+            saveConfigBtn.textContent = '已儲存';
+            setTimeout(() => {
+                saveConfigBtn.textContent = '儲存設定';
+            }, 1500);
+        });
+
+        clearLogsBtn.addEventListener('click', () => {
+            socket.send(JSON.stringify({
+                type: 'clear_logs'
+            }));
+        });
+
+        submitFeedbackBtn.addEventListener('click', () => {
+            const feedback = feedbackInput.value.trim();
+            socket.send(JSON.stringify({
+                type: 'submit_feedback',
+                feedback: feedback
+            }));
+        });
+
+        feedbackInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                submitFeedbackBtn.click();
+            }
+        });
+
+        // Initialize
+        initWebSocket();
+        feedbackInput.focus();
+    </script>
+</body>
+</html> 

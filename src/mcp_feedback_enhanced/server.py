@@ -32,7 +32,8 @@ SSH_ENV_VARS = ['SSH_CONNECTION', 'SSH_CLIENT', 'SSH_TTY']
 REMOTE_ENV_VARS = ['REMOTE_CONTAINERS', 'CODESPACES']
 
 # 初始化 MCP 服務器
-mcp = FastMCP(SERVER_NAME)
+from . import __version__
+mcp = FastMCP(SERVER_NAME, version=__version__)
 
 
 # ===== 工具函數 =====

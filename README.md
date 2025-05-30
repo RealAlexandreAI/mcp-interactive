@@ -25,9 +25,20 @@
 
 為了獲得最佳效果，請在您的 AI 助手中添加以下自訂提示（例如在 Cursor 的規則或提示中）：
 
+### 基本提示
 > 每當你想要詢問問題時，請務必調用 MCP `interactive_feedback`。  
 > 每當你即將完成用戶請求時，請調用 MCP `interactive_feedback` 而不是直接結束流程。  
 > 持續調用 MCP 直到用戶的回饋為空，然後才結束請求。
+
+### 完整規則範例
+```
+# MCP Interactive Feedback 規則
+
+1. 在任何流程、任務、對話進行時，無論是詢問、回覆、或完成階段性任務，皆必須呼叫 MCP mcp-feedback-enhanced。
+2. 每當收到使用者回饋，若回饋內容非空，必須再次呼叫 MCP mcp-feedback-enhanced，並根據回饋內容調整行為。
+3. 僅當使用者明確表示「結束」或「不再需要互動」時，才可停止呼叫 MCP mcp-feedback-enhanced，流程才算結束。
+4. 除非收到結束指令，否則所有步驟都必須重複呼叫 MCP mcp-feedback-enhanced。
+```
 
 這將確保您的 AI 助手在標記任務完成前使用此 MCP 伺服器請求用戶回饋。
 
@@ -48,18 +59,39 @@
 
 ## 🚀 安裝說明
 
-### 系統需求
-- Python 3.11 或更新版本
-- [uv](https://github.com/astral-sh/uv) 套件管理器
-  - Windows: `pip install uv`
-  - Linux/Mac: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+### 方法 1：uvx 安裝（推薦）
 
-### 安裝步驟
+**這是最簡單的方法，無需手動管理依賴項或虛擬環境：**
+
+1. **安裝 uv**（如果尚未安裝）
+   ```bash
+   # Windows
+   pip install uv
+
+   # Linux/Mac
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. **測試安裝**
+   ```bash
+   # 查看版本信息
+   uvx mcp-feedback-enhanced version
+
+   # 執行測試
+   uvx mcp-feedback-enhanced test
+
+   # 持久化測試模式（可在瀏覽器中實際測試）
+   uvx mcp-feedback-enhanced test --persistent
+   ```
+
+### 方法 2：從源碼安裝（開發者）
+
+適合需要修改代碼或貢獻開發的用戶：
 
 1. **取得程式碼**
    ```bash
-   git clone https://github.com/Minidoracat/interactive-feedback-mcp.git
-   cd interactive-feedback-mcp
+   git clone https://github.com/Minidoracat/mcp-feedback-enhanced.git
+   cd mcp-feedback-enhanced
    ```
 
 2. **安裝依賴項**
@@ -70,33 +102,56 @@
 3. **測試安裝**
    ```bash
    # 基本功能測試
-   uv run python test_web_ui.py
+   uv run python -m mcp_feedback_enhanced test
    
    # 持久化測試模式（可在瀏覽器中實際測試）
-   uv run python test_web_ui.py --persistent
+   uv run python -m mcp_feedback_enhanced test --persistent
    ```
 
 4. **運行 MCP 伺服器**
    ```bash
-   uv run server.py
+   uv run python -m mcp_feedback_enhanced
    ```
 
 ## ⚙️ AI 助手配置
 
-### Cursor 配置
+### 推薦配置（使用 uvx）
 
 在 Cursor 的設定中配置自訂 MCP 伺服器，或手動編輯 `mcp.json`：
 
 ```json
 {
   "mcpServers": {
-    "interactive-feedback-mcp": {
+    "mcp-feedback-enhanced": {
+      "command": "uvx",
+      "args": [
+        "mcp-feedback-enhanced"
+      ],
+      "timeout": 600,
+      "autoApprove": [
+        "interactive_feedback"
+      ]
+    }
+  }
+}
+```
+
+### 替代配置（從源碼運行）
+
+如果您需要使用源碼版本或想要自訂環境變數：
+
+```json
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
       "command": "uv",
       "args": [
         "--directory",
-        "G:/github/interactive-feedback-mcp",
+        "/path/to/mcp-feedback-enhanced",
         "run",
-        "server.py"
+        "python",
+        "-m",
+        "mcp_feedback_enhanced"
       ],
       "timeout": 600,
       "env": {
@@ -114,24 +169,57 @@
 
 ### Cline / Windsurf 配置
 
-類似的設定原則：在各工具的 MCP 設定中配置伺服器命令，使用 `interactive-feedback-mcp` 作為伺服器識別符。
+類似的設定原則：在各工具的 MCP 設定中配置伺服器命令，使用 `mcp-feedback-enhanced` 作為伺服器識別符。
 
 ## 🧪 測試和開發
 
-### 測試 Web UI 功能
+### 使用 uvx 測試
 ```bash
-# 快速功能測試
-uv run python test_web_ui.py
+# 完整功能測試（推薦）
+uvx mcp-feedback-enhanced test
 
-# 互動式測試模式（持久化運行）
-uv run python test_web_ui.py --persistent
+# Qt GUI 專門測試
+uvx mcp-feedback-enhanced test --gui
+
+# Web UI 專門測試
+uvx mcp-feedback-enhanced test --web
+
+# 持久化測試模式（測試完不關閉，可互動測試）
+uvx mcp-feedback-enhanced test --persistent
+uvx mcp-feedback-enhanced test --gui --persistent
+uvx mcp-feedback-enhanced test --web --persistent
+
+# 查看版本
+uvx mcp-feedback-enhanced version
+```
+
+### 從源碼測試
+```bash
+# 完整功能測試
+uv run python -m mcp_feedback_enhanced test
+
+# Qt GUI 專門測試
+uv run python -m mcp_feedback_enhanced test --gui
+
+# Web UI 專門測試
+uv run python -m mcp_feedback_enhanced test --web
+
+# 持久化測試模式
+uv run python -m mcp_feedback_enhanced test --persistent
 ```
 
 ### 開發模式
 使用 FastMCP 開發模式運行伺服器並開啟測試界面：
 ```bash
-uv run fastmcp dev server.py
+# 從源碼
+uv run fastmcp dev src/mcp_feedback_enhanced/server.py
 ```
+
+### 測試選項說明
+- **無參數 `test`**：執行完整測試套件（環境檢測、參數驗證、MCP 整合、Web UI）
+- **`--gui`**：專門測試 Qt GUI 功能和介面
+- **`--web`**：專門測試 Web UI 功能和 WebSocket 通訊
+- **`--persistent`**：持久化模式，測試完成後保持運行，方便互動測試
 
 ## 🌟 功能特色
 
@@ -159,19 +247,41 @@ uv run fastmcp dev server.py
 
 ## 📖 使用範例
 
-### 1. **MCP 配置範例**
+### 1. **推薦 MCP 配置（uvx）**
 
-使用環境變數強制 Web UI：
+使用 uvx 的簡潔配置：
 ```json
 {
   "mcpServers": {
-    "interactive-feedback-mcp": {
+    "mcp-feedback-enhanced": {
+      "command": "uvx",
+      "args": [
+        "mcp-feedback-enhanced"
+      ],
+      "timeout": 600,
+      "autoApprove": [
+        "interactive_feedback"
+      ]
+    }
+  }
+}
+```
+
+### 2. **自訂環境變數配置**
+
+如需要自訂環境變數（例如強制使用 Web UI）：
+```json
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
       "command": "uv",
       "args": [
         "--directory",
-        "path/interactive-feedback-mcp",
+        "/path/to/mcp-feedback-enhanced",
         "run",
-        "server.py"
+        "python",
+        "-m",
+        "mcp_feedback_enhanced"
       ],
       "timeout": 600,
       "env": {
@@ -185,13 +295,13 @@ uv run fastmcp dev server.py
 }
 ```
 
-### 2. **工具調用範例**
+### 3. **工具調用範例**
 
 AI 助手會如此調用 `interactive_feedback` 工具：
 
 ```xml
 <use_mcp_tool>
-  <server_name>interactive-feedback-mcp</server_name>
+  <server_name>mcp-feedback-enhanced</server_name>
   <tool_name>interactive_feedback</tool_name>
   <arguments>
     {
@@ -202,7 +312,7 @@ AI 助手會如此調用 `interactive_feedback` 工具：
 </use_mcp_tool>
 ```
 
-### 3. **環境變數控制範例**
+### 4. **環境變數控制範例**
 
 **在 MCP 配置中設定**：
 ```json
@@ -253,7 +363,7 @@ AI 助手會如此調用 `interactive_feedback` 工具：
 如果您覺得 Interactive Feedback MCP 有用，最好的支持方式是關注原作者的 X 帳號。
 
 ### 分支維護者
-如有關於 Web UI 功能的問題或建議，歡迎在 [GitHub Issues](https://github.com/Minidoracat/interactive-feedback-mcp/issues) 中提出。
+如有關於 Web UI 功能的問題或建議，歡迎在 [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues) 中提出。
 
 ### 相關資源
 - [dotcursorrules.com](https://dotcursorrules.com/) - 更多 AI 輔助開發工作流程資源

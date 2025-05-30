@@ -458,7 +458,7 @@ class ImageUploadWidget(QWidget):
                 size_kb = total_size / 1024
                 size_str = f"{size_kb:.1f} KB"
             else:
-            size_mb = total_size / (1024 * 1024)
+                size_mb = total_size / (1024 * 1024)
                 size_str = f"{size_mb:.1f} MB"
             
             self.status_label.setText(f"已選擇 {count} 張圖片 (總計 {size_str})")

@@ -1,176 +1,498 @@
-# Interactive Feedback MCP
-# Developed by Fábio Ferreira (https://x.com/fabiomlferreira)
-# Inspired by/related to dotcursorrules.com (https://dotcursorrules.com/)
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+互動式回饋收集 MCP 服務器
+============================
+
+這是一個基於 Model Context Protocol (MCP) 的服務器，提供互動式用戶回饋收集功能。
+支援文字回饋、圖片上傳，並自動偵測運行環境選擇適當的用戶介面。
+
+作者: Fábio Ferreira
+靈感來源: dotcursorrules.com
+增強功能: 圖片支援和環境偵測
+"""
+
 import os
 import sys
 import json
 import tempfile
-import subprocess
+import asyncio
+import base64
+from typing import Annotated, List
 
-from typing import Annotated, Dict
-
-from fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.utilities.types import Image as MCPImage
+from mcp.types import TextContent
 from pydantic import Field
 
-# The log_level is necessary for Cline to work: https://github.com/jlowin/fastmcp/issues/81
-mcp = FastMCP("Interactive Feedback MCP", log_level="ERROR")
+# ===== 常數定義 =====
+SERVER_NAME = "互動式回饋收集 MCP"
+SSH_ENV_VARS = ['SSH_CONNECTION', 'SSH_CLIENT', 'SSH_TTY']
+REMOTE_ENV_VARS = ['REMOTE_CONTAINERS', 'CODESPACES']
 
-def is_ssh_session() -> bool:
-    """Check if we're running in an SSH session or remote environment"""
-    # Check for SSH environment variables
-    ssh_indicators = [
-        'SSH_CONNECTION',
-        'SSH_CLIENT', 
-        'SSH_TTY'
-    ]
+# 初始化 MCP 服務器
+mcp = FastMCP(SERVER_NAME)
+
+
+# ===== 工具函數 =====
+def debug_log(message: str) -> None:
+    """輸出調試訊息到標準錯誤，避免污染標準輸出"""
+    print(f"[DEBUG] {message}", file=sys.stderr)
+
+
+def is_remote_environment() -> bool:
+    """
+    檢測是否在遠端環境中運行
     
-    for indicator in ssh_indicators:
-        if os.getenv(indicator):
+    Returns:
+        bool: True 表示遠端環境，False 表示本地環境
+    """
+    # 檢查 SSH 連線指標
+    for env_var in SSH_ENV_VARS:
+        if os.getenv(env_var):
+            debug_log(f"偵測到 SSH 環境變數: {env_var}")
             return True
     
-    # Check if DISPLAY is not set (common in SSH without X11 forwarding)
-    if sys.platform.startswith('linux') and not os.getenv('DISPLAY'):
+    # 檢查遠端開發環境
+    for env_var in REMOTE_ENV_VARS:
+        if os.getenv(env_var):
+            debug_log(f"偵測到遠端開發環境: {env_var}")
+            return True
+    
+    # 檢查 Docker 容器
+    if os.path.exists('/.dockerenv'):
+        debug_log("偵測到 Docker 容器環境")
         return True
     
-    # Check for other remote indicators
-    if os.getenv('TERM_PROGRAM') == 'vscode' and os.getenv('VSCODE_INJECTION') == '1':
-        # VSCode remote development
+    # Windows 遠端桌面檢查
+    if sys.platform == 'win32':
+        session_name = os.getenv('SESSIONNAME', '')
+        if session_name and 'RDP' in session_name:
+            debug_log(f"偵測到 Windows 遠端桌面: {session_name}")
+            return True
+    
+    # Linux 無顯示環境檢查
+    if sys.platform.startswith('linux') and not os.getenv('DISPLAY'):
+        debug_log("偵測到 Linux 無顯示環境")
         return True
     
     return False
 
+
 def can_use_gui() -> bool:
-    """Check if GUI can be used in current environment"""
-    if is_ssh_session():
+    """
+    檢測是否可以使用圖形介面
+    
+    Returns:
+        bool: True 表示可以使用 GUI，False 表示只能使用 Web UI
+    """
+    if is_remote_environment():
         return False
     
     try:
-        # Try to import Qt and check if display is available
-        if sys.platform == 'win32':
-            return True  # Windows should generally support GUI
-        elif sys.platform == 'darwin':
-            return True  # macOS should generally support GUI
-        else:
-            # Linux - check for DISPLAY
-            return bool(os.getenv('DISPLAY'))
+        from PySide6.QtWidgets import QApplication
+        debug_log("成功載入 PySide6，可使用 GUI")
+        return True
     except ImportError:
+        debug_log("無法載入 PySide6，使用 Web UI")
+        return False
+    except Exception as e:
+        debug_log(f"GUI 初始化失敗: {e}")
         return False
 
-def launch_feedback_ui(project_directory: str, summary: str) -> dict[str, str]:
-    """Launch appropriate UI based on environment"""
+
+def save_feedback_to_file(feedback_data: dict, file_path: str = None) -> str:
+    """
+    將回饋資料儲存到 JSON 文件
     
-    if can_use_gui():
-        # Use Qt GUI (original implementation)
-        return launch_qt_feedback_ui(project_directory, summary)
-    else:
-        # Use Web UI
-        return launch_web_feedback_ui(project_directory, summary)
-
-def launch_qt_feedback_ui(project_directory: str, summary: str) -> dict[str, str]:
-    """Original Qt GUI implementation"""
-    # Create a temporary file for the feedback result
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
-        output_file = tmp.name
-
-    try:
-        # Get the path to feedback_ui.py relative to this script
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        feedback_ui_path = os.path.join(script_dir, "feedback_ui.py")
-
-        # Run feedback_ui.py as a separate process
-        # NOTE: There appears to be a bug in uv, so we need
-        # to pass a bunch of special flags to make this work
-        args = [
-            sys.executable,
-            "-u",
-            feedback_ui_path,
-            "--project-directory", project_directory,
-            "--prompt", summary,
-            "--output-file", output_file
-        ]
-        result = subprocess.run(
-            args,
-            check=False,
-            shell=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            stdin=subprocess.DEVNULL,
-            close_fds=True
-        )
-        if result.returncode != 0:
-            raise Exception(f"Failed to launch feedback UI: {result.returncode}")
-
-        # Read the result from the temporary file
-        with open(output_file, 'r') as f:
-            result = json.load(f)
-        os.unlink(output_file)
-        return result
-    except Exception as e:
-        if os.path.exists(output_file):
-            os.unlink(output_file)
-        raise e
-
-def launch_web_feedback_ui(project_directory: str, summary: str) -> dict[str, str]:
-    """Launch Web UI implementation"""
-    try:
-        from web_ui import launch_web_feedback_ui as launch_web
-        return launch_web(project_directory, summary)
-    except ImportError as e:
-        # Fallback to command line if web UI fails
-        print(f"Web UI not available: {e}")
-        return launch_cli_feedback_ui(project_directory, summary)
-
-def launch_cli_feedback_ui(project_directory: str, summary: str) -> dict[str, str]:
-    """Simple command line fallback"""
-    print(f"\n{'='*60}")
-    print("Interactive Feedback MCP")
-    print(f"{'='*60}")
-    print(f"專案目錄: {project_directory}")
-    print(f"任務描述: {summary}")
-    print(f"{'='*60}")
+    Args:
+        feedback_data: 回饋資料字典
+        file_path: 儲存路徑，若為 None 則自動產生臨時文件
+        
+    Returns:
+        str: 儲存的文件路徑
+    """
+    if file_path is None:
+        temp_fd, file_path = tempfile.mkstemp(suffix='.json', prefix='feedback_')
+        os.close(temp_fd)
     
-    # Ask for command to run
-    command = input("要執行的命令 (留空跳過): ").strip()
-    command_logs = ""
+    # 確保目錄存在
+    directory = os.path.dirname(file_path)
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
     
-    if command:
-        print(f"執行命令: {command}")
+    # 複製數據以避免修改原始數據
+    json_data = feedback_data.copy()
+    
+    # 處理圖片數據：將 bytes 轉換為 base64 字符串以便 JSON 序列化
+    if "images" in json_data and isinstance(json_data["images"], list):
+        processed_images = []
+        for img in json_data["images"]:
+            if isinstance(img, dict) and "data" in img:
+                processed_img = img.copy()
+                # 如果 data 是 bytes，轉換為 base64 字符串
+                if isinstance(img["data"], bytes):
+                    processed_img["data"] = base64.b64encode(img["data"]).decode('utf-8')
+                    processed_img["data_type"] = "base64"
+                processed_images.append(processed_img)
+            else:
+                processed_images.append(img)
+        json_data["images"] = processed_images
+    
+    # 儲存資料
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(json_data, f, ensure_ascii=False, indent=2)
+    
+    debug_log(f"回饋資料已儲存至: {file_path}")
+    return file_path
+
+
+def create_feedback_text(feedback_data: dict) -> str:
+    """
+    建立格式化的回饋文字
+    
+    Args:
+        feedback_data: 回饋資料字典
+        
+    Returns:
+        str: 格式化後的回饋文字
+    """
+    text_parts = []
+    
+    # 基本回饋內容
+    if feedback_data.get("interactive_feedback"):
+        text_parts.append(f"=== 用戶回饋 ===\n{feedback_data['interactive_feedback']}")
+    
+    # 命令執行日誌
+    if feedback_data.get("logs"):
+        text_parts.append(f"=== 命令執行日誌 ===\n{feedback_data['logs']}")
+    
+    # 圖片附件概要
+    if feedback_data.get("images"):
+        images = feedback_data["images"]
+        text_parts.append(f"=== 圖片附件概要 ===\n用戶提供了 {len(images)} 張圖片：")
+        
+        for i, img in enumerate(images, 1):
+            size = img.get("size", 0)
+            name = img.get("name", "unknown")
+            
+            # 智能單位顯示
+            if size < 1024:
+                size_str = f"{size} B"
+            elif size < 1024 * 1024:
+                size_kb = size / 1024
+                size_str = f"{size_kb:.1f} KB"
+            else:
+                size_mb = size / (1024 * 1024)
+                size_str = f"{size_mb:.1f} MB"
+            
+            text_parts.append(f"  {i}. {name} ({size_str})")
+    
+    return "\n\n".join(text_parts) if text_parts else "用戶未提供任何回饋內容。"
+
+
+def process_images(images_data: List[dict]) -> List[MCPImage]:
+    """
+    處理圖片資料，轉換為 MCP 圖片對象
+    
+    Args:
+        images_data: 圖片資料列表
+        
+    Returns:
+        List[MCPImage]: MCP 圖片對象列表
+    """
+    mcp_images = []
+    
+    for i, img in enumerate(images_data, 1):
         try:
-            result = subprocess.run(
-                command,
-                shell=True,
-                cwd=project_directory,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="ignore"
-            )
-            command_logs = f"$ {command}\n{result.stdout}{result.stderr}"
-            print(command_logs)
+            if not img.get("data"):
+                debug_log(f"圖片 {i} 沒有資料，跳過")
+                continue
+            
+            # 檢查數據類型並相應處理
+            if isinstance(img["data"], bytes):
+                # 如果是原始 bytes 數據，直接使用
+                image_bytes = img["data"]
+                debug_log(f"圖片 {i} 使用原始 bytes 數據，大小: {len(image_bytes)} bytes")
+            elif isinstance(img["data"], str):
+                # 如果是 base64 字符串，進行解碼
+                image_bytes = base64.b64decode(img["data"])
+                debug_log(f"圖片 {i} 從 base64 解碼，大小: {len(image_bytes)} bytes")
+            else:
+                debug_log(f"圖片 {i} 數據類型不支援: {type(img['data'])}")
+                continue
+            
+            if len(image_bytes) == 0:
+                debug_log(f"圖片 {i} 數據為空，跳過")
+                continue
+            
+            # 根據文件名推斷格式
+            file_name = img.get("name", "image.png")
+            if file_name.lower().endswith(('.jpg', '.jpeg')):
+                image_format = 'jpeg'
+            elif file_name.lower().endswith('.gif'):
+                image_format = 'gif'
+            else:
+                image_format = 'png'  # 默認使用 PNG
+            
+            # 創建 MCPImage 對象
+            mcp_image = MCPImage(data=image_bytes, format=image_format)
+            mcp_images.append(mcp_image)
+            
+            debug_log(f"圖片 {i} ({file_name}) 處理成功，格式: {image_format}")
+            
         except Exception as e:
-            command_logs = f"$ {command}\nError: {str(e)}\n"
-            print(command_logs)
+            debug_log(f"圖片 {i} 處理失敗: {e}")
+            import traceback
+            debug_log(f"詳細錯誤: {traceback.format_exc()}")
     
-    # Ask for feedback
-    print(f"\n{'='*60}")
-    print("請提供您的回饋意見:")
-    feedback = input().strip()
-    
-    return {
-        "command_logs": command_logs,
-        "interactive_feedback": feedback
-    }
+    debug_log(f"共處理 {len(mcp_images)} 張圖片")
+    return mcp_images
 
-def first_line(text: str) -> str:
-    return text.split("\n")[0].strip()
+
+def launch_gui(project_dir: str, summary: str) -> dict:
+    """
+    啟動 GUI 收集回饋
+    
+    Args:
+        project_dir: 專案目錄路徑
+        summary: AI 工作摘要
+        
+    Returns:
+        dict: 收集到的回饋資料
+    """
+    debug_log("啟動 Qt GUI 介面")
+    
+    from feedback_ui import feedback_ui
+    return feedback_ui(project_dir, summary)
+
+
+# ===== MCP 工具定義 =====
+@mcp.tool()
+async def interactive_feedback(
+    project_directory: Annotated[str, Field(description="專案目錄路徑")] = ".",
+    summary: Annotated[str, Field(description="AI 工作完成的摘要說明")] = "我已完成了您請求的任務。",
+    timeout: Annotated[int, Field(description="等待用戶回饋的超時時間（秒）")] = 600,
+    force_web_ui: Annotated[bool, Field(description="強制使用 Web UI（用於測試或特殊需求）")] = False
+) -> List:
+    """
+    收集用戶的互動回饋，支援文字和圖片
+    
+    此工具會自動偵測運行環境：
+    - 遠端環境：使用 Web UI
+    - 本地環境：使用 Qt GUI
+    - 可透過 force_web_ui 參數或 FORCE_WEB 環境變數強制使用 Web UI
+    
+    用戶可以：
+    1. 執行命令來驗證結果
+    2. 提供文字回饋
+    3. 上傳圖片作為回饋
+    4. 查看 AI 的工作摘要
+    
+    Args:
+        project_directory: 專案目錄路徑
+        summary: AI 工作完成的摘要說明
+        timeout: 等待用戶回饋的超時時間（秒），預設為 600 秒（10 分鐘）
+        force_web_ui: 強制使用 Web UI，即使在本地環境也使用 Web UI（用於測試）
+        
+    Returns:
+        List: 包含 TextContent 和 MCPImage 對象的列表
+    """
+    # 檢查環境變數，如果設定了 FORCE_WEB 就覆蓋 force_web_ui 參數
+    env_force_web = os.getenv("FORCE_WEB", "").lower()
+    if env_force_web in ("true", "1", "yes", "on"):
+        force_web_ui = True
+        debug_log("環境變數 FORCE_WEB 已啟用，強制使用 Web UI")
+    elif env_force_web in ("false", "0", "no", "off"):
+        force_web_ui = False
+        debug_log("環境變數 FORCE_WEB 已停用，使用預設邏輯")
+    
+    # 環境偵測
+    is_remote = is_remote_environment()
+    can_gui = can_use_gui()
+    use_web_ui = is_remote or not can_gui or force_web_ui
+    
+    debug_log(f"環境偵測結果 - 遠端: {is_remote}, GUI 可用: {can_gui}, 強制 Web UI: {force_web_ui}")
+    debug_log(f"決定使用介面: {'Web UI' if use_web_ui else 'Qt GUI'}")
+    
+    try:
+        # 確保專案目錄存在
+        if not os.path.exists(project_directory):
+            project_directory = os.getcwd()
+        project_directory = os.path.abspath(project_directory)
+        
+        # 選擇適當的介面
+        if use_web_ui:
+            result = await launch_web_ui_with_timeout(project_directory, summary, timeout)
+        else:
+            result = launch_gui(project_directory, summary)
+        
+        # 處理取消情況
+        if not result:
+            return [TextContent(type="text", text="用戶取消了回饋。")]
+        
+        # 儲存詳細結果
+        save_feedback_to_file(result)
+        
+        # 建立回饋項目列表
+        feedback_items = []
+        
+        # 添加文字回饋
+        if result.get("interactive_feedback") or result.get("logs") or result.get("images"):
+            feedback_text = create_feedback_text(result)
+            feedback_items.append(TextContent(type="text", text=feedback_text))
+            debug_log("文字回饋已添加")
+        
+        # 添加圖片回饋
+        if result.get("images"):
+            mcp_images = process_images(result["images"])
+            feedback_items.extend(mcp_images)
+            debug_log(f"已添加 {len(mcp_images)} 張圖片")
+        
+        # 確保至少有一個回饋項目
+        if not feedback_items:
+            feedback_items.append(TextContent(type="text", text="用戶未提供任何回饋內容。"))
+        
+        debug_log(f"回饋收集完成，共 {len(feedback_items)} 個項目")
+        return feedback_items
+        
+    except Exception as e:
+        error_msg = f"回饋收集錯誤: {str(e)}"
+        debug_log(f"錯誤: {error_msg}")
+        return [TextContent(type="text", text=error_msg)]
+
+
+async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: int) -> dict:
+    """
+    啟動 Web UI 收集回饋，支援自訂超時時間
+    
+    Args:
+        project_dir: 專案目錄路徑
+        summary: AI 工作摘要
+        timeout: 超時時間（秒）
+        
+    Returns:
+        dict: 收集到的回饋資料
+    """
+    debug_log(f"啟動 Web UI 介面，超時時間: {timeout} 秒")
+    
+    try:
+        from web_ui import get_web_ui_manager
+        
+        # 直接運行 Web UI 會話
+        return await _run_web_ui_session(project_dir, summary, timeout)
+    except ImportError as e:
+        debug_log(f"無法導入 Web UI 模組: {e}")
+        return {
+            "logs": "",
+            "interactive_feedback": f"Web UI 模組導入失敗: {str(e)}",
+            "images": []
+        }
+
+
+async def _run_web_ui_session(project_dir: str, summary: str, timeout: int) -> dict:
+    """
+    運行 Web UI 會話
+    
+    Args:
+        project_dir: 專案目錄路徑
+        summary: AI 工作摘要
+        timeout: 超時時間（秒）
+        
+    Returns:
+        dict: 收集到的回饋資料
+    """
+    from web_ui import get_web_ui_manager
+    
+    manager = get_web_ui_manager()
+    
+    # 創建會話
+    session_id = manager.create_session(project_dir, summary)
+    session_url = f"http://{manager.host}:{manager.port}/session/{session_id}"
+    
+    debug_log(f"Web UI 已啟動: {session_url}")
+    try:
+        print(f"Web UI 已啟動: {session_url}")
+    except UnicodeEncodeError:
+        print(f"Web UI launched: {session_url}")
+    
+    # 開啟瀏覽器
+    manager.open_browser(session_url)
+    
+    try:
+        # 等待用戶回饋
+        session = manager.get_session(session_id)
+        if not session:
+            raise RuntimeError("會話創建失敗")
+            
+        result = await session.wait_for_feedback(timeout=timeout)
+        debug_log(f"Web UI 回饋收集成功，超時時間: {timeout} 秒")
+        return result
+        
+    except TimeoutError:
+        timeout_msg = f"等待用戶回饋超時（{timeout} 秒）"
+        debug_log(f"⏰ {timeout_msg}")
+        try:
+            print(f"等待用戶回饋超時（{timeout} 秒）")
+        except UnicodeEncodeError:
+            print(f"Feedback timeout ({timeout} seconds)")
+        return {
+            "logs": "",
+            "interactive_feedback": f"回饋超時（{timeout} 秒）",
+            "images": []
+        }
+    except Exception as e:
+        error_msg = f"Web UI 錯誤: {e}"
+        debug_log(f"❌ {error_msg}")
+        try:
+            print(f"Web UI 錯誤: {e}")
+        except UnicodeEncodeError:
+            print(f"Web UI error: {e}")
+        return {
+            "logs": "",
+            "interactive_feedback": f"錯誤: {str(e)}",
+            "images": []
+        }
+    finally:
+        # 清理會話
+        manager.remove_session(session_id)
+
 
 @mcp.tool()
-def interactive_feedback(
-    project_directory: Annotated[str, Field(description="Full path to the project directory")],
-    summary: Annotated[str, Field(description="Short, one-line summary of the changes")],
-) -> Dict[str, str]:
-    """Request interactive feedback for a given project directory and summary"""
-    return launch_feedback_ui(first_line(project_directory), first_line(summary))
+def get_system_info() -> str:
+    """
+    獲取系統環境資訊
+    
+    Returns:
+        str: JSON 格式的系統資訊
+    """
+    is_remote = is_remote_environment()
+    can_gui = can_use_gui()
+    
+    system_info = {
+        "平台": sys.platform,
+        "Python 版本": sys.version.split()[0],
+        "遠端環境": is_remote,
+        "GUI 可用": can_gui,
+        "建議介面": "Web UI" if is_remote or not can_gui else "Qt GUI",
+        "環境變數": {
+            "SSH_CONNECTION": os.getenv("SSH_CONNECTION"),
+            "SSH_CLIENT": os.getenv("SSH_CLIENT"),
+            "DISPLAY": os.getenv("DISPLAY"),
+            "VSCODE_INJECTION": os.getenv("VSCODE_INJECTION"),
+            "SESSIONNAME": os.getenv("SESSIONNAME"),
+        }
+    }
+    
+    return json.dumps(system_info, ensure_ascii=False, indent=2)
 
+
+# ===== 主程式入口 =====
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    debug_log("🚀 啟動互動式回饋收集 MCP 服務器")
+    debug_log(f"   遠端環境: {is_remote_environment()}")
+    debug_log(f"   GUI 可用: {can_use_gui()}")
+    debug_log(f"   建議介面: {'Web UI' if is_remote_environment() or not can_use_gui() else 'Qt GUI'}")
+    debug_log("   等待來自 AI 助手的調用...")
+    
+    mcp.run()

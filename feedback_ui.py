@@ -1,581 +1,938 @@
-# Interactive Feedback MCP UI
-# Developed by Fábio Ferreira (https://x.com/fabiomlferreira)
-# Inspired by/related to dotcursorrules.com (https://dotcursorrules.com/)
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+互動式回饋收集 GUI 介面
+=======================
+
+基於 PySide6 的圖形用戶介面，提供直觀的回饋收集功能。
+支援文字輸入、圖片上傳、命令執行等功能。
+
+作者: Fábio Ferreira  
+靈感來源: dotcursorrules.com
+增強功能: 圖片支援和現代化界面設計
+"""
+
 import os
 import sys
-import json
-import psutil
-import argparse
 import subprocess
-import threading
-import hashlib
-from typing import Optional, TypedDict
+import base64
+import uuid
+import time
+from typing import Optional, TypedDict, List, Dict
+from pathlib import Path
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QCheckBox, QTextEdit, QGroupBox
+    QLabel, QLineEdit, QPushButton, QTextEdit, QGroupBox,
+    QScrollArea, QFrame, QGridLayout, QFileDialog, QMessageBox,
+    QTabWidget, QSizePolicy
 )
-from PySide6.QtCore import Qt, Signal, QObject, QTimer, QSettings
-from PySide6.QtGui import QTextCursor, QIcon, QKeyEvent, QFont, QFontDatabase, QPalette, QColor
+from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtGui import QFont, QPixmap, QDragEnterEvent, QDropEvent, QKeySequence, QShortcut
 
+# ===== 型別定義 =====
 class FeedbackResult(TypedDict):
+    """回饋結果的型別定義"""
     command_logs: str
     interactive_feedback: str
+    images: List[dict]
 
-class FeedbackConfig(TypedDict):
-    run_command: str
-    execute_automatically: bool
 
-def set_dark_title_bar(widget: QWidget, dark_title_bar: bool) -> None:
-    # Ensure we're on Windows
-    if sys.platform != "win32":
-        return
-
-    from ctypes import windll, c_uint32, byref
-
-    # Get Windows build number
-    build_number = sys.getwindowsversion().build
-    if build_number < 17763:  # Windows 10 1809 minimum
-        return
-
-    # Check if the widget's property already matches the setting
-    dark_prop = widget.property("DarkTitleBar")
-    if dark_prop is not None and dark_prop == dark_title_bar:
-        return
-
-    # Set the property (True if dark_title_bar != 0, False otherwise)
-    widget.setProperty("DarkTitleBar", dark_title_bar)
-
-    # Load dwmapi.dll and call DwmSetWindowAttribute
-    dwmapi = windll.dwmapi
-    hwnd = widget.winId()  # Get the window handle
-    attribute = 20 if build_number >= 18985 else 19  # Use newer attribute for newer builds
-    c_dark_title_bar = c_uint32(dark_title_bar)  # Convert to C-compatible uint32
-    dwmapi.DwmSetWindowAttribute(hwnd, attribute, byref(c_dark_title_bar), 4)
-
-    # HACK: Create a 1x1 pixel frameless window to force redraw
-    temp_widget = QWidget(None, Qt.FramelessWindowHint)
-    temp_widget.resize(1, 1)
-    temp_widget.move(widget.pos())
-    temp_widget.show()
-    temp_widget.deleteLater()  # Safe deletion in Qt event loop
-
-def get_dark_mode_palette(app: QApplication):
-    darkPalette = app.palette()
-    darkPalette.setColor(QPalette.Window, QColor(53, 53, 53))
-    darkPalette.setColor(QPalette.WindowText, Qt.white)
-    darkPalette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(127, 127, 127))
-    darkPalette.setColor(QPalette.Base, QColor(42, 42, 42))
-    darkPalette.setColor(QPalette.AlternateBase, QColor(66, 66, 66))
-    darkPalette.setColor(QPalette.ToolTipBase, QColor(53, 53, 53))
-    darkPalette.setColor(QPalette.ToolTipText, Qt.white)
-    darkPalette.setColor(QPalette.Text, Qt.white)
-    darkPalette.setColor(QPalette.Disabled, QPalette.Text, QColor(127, 127, 127))
-    darkPalette.setColor(QPalette.Dark, QColor(35, 35, 35))
-    darkPalette.setColor(QPalette.Shadow, QColor(20, 20, 20))
-    darkPalette.setColor(QPalette.Button, QColor(53, 53, 53))
-    darkPalette.setColor(QPalette.ButtonText, Qt.white)
-    darkPalette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(127, 127, 127))
-    darkPalette.setColor(QPalette.BrightText, Qt.red)
-    darkPalette.setColor(QPalette.Link, QColor(42, 130, 218))
-    darkPalette.setColor(QPalette.Highlight, QColor(42, 130, 218))
-    darkPalette.setColor(QPalette.Disabled, QPalette.Highlight, QColor(80, 80, 80))
-    darkPalette.setColor(QPalette.HighlightedText, Qt.white)
-    darkPalette.setColor(QPalette.Disabled, QPalette.HighlightedText, QColor(127, 127, 127))
-    darkPalette.setColor(QPalette.PlaceholderText, QColor(127, 127, 127))
-    return darkPalette
-
-def kill_tree(process: subprocess.Popen):
-    killed: list[psutil.Process] = []
-    parent = psutil.Process(process.pid)
-    for proc in parent.children(recursive=True):
+# ===== 圖片預覽元件 =====
+class ImagePreviewWidget(QLabel):
+    """圖片預覽元件"""
+    remove_clicked = Signal(str)
+    
+    def __init__(self, image_path: str, image_id: str, parent=None):
+        super().__init__(parent)
+        self.image_path = image_path
+        self.image_id = image_id
+        self._setup_widget()
+        self._load_image()
+        self._create_delete_button()
+    
+    def _setup_widget(self) -> None:
+        """設置元件基本屬性"""
+        self.setFixedSize(100, 100)
+        self.setFrameStyle(QFrame.Box)
+        self.setStyleSheet("""
+            QLabel {
+                border: 2px solid #464647;
+                border-radius: 8px;
+                background-color: #2d2d30;
+                padding: 2px;
+            }
+            QLabel:hover {
+                border-color: #007acc;
+                background-color: #383838;
+            }
+        """)
+        self.setToolTip(f"圖片: {os.path.basename(self.image_path)}")
+    
+    def _load_image(self) -> None:
+        """載入並顯示圖片"""
         try:
-            proc.kill()
-            killed.append(proc)
-        except psutil.Error:
-            pass
-    try:
-        parent.kill()
-    except psutil.Error:
-        pass
-    killed.append(parent)
+            pixmap = QPixmap(self.image_path)
+            if not pixmap.isNull():
+                scaled_pixmap = pixmap.scaled(96, 96, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.setPixmap(scaled_pixmap)
+                self.setAlignment(Qt.AlignCenter)
+            else:
+                self.setText("無法載入圖片")
+                self.setAlignment(Qt.AlignCenter)
+        except Exception:
+            self.setText("載入錯誤")
+            self.setAlignment(Qt.AlignCenter)
+    
+    def _create_delete_button(self) -> None:
+        """創建刪除按鈕"""
+        self.delete_button = QPushButton("×", self)
+        self.delete_button.setFixedSize(20, 20)
+        self.delete_button.move(78, 2)
+        self.delete_button.setStyleSheet("""
+            QPushButton {
+                background-color: #f44336;
+                color: white;
+                border: none;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton:hover { background-color: #d32f2f; }
+        """)
+        self.delete_button.clicked.connect(self._on_delete_clicked)
+        self.delete_button.setToolTip("刪除圖片")
+        
+    def _on_delete_clicked(self) -> None:
+        """處理刪除按鈕點擊事件"""
+        reply = QMessageBox.question(
+            self, '確認刪除', 
+            f'確定要移除圖片 "{os.path.basename(self.image_path)}" 嗎？',
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            self.remove_clicked.emit(self.image_id)
+        
 
-    # Terminate any remaining processes
-    for proc in killed:
-        try:
-            if proc.is_running():
-                proc.terminate()
-        except psutil.Error:
-            pass
-
-def get_user_environment() -> dict[str, str]:
-    if sys.platform != "win32":
-        return os.environ.copy()
-
-    import ctypes
-    from ctypes import wintypes
-
-    # Load required DLLs
-    advapi32 = ctypes.WinDLL("advapi32")
-    userenv = ctypes.WinDLL("userenv")
-    kernel32 = ctypes.WinDLL("kernel32")
-
-    # Constants
-    TOKEN_QUERY = 0x0008
-
-    # Function prototypes
-    OpenProcessToken = advapi32.OpenProcessToken
-    OpenProcessToken.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.POINTER(wintypes.HANDLE)]
-    OpenProcessToken.restype = wintypes.BOOL
-
-    CreateEnvironmentBlock = userenv.CreateEnvironmentBlock
-    CreateEnvironmentBlock.argtypes = [ctypes.POINTER(ctypes.c_void_p), wintypes.HANDLE, wintypes.BOOL]
-    CreateEnvironmentBlock.restype = wintypes.BOOL
-
-    DestroyEnvironmentBlock = userenv.DestroyEnvironmentBlock
-    DestroyEnvironmentBlock.argtypes = [wintypes.LPVOID]
-    DestroyEnvironmentBlock.restype = wintypes.BOOL
-
-    GetCurrentProcess = kernel32.GetCurrentProcess
-    GetCurrentProcess.argtypes = []
-    GetCurrentProcess.restype = wintypes.HANDLE
-
-    CloseHandle = kernel32.CloseHandle
-    CloseHandle.argtypes = [wintypes.HANDLE]
-    CloseHandle.restype = wintypes.BOOL
-
-    # Get process token
-    token = wintypes.HANDLE()
-    if not OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, ctypes.byref(token)):
-        raise RuntimeError("Failed to open process token")
-
-    try:
-        # Create environment block
-        environment = ctypes.c_void_p()
-        if not CreateEnvironmentBlock(ctypes.byref(environment), token, False):
-            raise RuntimeError("Failed to create environment block")
-
-        try:
-            # Convert environment block to list of strings
-            result = {}
-            env_ptr = ctypes.cast(environment, ctypes.POINTER(ctypes.c_wchar))
-            offset = 0
-
-            while True:
-                # Get string at current offset
-                current_string = ""
-                while env_ptr[offset] != "\0":
-                    current_string += env_ptr[offset]
-                    offset += 1
-
-                # Skip null terminator
-                offset += 1
-
-                # Break if we hit double null terminator
-                if not current_string:
-                    break
-
-                equal_index = current_string.index("=")
-                if equal_index == -1:
-                    continue
-
-                key = current_string[:equal_index]
-                value = current_string[equal_index + 1:]
-                result[key] = value
-
-            return result
-
-        finally:
-            DestroyEnvironmentBlock(environment)
-
-    finally:
-        CloseHandle(token)
-
-class FeedbackTextEdit(QTextEdit):
+# ===== 圖片上傳元件 =====
+class ImageUploadWidget(QWidget):
+    """圖片上傳元件"""
+    images_changed = Signal()
+    
     def __init__(self, parent=None):
         super().__init__(parent)
-
-    def keyPressEvent(self, event: QKeyEvent):
-        if event.key() == Qt.Key_Return and event.modifiers() == Qt.ControlModifier:
-            # Find the parent FeedbackUI instance and call submit
-            parent = self.parent()
-            while parent and not isinstance(parent, FeedbackUI):
-                parent = parent.parent()
-            if parent:
-                parent._submit_feedback()
+        self.images: Dict[str, Dict[str, str]] = {}
+        self._setup_ui()
+        self.setAcceptDrops(True)
+        # 啟動時清理舊的臨時文件
+        self._cleanup_old_temp_files()
+        
+    def _setup_ui(self) -> None:
+        """設置用戶介面"""
+        layout = QVBoxLayout(self)
+        layout.setSpacing(6)
+        layout.setContentsMargins(12, 8, 12, 8)
+        
+        # 標題
+        title = QLabel("🖼️ 圖片附件（可選）")
+        title.setFont(QFont("", 10, QFont.Bold))
+        title.setStyleSheet("color: #007acc; margin: 1px 0;")
+        layout.addWidget(title)
+        
+        # 操作按鈕
+        self._create_buttons(layout)
+        
+        # 拖拽區域
+        self._create_drop_zone(layout)
+        
+        # 圖片預覽區域
+        self._create_preview_area(layout)
+        
+        # 狀態標籤
+        self.status_label = QLabel("已選擇 0 張圖片")
+        self.status_label.setStyleSheet("color: #9e9e9e; font-size: 10px;")
+        layout.addWidget(self.status_label)
+    
+    def _create_buttons(self, layout: QVBoxLayout) -> None:
+        """創建操作按鈕"""
+        button_layout = QHBoxLayout()
+        
+        # 選擇文件按鈕
+        self.file_button = QPushButton("📁 選擇文件")
+        self.file_button.clicked.connect(self.select_files)
+        
+        # 剪貼板按鈕
+        self.paste_button = QPushButton("📋 剪貼板")
+        self.paste_button.clicked.connect(self.paste_from_clipboard)
+        
+        # 清除按鈕
+        self.clear_button = QPushButton("❌ 清除")
+        self.clear_button.clicked.connect(self.clear_all_images)
+        
+        # 設置按鈕樣式
+        button_style = """
+            QPushButton {
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 11px;
+            }
+        """
+        
+        self.file_button.setStyleSheet(button_style + "QPushButton { background-color: #0e639c; }")
+        self.paste_button.setStyleSheet(button_style + "QPushButton { background-color: #4caf50; }")
+        self.clear_button.setStyleSheet(button_style + "QPushButton { background-color: #f44336; }")
+        
+        button_layout.addWidget(self.file_button)
+        button_layout.addWidget(self.paste_button)
+        button_layout.addWidget(self.clear_button)
+        button_layout.addStretch()
+        
+        layout.addLayout(button_layout)
+        
+    def _create_drop_zone(self, layout: QVBoxLayout) -> None:
+        """創建拖拽區域"""
+        self.drop_zone = QLabel("🎯 拖拽圖片到這裡 (PNG、JPG、JPEG、GIF、BMP、WebP)")
+        self.drop_zone.setFixedHeight(50)
+        self.drop_zone.setAlignment(Qt.AlignCenter)
+        self.drop_zone.setStyleSheet("""
+            QLabel {
+                border: 2px dashed #464647;
+                border-radius: 6px;
+                background-color: #2d2d30;
+                color: #9e9e9e;
+                font-size: 11px;
+            }
+        """)
+        layout.addWidget(self.drop_zone)
+        
+    def _create_preview_area(self, layout: QVBoxLayout) -> None:
+        """創建圖片預覽區域"""
+        self.preview_scroll = QScrollArea()
+        self.preview_widget = QWidget()
+        self.preview_layout = QGridLayout(self.preview_widget)
+        self.preview_layout.setSpacing(4)
+        self.preview_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        
+        self.preview_scroll.setWidget(self.preview_widget)
+        self.preview_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.preview_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.preview_scroll.setMinimumHeight(70)
+        self.preview_scroll.setMaximumHeight(180)
+        self.preview_scroll.setWidgetResizable(True)
+        self.preview_scroll.setStyleSheet("""
+            QScrollArea {
+                border: 1px solid #464647;
+                border-radius: 4px;
+                background-color: #1e1e1e;
+            }
+        """)
+        
+        layout.addWidget(self.preview_scroll)
+        
+    def select_files(self) -> None:
+        """選擇文件對話框"""
+        files, _ = QFileDialog.getOpenFileNames(
+            self,
+            "選擇圖片文件",
+            "",
+            "圖片文件 (*.png *.jpg *.jpeg *.gif *.bmp *.webp);;所有文件 (*)"
+        )
+        if files:
+            self._add_images(files)
+            
+    def paste_from_clipboard(self) -> None:
+        """從剪貼板粘貼圖片"""
+        clipboard = QApplication.clipboard()
+        
+        if clipboard.mimeData().hasImage():
+            image = clipboard.image()
+            if not image.isNull():
+                # 保存臨時文件
+                temp_dir = Path.home() / ".cache" / "interactive-feedback-mcp"
+                temp_dir.mkdir(parents=True, exist_ok=True)
+                temp_file = temp_dir / f"clipboard_{uuid.uuid4().hex}.png"
+                
+                # 檢查圖片尺寸，如果太大則壓縮
+                max_dimension = 1024  # 最大尺寸
+                if image.width() > max_dimension or image.height() > max_dimension:
+                    # 計算縮放比例
+                    scale = min(max_dimension / image.width(), max_dimension / image.height())
+                    new_width = int(image.width() * scale)
+                    new_height = int(image.height() * scale)
+                    
+                    # 縮放圖片
+                    from PySide6.QtCore import Qt
+                    image = image.scaled(new_width, new_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    print(f"[DEBUG] 圖片已縮放至: {new_width}x{new_height}")
+                
+                # 使用較低的質量保存以減小文件大小
+                quality = 70  # 降低質量以減小文件大小
+                if image.save(str(temp_file), "PNG", quality):
+                    # 檢查保存後的文件大小
+                    if temp_file.exists():
+                        file_size = temp_file.stat().st_size
+                        print(f"[DEBUG] 剪貼板圖片保存成功: {temp_file}, 大小: {file_size} bytes")
+                        
+                        # 檢查文件大小是否超過限制
+                        if file_size > 1 * 1024 * 1024:  # 1MB 限制
+                            temp_file.unlink()  # 刪除過大的文件
+                            QMessageBox.warning(
+                                self, "圖片過大", 
+                                f"剪貼板圖片壓縮後仍然超過 1MB 限制 ({file_size/1024/1024:.1f}MB)！\n"
+                                f"請使用圖片編輯軟體進一步壓縮。"
+                            )
+                            return
+                        
+                        if file_size > 0:
+                            self._add_images([str(temp_file)])
+                        else:
+                            QMessageBox.warning(self, "錯誤", f"保存的圖片文件為空！位置: {temp_file}")
+                    else:
+                        QMessageBox.warning(self, "錯誤", "圖片保存失敗！")
+                else:
+                    QMessageBox.warning(self, "錯誤", "無法保存剪貼板圖片！")
+            else:
+                QMessageBox.information(self, "提示", "剪貼板中沒有有效的圖片！")
         else:
-            super().keyPressEvent(event)
+            QMessageBox.information(self, "提示", "剪貼板中沒有圖片內容！")
+            
+    def clear_all_images(self) -> None:
+        """清除所有圖片"""
+        if self.images:
+            reply = QMessageBox.question(
+                self, '確認清除', 
+                f'確定要清除所有 {len(self.images)} 張圖片嗎？',
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                # 清理臨時文件
+                temp_files_cleaned = 0
+                for image_info in self.images.values():
+                    file_path = image_info["path"]
+                    if "clipboard_" in os.path.basename(file_path) and ".cache" in file_path:
+                        try:
+                            if os.path.exists(file_path):
+                                os.remove(file_path)
+                                temp_files_cleaned += 1
+                                print(f"[DEBUG] 已刪除臨時文件: {file_path}")
+                        except Exception as e:
+                            print(f"[DEBUG] 刪除臨時文件失敗: {e}")
+                
+                # 清除內存中的圖片數據
+                self.images.clear()
+                self._refresh_preview()
+                self._update_status()
+                self.images_changed.emit()
+                print(f"[DEBUG] 已清除所有圖片，包括 {temp_files_cleaned} 個臨時文件")
+    
+    def _add_images(self, file_paths: List[str]) -> None:
+        """添加圖片"""
+        added_count = 0
+        for file_path in file_paths:
+            try:
+                print(f"[DEBUG] 嘗試添加圖片: {file_path}")
+                
+                if not os.path.exists(file_path):
+                    print(f"[DEBUG] 文件不存在: {file_path}")
+                    continue
+                    
+                if not self._is_image_file(file_path):
+                    print(f"[DEBUG] 不是圖片文件: {file_path}")
+                    continue
+                
+                file_size = os.path.getsize(file_path)
+                print(f"[DEBUG] 文件大小: {file_size} bytes")
+                
+                # 更嚴格的大小限制（1MB）
+                if file_size > 1 * 1024 * 1024:
+                    QMessageBox.warning(
+                        self, "文件過大", 
+                        f"圖片 {os.path.basename(file_path)} 大小為 {file_size/1024/1024:.1f}MB，"
+                        f"超過 1MB 限制！\n建議使用圖片編輯軟體壓縮後再上傳。"
+                    )
+                    continue
+                
+                if file_size == 0:
+                    QMessageBox.warning(self, "文件為空", f"圖片 {os.path.basename(file_path)} 是空文件！")
+                    continue
+                
+                # 讀取圖片原始二進制數據
+                with open(file_path, 'rb') as f:
+                    raw_data = f.read()
+                    print(f"[DEBUG] 讀取原始數據大小: {len(raw_data)} bytes")
+                    
+                    if len(raw_data) == 0:
+                        print(f"[DEBUG] 讀取的數據為空！")
+                        continue
+                    
+                    # 再次檢查內存中的數據大小
+                    if len(raw_data) > 1 * 1024 * 1024:
+                        QMessageBox.warning(
+                            self, "數據過大", 
+                            f"圖片 {os.path.basename(file_path)} 數據大小超過 1MB 限制！"
+                        )
+                        continue
+                
+                image_id = str(uuid.uuid4())
+                self.images[image_id] = {
+                    "path": file_path,
+                    "data": raw_data,  # 直接保存原始二進制數據
+                    "name": os.path.basename(file_path),
+                    "size": file_size
+                }
+                added_count += 1
+                print(f"[DEBUG] 圖片添加成功: {os.path.basename(file_path)}, 數據大小: {len(raw_data)} bytes")
+                
+            except Exception as e:
+                print(f"[DEBUG] 添加圖片失敗: {e}")
+                QMessageBox.warning(self, "錯誤", f"無法載入圖片 {os.path.basename(file_path)}:\n{str(e)}")
+                
+        print(f"[DEBUG] 共添加 {added_count} 張圖片")
+        print(f"[DEBUG] 當前總共有 {len(self.images)} 張圖片")
+        if added_count > 0:
+            self._refresh_preview()
+            self._update_status()
+            self.images_changed.emit()
+            
+    def _is_image_file(self, file_path: str) -> bool:
+        """檢查是否為支援的圖片格式"""
+        extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
+        return Path(file_path).suffix.lower() in extensions
+    
+    def _refresh_preview(self) -> None:
+        """刷新預覽布局"""
+        # 清除現有預覽
+        while self.preview_layout.count():
+            child = self.preview_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+                
+        # 重新添加圖片預覽
+        for i, (image_id, image_info) in enumerate(self.images.items()):
+            preview = ImagePreviewWidget(image_info["path"], image_id, self)
+            preview.remove_clicked.connect(self._remove_image)
+            
+            row = i // 5
+            col = i % 5
+            self.preview_layout.addWidget(preview, row, col)
+            
+    def _remove_image(self, image_id: str) -> None:
+        """移除圖片"""
+        if image_id in self.images:
+            image_info = self.images[image_id]
+            
+            # 如果是臨時文件（剪貼板圖片），則物理刪除文件
+            file_path = image_info["path"]
+            if "clipboard_" in os.path.basename(file_path) and ".cache" in file_path:
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                        print(f"[DEBUG] 已刪除臨時文件: {file_path}")
+                except Exception as e:
+                    print(f"[DEBUG] 刪除臨時文件失敗: {e}")
+            
+            # 從內存中移除圖片數據
+            del self.images[image_id]
+            self._refresh_preview()
+            self._update_status()
+            self.images_changed.emit()
+            print(f"[DEBUG] 已移除圖片: {image_info['name']}")
+    
+    def _update_status(self) -> None:
+        """更新狀態標籤"""
+        count = len(self.images)
+        if count == 0:
+            self.status_label.setText("已選擇 0 張圖片")
+        else:
+            total_size = sum(img["size"] for img in self.images.values())
+            
+            # 智能單位顯示
+            if total_size < 1024:
+                size_str = f"{total_size} B"
+            elif total_size < 1024 * 1024:
+                size_kb = total_size / 1024
+                size_str = f"{size_kb:.1f} KB"
+            else:
+            size_mb = total_size / (1024 * 1024)
+                size_str = f"{size_mb:.1f} MB"
+            
+            self.status_label.setText(f"已選擇 {count} 張圖片 (總計 {size_str})")
+            
+            # 詳細調試信息
+            print(f"[DEBUG] === 圖片狀態更新 ===")
+            print(f"[DEBUG] 圖片數量: {count}")
+            print(f"[DEBUG] 總大小: {total_size} bytes ({size_str})")
+            for i, (image_id, img) in enumerate(self.images.items(), 1):
+                data_size = len(img["data"]) if isinstance(img["data"], bytes) else 0
+                # 智能顯示每張圖片的大小
+                if data_size < 1024:
+                    data_str = f"{data_size} B"
+                elif data_size < 1024 * 1024:
+                    data_str = f"{data_size/1024:.1f} KB"
+                else:
+                    data_str = f"{data_size/(1024*1024):.1f} MB"
+                print(f"[DEBUG] 圖片 {i}: {img['name']} - 數據大小: {data_str}")
+            print(f"[DEBUG] ==================")
+            
+    def get_images_data(self) -> List[dict]:
+        """獲取圖片數據"""
+        return [
+            {
+                "name": img["name"],
+                "data": img["data"],  # 原始二進制數據
+                "size": len(img["data"]) if isinstance(img["data"], bytes) else img["size"]  # 使用實際數據大小
+            }
+            for img in self.images.values()
+        ]
 
-class LogSignals(QObject):
-    append_log = Signal(str)
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        """拖拽進入事件"""
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                if url.isLocalFile() and self._is_image_file(url.toLocalFile()):
+                    event.acceptProposedAction()
+                    self.drop_zone.setStyleSheet("""
+                        QLabel {
+                            border: 2px dashed #007acc;
+                            border-radius: 6px;
+                            background-color: #383838;
+                            color: #007acc;
+                            font-size: 11px;
+                        }
+                    """)
+        return
+        event.ignore()
+    
+    def dragLeaveEvent(self, event) -> None:
+        """拖拽離開事件"""
+        self.drop_zone.setStyleSheet("""
+            QLabel {
+                border: 2px dashed #464647;
+                border-radius: 6px;
+                background-color: #2d2d30;
+                color: #9e9e9e;
+                font-size: 11px;
+            }
+        """)
+    
+    def dropEvent(self, event: QDropEvent) -> None:
+        """拖拽放下事件"""
+        self.dragLeaveEvent(event)
+        
+        files = []
+        for url in event.mimeData().urls():
+            if url.isLocalFile():
+                file_path = url.toLocalFile()
+                if self._is_image_file(file_path):
+                    files.append(file_path)
+        
+        if files:
+            self._add_images(files)
+            event.acceptProposedAction()
+        else:
+            QMessageBox.warning(self, "格式錯誤", "請拖拽有效的圖片文件！")
+    
+    def _cleanup_old_temp_files(self) -> None:
+        """清理舊的臨時文件"""
+        try:
+            temp_dir = Path.home() / ".cache" / "interactive-feedback-mcp"
+            if temp_dir.exists():
+                cleaned_count = 0
+                for temp_file in temp_dir.glob("clipboard_*.png"):
+                    try:
+                        # 清理超過1小時的臨時文件
+                        if temp_file.exists():
+                            file_age = time.time() - temp_file.stat().st_mtime
+                            if file_age > 3600:  # 1小時 = 3600秒
+                                temp_file.unlink()
+                                cleaned_count += 1
+                    except Exception as e:
+                        print(f"[DEBUG] 清理舊臨時文件失敗: {e}")
+                if cleaned_count > 0:
+                    print(f"[DEBUG] 清理了 {cleaned_count} 個舊的臨時文件")
+        except Exception as e:
+            print(f"[DEBUG] 臨時文件清理過程出錯: {e}")
 
-class FeedbackUI(QMainWindow):
-    def __init__(self, project_directory: str, prompt: str):
+
+# ===== 主要回饋介面 =====
+class FeedbackWindow(QMainWindow):
+    """主要的回饋收集視窗"""
+    
+    def __init__(self, project_dir: str, summary: str):
         super().__init__()
-        self.project_directory = project_directory
-        self.prompt = prompt
-
+        self.project_dir = project_dir
+        self.summary = summary
+        self.result: Optional[FeedbackResult] = None
         self.process: Optional[subprocess.Popen] = None
-        self.log_buffer = []
-        self.feedback_result = None
-        self.log_signals = LogSignals()
-        self.log_signals.append_log.connect(self._append_log)
-
-        self.setWindowTitle("Interactive Feedback MCP")
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        icon_path = os.path.join(script_dir, "images", "feedback.png")
-        self.setWindowIcon(QIcon(icon_path))
-        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+        self.accepted = False
         
-        self.settings = QSettings("InteractiveFeedbackMCP", "InteractiveFeedbackMCP")
+        self._setup_ui()
+        self._apply_dark_style()
+    
+    def _setup_ui(self) -> None:
+        """設置用戶介面"""
+        self.setWindowTitle("互動式回饋收集")
+        self.setMinimumSize(800, 600)
         
-        # Load general UI settings for the main window (geometry, state)
-        self.settings.beginGroup("MainWindow_General")
-        geometry = self.settings.value("geometry")
-        if geometry:
-            self.restoreGeometry(geometry)
-        else:
-            self.resize(800, 600)
-            screen = QApplication.primaryScreen().geometry()
-            x = (screen.width() - 800) // 2
-            y = (screen.height() - 600) // 2
-            self.move(x, y)
-        state = self.settings.value("windowState")
-        if state:
-            self.restoreState(state)
-        self.settings.endGroup() # End "MainWindow_General" group
-        
-        # Load project-specific settings (command, auto-execute, command section visibility)
-        self.project_group_name = get_project_settings_group(self.project_directory)
-        self.settings.beginGroup(self.project_group_name)
-        loaded_run_command = self.settings.value("run_command", "", type=str)
-        loaded_execute_auto = self.settings.value("execute_automatically", False, type=bool)
-        command_section_visible = self.settings.value("commandSectionVisible", False, type=bool)
-        self.settings.endGroup() # End project-specific group
-        
-        self.config: FeedbackConfig = {
-            "run_command": loaded_run_command,
-            "execute_automatically": loaded_execute_auto
-        }
-
-        self._create_ui() # self.config is used here to set initial values
-
-        # Set command section visibility AFTER _create_ui has created relevant widgets
-        self.command_group.setVisible(command_section_visible)
-        if command_section_visible:
-            self.toggle_command_button.setText("Hide Command Section")
-        else:
-            self.toggle_command_button.setText("Show Command Section")
-
-        set_dark_title_bar(self, True)
-
-        if self.config.get("execute_automatically", False):
-            self._run_command()
-
-    def _format_windows_path(self, path: str) -> str:
-        if sys.platform == "win32":
-            # Convert forward slashes to backslashes
-            path = path.replace("/", "\\")
-            # Capitalize drive letter if path starts with x:\
-            if len(path) >= 2 and path[1] == ":" and path[0].isalpha():
-                path = path[0].upper() + path[1:]
-        return path
-
-    def _create_ui(self):
+        # 主要元件
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
-
-        # Toggle Command Section Button
-        self.toggle_command_button = QPushButton("Show Command Section")
-        self.toggle_command_button.clicked.connect(self._toggle_command_section)
-        layout.addWidget(self.toggle_command_button)
-
-        # Command section
-        self.command_group = QGroupBox("Command")
-        command_layout = QVBoxLayout(self.command_group)
-
-        # Working directory label
-        formatted_path = self._format_windows_path(self.project_directory)
-        working_dir_label = QLabel(f"Working directory: {formatted_path}")
-        command_layout.addWidget(working_dir_label)
-
-        # Command input row
-        command_input_layout = QHBoxLayout()
-        self.command_entry = QLineEdit()
-        self.command_entry.setText(self.config["run_command"])
-        self.command_entry.returnPressed.connect(self._run_command)
-        self.command_entry.textChanged.connect(self._update_config)
-        self.run_button = QPushButton("&Run")
+        
+        # 主要佈局
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setSpacing(10)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # AI 工作摘要（適度參與拉伸）
+        self._create_summary_section(main_layout)
+        
+        # 分頁標籤（主要工作區域）
+        self._create_tabs(main_layout)
+        
+        # 操作按鈕（固定大小）
+        self._create_action_buttons(main_layout)
+        
+        # 設置比例拉伸：摘要區域佔1份，分頁區域佔3份，按鈕不拉伸
+        summary_widget = main_layout.itemAt(0).widget()  # 摘要區域
+        main_layout.setStretchFactor(summary_widget, 1)   # 適度拉伸
+        main_layout.setStretchFactor(self.tabs, 3)        # 主要拉伸區域
+    
+    def _create_summary_section(self, layout: QVBoxLayout) -> None:
+        """創建 AI 工作摘要區域"""
+        summary_group = QGroupBox("📋 AI 工作摘要")
+        summary_layout = QVBoxLayout(summary_group)
+        
+        self.summary_text = QTextEdit()
+        self.summary_text.setPlainText(self.summary)
+        # 設置合理的高度範圍，允許適度拉伸
+        self.summary_text.setMinimumHeight(80)
+        self.summary_text.setMaximumHeight(250)  # 增加最大高度，允許更多拉伸
+        self.summary_text.setReadOnly(True)
+        self.summary_text.setStyleSheet("background-color: #2d2d30; border: 1px solid #464647;")
+        
+        # 設置大小策略：允許適度垂直擴展
+        self.summary_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
+        # 設置群組框的大小策略：允許適度擴展
+        summary_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
+        summary_layout.addWidget(self.summary_text)
+        layout.addWidget(summary_group)
+    
+    def _create_tabs(self, layout: QVBoxLayout) -> None:
+        """創建分頁標籤"""
+        self.tabs = QTabWidget()
+        
+        # 設置分頁標籤的大小策略，確保能夠獲得主要空間
+        self.tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
+        # 回饋分頁
+        self._create_feedback_tab()
+        
+        # 命令分頁
+        self._create_command_tab()
+        
+        layout.addWidget(self.tabs)
+    
+    def _create_feedback_tab(self) -> None:
+        """創建回饋分頁"""
+        feedback_widget = QWidget()
+        feedback_layout = QVBoxLayout(feedback_widget)
+        
+        # 文字回饋區域
+        feedback_group = QGroupBox("💬 您的回饋")
+        feedback_group_layout = QVBoxLayout(feedback_group)
+        
+        self.feedback_text = QTextEdit()
+        self.feedback_text.setPlaceholderText("請在這裡輸入您的回饋、建議或問題...\n\n💡 小提示：按 Ctrl+Enter 可快速提交回饋")
+        self.feedback_text.setMinimumHeight(150)
+        # 確保文字輸入區域能夠擴展
+        self.feedback_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
+        # 添加快捷鍵支援
+        submit_shortcut = QShortcut(QKeySequence("Ctrl+Return"), self.feedback_text)
+        submit_shortcut.activated.connect(self._submit_feedback)
+        
+        feedback_group_layout.addWidget(self.feedback_text)
+        feedback_layout.addWidget(feedback_group)
+        
+        # 圖片上傳區域（允許適度拉伸）
+        self.image_upload = ImageUploadWidget()
+        self.image_upload.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.image_upload.setMinimumHeight(200)   # 設置最小高度
+        self.image_upload.setMaximumHeight(400)   # 增加最大高度限制
+        feedback_layout.addWidget(self.image_upload)
+        
+        # 設置比例拉伸：文字區域佔2份，圖片區域佔1份
+        feedback_layout.setStretchFactor(feedback_group, 2)
+        feedback_layout.setStretchFactor(self.image_upload, 1)
+        
+        self.tabs.addTab(feedback_widget, "💬 回饋")
+    
+    def _create_command_tab(self) -> None:
+        """創建命令分頁"""
+        command_widget = QWidget()
+        command_layout = QVBoxLayout(command_widget)
+        
+        # 命令輸入區域
+        command_group = QGroupBox("⚡ 命令執行")
+        command_group_layout = QVBoxLayout(command_group)
+        
+        # 命令輸入
+        cmd_input_layout = QHBoxLayout()
+        self.command_input = QLineEdit()
+        self.command_input.setPlaceholderText("輸入要執行的命令...")
+        self.command_input.returnPressed.connect(self._run_command)
+        
+        self.run_button = QPushButton("▶️ 執行")
         self.run_button.clicked.connect(self._run_command)
-
-        command_input_layout.addWidget(self.command_entry)
-        command_input_layout.addWidget(self.run_button)
-        command_layout.addLayout(command_input_layout)
-
-        # Auto-execute and save config row
-        auto_layout = QHBoxLayout()
-        self.auto_check = QCheckBox("Execute automatically on next run")
-        self.auto_check.setChecked(self.config.get("execute_automatically", False))
-        self.auto_check.stateChanged.connect(self._update_config)
-
-        save_button = QPushButton("&Save Configuration")
-        save_button.clicked.connect(self._save_config)
-
-        auto_layout.addWidget(self.auto_check)
-        auto_layout.addStretch()
-        auto_layout.addWidget(save_button)
-        command_layout.addLayout(auto_layout)
-
-        # Console section (now part of command_group)
-        console_group = QGroupBox("Console")
-        console_layout_internal = QVBoxLayout(console_group)
-        console_group.setMinimumHeight(200)
-
-        # Log text area
-        self.log_text = QTextEdit()
-        self.log_text.setReadOnly(True)
-        font = QFont(QFontDatabase.systemFont(QFontDatabase.FixedFont))
-        font.setPointSize(9)
-        self.log_text.setFont(font)
-        console_layout_internal.addWidget(self.log_text)
-
-        # Clear button
+        
+        cmd_input_layout.addWidget(self.command_input)
+        cmd_input_layout.addWidget(self.run_button)
+        command_group_layout.addLayout(cmd_input_layout)
+        
+        # 命令輸出
+        self.command_output = QTextEdit()
+        self.command_output.setReadOnly(True)
+        self.command_output.setMinimumHeight(200)
+        self.command_output.setStyleSheet("background-color: #1e1e1e; color: #ffffff; font-family: 'Consolas', 'Monaco', 'Courier New', monospace;")
+        # 確保命令輸出區域能夠擴展
+        self.command_output.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        command_group_layout.addWidget(self.command_output)
+        
+        # 設置群組框的大小策略
+        command_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        
+        command_layout.addWidget(command_group)
+        
+        self.tabs.addTab(command_widget, "⚡ 命令")
+    
+    def _create_action_buttons(self, layout: QVBoxLayout) -> None:
+        """創建操作按鈕"""
         button_layout = QHBoxLayout()
-        self.clear_button = QPushButton("&Clear")
-        self.clear_button.clicked.connect(self.clear_logs)
+        
+        self.submit_button = QPushButton("✅ 提交回饋")
+        self.submit_button.clicked.connect(self._submit_feedback)
+        self.submit_button.setStyleSheet("""
+            QPushButton {
+                background-color: #4caf50;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+            QPushButton:hover { background-color: #45a049; }
+        """)
+        
+        self.cancel_button = QPushButton("❌ 取消")
+        self.cancel_button.clicked.connect(self._cancel_feedback)
+        self.cancel_button.setStyleSheet("""
+            QPushButton {
+                background-color: #f44336;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+            QPushButton:hover { background-color: #d32f2f; }
+        """)
+        
         button_layout.addStretch()
-        button_layout.addWidget(self.clear_button)
-        console_layout_internal.addLayout(button_layout)
+        button_layout.addWidget(self.cancel_button)
+        button_layout.addWidget(self.submit_button)
         
-        command_layout.addWidget(console_group)
+        layout.addLayout(button_layout)
+    
+    def _apply_dark_style(self) -> None:
+        """應用深色主題"""
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #2b2b2b;
+                color: #ffffff;
+            }
+            QGroupBox {
+                font-weight: bold;
+                border: 2px solid #464647;
+                border-radius: 8px;
+                margin-top: 1ex;
+                padding: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+            QTextEdit {
+                background-color: #2d2d30;
+                border: 1px solid #464647;
+                border-radius: 4px;
+                padding: 8px;
+                color: #ffffff;
+            }
+            QLineEdit {
+                background-color: #2d2d30;
+                border: 1px solid #464647;
+                border-radius: 4px;
+                padding: 8px;
+                color: #ffffff;
+            }
+            QTabWidget::pane {
+                border: 1px solid #464647;
+                border-radius: 4px;
+            }
+            QTabBar::tab {
+                background-color: #2d2d30;
+                color: #ffffff;
+                border: 1px solid #464647;
+                    padding: 8px 16px;
+                margin-right: 2px;
+                }
+            QTabBar::tab:selected {
+                background-color: #007acc;
+                }
+            """)
 
-        self.command_group.setVisible(False) 
-        layout.addWidget(self.command_group)
-
-        # Feedback section with adjusted height
-        self.feedback_group = QGroupBox("Feedback")
-        feedback_layout = QVBoxLayout(self.feedback_group)
-
-        # Short description label (from self.prompt)
-        self.description_label = QLabel(self.prompt)
-        self.description_label.setWordWrap(True)
-        feedback_layout.addWidget(self.description_label)
-
-        self.feedback_text = FeedbackTextEdit()
-        font_metrics = self.feedback_text.fontMetrics()
-        row_height = font_metrics.height()
-        # Calculate height for 5 lines + some padding for margins
-        padding = self.feedback_text.contentsMargins().top() + self.feedback_text.contentsMargins().bottom() + 5 # 5 is extra vertical padding
-        self.feedback_text.setMinimumHeight(5 * row_height + padding)
-
-        self.feedback_text.setPlaceholderText("Enter your feedback here (Ctrl+Enter to submit)")
-        submit_button = QPushButton("&Send Feedback (Ctrl+Enter)")
-        submit_button.clicked.connect(self._submit_feedback)
-
-        feedback_layout.addWidget(self.feedback_text)
-        feedback_layout.addWidget(submit_button)
-
-        # Set minimum height for feedback_group to accommodate its contents
-        # This will be based on the description label and the 5-line feedback_text
-        self.feedback_group.setMinimumHeight(self.description_label.sizeHint().height() + self.feedback_text.minimumHeight() + submit_button.sizeHint().height() + feedback_layout.spacing() * 2 + feedback_layout.contentsMargins().top() + feedback_layout.contentsMargins().bottom() + 10) # 10 for extra padding
-
-        # Add widgets in a specific order
-        layout.addWidget(self.feedback_group)
-
-        # Credits/Contact Label
-        contact_label = QLabel('Need to improve? Contact Fábio Ferreira on <a href="https://x.com/fabiomlferreira">X.com</a> or visit <a href="https://dotcursorrules.com/">dotcursorrules.com</a>')
-        contact_label.setOpenExternalLinks(True)
-        contact_label.setAlignment(Qt.AlignCenter)
-        # Optionally, make font a bit smaller and less prominent
-        # contact_label_font = contact_label.font()
-        # contact_label_font.setPointSize(contact_label_font.pointSize() - 1)
-        # contact_label.setFont(contact_label_font)
-        contact_label.setStyleSheet("font-size: 9pt; color: #cccccc;") # Light gray for dark theme
-        layout.addWidget(contact_label)
-
-    def _toggle_command_section(self):
-        is_visible = self.command_group.isVisible()
-        self.command_group.setVisible(not is_visible)
-        if not is_visible:
-            self.toggle_command_button.setText("Hide Command Section")
-        else:
-            self.toggle_command_button.setText("Show Command Section")
-        
-        # Immediately save the visibility state for this project
-        self.settings.beginGroup(self.project_group_name)
-        self.settings.setValue("commandSectionVisible", self.command_group.isVisible())
-        self.settings.endGroup()
-
-        # Adjust window height only
-        new_height = self.centralWidget().sizeHint().height()
-        if self.command_group.isVisible() and self.command_group.layout().sizeHint().height() > 0 :
-             # if command group became visible and has content, ensure enough height
-             min_content_height = self.command_group.layout().sizeHint().height() + self.feedback_group.minimumHeight() + self.toggle_command_button.height() + layout().spacing() * 2
-             new_height = max(new_height, min_content_height)
-
-        current_width = self.width()
-        self.resize(current_width, new_height)
-
-    def _update_config(self):
-        self.config["run_command"] = self.command_entry.text()
-        self.config["execute_automatically"] = self.auto_check.isChecked()
-
-    def _append_log(self, text: str):
-        self.log_buffer.append(text)
-        self.log_text.append(text.rstrip())
-        cursor = self.log_text.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.log_text.setTextCursor(cursor)
-
-    def _check_process_status(self):
-        if self.process and self.process.poll() is not None:
-            # Process has terminated
-            exit_code = self.process.poll()
-            self._append_log(f"\nProcess exited with code {exit_code}\n")
-            self.run_button.setText("&Run")
-            self.process = None
-            self.activateWindow()
-            self.feedback_text.setFocus()
-
-    def _run_command(self):
-        if self.process:
-            kill_tree(self.process)
-            self.process = None
-            self.run_button.setText("&Run")
-            return
-
-        # Clear the log buffer but keep UI logs visible
-        self.log_buffer = []
-
-        command = self.command_entry.text()
+    def _run_command(self) -> None:
+        """執行命令"""
+        command = self.command_input.text().strip()
         if not command:
-            self._append_log("Please enter a command to run\n")
             return
 
-        self._append_log(f"$ {command}\n")
-        self.run_button.setText("Sto&p")
-
+        self.command_output.append(f"$ {command}")
+        
         try:
+            # 在專案目錄中執行命令
             self.process = subprocess.Popen(
                 command,
                 shell=True,
-                cwd=self.project_directory,
+                cwd=self.project_dir,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env=get_user_environment(),
+                stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                encoding="utf-8",
-                errors="ignore",
-                close_fds=True,
+                universal_newlines=True
             )
-
-            def read_output(pipe):
-                for line in iter(pipe.readline, ""):
-                    self.log_signals.append_log.emit(line)
-
-            threading.Thread(
-                target=read_output,
-                args=(self.process.stdout,),
-                daemon=True
-            ).start()
-
-            threading.Thread(
-                target=read_output,
-                args=(self.process.stderr,),
-                daemon=True
-            ).start()
-
-            # Start process status checking
-            self.status_timer = QTimer()
-            self.status_timer.timeout.connect(self._check_process_status)
-            self.status_timer.start(100)  # Check every 100ms
-
+            
+            # 使用計時器讀取輸出
+            self.timer = QTimer()
+            self.timer.timeout.connect(self._read_command_output)
+            self.timer.start(100)
+            
         except Exception as e:
-            self._append_log(f"Error running command: {str(e)}\n")
-            self.run_button.setText("&Run")
-
-    def _submit_feedback(self):
-        self.feedback_result = FeedbackResult(
-            logs="".join(self.log_buffer),
-            interactive_feedback=self.feedback_text.toPlainText().strip(),
-        )
+            self.command_output.append(f"錯誤: {str(e)}")
+    
+    def _read_command_output(self) -> None:
+        """讀取命令輸出"""
+        if self.process and self.process.poll() is None:
+            try:
+                output = self.process.stdout.readline()
+                if output:
+                    self.command_output.insertPlainText(output)
+                    # 自動滾動到底部
+                    cursor = self.command_output.textCursor()
+                    cursor.movePosition(cursor.End)
+                    self.command_output.setTextCursor(cursor)
+            except:
+                pass
+        else:
+            # 進程結束
+            if hasattr(self, 'timer'):
+                self.timer.stop()
+            if self.process:
+                return_code = self.process.returncode
+                self.command_output.append(f"\n進程結束，返回碼: {return_code}\n")
+    
+    def _submit_feedback(self) -> None:
+        """提交回饋"""
+        self.result = {
+            "interactive_feedback": self.feedback_text.toPlainText(),
+            "command_logs": self.command_output.toPlainText(),
+            "images": self.image_upload.get_images_data()
+        }
+        self.accepted = True
+        self.close()
+    
+    def _cancel_feedback(self) -> None:
+        """取消回饋"""
+        self.accepted = False
         self.close()
 
-    def clear_logs(self):
-        self.log_buffer = []
-        self.log_text.clear()
-
-    def _save_config(self):
-        # Save run_command and execute_automatically to QSettings under project group
-        self.settings.beginGroup(self.project_group_name)
-        self.settings.setValue("run_command", self.config["run_command"])
-        self.settings.setValue("execute_automatically", self.config["execute_automatically"])
-        self.settings.endGroup()
-        self._append_log("Configuration saved for this project.\n")
-
-    def closeEvent(self, event):
-        # Save general UI settings for the main window (geometry, state)
-        self.settings.beginGroup("MainWindow_General")
-        self.settings.setValue("geometry", self.saveGeometry())
-        self.settings.setValue("windowState", self.saveState())
-        self.settings.endGroup()
-
-        # Save project-specific command section visibility (this is now slightly redundant due to immediate save in toggle, but harmless)
-        self.settings.beginGroup(self.project_group_name)
-        self.settings.setValue("commandSectionVisible", self.command_group.isVisible())
-        self.settings.endGroup()
-
+    def closeEvent(self, event) -> None:
+        """處理視窗關閉事件"""
+        if hasattr(self, 'timer'):
+            self.timer.stop()
         if self.process:
-            kill_tree(self.process)
-        super().closeEvent(event)
+            try:
+                self.process.terminate()
+            except:
+                pass
+        
+        # 清理圖片上傳組件中的臨時文件
+        if hasattr(self, 'image_upload') and self.image_upload:
+            temp_files_cleaned = 0
+            for image_info in self.image_upload.images.values():
+                file_path = image_info["path"]
+                if "clipboard_" in os.path.basename(file_path) and ".cache" in file_path:
+                    try:
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                            temp_files_cleaned += 1
+                            print(f"[DEBUG] 關閉時清理臨時文件: {file_path}")
+                    except Exception as e:
+                        print(f"[DEBUG] 關閉時清理臨時文件失敗: {e}")
+            if temp_files_cleaned > 0:
+                print(f"[DEBUG] 視窗關閉時清理了 {temp_files_cleaned} 個臨時文件")
+        
+        event.accept()
 
-    def run(self) -> FeedbackResult:
-        self.show()
-        QApplication.instance().exec()
 
-        if self.process:
-            kill_tree(self.process)
-
-        if not self.feedback_result:
-            return FeedbackResult(logs="".join(self.log_buffer), interactive_feedback="")
-
-        return self.feedback_result
-
-def get_project_settings_group(project_dir: str) -> str:
-    # Create a safe, unique group name from the project directory path
-    # Using only the last component + hash of full path to keep it somewhat readable but unique
-    basename = os.path.basename(os.path.normpath(project_dir))
-    full_hash = hashlib.md5(project_dir.encode('utf-8')).hexdigest()[:8]
-    return f"{basename}_{full_hash}"
-
-def feedback_ui(project_directory: str, prompt: str, output_file: Optional[str] = None) -> Optional[FeedbackResult]:
-    app = QApplication.instance() or QApplication()
-    app.setPalette(get_dark_mode_palette(app))
-    app.setStyle("Fusion")
-    ui = FeedbackUI(project_directory, prompt)
-    result = ui.run()
-
-    if output_file and result:
-        # Ensure the directory exists
-        os.makedirs(os.path.dirname(output_file) if os.path.dirname(output_file) else ".", exist_ok=True)
-        # Save the result to the output file
-        with open(output_file, "w") as f:
-            json.dump(result, f)
+# ===== 主要入口函數 =====
+def feedback_ui(project_directory: str, summary: str) -> Optional[FeedbackResult]:
+    """
+    啟動回饋收集 GUI 介面
+    
+    Args:
+        project_directory: 專案目錄路徑
+        summary: AI 工作摘要
+        
+    Returns:
+        Optional[FeedbackResult]: 用戶回饋結果，如果取消則返回 None
+    """
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
+    
+    # 設置應用程式屬性
+    app.setApplicationName("互動式回饋收集")
+    app.setApplicationVersion("1.0")
+    
+    # 創建並顯示視窗
+    window = FeedbackWindow(project_directory, summary)
+    window.show()
+    
+    # 使用事件循環等待視窗關閉
+    app.exec()
+    
+    # 返回結果
+    if window.accepted:
+        return window.result
+    else:
         return None
 
-    return result
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the feedback UI")
-    parser.add_argument("--project-directory", default=os.getcwd(), help="The project directory to run the command in")
-    parser.add_argument("--prompt", default="I implemented the changes you requested.", help="The prompt to show to the user")
-    parser.add_argument("--output-file", help="Path to save the feedback result as JSON")
-    args = parser.parse_args()
-
-    result = feedback_ui(args.project_directory, args.prompt, args.output_file)
+    # 測試用的主程式
+    result = feedback_ui(".", "測試摘要")
     if result:
-        print(f"\nLogs collected: \n{result['logs']}")
-        print(f"\nFeedback received:\n{result['interactive_feedback']}")
-    sys.exit(0)
+        print("收到回饋:", result)
+    else:
+        print("用戶取消了回饋") 

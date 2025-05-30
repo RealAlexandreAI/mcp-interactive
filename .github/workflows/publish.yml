@@ -36,12 +36,19 @@ jobs:
     
     - name: Install dependencies
       run: |
-        uv add --dev bump2version
+        uv sync --dev
     
     - name: Configure Git
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
+    
+    - name: Commit dependency changes if any
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          git add .
+          git commit -m "📦 Update dependencies" || true
+        fi
     
     - name: Get current version
       id: current_version
@@ -53,7 +60,7 @@ jobs:
     - name: Bump version
       id: bump_version
       run: |
-        uv run bump2version ${{ github.event.inputs.version_type }}
+        uv run bump2version --allow-dirty ${{ github.event.inputs.version_type }}
         NEW_VERSION=$(grep '^version =' pyproject.toml | cut -d'"' -f2)
         echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
         echo "New version: $NEW_VERSION"

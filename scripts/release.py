@@ -39,8 +39,8 @@ def bump_version(version_type):
     current = get_current_version()
     print(f"📦 當前版本: {current}")
     
-    # 使用 bump2version
-    run_cmd(f"uv run bump2version {version_type}")
+    # 使用 bump2version with allow-dirty
+    run_cmd(f"uv run bump2version --allow-dirty {version_type}")
     
     new_version = get_current_version()
     print(f"🎉 新版本: {new_version}")
@@ -56,14 +56,12 @@ def main():
     
     print("🚀 開始發布流程...")
     
-    # 檢查是否有未提交的變更
+    # 檢查 Git 狀態（僅提示，不阻止）
     result = run_cmd("git status --porcelain", check=False)
     if result.stdout.strip():
-        print("⚠️  有未提交的變更，請先提交或暫存")
+        print("⚠️  有未提交的變更：")
         print(result.stdout)
-        choice = input("是否繼續？ (y/N): ")
-        if choice.lower() != 'y':
-            sys.exit(1)
+        print("💡 將繼續執行（使用 --allow-dirty 模式）")
     
     # 更新版本
     old_version, new_version = bump_version(version_type)
@@ -76,7 +74,7 @@ def main():
     print("🔍 檢查套件...")
     run_cmd("uv run twine check dist/*")
     
-    # 提交變更
+    # 提交所有變更（包括版本更新）
     print("💾 提交版本更新...")
     run_cmd("git add .")
     run_cmd(f'git commit -m "🔖 Release v{new_version}"')

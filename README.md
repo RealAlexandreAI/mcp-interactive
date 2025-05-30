@@ -17,8 +17,6 @@
 - **即時通訊**：基於 WebSocket 的即時命令輸出和回饋
 - **深色主題**：提供現代化的深色主題界面
 
-![Interactive Feedback Web UI](https://raw.githubusercontent.com/Minidoracat/interactive-feedback-mcp/main/.github/web_ui_preview.jpg)
-
 ## 🎯 為什麼使用這個工具？
 
 透過引導 AI 助手與用戶進行確認，而非進行推測性的高成本工具調用，此模組可以大幅減少平台（如 Cursor）上的付費請求次數。在某些情況下，它可以將多達 25 次工具調用合併為單次回饋導向的請求，節省資源並提升效能。

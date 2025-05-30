@@ -24,7 +24,7 @@ def test_web_ui(keep_running=False):
     
     # Test import
     try:
-        from web_ui import WebUIManager, launch_web_feedback_ui
+        from .web_ui import WebUIManager, launch_web_feedback_ui
         print("✅ Web UI 模組匯入成功")
     except ImportError as e:
         print(f"❌ Web UI 模組匯入失敗: {e}")
@@ -119,7 +119,7 @@ def test_environment_detection():
     print("-" * 30)
     
     try:
-        from server import is_remote_environment, can_use_gui
+        from .server import is_remote_environment, can_use_gui
         
         remote_detected = is_remote_environment()
         gui_available = can_use_gui()
@@ -144,7 +144,7 @@ def test_mcp_integration():
     print("-" * 30)
     
     try:
-        from server import interactive_feedback
+        from .server import interactive_feedback
         print("✅ MCP 工具函數可用")
         
         # Test timeout parameter
@@ -167,7 +167,7 @@ def test_new_parameters():
     print("-" * 30)
     
     try:
-        from server import interactive_feedback
+        from .server import interactive_feedback
         
         # 測試參數是否存在
         import inspect
@@ -202,7 +202,7 @@ def test_force_web_ui_mode():
     print("-" * 30)
     
     try:
-        from server import interactive_feedback, is_remote_environment, can_use_gui
+        from .server import interactive_feedback, is_remote_environment, can_use_gui
         
         # 顯示當前環境狀態
         is_remote = is_remote_environment()

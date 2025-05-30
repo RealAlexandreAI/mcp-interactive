@@ -239,16 +239,17 @@ class WebUIManager:
     def setup_routes(self):
         """設置路由"""
         
-        # 確保靜態文件目錄存在
-        static_dir = Path("static")
-        templates_dir = Path("templates")
+        # 確保靜態文件目錄存在（相對於套件位置）
+        package_dir = Path(__file__).parent
+        static_dir = package_dir / "static"
+        templates_dir = package_dir / "templates"
         
         # 靜態文件
         if static_dir.exists():
-            self.app.mount("/static", StaticFiles(directory="static"), name="static")
+            self.app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
         
         # 模板
-        templates = Jinja2Templates(directory="templates") if templates_dir.exists() else None
+        templates = Jinja2Templates(directory=str(templates_dir)) if templates_dir.exists() else None
 
         @self.app.get("/", response_class=HTMLResponse)
         async def index(request: Request):

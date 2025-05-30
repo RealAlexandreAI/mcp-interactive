@@ -284,7 +284,7 @@ def process_images(images_data: List[dict]) -> List[MCPImage]:
 
 def launch_gui(project_dir: str, summary: str) -> dict:
     """
-    啟動 GUI 收集回饋
+    啟動 Qt GUI 收集回饋
     
     Args:
         project_dir: 專案目錄路徑
@@ -295,8 +295,16 @@ def launch_gui(project_dir: str, summary: str) -> dict:
     """
     debug_log("啟動 Qt GUI 介面")
     
-    from feedback_ui import feedback_ui
-    return feedback_ui(project_dir, summary)
+    try:
+        from .feedback_ui import feedback_ui
+        return feedback_ui(project_dir, summary)
+    except ImportError as e:
+        debug_log(f"無法導入 feedback_ui 模組: {e}")
+        return {
+            "logs": "",
+            "interactive_feedback": f"Qt GUI 模組導入失敗: {str(e)}",
+            "images": []
+        }
 
 
 # ===== MCP 工具定義 =====
@@ -409,7 +417,7 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
     debug_log(f"啟動 Web UI 介面，超時時間: {timeout} 秒")
     
     try:
-        from web_ui import get_web_ui_manager
+        from .web_ui import get_web_ui_manager
         
         # 直接運行 Web UI 會話
         return await _run_web_ui_session(project_dir, summary, timeout)
@@ -434,7 +442,7 @@ async def _run_web_ui_session(project_dir: str, summary: str, timeout: int) -> d
     Returns:
         dict: 收集到的回饋資料
     """
-    from web_ui import get_web_ui_manager
+    from .web_ui import get_web_ui_manager
     
     manager = get_web_ui_manager()
     
@@ -520,7 +528,8 @@ def get_system_info() -> str:
 
 
 # ===== 主程式入口 =====
-if __name__ == "__main__":
+def main():
+    """主要入口點，用於套件執行"""
     debug_log("🚀 啟動互動式回饋收集 MCP 服務器")
     debug_log(f"   遠端環境: {is_remote_environment()}")
     debug_log(f"   GUI 可用: {can_use_gui()}")
@@ -528,3 +537,7 @@ if __name__ == "__main__":
     debug_log("   等待來自 AI 助手的調用...")
     
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()

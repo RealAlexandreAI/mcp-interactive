@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 def test_qt_gui():
     """測試 Qt GUI 功能"""
     try:
-        from feedback_ui import feedback_ui
+        from .feedback_ui import feedback_ui
         
         # 測試參數
         project_directory = os.getcwd()

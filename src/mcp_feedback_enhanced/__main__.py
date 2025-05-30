@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+MCP Interactive Feedback Enhanced - 主程式入口
+==============================================
+
+此檔案允許套件透過 `python -m mcp_feedback_enhanced` 執行。
+
+使用方法:
+  python -m mcp_feedback_enhanced        # 啟動 MCP 伺服器
+  python -m mcp_feedback_enhanced test   # 執行測試
+"""
+
+import sys
+import argparse
+
+def main():
+    """主程式入口點"""
+    parser = argparse.ArgumentParser(
+        description="Interactive Feedback MCP Enhanced - 互動式回饋收集 MCP 伺服器"
+    )
+    
+    subparsers = parser.add_subparsers(dest='command', help='可用命令')
+    
+    # 伺服器命令（預設）
+    server_parser = subparsers.add_parser('server', help='啟動 MCP 伺服器（預設）')
+    
+    # 測試命令
+    test_parser = subparsers.add_parser('test', help='執行測試')
+    test_parser.add_argument('--web', action='store_true', help='測試 Web UI')
+    test_parser.add_argument('--gui', action='store_true', help='測試 Qt GUI')
+    test_parser.add_argument('--persistent', action='store_true', help='持久化測試模式')
+    
+    # 版本命令
+    version_parser = subparsers.add_parser('version', help='顯示版本資訊')
+    
+    args = parser.parse_args()
+    
+    if args.command == 'test':
+        run_tests(args)
+    elif args.command == 'version':
+        show_version()
+    elif args.command == 'server':
+        # 明確指定伺服器命令
+        print("🚀 啟動 Interactive Feedback MCP Enhanced 伺服器...")
+        run_server()
+    elif args.command is None:
+        # 沒有指定命令，啟動伺服器（保持向後兼容）
+        print("🚀 啟動 Interactive Feedback MCP Enhanced 伺服器...")
+        run_server()
+    else:
+        # 不應該到達這裡
+        parser.print_help()
+        sys.exit(1)
+
+def run_server():
+    """啟動 MCP 伺服器"""
+    from .server import main as server_main
+    return server_main()
+
+def run_tests(args):
+    """執行測試"""
+    if args.web:
+        print("🧪 執行 Web UI 測試...")
+        from .test_web_ui import test_web_ui, interactive_demo
+        success, session_info = test_web_ui()
+        if not success:
+            sys.exit(1)
+        if args.persistent and session_info:
+            interactive_demo(session_info)
+    elif args.gui:
+        print("🧪 執行 Qt GUI 測試...")
+        from .test_qt_gui import test_qt_gui
+        if not test_qt_gui():
+            sys.exit(1)
+    else:
+        # 執行所有測試
+        print("🧪 執行完整測試套件...")
+        success = True
+        session_info = None
+        
+        try:
+            from .test_web_ui import (
+                test_environment_detection,
+                test_new_parameters,
+                test_mcp_integration,
+                test_web_ui,
+                interactive_demo
+            )
+            
+            if not test_environment_detection():
+                success = False
+            if not test_new_parameters():
+                success = False
+            if not test_mcp_integration():
+                success = False
+            
+            web_success, session_info = test_web_ui()
+            if not web_success:
+                success = False
+            
+        except Exception as e:
+            print(f"❌ 測試執行失敗: {e}")
+            success = False
+        
+        if not success:
+            sys.exit(1)
+        
+        print("🎉 所有測試通過！")
+        
+        # 如果是持久化模式且有會話資訊，進入互動模式
+        if args.persistent and session_info:
+            interactive_demo(session_info)
+
+def show_version():
+    """顯示版本資訊"""
+    from . import __version__, __author__
+    print(f"Interactive Feedback MCP Enhanced v{__version__}")
+    print(f"作者: {__author__}")
+    print("GitHub: https://github.com/Minidoracat/mcp-feedback-enhanced")
+
+if __name__ == "__main__":
+    main() 

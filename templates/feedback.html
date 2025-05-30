@@ -628,22 +628,22 @@
                         }
                     }
                 }
-                alert('剪貼板中沒有圖片！');
+                showNotification('剪貼板中沒有圖片！');
             } catch (error) {
                 console.error('剪貼板讀取失敗:', error);
-                alert('無法從剪貼板讀取圖片');
+                showNotification('無法從剪貼板讀取圖片');
             }
         }
 
         function processFiles(files) {
             for (const file of files) {
                 if (!file.type.startsWith('image/')) {
-                    alert(`檔案 ${file.name} 不是圖片格式！`);
+                    showNotification(`檔案 ${file.name} 不是圖片格式！`, 'warning');
                     continue;
                 }
 
                 if (file.size > 1024 * 1024) { // 1MB 限制
-                    alert(`圖片 ${file.name} 大小超過 1MB 限制！`);
+                    showNotification(`圖片 ${file.name} 大小超過 1MB 限制！`, 'warning');
                     continue;
                 }
 
@@ -757,7 +757,7 @@
             if (!command) return;
 
             if (commandRunning) {
-                alert('已有命令在執行中，請等待完成或停止當前命令');
+                showNotification('已有命令在執行中，請等待完成或停止當前命令', 'warning');
                 return;
             }
 
@@ -785,22 +785,61 @@
             const feedback = document.getElementById('feedbackText').value.trim();
             
             if (!feedback && images.length === 0) {
-                alert('請輸入回饋內容或上傳圖片！');
+                showNotification('請輸入回饋內容或上傳圖片！', 'warning');
                 return;
             }
 
             if (ws && ws.readyState === WebSocket.OPEN) {
+                // 顯示提交中狀態
+                const submitBtn = document.querySelector('.submit-btn');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = '提交中...';
+                submitBtn.disabled = true;
+                
                 ws.send(JSON.stringify({
                     type: 'submit_feedback',
                     feedback: feedback,
                     images: images
                 }));
                 
-                alert('回饋已提交！感謝您的回饋。');
-                window.close();
+                // 簡短延遲後自動關閉，不顯示 alert
+                setTimeout(() => {
+                    window.close();
+                }, 500);
             } else {
-                alert('WebSocket 連接異常，請重新整理頁面');
+                showNotification('WebSocket 連接異常，請重新整理頁面', 'error');
             }
+        }
+
+        // 添加通知函數，替代 alert
+        function showNotification(message, type = 'info') {
+            // 創建通知元素
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#007acc'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-weight: bold;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 3 秒後自動移除
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
         }
 
         function cancelFeedback() {

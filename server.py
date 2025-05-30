@@ -186,7 +186,39 @@ def create_feedback_text(feedback_data: dict) -> str:
                 size_mb = size / (1024 * 1024)
                 size_str = f"{size_mb:.1f} MB"
             
-            text_parts.append(f"  {i}. {name} ({size_str})")
+            img_info = f"  {i}. {name} ({size_str})"
+            
+            # 為提高兼容性，添加 base64 預覽信息
+            if img.get("data"):
+                try:
+                    if isinstance(img["data"], bytes):
+                        img_base64 = base64.b64encode(img["data"]).decode('utf-8')
+                    elif isinstance(img["data"], str):
+                        img_base64 = img["data"]
+                    else:
+                        img_base64 = None
+                    
+                    if img_base64:
+                        # 只顯示前50個字符的預覽
+                        preview = img_base64[:50] + "..." if len(img_base64) > 50 else img_base64
+                        img_info += f"\n     Base64 預覽: {preview}"
+                        img_info += f"\n     完整 Base64 長度: {len(img_base64)} 字符"
+                        
+                        # 如果 AI 助手不支援 MCP 圖片，可以提供完整 base64
+                        debug_log(f"圖片 {i} Base64 已準備，長度: {len(img_base64)}")
+                        
+                        # 可選：根據環境變數決定是否包含完整 base64
+                        include_full_base64 = os.getenv("INCLUDE_BASE64_DETAIL", "").lower() in ("true", "1", "yes", "on")
+                        if include_full_base64:
+                            img_info += f"\n     完整 Base64: data:image/png;base64,{img_base64}"
+                        
+                except Exception as e:
+                    debug_log(f"圖片 {i} Base64 處理失敗: {e}")
+            
+            text_parts.append(img_info)
+        
+        # 添加兼容性說明
+        text_parts.append("\n💡 注意：如果 AI 助手無法顯示圖片，圖片數據已包含在上述 Base64 信息中。")
     
     return "\n\n".join(text_parts) if text_parts else "用戶未提供任何回饋內容。"
 

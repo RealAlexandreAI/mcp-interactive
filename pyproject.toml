@@ -52,6 +52,7 @@ packages = ["src/mcp_feedback_enhanced"]
 
 [tool.uv]
 dev-dependencies = [
+    "bump2version>=1.0.1",
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "twine>=6.1.0",

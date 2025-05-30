@@ -1,0 +1,114 @@
+name: Auto Release to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch    # 2.0.0 -> 2.0.1 (bug fixes)
+        - minor    # 2.0.0 -> 2.1.0 (new features)
+        - major    # 2.0.0 -> 3.0.0 (breaking changes)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python
+      run: uv python install
+    
+    - name: Install dependencies
+      run: |
+        uv add --dev bump2version
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Get current version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(grep '^version =' pyproject.toml | cut -d'"' -f2)
+        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+    
+    - name: Bump version
+      id: bump_version
+      run: |
+        uv run bump2version ${{ github.event.inputs.version_type }}
+        NEW_VERSION=$(grep '^version =' pyproject.toml | cut -d'"' -f2)
+        echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+    
+    - name: Update __init__.py version
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
+        sed -i "s/__version__ = \".*\"/__version__ = \"$NEW_VERSION\"/" src/mcp_feedback_enhanced/__init__.py
+    
+    - name: Commit version bump
+      run: |
+        git add .
+        git commit -m "🔖 Release v${{ steps.bump_version.outputs.new }}"
+        git tag "v${{ steps.bump_version.outputs.new }}"
+    
+    - name: Build package
+      run: uv build
+    
+    - name: Check package
+      run: uv run twine check dist/*
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+    
+    - name: Push changes and tags
+      run: |
+        git push origin main
+        git push origin "v${{ steps.bump_version.outputs.new }}"
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v${{ steps.bump_version.outputs.new }}"
+        release_name: "Release v${{ steps.bump_version.outputs.new }}"
+        body: |
+          ## Changes in v${{ steps.bump_version.outputs.new }}
+          
+          **Version Type:** ${{ github.event.inputs.version_type }}
+          **Previous Version:** v${{ steps.current_version.outputs.current }}
+          
+          This release was automatically generated.
+          
+          ### Installation
+          ```bash
+          uvx mcp-feedback-enhanced
+          ```
+          
+          ### What's New
+          - Auto-generated release from GitHub Actions
+          - Updated package version from ${{ steps.current_version.outputs.current }} to ${{ steps.bump_version.outputs.new }}
+          
+        draft: false
+        prerelease: false 

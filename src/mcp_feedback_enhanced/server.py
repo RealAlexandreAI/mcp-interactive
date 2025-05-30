@@ -26,6 +26,59 @@ from mcp.server.fastmcp.utilities.types import Image as MCPImage
 from mcp.types import TextContent
 from pydantic import Field
 
+# ===== 編碼初始化 =====
+def init_encoding():
+    """初始化編碼設置，確保正確處理中文字符"""
+    try:
+        # Windows 特殊處理
+        if sys.platform == 'win32':
+            import msvcrt
+            # 設置為二進制模式
+            msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+            msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+            
+            # 重新包裝為 UTF-8 文本流，並禁用緩衝
+            sys.stdin = io.TextIOWrapper(
+                sys.stdin.detach(), 
+                encoding='utf-8', 
+                errors='replace',
+                newline=None
+            )
+            sys.stdout = io.TextIOWrapper(
+                sys.stdout.detach(), 
+                encoding='utf-8', 
+                errors='replace',
+                newline='',
+                write_through=True  # 關鍵：禁用寫入緩衝
+            )
+        else:
+            # 非 Windows 系統的標準設置
+            if hasattr(sys.stdout, 'reconfigure'):
+                sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            if hasattr(sys.stdin, 'reconfigure'):
+                sys.stdin.reconfigure(encoding='utf-8', errors='replace')
+        
+        # 設置 stderr 編碼（用於調試訊息）
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        
+        return True
+    except Exception as e:
+        # 如果編碼設置失敗，嘗試基本設置
+        try:
+            if hasattr(sys.stdout, 'reconfigure'):
+                sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            if hasattr(sys.stdin, 'reconfigure'):
+                sys.stdin.reconfigure(encoding='utf-8', errors='replace')
+            if hasattr(sys.stderr, 'reconfigure'):
+                sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except:
+            pass
+        return False
+
+# 初始化編碼（在導入時就執行）
+_encoding_initialized = init_encoding()
+
 # ===== 常數定義 =====
 SERVER_NAME = "互動式回饋收集 MCP"
 SSH_ENV_VARS = ['SSH_CONNECTION', 'SSH_CLIENT', 'SSH_TTY']
@@ -39,7 +92,25 @@ mcp = FastMCP(SERVER_NAME, version=__version__)
 # ===== 工具函數 =====
 def debug_log(message: str) -> None:
     """輸出調試訊息到標準錯誤，避免污染標準輸出"""
-    print(f"[DEBUG] {message}", file=sys.stderr)
+    # 只在啟用調試模式時才輸出，避免干擾 MCP 通信
+    if not os.getenv("MCP_DEBUG", "").lower() in ("true", "1", "yes", "on"):
+        return
+        
+    try:
+        # 確保消息是字符串類型
+        if not isinstance(message, str):
+            message = str(message)
+        
+        # 安全地輸出到 stderr，處理編碼問題
+        try:
+            print(f"[DEBUG] {message}", file=sys.stderr, flush=True)
+        except UnicodeEncodeError:
+            # 如果遇到編碼問題，使用 ASCII 安全模式
+            safe_message = message.encode('ascii', errors='replace').decode('ascii')
+            print(f"[DEBUG] {safe_message}", file=sys.stderr, flush=True)
+    except Exception:
+        # 最後的備用方案：靜默失敗，不影響主程序
+        pass
 
 
 def is_remote_environment() -> bool:
@@ -331,6 +402,10 @@ async def interactive_feedback(
     3. 上傳圖片作為回饋
     4. 查看 AI 的工作摘要
     
+    調試模式：
+    - 設置環境變數 MCP_DEBUG=true 可啟用詳細調試輸出
+    - 生產環境建議關閉調試模式以避免輸出干擾
+    
     Args:
         project_directory: 專案目錄路徑
         summary: AI 工作完成的摘要說明
@@ -453,10 +528,11 @@ async def _run_web_ui_session(project_dir: str, summary: str, timeout: int) -> d
     session_url = f"http://{manager.host}:{manager.port}/session/{session_id}"
     
     debug_log(f"Web UI 已啟動: {session_url}")
-    try:
-        print(f"Web UI 已啟動: {session_url}")
-    except UnicodeEncodeError:
-        print(f"Web UI launched: {session_url}")
+    # 注意：不能使用 print() 污染 stdout，會破壞 MCP 通信
+    # try:
+    #     print(f"Web UI 已啟動: {session_url}")
+    # except UnicodeEncodeError:
+    #     print(f"Web UI launched: {session_url}")
     
     # 開啟瀏覽器
     manager.open_browser(session_url)
@@ -474,10 +550,11 @@ async def _run_web_ui_session(project_dir: str, summary: str, timeout: int) -> d
     except TimeoutError:
         timeout_msg = f"等待用戶回饋超時（{timeout} 秒）"
         debug_log(f"⏰ {timeout_msg}")
-        try:
-            print(f"等待用戶回饋超時（{timeout} 秒）")
-        except UnicodeEncodeError:
-            print(f"Feedback timeout ({timeout} seconds)")
+        # 注意：不能使用 print() 污染 stdout，會破壞 MCP 通信
+        # try:
+        #     print(f"等待用戶回饋超時（{timeout} 秒）")
+        # except UnicodeEncodeError:
+        #     print(f"Feedback timeout ({timeout} seconds)")
         return {
             "logs": "",
             "interactive_feedback": f"回饋超時（{timeout} 秒）",
@@ -486,10 +563,11 @@ async def _run_web_ui_session(project_dir: str, summary: str, timeout: int) -> d
     except Exception as e:
         error_msg = f"Web UI 錯誤: {e}"
         debug_log(f"❌ {error_msg}")
-        try:
-            print(f"Web UI 錯誤: {e}")
-        except UnicodeEncodeError:
-            print(f"Web UI error: {e}")
+        # 注意：不能使用 print() 污染 stdout，會破壞 MCP 通信
+        # try:
+        #     print(f"Web UI 錯誤: {e}")
+        # except UnicodeEncodeError:
+        #     print(f"Web UI error: {e}")
         return {
             "logs": "",
             "interactive_feedback": f"錯誤: {str(e)}",
@@ -532,60 +610,34 @@ def get_system_info() -> str:
 # ===== 主程式入口 =====
 def main():
     """主要入口點，用於套件執行"""
-    debug_log("🚀 啟動互動式回饋收集 MCP 服務器")
-    debug_log(f"   遠端環境: {is_remote_environment()}")
-    debug_log(f"   GUI 可用: {can_use_gui()}")
-    debug_log(f"   建議介面: {'Web UI' if is_remote_environment() or not can_use_gui() else 'Qt GUI'}")
-    debug_log("   等待來自 AI 助手的調用...")
+    # 檢查是否啟用調試模式
+    debug_enabled = os.getenv("MCP_DEBUG", "").lower() in ("true", "1", "yes", "on")
     
-    # Windows 特殊處理：設置 stdio 為二進制模式，避免編碼問題
-    if sys.platform == 'win32':
-        debug_log("偵測到 Windows 環境，設置 stdio 二進制模式")
-        try:
-            # 設置 stdin/stdout 為二進制模式，避免 Windows 下的編碼問題
-            import msvcrt
-            msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
-            msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
-            debug_log("Windows stdio 二進制模式設置成功")
-            
-            # 重新包裝 stdin/stdout 為 UTF-8 編碼的文本流
-            sys.stdin = io.TextIOWrapper(sys.stdin.detach(), encoding='utf-8', errors='replace')
-            sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8', errors='replace', newline='')
-            debug_log("Windows stdio UTF-8 包裝設置成功")
-            
-        except Exception as e:
-            debug_log(f"Windows stdio 設置失敗，使用預設模式: {e}")
-    else:
-        # 非 Windows 系統：確保使用 UTF-8 編碼
-        try:
-            if hasattr(sys.stdin, 'reconfigure'):
-                sys.stdin.reconfigure(encoding='utf-8', errors='replace')
-            if hasattr(sys.stdout, 'reconfigure'):
-                sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-            debug_log("非 Windows 系統 UTF-8 編碼設置成功")
-        except Exception as e:
-            debug_log(f"UTF-8 編碼設置失敗: {e}")
-    
-    # 確保 stderr 使用 UTF-8 編碼（用於 debug 訊息）
-    if hasattr(sys.stderr, 'reconfigure'):
-        try:
-            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
-            debug_log("stderr UTF-8 編碼設置成功")
-        except Exception as e:
-            debug_log(f"stderr 編碼設置失敗: {e}")
-    
-    # 強制 stdout 立即刷新，確保 JSON-RPC 消息及時發送
-    sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
+    if debug_enabled:
+        debug_log("🚀 啟動互動式回饋收集 MCP 服務器")
+        debug_log(f"   服務器名稱: {SERVER_NAME}")
+        debug_log(f"   版本: {__version__}")
+        debug_log(f"   平台: {sys.platform}")
+        debug_log(f"   編碼初始化: {'成功' if _encoding_initialized else '失敗'}")
+        debug_log(f"   遠端環境: {is_remote_environment()}")
+        debug_log(f"   GUI 可用: {can_use_gui()}")
+        debug_log(f"   建議介面: {'Web UI' if is_remote_environment() or not can_use_gui() else 'Qt GUI'}")
+        debug_log("   等待來自 AI 助手的調用...")
+        debug_log("準備啟動 MCP 伺服器...")
+        debug_log("調用 mcp.run()...")
     
     try:
+        # 使用正確的 FastMCP API
         mcp.run()
     except KeyboardInterrupt:
-        debug_log("收到中斷信號，正常退出")
+        if debug_enabled:
+            debug_log("收到中斷信號，正常退出")
         sys.exit(0)
     except Exception as e:
-        debug_log(f"MCP 服務器啟動失敗: {e}")
-        import traceback
-        debug_log(f"詳細錯誤: {traceback.format_exc()}")
+        if debug_enabled:
+            debug_log(f"MCP 服務器啟動失敗: {e}")
+            import traceback
+            debug_log(f"詳細錯誤: {traceback.format_exc()}")
         sys.exit(1)
 
 

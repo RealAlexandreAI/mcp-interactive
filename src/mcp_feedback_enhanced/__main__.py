@@ -41,12 +41,8 @@ def main():
     elif args.command == 'version':
         show_version()
     elif args.command == 'server':
-        # 明確指定伺服器命令
-        print("🚀 啟動 Interactive Feedback MCP Enhanced 伺服器...")
         run_server()
     elif args.command is None:
-        # 沒有指定命令，啟動伺服器（保持向後兼容）
-        print("🚀 啟動 Interactive Feedback MCP Enhanced 伺服器...")
         run_server()
     else:
         # 不應該到達這裡

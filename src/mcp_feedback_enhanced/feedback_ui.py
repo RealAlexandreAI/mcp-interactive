@@ -30,6 +30,29 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont, QPixmap, QDragEnterEvent, QDropEvent, QKeySequence, QShortcut
 
+# ===== 調試日誌函數 =====
+def debug_log(message: str) -> None:
+    """輸出調試訊息到標準錯誤，避免污染標準輸出"""
+    # 只在啟用調試模式時才輸出，避免干擾 MCP 通信
+    if not os.getenv("MCP_DEBUG", "").lower() in ("true", "1", "yes", "on"):
+        return
+        
+    try:
+        # 確保消息是字符串類型
+        if not isinstance(message, str):
+            message = str(message)
+        
+        # 安全地輸出到 stderr，處理編碼問題
+        try:
+            print(f"[GUI_DEBUG] {message}", file=sys.stderr, flush=True)
+        except UnicodeEncodeError:
+            # 如果遇到編碼問題，使用 ASCII 安全模式
+            safe_message = message.encode('ascii', errors='replace').decode('ascii')
+            print(f"[GUI_DEBUG] {safe_message}", file=sys.stderr, flush=True)
+    except Exception:
+        # 最後的備用方案：靜默失敗，不影響主程序
+        pass
+
 # ===== 型別定義 =====
 class FeedbackResult(TypedDict):
     """回饋結果的型別定義"""
@@ -265,9 +288,8 @@ class ImageUploadWidget(QWidget):
                     new_height = int(image.height() * scale)
                     
                     # 縮放圖片
-                    from PySide6.QtCore import Qt
                     image = image.scaled(new_width, new_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                    print(f"[DEBUG] 圖片已縮放至: {new_width}x{new_height}")
+                    debug_log(f"圖片已縮放至: {new_width}x{new_height}")
                 
                 # 使用較低的質量保存以減小文件大小
                 quality = 70  # 降低質量以減小文件大小
@@ -275,7 +297,7 @@ class ImageUploadWidget(QWidget):
                     # 檢查保存後的文件大小
                     if temp_file.exists():
                         file_size = temp_file.stat().st_size
-                        print(f"[DEBUG] 剪貼板圖片保存成功: {temp_file}, 大小: {file_size} bytes")
+                        debug_log(f"剪貼板圖片保存成功: {temp_file}, 大小: {file_size} bytes")
                         
                         # 檢查文件大小是否超過限制
                         if file_size > 1 * 1024 * 1024:  # 1MB 限制
@@ -319,34 +341,34 @@ class ImageUploadWidget(QWidget):
                             if os.path.exists(file_path):
                                 os.remove(file_path)
                                 temp_files_cleaned += 1
-                                print(f"[DEBUG] 已刪除臨時文件: {file_path}")
+                                debug_log(f"已刪除臨時文件: {file_path}")
                         except Exception as e:
-                            print(f"[DEBUG] 刪除臨時文件失敗: {e}")
+                            debug_log(f"刪除臨時文件失敗: {e}")
                 
                 # 清除內存中的圖片數據
                 self.images.clear()
                 self._refresh_preview()
                 self._update_status()
                 self.images_changed.emit()
-                print(f"[DEBUG] 已清除所有圖片，包括 {temp_files_cleaned} 個臨時文件")
+                debug_log(f"已清除所有圖片，包括 {temp_files_cleaned} 個臨時文件")
     
     def _add_images(self, file_paths: List[str]) -> None:
         """添加圖片"""
         added_count = 0
         for file_path in file_paths:
             try:
-                print(f"[DEBUG] 嘗試添加圖片: {file_path}")
+                debug_log(f"嘗試添加圖片: {file_path}")
                 
                 if not os.path.exists(file_path):
-                    print(f"[DEBUG] 文件不存在: {file_path}")
+                    debug_log(f"文件不存在: {file_path}")
                     continue
                     
                 if not self._is_image_file(file_path):
-                    print(f"[DEBUG] 不是圖片文件: {file_path}")
+                    debug_log(f"不是圖片文件: {file_path}")
                     continue
                 
                 file_size = os.path.getsize(file_path)
-                print(f"[DEBUG] 文件大小: {file_size} bytes")
+                debug_log(f"文件大小: {file_size} bytes")
                 
                 # 更嚴格的大小限制（1MB）
                 if file_size > 1 * 1024 * 1024:
@@ -364,10 +386,10 @@ class ImageUploadWidget(QWidget):
                 # 讀取圖片原始二進制數據
                 with open(file_path, 'rb') as f:
                     raw_data = f.read()
-                    print(f"[DEBUG] 讀取原始數據大小: {len(raw_data)} bytes")
+                    debug_log(f"讀取原始數據大小: {len(raw_data)} bytes")
                     
                     if len(raw_data) == 0:
-                        print(f"[DEBUG] 讀取的數據為空！")
+                        debug_log(f"讀取的數據為空！")
                         continue
                     
                     # 再次檢查內存中的數據大小
@@ -386,14 +408,14 @@ class ImageUploadWidget(QWidget):
                     "size": file_size
                 }
                 added_count += 1
-                print(f"[DEBUG] 圖片添加成功: {os.path.basename(file_path)}, 數據大小: {len(raw_data)} bytes")
+                debug_log(f"圖片添加成功: {os.path.basename(file_path)}, 數據大小: {len(raw_data)} bytes")
                 
             except Exception as e:
-                print(f"[DEBUG] 添加圖片失敗: {e}")
+                debug_log(f"添加圖片失敗: {e}")
                 QMessageBox.warning(self, "錯誤", f"無法載入圖片 {os.path.basename(file_path)}:\n{str(e)}")
                 
-        print(f"[DEBUG] 共添加 {added_count} 張圖片")
-        print(f"[DEBUG] 當前總共有 {len(self.images)} 張圖片")
+        debug_log(f"共添加 {added_count} 張圖片")
+        debug_log(f"當前總共有 {len(self.images)} 張圖片")
         if added_count > 0:
             self._refresh_preview()
             self._update_status()
@@ -432,16 +454,16 @@ class ImageUploadWidget(QWidget):
                 try:
                     if os.path.exists(file_path):
                         os.remove(file_path)
-                        print(f"[DEBUG] 已刪除臨時文件: {file_path}")
+                        debug_log(f"已刪除臨時文件: {file_path}")
                 except Exception as e:
-                    print(f"[DEBUG] 刪除臨時文件失敗: {e}")
+                    debug_log(f"刪除臨時文件失敗: {e}")
             
             # 從內存中移除圖片數據
             del self.images[image_id]
             self._refresh_preview()
             self._update_status()
             self.images_changed.emit()
-            print(f"[DEBUG] 已移除圖片: {image_info['name']}")
+            debug_log(f"已移除圖片: {image_info['name']}")
     
     def _update_status(self) -> None:
         """更新狀態標籤"""
@@ -464,9 +486,9 @@ class ImageUploadWidget(QWidget):
             self.status_label.setText(f"已選擇 {count} 張圖片 (總計 {size_str})")
             
             # 詳細調試信息
-            print(f"[DEBUG] === 圖片狀態更新 ===")
-            print(f"[DEBUG] 圖片數量: {count}")
-            print(f"[DEBUG] 總大小: {total_size} bytes ({size_str})")
+            debug_log(f"=== 圖片狀態更新 ===")
+            debug_log(f"圖片數量: {count}")
+            debug_log(f"總大小: {total_size} bytes ({size_str})")
             for i, (image_id, img) in enumerate(self.images.items(), 1):
                 data_size = len(img["data"]) if isinstance(img["data"], bytes) else 0
                 # 智能顯示每張圖片的大小
@@ -476,8 +498,8 @@ class ImageUploadWidget(QWidget):
                     data_str = f"{data_size/1024:.1f} KB"
                 else:
                     data_str = f"{data_size/(1024*1024):.1f} MB"
-                print(f"[DEBUG] 圖片 {i}: {img['name']} - 數據大小: {data_str}")
-            print(f"[DEBUG] ==================")
+                debug_log(f"圖片 {i}: {img['name']} - 數據大小: {data_str}")
+            debug_log(f"==================")
             
     def get_images_data(self) -> List[dict]:
         """獲取圖片數據"""
@@ -552,11 +574,11 @@ class ImageUploadWidget(QWidget):
                                 temp_file.unlink()
                                 cleaned_count += 1
                     except Exception as e:
-                        print(f"[DEBUG] 清理舊臨時文件失敗: {e}")
+                        debug_log(f"清理舊臨時文件失敗: {e}")
                 if cleaned_count > 0:
-                    print(f"[DEBUG] 清理了 {cleaned_count} 個舊的臨時文件")
+                    debug_log(f"清理了 {cleaned_count} 個舊的臨時文件")
         except Exception as e:
-            print(f"[DEBUG] 臨時文件清理過程出錯: {e}")
+            debug_log(f"臨時文件清理過程出錯: {e}")
 
 
 # ===== 主要回饋介面 =====
@@ -886,11 +908,11 @@ class FeedbackWindow(QMainWindow):
                         if os.path.exists(file_path):
                             os.remove(file_path)
                             temp_files_cleaned += 1
-                            print(f"[DEBUG] 關閉時清理臨時文件: {file_path}")
+                            debug_log(f"關閉時清理臨時文件: {file_path}")
                     except Exception as e:
-                        print(f"[DEBUG] 關閉時清理臨時文件失敗: {e}")
+                        debug_log(f"關閉時清理臨時文件失敗: {e}")
             if temp_files_cleaned > 0:
-                print(f"[DEBUG] 視窗關閉時清理了 {temp_files_cleaned} 個臨時文件")
+                debug_log(f"視窗關閉時清理了 {temp_files_cleaned} 個臨時文件")
         
         event.accept()
 
@@ -933,6 +955,6 @@ if __name__ == "__main__":
     # 測試用的主程式
     result = feedback_ui(".", "測試摘要")
     if result:
-        print("收到回饋:", result)
+        debug_log(f"收到回饋: {result}")
     else:
-        print("用戶取消了回饋") 
+        debug_log("用戶取消了回饋") 

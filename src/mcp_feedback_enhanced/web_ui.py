@@ -120,7 +120,7 @@ class WebFeedbackSession:
                 
                 # 檢查文件大小
                 if img["size"] > MAX_IMAGE_SIZE:
-                    print(f"[DEBUG] 圖片 {img['name']} 超過大小限制，跳過")
+                    debug_log(f"圖片 {img['name']} 超過大小限制，跳過")
                     continue
                 
                 # 解碼 base64 數據
@@ -128,13 +128,13 @@ class WebFeedbackSession:
                     try:
                         image_bytes = base64.b64decode(img["data"])
                     except Exception as e:
-                        print(f"[DEBUG] 圖片 {img['name']} base64 解碼失敗: {e}")
+                        debug_log(f"圖片 {img['name']} base64 解碼失敗: {e}")
                         continue
                 else:
                     image_bytes = img["data"]
                 
                 if len(image_bytes) == 0:
-                    print(f"[DEBUG] 圖片 {img['name']} 數據為空，跳過")
+                    debug_log(f"圖片 {img['name']} 數據為空，跳過")
                     continue
                 
                 processed_images.append({
@@ -143,10 +143,10 @@ class WebFeedbackSession:
                     "size": len(image_bytes)
                 })
                 
-                print(f"[DEBUG] 圖片 {img['name']} 處理成功，大小: {len(image_bytes)} bytes")
+                debug_log(f"圖片 {img['name']} 處理成功，大小: {len(image_bytes)} bytes")
                 
             except Exception as e:
-                print(f"[DEBUG] 圖片處理錯誤: {e}")
+                debug_log(f"圖片處理錯誤: {e}")
                 continue
         
         return processed_images
@@ -207,7 +207,7 @@ class WebFeedbackSession:
                         )
                 
                 except Exception as e:
-                    print(f"命令執行錯誤: {e}")
+                    debug_log(f"命令執行錯誤: {e}")
                 finally:
                     self.process = None
 
@@ -293,9 +293,9 @@ class WebUIManager:
                     await self.handle_websocket_message(session, data)
                     
             except WebSocketDisconnect:
-                print(f"WebSocket 斷開連接: {session_id}")
+                debug_log(f"WebSocket 斷開連接: {session_id}")
             except Exception as e:
-                print(f"WebSocket 錯誤: {e}")
+                debug_log(f"WebSocket 錯誤: {e}")
             finally:
                 session.websocket = None
 
@@ -364,7 +364,7 @@ class WebUIManager:
         try:
             webbrowser.open(url)
         except Exception as e:
-            print(f"無法開啟瀏覽器: {e}")
+            debug_log(f"無法開啟瀏覽器: {e}")
     
     def _get_simple_index_html(self) -> str:
         """簡單的首頁 HTML"""
@@ -446,7 +446,7 @@ async def launch_web_feedback_ui(project_directory: str, summary: str) -> dict:
     session_id = manager.create_session(project_directory, summary)
     session_url = f"http://{manager.host}:{manager.port}/session/{session_id}"
     
-    print(f"🌐 Web UI 已啟動: {session_url}")
+    debug_log(f"🌐 Web UI 已啟動: {session_url}")
     
     # 開啟瀏覽器
     manager.open_browser(session_url)
@@ -461,14 +461,14 @@ async def launch_web_feedback_ui(project_directory: str, summary: str) -> dict:
         return result
         
     except TimeoutError:
-        print("⏰ 等待用戶回饋超時")
+        debug_log("⏰ 等待用戶回饋超時")
         return {
             "logs": "",
             "interactive_feedback": "回饋超時",
             "images": []
         }
     except Exception as e:
-        print(f"❌ Web UI 錯誤: {e}")
+        debug_log(f"❌ Web UI 錯誤: {e}")
         return {
             "logs": "",
             "interactive_feedback": f"錯誤: {str(e)}",
@@ -507,7 +507,7 @@ if __name__ == "__main__":
         session_id = manager.create_session(args.project_directory, args.summary)
         session_url = f"http://{args.host}:{args.port}/session/{session_id}"
         
-        print(f"🌐 Web UI 已啟動: {session_url}")
+        debug_log(f"🌐 Web UI 已啟動: {session_url}")
         manager.open_browser(session_url)
         
         try:
@@ -515,6 +515,19 @@ if __name__ == "__main__":
             while True:
                 await asyncio.sleep(1)
         except KeyboardInterrupt:
-            print("\n👋 Web UI 已停止")
+            debug_log("\n👋 Web UI 已停止")
     
     asyncio.run(main()) 
+
+# === 工具函數 ===
+def debug_log(message: str) -> None:
+    """輸出調試訊息到標準錯誤，避免污染標準輸出"""
+    # 只在啟用調試模式時才輸出，避免干擾 MCP 通信
+    if not os.getenv("MCP_DEBUG", "").lower() in ("true", "1", "yes", "on"):
+        return
+        
+    try:
+        print(f"[WEB_UI] {message}", file=sys.stderr, flush=True)
+    except Exception:
+        # 靜默失敗，不影響主程序
+        pass 

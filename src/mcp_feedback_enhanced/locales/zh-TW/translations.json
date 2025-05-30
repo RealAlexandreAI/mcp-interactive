@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "language": "zh-TW",
+    "displayName": "繁體中文",
+    "author": "Minidoracat",
+    "version": "1.0.0",
+    "lastUpdate": "2025-01-31"
+  },
+  "app": {
+    "title": "互動式回饋收集",
+    "projectDirectory": "專案目錄",
+    "language": "語言",
+    "settings": "設定"
+  },
+  "tabs": {
+    "feedback": "💬 回饋",
+    "command": "⚡ 命令",
+    "images": "🖼️ 圖片"
+  },
+  "feedback": {
+    "title": "您的回饋",
+    "description": "請描述您對 AI 工作結果的想法、建議或需要修改的地方。",
+    "placeholder": "請在這裡輸入您的回饋、建議或問題...\n\n💡 小提示：按 Ctrl+Enter 可快速提交回饋"
+  },
+  "command": {
+    "title": "命令執行",
+    "description": "您可以執行命令來驗證結果或收集更多資訊。",
+    "placeholder": "輸入要執行的命令...",
+    "output": "命令輸出"
+  },
+  "images": {
+    "title": "🖼️ 圖片附件（可選）",
+    "select": "選擇文件",
+    "paste": "剪貼板",
+    "clear": "清除",
+    "status": "已選擇 {count} 張圖片",
+    "statusWithSize": "已選擇 {count} 張圖片 (總計 {size})",
+    "dragHint": "🎯 拖拽圖片到這裡 (PNG、JPG、JPEG、GIF、BMP、WebP)",
+    "deleteConfirm": "確定要移除圖片 \"{filename}\" 嗎？",
+    "deleteTitle": "確認刪除",
+    "sizeWarning": "圖片文件大小不能超過 1MB",
+    "formatError": "不支援的圖片格式"
+  },
+  "buttons": {
+    "submit": "提交回饋",
+    "cancel": "取消",
+    "close": "關閉",
+    "clear": "清除",
+    "submitFeedback": "✅ 提交回饋",
+    "selectFiles": "📁 選擇文件",
+    "pasteClipboard": "📋 剪貼板",
+    "clearAll": "✕ 清除",
+    "runCommand": "▶️ 執行"
+  },
+  "status": {
+    "feedbackSubmitted": "回饋已成功提交！",
+    "feedbackCancelled": "已取消回饋。",
+    "timeoutMessage": "等待回饋超時",
+    "errorOccurred": "發生錯誤",
+    "loading": "載入中...",
+    "connecting": "連接中...",
+    "connected": "已連接",
+    "disconnected": "連接中斷",
+    "uploading": "上傳中...",
+    "uploadSuccess": "上傳成功",
+    "uploadFailed": "上傳失敗",
+    "commandRunning": "命令執行中...",
+    "commandFinished": "命令執行完成",
+    "pasteSuccess": "已從剪貼板貼上圖片",
+    "pasteFailed": "無法從剪貼板獲取圖片",
+    "invalidFileType": "不支援的文件類型",
+    "fileTooLarge": "文件過大（最大 1MB）"
+  },
+  "aiSummary": "AI 工作摘要",
+  "languageSelector": "🌐 語言",
+  "languageNames": {
+    "zhTw": "繁體中文",
+    "en": "English",
+    "zhCn": "简体中文"
+  }
+} 

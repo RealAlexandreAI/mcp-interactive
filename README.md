@@ -1,4 +1,4 @@
- # Interactive Feedback MCP
+# Interactive Feedback MCP
 
 **🌐 Language / 語言切換:** **English** | [繁體中文](README.zh-TW.md)
 
@@ -31,13 +31,20 @@ A simple [MCP server](https://modelcontextprotocol.io/) for implementing human-i
 - **Error Handling**: Enhanced error handling ensuring stable program operation
 - **Output Isolation**: Strict isolation of debug output from MCP communication
 
+### 🌏 Multi-language Support
+- **Full Internationalization**: Complete multi-language support with structured JSON translation files
+- **Supported Languages**: Traditional Chinese, English, Simplified Chinese
+- **Smart Detection**: Automatic language detection based on system locale
+- **Easy Extension**: Simple JSON-based translation system for adding new languages
+- **Legacy Compatibility**: Fully backward compatible with existing code
+
 ## 🖥️ Interface Preview
 
 ### Qt GUI Interface (Local Environment)
-![Qt GUI Interface](docs/images/qt-gui-interface.png)
+![Qt GUI Interface - English](docs/images/gui-en.png)
 
 ### Web UI Interface (SSH Remote Environment)
-![Web UI Interface](docs/images/web-ui-interface.jpeg)
+![Web UI Interface - English](docs/images/web-en.png)
 
 Both interfaces support:
 - 💬 Text feedback input
@@ -45,6 +52,7 @@ Both interfaces support:
 - ⚡ Real-time command execution
 - 🎨 Modern dark theme
 - 📱 Responsive design (Web UI)
+- 🌐 Multi-language support (Traditional Chinese, English, Simplified Chinese)
 
 ## 🎯 Why Use This Tool?
 
@@ -204,6 +212,46 @@ uvx mcp-feedback-enhanced@latest version
 # Enable debug mode testing
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 ```
+
+## 🆕 Version History
+
+### v2.0.9 - Multi-language Architecture Enhancement (Latest)
+- 🌏 **Complete Multi-language Architecture Restructuring**: Migrated from embedded translations to structured JSON-based system
+- 📁 **Organized Language Files**: Separated language files into `src/mcp_feedback_enhanced/locales/` directory structure
+- 🔧 **Enhanced Internationalization**: Dynamic loading with nested key structure and browser language detection
+- 📚 **Comprehensive Documentation**: Added detailed README for translation contributors with examples and guidelines
+- 🔄 **Backward Compatibility**: Maintained full compatibility with existing code while enabling modern features
+- 🖼️ **Interface Screenshots Update**: Added comprehensive screenshots showcasing both English and Traditional Chinese interfaces
+- 📝 **Documentation Enhancement**: Updated README files with multi-language screenshots and feature descriptions
+
+### v2.0.7 - Stability and Performance Improvements
+- 🛡️ **Enhanced Error Handling**: Improved stability and error recovery mechanisms
+- 🚀 **Performance Optimizations**: Faster startup times and improved resource management
+- 🔧 **Bug Fixes**: Various minor fixes and improvements
+- 📦 **Package Optimization**: Better dependency management and build process
+- 🎨 **Visual Improvements**: Enhanced button visibility and color consistency
+- 🖱️ **Interaction Fixes**: Improved drag-and-drop indicators and empty state hints
+- 📱 **Responsive Design**: Better layout adaptation for different screen sizes
+- 🌐 **Language Switching**: Fixed Qt GUI language switching with proper checkmarks
+- 🛡️ **Complete Chinese Character Encoding Fix**: Perfect Chinese character display support
+- 🔧 **JSON Parsing Error Resolution**: Fixed MCP client "Unexpected token" errors
+- 🎛️ **Controllable Debug Mode**: Debug output control via `MCP_DEBUG` environment variable
+- 🖼️ **Enhanced Image Support**: Improved image processing and Base64 encoding
+- 🚀 **Output Isolation**: Strict separation of debug output from MCP communication
+- 📦 **Package Optimization**: Improved uvx installation experience and dependency management
+
+### v2.0.0 - Web UI and Remote Support
+- ✅ **Web UI Interface**: Added Web UI support for SSH remote development environments
+- ✅ **Automatic Environment Detection**: Smart interface selection based on environment
+- ✅ **WebSocket Real-time Communication**: Live command execution and feedback
+- ✅ **Modern Dark Theme**: Beautiful dark theme with responsive design
+- ✅ **Persistent Testing Mode**: Enhanced testing capabilities
+
+### v1.0.0 - Foundation (Original Author)
+- ✅ **Qt GUI Interface**: Native desktop interface
+- ✅ **Command Execution**: Real-time command execution and output
+- ✅ **MCP Protocol Support**: Full Model Context Protocol implementation
+- ✅ **Cross-platform Support**: Windows, macOS, and Linux compatibility
 
 ## 🛠️ Environment Variables
 

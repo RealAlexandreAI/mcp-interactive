@@ -7,7 +7,7 @@
 基於 FastAPI 的 Web 用戶介面，專為 SSH 遠端開發環境設計。
 支援文字輸入、圖片上傳、命令執行等功能。
 
-作者: Fábio Ferreira  
+作者: Minidoracat  
 靈感來源: dotcursorrules.com
 增強功能: 圖片支援和現代化界面設計
 """

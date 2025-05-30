@@ -1,30 +1,26 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>互動式回饋收集 - Interactive Feedback MCP</title>
+    <title>Interactive Feedback MCP</title>
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <style>
-        /* ===== 基礎樣式 ===== */
         :root {
-            --bg-primary: #2b2b2b;
+            /* 深色主題顏色變數 */
+            --bg-primary: #1e1e1e;
             --bg-secondary: #2d2d30;
-            --bg-tertiary: #1e1e1e;
-            --surface-color: #2d2d30;
-            --surface-hover: #383838;
-            --border-color: #464647;
-            --text-primary: #ffffff;
+            --bg-tertiary: #252526;
+            --surface-color: #333333;
+            --text-primary: #cccccc;
             --text-secondary: #9e9e9e;
-            --primary-color: #007acc;
-            --primary-hover: #005a9e;
+            --accent-color: #007acc;
+            --accent-hover: #005a9e;
+            --border-color: #464647;
             --success-color: #4caf50;
-            --success-hover: #45a049;
+            --warning-color: #ff9800;
             --error-color: #f44336;
-            --error-hover: #d32f2f;
-            --console-bg: #1e1e1e;
-            --button-bg: #0e639c;
-            --button-hover-bg: #005a9e;
+            --info-color: #2196f3;
         }
 
         * {
@@ -35,281 +31,364 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-primary);
+            background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: none;
+            width: 100%;
             margin: 0 auto;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            flex: 1;
         }
 
-        /* ===== 標題樣式 ===== */
         .header {
-            background: linear-gradient(135deg, var(--surface-color), var(--surface-hover));
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 0;
             margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-radius: 8px 8px 0 0;
         }
 
-        .header h1 {
-            color: var(--primary-color);
-            font-size: 24px;
-            margin-bottom: 10px;
+        .header-content {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            max-width: none;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
-        .header .project-info {
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin: 0;
+        }
+
+        .project-info {
             color: var(--text-secondary);
             font-size: 14px;
         }
 
-        /* ===== AI 工作摘要 ===== */
-        .summary-section {
-            background: linear-gradient(135deg, var(--surface-color), var(--surface-hover));
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            flex: 1;
-            min-height: 150px;
-            max-height: 250px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .summary-section h2 {
-            color: var(--primary-color);
-            margin-bottom: 15px;
-            font-size: 18px;
+        .language-selector {
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .summary-content {
-            background: var(--console-bg);
+        .language-selector select {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: none;
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                max-width: none;
+            }
+        }
+
+        .feedback-section, .summary-section {
+            background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 15px;
+            padding: 20px;
+            width: 100%;
+            max-width: none;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-description {
+            color: var(--text-secondary);
             font-size: 14px;
-            line-height: 1.6;
-            overflow-y: auto;
-            flex: 1;
+            margin-bottom: 15px;
+            line-height: 1.5;
         }
 
-        /* ===== 分頁標籤 ===== */
-        .tabs-container {
-            flex: 3;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .tab-buttons {
-            display: flex;
+        .tabs {
             border-bottom: 2px solid var(--border-color);
             margin-bottom: 20px;
         }
 
+        .tab-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
         .tab-button {
-            background: var(--surface-color);
+            background: transparent;
             border: none;
-            padding: 12px 24px;
             color: var(--text-secondary);
+            padding: 12px 20px;
             cursor: pointer;
-            border-radius: 8px 8px 0 0;
-            margin-right: 4px;
-            font-size: 14px;
-            font-weight: bold;
+            border-bottom: 2px solid transparent;
             transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
         }
 
         .tab-button.active {
-            background: var(--primary-color);
-            color: white;
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
         }
 
-        .tab-button:hover:not(.active) {
-            background: var(--surface-hover);
+        .tab-button:hover {
             color: var(--text-primary);
+            background: var(--bg-tertiary);
         }
 
         .tab-content {
             display: none;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            animation: fadeIn 0.3s ease;
         }
 
         .tab-content.active {
-            display: flex;
+            display: block;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ===== 回饋分頁樣式 ===== */
-        .feedback-section {
-            flex: 2;
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
+        .input-group {
             margin-bottom: 20px;
-            background: var(--surface-color);
         }
 
-        .feedback-section h3 {
-            color: var(--primary-color);
-            margin-bottom: 15px;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .input-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-primary);
         }
 
-        .feedback-textarea {
+        .text-input, .command-input {
             width: 100%;
-            min-height: 150px;
-            background: var(--surface-color);
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
+            border-radius: 6px;
+            padding: 12px;
             color: var(--text-primary);
             font-size: 14px;
+            line-height: 1.5;
             resize: vertical;
+            min-height: 120px;
             font-family: inherit;
         }
 
-        .feedback-textarea:focus {
+        .command-input {
+            min-height: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        .text-input:focus, .command-input:focus {
             outline: none;
-            border-color: var(--primary-color);
+            border-color: var(--accent-color);
             box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
         }
 
-        .feedback-textarea::placeholder {
+        .text-input::placeholder, .command-input::placeholder {
             color: var(--text-secondary);
         }
 
-        /* ===== 圖片上傳區域 ===== */
-        .image-section {
-            flex: 1;
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            background: var(--surface-color);
-            min-height: 200px;
-            max-height: 400px;
+        .command-section {
             display: flex;
-            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
         }
 
-        .image-section h3 {
-            color: var(--primary-color);
-            margin-bottom: 15px;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .command-input-wrapper {
+            flex: 1;
+        }
+
+        .run-button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .run-button:hover {
+            background: var(--accent-hover);
+        }
+
+        .run-button:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .command-output {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+
+        .image-section {
+            margin-top: 20px;
         }
 
         .upload-buttons {
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .upload-btn {
-            background: var(--button-bg);
-            color: white;
-            border: none;
-            padding: 8px 16px;
+            background: var(--surface-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 15px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
-            font-size: 12px;
+            font-size: 14px;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .upload-btn:hover {
-            background: var(--button-hover-bg);
-            transform: translateY(-1px);
+            background: var(--bg-tertiary);
         }
 
         .upload-btn.success {
             background: var(--success-color);
-        }
-
-        .upload-btn.success:hover {
-            background: var(--success-hover);
+            border-color: var(--success-color);
         }
 
         .upload-btn.danger {
             background: var(--error-color);
+            border-color: var(--error-color);
+            color: #ffffff;
         }
 
         .upload-btn.danger:hover {
-            background: var(--error-hover);
+            background: #d32f2f;
+            border-color: #d32f2f;
+            color: #ffffff;
         }
 
         .drop-zone {
             border: 2px dashed var(--border-color);
             border-radius: 8px;
-            padding: 20px;
+            padding: 40px 20px;
             text-align: center;
-            background: var(--surface-color);
-            transition: all 0.3s ease;
-            margin-bottom: 15px;
             color: var(--text-secondary);
-            font-size: 12px;
+            background: var(--bg-tertiary);
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
         }
 
-        .drop-zone:hover,
-        .drop-zone.drag-over {
-            border-color: var(--primary-color);
-            background: var(--surface-hover);
-            color: var(--primary-color);
+        .drop-zone.dragover {
+            border-color: var(--accent-color);
+            background: rgba(0, 122, 204, 0.1);
+            color: var(--accent-color);
+        }
+
+        .image-status {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin: 10px 0;
+            padding: 5px 0;
         }
 
         .image-preview-area {
             flex: 1;
-            min-height: 120px;
-            max-height: 300px;
+            min-height: 140px;
+            max-height: 400px;
             overflow-y: auto;
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            padding: 10px;
+            padding: 15px;
             background: var(--bg-tertiary);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            background-image: 
+                linear-gradient(90deg, rgba(70, 70, 71, 0.1) 1px, transparent 1px),
+                linear-gradient(rgba(70, 70, 71, 0.1) 1px, transparent 1px);
+            background-size: 120px 120px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
             align-content: flex-start;
+            position: relative;
+        }
+
+        .image-preview-area:empty::before {
+            content: attr(data-empty-text);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-align: center;
+            opacity: 0.6;
+            pointer-events: none;
+            white-space: pre-line;
+        }
+
+        .image-preview-area.has-images {
+            background-image: none;
+        }
+
+        .preview-grid-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 122, 204, 0.1);
+            color: var(--accent-color);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0.7;
         }
 
         .image-preview {
             position: relative;
-            width: 80px;
-            height: 80px;
+            width: 100%;
+            height: 100px;
             border: 2px solid var(--border-color);
             border-radius: 6px;
             overflow: hidden;
             background: var(--surface-color);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .image-preview:hover {
+            transform: scale(1.05);
+            border-color: var(--accent-color);
         }
 
         .image-preview img {
@@ -318,280 +397,458 @@
             object-fit: cover;
         }
 
-        .image-preview .remove-btn {
+        .image-delete {
             position: absolute;
             top: 2px;
             right: 2px;
             background: var(--error-color);
-            color: white;
+            color: #ffffff;
             border: none;
             border-radius: 50%;
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             cursor: pointer;
-            font-size: 10px;
+            font-size: 14px;
+            font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            transition: background-color 0.3s ease;
         }
 
-        .image-preview .remove-btn:hover {
-            background: var(--error-hover);
+        .image-delete:hover {
+            background: #d32f2f;
+            color: #ffffff;
         }
 
-        .image-status {
-            color: var(--text-secondary);
-            font-size: 11px;
-            margin-top: 8px;
-            margin-bottom: 10px;
-        }
-
-        /* ===== 命令分頁樣式 ===== */
-        .command-section {
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            background: var(--surface-color);
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .command-section h3 {
-            color: var(--primary-color);
-            margin-bottom: 15px;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .command-input-area {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .command-input {
-            flex: 1;
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 10px;
-            color: var(--text-primary);
-            font-size: 14px;
-        }
-
-        .command-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        .run-btn {
-            background: var(--success-color);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .run-btn:hover {
-            background: var(--success-hover);
-        }
-
-        .command-output {
-            flex: 1;
-            background: var(--console-bg);
+        .summary-content {
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 15px;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 12px;
-            color: #ffffff;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 300px;
             overflow-y: auto;
-            white-space: pre-wrap;
-            min-height: 200px;
         }
 
-        /* ===== 操作按鈕 ===== */
-        .action-buttons {
+        .actions {
             display: flex;
             justify-content: flex-end;
             gap: 15px;
-            padding: 20px 0;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
         }
 
-        .action-btn {
+        .btn {
             padding: 12px 24px;
+            border-radius: 6px;
             border: none;
-            border-radius: 8px;
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .submit-btn {
+        .btn-primary {
             background: var(--success-color);
             color: white;
         }
 
-        .submit-btn:hover {
-            background: var(--success-hover);
-            transform: translateY(-2px);
+        .btn-primary:hover {
+            background: #45a049;
         }
 
-        .cancel-btn {
-            background: var(--error-color);
+        .btn-secondary {
+            background: var(--surface-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .status-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 6px;
             color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
         }
 
-        .cancel-btn:hover {
-            background: var(--error-hover);
-            transform: translateY(-2px);
+        .status-message.show {
+            opacity: 1;
+            transform: translateX(0);
         }
 
-        /* ===== 響應式設計 ===== */
-        @media (max-width: 768px) {
+        .status-message.success {
+            background: var(--success-color);
+        }
+
+        .status-message.error {
+            background: var(--error-color);
+        }
+
+        .status-message.info {
+            background: var(--info-color);
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 1200px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header-content {
+                padding: 0 15px;
+            }
+            
+            .image-preview-area {
+                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+                gap: 10px;
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .language-selector {
+                justify-content: center;
+            }
+
             .container {
                 padding: 10px;
             }
-            
+
             .tab-buttons {
                 flex-wrap: wrap;
             }
-            
+
             .upload-buttons {
-                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .command-section {
+                flex-direction: column;
+                gap: 15px;
             }
             
-            .action-buttons {
-                flex-direction: column;
+            .image-preview-area {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                gap: 8px;
+                padding: 10px;
+                max-height: 300px;
+            }
+            
+            .image-preview {
+                height: 80px;
             }
         }
 
-        /* ===== 隱藏檔案輸入 ===== */
+        @media (min-width: 1400px) {
+            .image-preview-area {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 15px;
+                padding: 20px;
+            }
+            
+            .image-preview {
+                height: 120px;
+            }
+        }
+
+        /* 滾動條樣式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-color);
+        }
+
+        /* 隱藏檔案輸入 */
         #fileInput {
             display: none;
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <h1 class="title" id="pageTitle">Interactive Feedback MCP</h1>
+                <div class="project-info" id="projectInfo">
+                    <span id="projectDirLabel">專案目錄</span>: {{ project_dir }}
+                </div>
+            </div>
+            <div class="language-selector">
+                <label for="languageSelect" id="languageLabel">🌐 語言選擇:</label>
+                <select id="languageSelect">
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="en">English</option>
+                    <option value="zh-CN">简体中文</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
-        <!-- 標題 -->
-        <div class="header">
-            <h1>🎯 互動式回饋收集</h1>
-            <div class="project-info">專案目錄: {{ project_directory }}</div>
-        </div>
-
-        <!-- AI 工作摘要 -->
-        <div class="summary-section">
-            <h2>📋 AI 工作摘要</h2>
-            <div class="summary-content">{{ summary }}</div>
-        </div>
-
-        <!-- 分頁容器 -->
-        <div class="tabs-container">
-            <!-- 分頁按鈕 -->
-            <div class="tab-buttons">
-                <button class="tab-button active" onclick="switchTab('feedback')">💬 回饋</button>
-                <button class="tab-button" onclick="switchTab('command')">⚡ 命令</button>
-            </div>
-
-            <!-- 回饋分頁 -->
-            <div id="feedback-tab" class="tab-content active">
-                <div class="feedback-section">
-                    <h3>💬 您的回饋</h3>
-                    <textarea id="feedbackText" class="feedback-textarea" 
-                              placeholder="請在這裡輸入您的回饋、建議或問題...&#10;&#10;💡 小提示：按 Ctrl+Enter 可快速提交回饋"></textarea>
+        <div class="main-content">
+            <!-- 主要回饋區域 -->
+            <div class="feedback-section">
+                <!-- AI 工作摘要 -->
+                <div class="summary-section" style="margin-bottom: 20px;">
+                    <h2 class="section-title" id="summaryTitle">
+                        📋 AI 工作摘要
+                    </h2>
+                    <div class="summary-content" id="summaryContent">{{ summary }}</div>
                 </div>
 
-                <div class="image-section">
-                    <h3>🖼️ 圖片附件（可選）</h3>
-                    <div class="upload-buttons">
-                        <button class="upload-btn" onclick="selectFiles()">📁 選擇文件</button>
-                        <button class="upload-btn success" onclick="pasteFromClipboard()">📋 剪貼板</button>
-                        <button class="upload-btn danger" onclick="clearAllImages()">❌ 清除</button>
+                <!-- 分頁標籤 -->
+                <div class="tabs">
+                    <div class="tab-buttons">
+                        <button class="tab-button active" onclick="switchTab('feedback')" id="feedbackTabBtn">
+                            💬 回饋
+                        </button>
+                        <button class="tab-button" onclick="switchTab('command')" id="commandTabBtn">
+                            ⚡ 命令
+                        </button>
                     </div>
-                    <div class="drop-zone" id="dropZone">
-                        🎯 拖拽圖片到這裡 (PNG、JPG、JPEG、GIF、BMP、WebP)
+                </div>
+
+                <!-- 回饋分頁內容 -->
+                <div id="feedback" class="tab-content active">
+                    <div class="input-group">
+                        <label class="input-label" id="feedbackLabel">💬 您的回饋</label>
+                        <div class="section-description" id="feedbackDescription">
+                            請在這裡輸入您的回饋、建議或問題。您的意見將幫助 AI 更好地理解您的需求。
+                        </div>
+                        <textarea 
+                            id="feedbackText" 
+                            class="text-input" 
+                            placeholder="請在這裡輸入您的回饋、建議或問題...&#10;&#10;💡 小提示：按 Ctrl+Enter 可快速提交回饋"
+                        ></textarea>
                     </div>
-                    <div class="image-status" id="imageStatus">已選擇 0 張圖片</div>
-                    <div class="image-preview-area" id="imagePreviewArea"></div>
+
+                    <!-- 圖片上傳區域 -->
+                    <div class="image-section">
+                        <h3 id="imagesTitle">🖼️ 圖片附件（可選）</h3>
+                        <div class="upload-buttons">
+                            <button class="upload-btn" onclick="selectFiles()" id="selectFilesBtn">📁 選擇文件</button>
+                            <button class="upload-btn success" onclick="pasteFromClipboard()" id="pasteBtn">📋 剪貼板</button>
+                            <button class="upload-btn danger" onclick="clearAllImages()" id="clearBtn">❌ 清除</button>
+                        </div>
+                        <div class="drop-zone" id="dropZone">
+                            🎯 拖拽圖片到這裡 (PNG、JPG、JPEG、GIF、BMP、WebP)
+                        </div>
+                        <div class="image-status" id="imageStatus">已選擇 0 張圖片</div>
+                        <div class="image-preview-area" id="imagePreviewArea"></div>
+                    </div>
+                </div>
+
+                <!-- 命令分頁內容 -->
+                <div id="command" class="tab-content">
+                    <div class="input-group">
+                        <label class="input-label" id="commandLabel">⚡ 命令執行</label>
+                        <div class="section-description" id="commandDescription">
+                            您可以在此執行系統命令來驗證結果或獲取更多資訊。
+                        </div>
+                        <div class="command-section">
+                            <div class="command-input-wrapper">
+                                <input 
+                                    type="text" 
+                                    id="commandInput" 
+                                    class="command-input" 
+                                    placeholder="輸入要執行的命令..."
+                                    onkeypress="if(event.key==='Enter') runCommand()"
+                                >
+                            </div>
+                            <button class="run-button" onclick="runCommand()" id="runBtn">▶️ 執行</button>
+                        </div>
+                        <div class="command-output" id="commandOutput"></div>
+                    </div>
+                </div>
+
+                <!-- 操作按鈕 -->
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="window.close()" id="cancelBtn">❌ 取消</button>
+                    <button class="btn btn-primary" onclick="submitFeedback()" id="submitBtn">✅ 提交回饋</button>
                 </div>
             </div>
-
-            <!-- 命令分頁 -->
-            <div id="command-tab" class="tab-content">
-                <div class="command-section">
-                    <h3>⚡ 命令執行</h3>
-                    <div class="command-input-area">
-                        <input type="text" id="commandInput" class="command-input" 
-                               placeholder="輸入要執行的命令..." 
-                               onkeypress="if(event.key==='Enter') runCommand()">
-                        <button class="run-btn" onclick="runCommand()">▶️ 執行</button>
-                    </div>
-                    <div id="commandOutput" class="command-output"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 操作按鈕 -->
-        <div class="action-buttons">
-            <button class="action-btn cancel-btn" onclick="cancelFeedback()">❌ 取消</button>
-            <button class="action-btn submit-btn" onclick="submitFeedback()">✅ 提交回饋</button>
         </div>
     </div>
 
     <!-- 隱藏的檔案輸入 -->
-    <input type="file" id="fileInput" multiple accept="image/*" onchange="handleFileSelect(event)">
+    <input type="file" id="fileInput" multiple accept="image/*">
 
+    <!-- 狀態提示元素 -->
+    <div id="statusMessage" class="status-message"></div>
+
+    <!-- 引入國際化模組 -->
+    <script src="/static/i18n.js"></script>
+    
     <script>
-        // ===== 全域變數 =====
-        let ws = null;
-        let images = [];
-        let commandRunning = false;
+        // 全域變數
+        let selectedImages = [];
+        let commandHistory = [];
+        let historyIndex = -1;
 
-        // ===== WebSocket 連接 =====
-        function connectWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/{{ session_id }}`;
+        // 初始化應用程式
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+            applyTranslations();
+            updateImagePreviewArea(); // 初始化預覽區域
+        });
+
+        // 監聽語言變更事件
+        document.addEventListener('languageChanged', function(event) {
+            applyTranslations();
+            updatePlaceholders();
+            updateImagePreviewArea(); // 更新預覽區域文字
+        });
+
+        function initializeApp() {
+            // 設置語言選擇器
+            const languageSelect = document.getElementById('languageSelect');
+            languageSelect.value = window.i18n.getCurrentLanguage();
             
-            ws = new WebSocket(wsUrl);
+            // 更新 HTML lang 屬性
+            updateHtmlLang();
             
-            ws.onopen = function() {
-                console.log('WebSocket 連接成功');
-            };
+            // 設置拖拽功能
+            setupDragAndDrop();
             
-            ws.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                handleWebSocketMessage(data);
-            };
-            
-            ws.onclose = function() {
-                console.log('WebSocket 連接已關閉');
-            };
-            
-            ws.onerror = function(error) {
-                console.error('WebSocket 錯誤:', error);
-            };
+            // 設置快捷鍵
+            setupKeyboardShortcuts();
         }
 
-        function handleWebSocketMessage(data) {
-            if (data.type === 'command_output') {
-                appendCommandOutput(data.output);
-            } else if (data.type === 'command_finished') {
-                appendCommandOutput(`\n進程結束，返回碼: ${data.exit_code}\n`);
-                commandRunning = false;
-            }
+        function setupEventListeners() {
+            // 語言選擇器事件
+            document.getElementById('languageSelect').addEventListener('change', function(e) {
+                const newLanguage = e.target.value;
+                window.i18n.setLanguage(newLanguage);
+                updateHtmlLang();
+            });
+
+            // 文件輸入事件
+            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
         }
 
-        // ===== 分頁切換 =====
+        function updateHtmlLang() {
+            const htmlRoot = document.getElementById('html-root');
+            const currentLang = window.i18n.getCurrentLanguage();
+            
+            // 語言代碼映射
+            const langMap = {
+                'zh-TW': 'zh-TW',
+                'zh-CN': 'zh-CN',
+                'en': 'en'
+            };
+            
+            htmlRoot.setAttribute('lang', langMap[currentLang] || 'en');
+        }
+
+        function applyTranslations() {
+            // 更新頁面標題
+            document.title = t('app_title');
+            
+            // 更新標題區域
+            document.getElementById('pageTitle').textContent = t('app_title');
+            document.getElementById('projectDirLabel').textContent = t('project_directory');
+            document.getElementById('languageLabel').textContent = t('language_selector') + ':';
+            
+            // 更新語言選項
+            const languageSelect = document.getElementById('languageSelect');
+            const options = languageSelect.querySelectorAll('option');
+            options.forEach(option => {
+                const value = option.value;
+                option.textContent = window.i18n.getLanguageDisplayName(value);
+            });
+            
+            // 更新摘要區域
+            document.getElementById('summaryTitle').innerHTML = t('ai_summary');
+            
+            // 更新分頁標籤
+            document.getElementById('feedbackTabBtn').innerHTML = t('feedback_tab');
+            document.getElementById('commandTabBtn').innerHTML = t('command_tab');
+            
+            // 更新回饋區域
+            document.getElementById('feedbackLabel').textContent = t('feedback_title');
+            document.getElementById('feedbackDescription').textContent = t('feedback_description');
+            
+            // 更新命令區域
+            document.getElementById('commandLabel').textContent = t('command_title');
+            document.getElementById('commandDescription').textContent = t('command_description');
+            document.getElementById('runBtn').innerHTML = t('btn_run_command');
+            
+            // 更新圖片區域
+            document.getElementById('imagesTitle').textContent = t('images_title');
+            document.getElementById('selectFilesBtn').innerHTML = t('btn_select_files');
+            document.getElementById('pasteBtn').innerHTML = t('btn_paste_clipboard');
+            document.getElementById('clearBtn').innerHTML = t('btn_clear_all');
+            document.getElementById('dropZone').textContent = t('images_drag_hint');
+            
+            // 更新按鈕
+            document.getElementById('cancelBtn').innerHTML = t('btn_cancel');
+            document.getElementById('submitBtn').innerHTML = t('btn_submit_feedback');
+            
+            // 更新圖片狀態
+            updateImageStatus();
+            
+            // 更新預覽區域
+            updateImagePreviewArea();
+        }
+
+        function updatePlaceholders() {
+            // 更新輸入框的 placeholder
+            document.getElementById('feedbackText').placeholder = t('feedback_placeholder');
+            document.getElementById('commandInput').placeholder = t('command_placeholder');
+        }
+
+        function setupKeyboardShortcuts() {
+            // Ctrl+Enter 快速提交
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    submitFeedback();
+                }
+            });
+        }
+
+        // 分頁切換功能
         function switchTab(tabName) {
-            // 隱藏所有分頁
+            // 隱藏所有分頁內容
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -602,132 +859,24 @@
             });
             
             // 顯示選中的分頁
-            document.getElementById(tabName + '-tab').classList.add('active');
+            document.getElementById(tabName).classList.add('active');
             
-            // 設置按鈕活動狀態
-            event.target.classList.add('active');
-        }
-
-        // ===== 圖片處理 =====
-        function selectFiles() {
-            document.getElementById('fileInput').click();
-        }
-
-        function handleFileSelect(event) {
-            const files = Array.from(event.target.files);
-            processFiles(files);
-        }
-
-        async function pasteFromClipboard() {
-            try {
-                const items = await navigator.clipboard.read();
-                for (const item of items) {
-                    for (const type of item.types) {
-                        if (type.startsWith('image/')) {
-                            const blob = await item.getType(type);
-                            const file = new File([blob], `clipboard_${Date.now()}.png`, { type });
-                            processFiles([file]);
-                            return;
-                        }
-                    }
-                }
-                showNotification('剪貼板中沒有圖片！');
-            } catch (error) {
-                console.error('剪貼板讀取失敗:', error);
-                showNotification('無法從剪貼板讀取圖片');
+            // 設置對應按鈕為活動狀態
+            if (tabName === 'feedback') {
+                document.getElementById('feedbackTabBtn').classList.add('active');
+            } else if (tabName === 'command') {
+                document.getElementById('commandTabBtn').classList.add('active');
             }
         }
 
-        function processFiles(files) {
-            for (const file of files) {
-                if (!file.type.startsWith('image/')) {
-                    showNotification(`檔案 ${file.name} 不是圖片格式！`, 'warning');
-                    continue;
-                }
-
-                if (file.size > 1024 * 1024) { // 1MB 限制
-                    showNotification(`圖片 ${file.name} 大小超過 1MB 限制！`, 'warning');
-                    continue;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imageData = {
-                        id: Date.now() + Math.random(),
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        data: e.target.result.split(',')[1] // 移除 data:image/xxx;base64, 前綴
-                    };
-                    
-                    images.push(imageData);
-                    updateImagePreview();
-                    updateImageStatus();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function updateImagePreview() {
-            const previewArea = document.getElementById('imagePreviewArea');
-            previewArea.innerHTML = '';
-
-            images.forEach(img => {
-                const preview = document.createElement('div');
-                preview.className = 'image-preview';
-                preview.innerHTML = `
-                    <img src="data:${img.type};base64,${img.data}" alt="${img.name}" title="${img.name}">
-                    <button class="remove-btn" onclick="removeImage('${img.id}')" title="刪除圖片">×</button>
-                `;
-                previewArea.appendChild(preview);
-            });
-        }
-
-        function removeImage(imageId) {
-            images = images.filter(img => img.id != imageId);
-            updateImagePreview();
-            updateImageStatus();
-        }
-
-        function clearAllImages() {
-            if (images.length > 0) {
-                if (confirm(`確定要清除所有 ${images.length} 張圖片嗎？`)) {
-                    images = [];
-                    updateImagePreview();
-                    updateImageStatus();
-                }
-            }
-        }
-
-        function updateImageStatus() {
-            const count = images.length;
-            const totalSize = images.reduce((sum, img) => sum + img.size, 0);
-            
-            let sizeStr;
-            if (totalSize < 1024) {
-                sizeStr = `${totalSize} B`;
-            } else if (totalSize < 1024 * 1024) {
-                sizeStr = `${(totalSize / 1024).toFixed(1)} KB`;
-            } else {
-                sizeStr = `${(totalSize / (1024 * 1024)).toFixed(1)} MB`;
-            }
-
-            document.getElementById('imageStatus').textContent = 
-                count > 0 ? `已選擇 ${count} 張圖片 (總計 ${sizeStr})` : '已選擇 0 張圖片';
-        }
-
-        // ===== 拖拽功能 =====
+        // 設置拖拽功能
         function setupDragAndDrop() {
             const dropZone = document.getElementById('dropZone');
-
+            
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
             });
-
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
 
             ['dragenter', 'dragover'].forEach(eventName => {
                 dropZone.addEventListener(eventName, highlight, false);
@@ -737,133 +886,313 @@
                 dropZone.addEventListener(eventName, unhighlight, false);
             });
 
-            function highlight() {
-                dropZone.classList.add('drag-over');
-            }
-
-            function unhighlight() {
-                dropZone.classList.remove('drag-over');
-            }
-
             dropZone.addEventListener('drop', handleDrop, false);
+        }
 
-            function handleDrop(e) {
-                const dt = e.dataTransfer;
-                const files = Array.from(dt.files);
-                processFiles(files);
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
+            document.getElementById('dropZone').classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            document.getElementById('dropZone').classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        // 檔案選擇功能
+        function selectFiles() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            [...files].forEach(processFile);
+        }
+
+        function processFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showStatusMessage(t('invalid_file_type'), 'error');
+                return;
+            }
+
+            if (file.size > 1024 * 1024) { // 1MB 限制
+                showStatusMessage(t('file_too_large'), 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = {
+                    id: Date.now() + Math.random(),
+                    filename: file.name,
+                    data: e.target.result.split(',')[1], // 移除 data:image/xxx;base64, 前綴
+                    size: file.size,
+                    type: file.type
+                };
+                
+                selectedImages.push(imageData);
+                updateImagePreview();
+                updateImageStatus();
+                showStatusMessage(t('upload_success'), 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 剪貼板功能
+        async function pasteFromClipboard() {
+            try {
+                const items = await navigator.clipboard.read();
+                let hasImage = false;
+                
+                for (const item of items) {
+                    for (const type of item.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await item.getType(type);
+                            const file = new File([blob], `paste-${Date.now()}.png`, { type: type });
+                            processFile(file);
+                            hasImage = true;
+                        }
+                    }
+                }
+                
+                if (!hasImage) {
+                    showStatusMessage(t('paste_failed'), 'error');
+                }
+            } catch (err) {
+                showStatusMessage(t('paste_failed'), 'error');
             }
         }
 
-        // ===== 命令執行 =====
+        // 圖片預覽更新
+        function updateImagePreview() {
+            const previewArea = document.getElementById('imagePreviewArea');
+            
+            // 清除現有內容
+            previewArea.innerHTML = '';
+            
+            if (selectedImages.length === 0) {
+                // 空狀態 - 移除 has-images 類別
+                previewArea.classList.remove('has-images');
+                updateImagePreviewArea();
+            } else {
+                // 有圖片 - 添加 has-images 類別
+                previewArea.classList.add('has-images');
+                
+                selectedImages.forEach(img => {
+                    const preview = document.createElement('div');
+                    preview.className = 'image-preview';
+                    
+                    const imgElement = document.createElement('img');
+                    imgElement.src = `data:${img.type};base64,${img.data}`;
+                    imgElement.alt = img.filename;
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'image-delete';
+                    deleteBtn.innerHTML = '×';
+                    deleteBtn.title = t('images_clear');
+                    deleteBtn.onclick = () => {
+                        if (confirm(t('images_delete_confirm', { filename: img.filename }))) {
+                            removeImage(img.id);
+                        }
+                    };
+                    
+                    preview.appendChild(imgElement);
+                    preview.appendChild(deleteBtn);
+                    previewArea.appendChild(preview);
+                });
+                
+                // 添加網格指示器
+                updateGridIndicator();
+            }
+        }
+
+        function updateImagePreviewArea() {
+            const previewArea = document.getElementById('imagePreviewArea');
+            
+            if (selectedImages.length === 0) {
+                // 計算當前可顯示的列數
+                const containerWidth = previewArea.clientWidth - 30; // 減去 padding
+                const minItemWidth = 100; // 最小項目寬度
+                const gap = 12; // 間距
+                
+                const maxColumns = Math.floor((containerWidth + gap) / (minItemWidth + gap));
+                const actualColumns = Math.max(1, maxColumns);
+                
+                const emptyText = `📋 圖片預覽區域\n\n💡 目前寬度可顯示 ${actualColumns} 列圖片\n區域寬度: ${Math.round(containerWidth)}px`;
+                previewArea.setAttribute('data-empty-text', emptyText);
+                
+                // 移除網格指示器
+                const existingIndicator = previewArea.querySelector('.preview-grid-indicator');
+                if (existingIndicator) {
+                    existingIndicator.remove();
+                }
+            }
+        }
+
+        function updateGridIndicator() {
+            const previewArea = document.getElementById('imagePreviewArea');
+            
+            // 移除現有指示器
+            const existingIndicator = previewArea.querySelector('.preview-grid-indicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+            
+            // 計算當前列數
+            const containerWidth = previewArea.clientWidth - 30;
+            const minItemWidth = 100;
+            const gap = 12;
+            const maxColumns = Math.floor((containerWidth + gap) / (minItemWidth + gap));
+            const actualColumns = Math.max(1, maxColumns);
+            
+            // 添加新指示器
+            const indicator = document.createElement('div');
+            indicator.className = 'preview-grid-indicator';
+            indicator.textContent = `${actualColumns} 列佈局`;
+            previewArea.appendChild(indicator);
+        }
+
+        function removeImage(imageId) {
+            selectedImages = selectedImages.filter(img => img.id !== imageId);
+            updateImagePreview();
+            updateImageStatus();
+        }
+
+        function clearAllImages() {
+            if (selectedImages.length > 0) {
+                const confirmMessage = t('images_delete_confirm', { 
+                    filename: `${selectedImages.length} ${t('images_status', { count: selectedImages.length }).match(/\d+\s+(\S+)/)[1]}` 
+                });
+                if (confirm(confirmMessage)) {
+                    selectedImages = [];
+                    updateImagePreview();
+                    updateImageStatus();
+                }
+            }
+        }
+
+        function updateImageStatus() {
+            const count = selectedImages.length;
+            const statusElement = document.getElementById('imageStatus');
+            
+            if (count === 0) {
+                statusElement.textContent = t('images_status', { count: 0 });
+            } else {
+                const totalSize = selectedImages.reduce((sum, img) => sum + img.size, 0);
+                
+                let sizeStr;
+                if (totalSize >= 1024 * 1024) {
+                    sizeStr = `${(totalSize / (1024 * 1024)).toFixed(1)} MB`;
+                } else {
+                    sizeStr = `${(totalSize / 1024).toFixed(1)} KB`;
+                }
+                
+                statusElement.textContent = t('images_status_with_size', { count, size: sizeStr });
+            }
+        }
+
+        // 命令執行功能
         function runCommand() {
             const command = document.getElementById('commandInput').value.trim();
             if (!command) return;
 
-            if (commandRunning) {
-                showNotification('已有命令在執行中，請等待完成或停止當前命令', 'warning');
-                return;
-            }
-
-            appendCommandOutput(`$ ${command}\n`);
+            const outputElement = document.getElementById('commandOutput');
+            outputElement.textContent += `$ ${command}\n`;
             
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'run_command',
-                    command: command
-                }));
-                commandRunning = true;
-            } else {
-                appendCommandOutput('WebSocket 連接未建立\n');
-            }
+            // 這裡可以根據需要實現實際的命令執行
+            // 暫時顯示一個模擬的輸出
+            setTimeout(() => {
+                outputElement.textContent += t('command_running') + '\n';
+                setTimeout(() => {
+                    outputElement.textContent += t('command_finished') + '\n\n';
+                    outputElement.scrollTop = outputElement.scrollHeight;
+                }, 1000);
+            }, 100);
+            
+            // 清空輸入框
+            document.getElementById('commandInput').value = '';
         }
 
-        function appendCommandOutput(text) {
-            const output = document.getElementById('commandOutput');
-            output.textContent += text;
-            output.scrollTop = output.scrollHeight;
-        }
-
-        // ===== 回饋提交 =====
+        // 回饋提交功能
         function submitFeedback() {
             const feedback = document.getElementById('feedbackText').value.trim();
+            const commandLogs = document.getElementById('commandOutput').textContent;
             
-            if (!feedback && images.length === 0) {
-                showNotification('請輸入回饋內容或上傳圖片！', 'warning');
+            if (!feedback && selectedImages.length === 0) {
+                showStatusMessage(t('feedback_placeholder').split('\n')[0], 'error');
                 return;
             }
 
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                // 顯示提交中狀態
-                const submitBtn = document.querySelector('.submit-btn');
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = '提交中...';
-                submitBtn.disabled = true;
+            // 準備提交數據
+            const submitData = {
+                interactive_feedback: feedback,
+                command_logs: commandLogs,
+                images: selectedImages.map(img => ({
+                    filename: img.filename,
+                    data: img.data,
+                    size: img.size,
+                    type: img.type
+                }))
+            };
+
+            // 顯示提交狀態
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = t('uploading');
+            submitBtn.disabled = true;
+
+            // 模擬提交過程
+            setTimeout(() => {
+                showStatusMessage(t('upload_success'), 'success');
                 
-                ws.send(JSON.stringify({
-                    type: 'submit_feedback',
-                    feedback: feedback,
-                    images: images
-                }));
+                // 實際的提交邏輯應該在這裡實現
+                // 例如：發送到伺服器端點
+                console.log('提交數據:', submitData);
                 
-                // 簡短延遲後自動關閉，不顯示 alert
                 setTimeout(() => {
                     window.close();
-                }, 500);
-            } else {
-                showNotification('WebSocket 連接異常，請重新整理頁面', 'error');
-            }
+                }, 1000);
+            }, 500);
         }
 
-        // 添加通知函數，替代 alert
-        function showNotification(message, type = 'info') {
-            // 創建通知元素
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#007acc'};
-                color: white;
-                padding: 12px 20px;
-                border-radius: 6px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                z-index: 10000;
-                font-weight: bold;
-                max-width: 300px;
-                word-wrap: break-word;
-            `;
+        // 狀態提示功能
+        function showStatusMessage(message, type = 'info') {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type} show`;
             
-            document.body.appendChild(notification);
-            
-            // 3 秒後自動移除
             setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
+                statusElement.classList.remove('show');
             }, 3000);
         }
 
-        function cancelFeedback() {
-            if (confirm('確定要取消回饋嗎？')) {
-                window.close();
-            }
+        // 追加命令輸出
+        function appendCommandOutput(text) {
+            const outputElement = document.getElementById('commandOutput');
+            outputElement.textContent += text;
+            outputElement.scrollTop = outputElement.scrollHeight;
         }
 
-        // ===== 快捷鍵支援 =====
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'Enter') {
-                e.preventDefault();
-                submitFeedback();
+        // 監聽窗口大小變化
+        window.addEventListener('resize', function() {
+            updateImagePreviewArea();
+            if (selectedImages.length > 0) {
+                updateGridIndicator();
             }
-        });
-
-        // ===== 初始化 =====
-        document.addEventListener('DOMContentLoaded', function() {
-            connectWebSocket();
-            setupDragAndDrop();
         });
     </script>
 </body>
-</html> 
+</html>

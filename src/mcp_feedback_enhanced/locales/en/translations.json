@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "language": "en",
+    "displayName": "English",
+    "author": "Minidoracat",
+    "version": "1.0.0",
+    "lastUpdate": "2025-01-31"
+  },
+  "app": {
+    "title": "Interactive Feedback Collection",
+    "projectDirectory": "Project Directory",
+    "language": "Language",
+    "settings": "Settings"
+  },
+  "tabs": {
+    "feedback": "💬 Feedback",
+    "command": "⚡ Command",
+    "images": "🖼️ Images"
+  },
+  "feedback": {
+    "title": "Your Feedback",
+    "description": "Please describe your thoughts, suggestions, or changes needed for the AI work results.",
+    "placeholder": "Please enter your feedback, suggestions, or questions here...\n\n💡 Tip: Press Ctrl+Enter to submit quickly"
+  },
+  "command": {
+    "title": "Command Execution",
+    "description": "You can execute commands to verify results or gather more information.",
+    "placeholder": "Enter command to execute...",
+    "output": "Command Output"
+  },
+  "images": {
+    "title": "🖼️ Image Attachments (Optional)",
+    "select": "Select Files",
+    "paste": "Clipboard",
+    "clear": "Clear",
+    "status": "{count} images selected",
+    "statusWithSize": "{count} images selected (Total {size})",
+    "dragHint": "🎯 Drag images here (PNG, JPG, JPEG, GIF, BMP, WebP)",
+    "deleteConfirm": "Are you sure you want to remove image \"{filename}\"?",
+    "deleteTitle": "Confirm Delete",
+    "sizeWarning": "Image file size cannot exceed 1MB",
+    "formatError": "Unsupported image format"
+  },
+  "buttons": {
+    "submit": "Submit Feedback",
+    "cancel": "Cancel",
+    "close": "Close",
+    "clear": "Clear",
+    "submitFeedback": "✅ Submit Feedback",
+    "selectFiles": "📁 Select Files",
+    "pasteClipboard": "📋 Clipboard",
+    "clearAll": "✕ Clear",
+    "runCommand": "▶️ Run"
+  },
+  "status": {
+    "feedbackSubmitted": "Feedback submitted successfully!",
+    "feedbackCancelled": "Feedback cancelled.",
+    "timeoutMessage": "Feedback timeout",
+    "errorOccurred": "Error occurred",
+    "loading": "Loading...",
+    "connecting": "Connecting...",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "uploading": "Uploading...",
+    "uploadSuccess": "Upload successful",
+    "uploadFailed": "Upload failed",
+    "commandRunning": "Command running...",
+    "commandFinished": "Command finished",
+    "pasteSuccess": "Image pasted from clipboard",
+    "pasteFailed": "Failed to get image from clipboard",
+    "invalidFileType": "Unsupported file type",
+    "fileTooLarge": "File too large (max 1MB)"
+  },
+  "aiSummary": "AI Work Summary",
+  "languageSelector": "🌐 Language",
+  "languageNames": {
+    "zhTw": "繁體中文",
+    "en": "English",
+    "zhCn": "简体中文"
+  }
+} 

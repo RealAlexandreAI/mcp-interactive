@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "language": "zh-CN",
+    "displayName": "简体中文",
+    "author": "Minidoracat",
+    "version": "1.0.0",
+    "lastUpdate": "2025-01-31"
+  },
+  "app": {
+    "title": "交互式反馈收集",
+    "projectDirectory": "项目目录",
+    "language": "语言",
+    "settings": "设置"
+  },
+  "tabs": {
+    "feedback": "💬 反馈",
+    "command": "⚡ 命令",
+    "images": "🖼️ 图片"
+  },
+  "feedback": {
+    "title": "您的反馈",
+    "description": "请描述您对 AI 工作结果的想法、建议或需要修改的地方。",
+    "placeholder": "请在这里输入您的反馈、建议或问题...\n\n💡 小提示：按 Ctrl+Enter 可快速提交反馈"
+  },
+  "command": {
+    "title": "命令执行",
+    "description": "您可以执行命令来验证结果或收集更多信息。",
+    "placeholder": "输入要执行的命令...",
+    "output": "命令输出"
+  },
+  "images": {
+    "title": "🖼️ 图片附件（可选）",
+    "select": "选择文件",
+    "paste": "剪贴板",
+    "clear": "清除",
+    "status": "已选择 {count} 张图片",
+    "statusWithSize": "已选择 {count} 张图片 (总计 {size})",
+    "dragHint": "🎯 拖拽图片到这里 (PNG、JPG、JPEG、GIF、BMP、WebP)",
+    "deleteConfirm": "确定要移除图片 \"{filename}\" 吗？",
+    "deleteTitle": "确认删除",
+    "sizeWarning": "图片文件大小不能超过 1MB",
+    "formatError": "不支持的图片格式"
+  },
+  "buttons": {
+    "submit": "提交反馈",
+    "cancel": "取消",
+    "close": "关闭",
+    "clear": "清除",
+    "submitFeedback": "✅ 提交反馈",
+    "selectFiles": "📁 选择文件",
+    "pasteClipboard": "📋 剪贴板",
+    "clearAll": "✕ 清除",
+    "runCommand": "▶️ 执行"
+  },
+  "status": {
+    "feedbackSubmitted": "反馈已成功提交！",
+    "feedbackCancelled": "已取消反馈。",
+    "timeoutMessage": "等待反馈超时",
+    "errorOccurred": "发生错误",
+    "loading": "加载中...",
+    "connecting": "连接中...",
+    "connected": "已连接",
+    "disconnected": "连接中断",
+    "uploading": "上传中...",
+    "uploadSuccess": "上传成功",
+    "uploadFailed": "上传失败",
+    "commandRunning": "命令执行中...",
+    "commandFinished": "命令执行完成",
+    "pasteSuccess": "已从剪贴板粘贴图片",
+    "pasteFailed": "无法从剪贴板获取图片",
+    "invalidFileType": "不支持的文件类型",
+    "fileTooLarge": "文件过大（最大 1MB）"
+  },
+  "aiSummary": "AI 工作摘要",
+  "languageSelector": "🌐 语言选择",
+  "languageNames": {
+    "zhTw": "繁體中文",
+    "en": "English",
+    "zhCn": "简体中文"
+  }
+} 

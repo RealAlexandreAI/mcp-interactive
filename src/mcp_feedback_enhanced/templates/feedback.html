@@ -289,6 +289,8 @@
 
         .image-preview-area {
             flex: 1;
+            min-height: 120px;
+            max-height: 300px;
             overflow-y: auto;
             border: 1px solid var(--border-color);
             border-radius: 6px;
@@ -341,7 +343,8 @@
         .image-status {
             color: var(--text-secondary);
             font-size: 11px;
-            margin-top: 10px;
+            margin-top: 8px;
+            margin-bottom: 10px;
         }
 
         /* ===== 命令分頁樣式 ===== */
@@ -516,8 +519,8 @@
                     <div class="drop-zone" id="dropZone">
                         🎯 拖拽圖片到這裡 (PNG、JPG、JPEG、GIF、BMP、WebP)
                     </div>
-                    <div class="image-preview-area" id="imagePreviewArea"></div>
                     <div class="image-status" id="imageStatus">已選擇 0 張圖片</div>
+                    <div class="image-preview-area" id="imagePreviewArea"></div>
                 </div>
             </div>
 

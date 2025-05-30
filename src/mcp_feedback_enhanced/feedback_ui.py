@@ -169,13 +169,13 @@ class ImageUploadWidget(QWidget):
         # 拖拽區域
         self._create_drop_zone(layout)
         
+        # 狀態標籤 - 移到預覽區域前面
+        self.status_label = QLabel("已選擇 0 張圖片")
+        self.status_label.setStyleSheet("color: #9e9e9e; font-size: 10px; margin: 5px 0;")
+        layout.addWidget(self.status_label)
+        
         # 圖片預覽區域
         self._create_preview_area(layout)
-        
-        # 狀態標籤
-        self.status_label = QLabel("已選擇 0 張圖片")
-        self.status_label.setStyleSheet("color: #9e9e9e; font-size: 10px;")
-        layout.addWidget(self.status_label)
     
     def _create_buttons(self, layout: QVBoxLayout) -> None:
         """創建操作按鈕"""
@@ -243,8 +243,8 @@ class ImageUploadWidget(QWidget):
         self.preview_scroll.setWidget(self.preview_widget)
         self.preview_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.preview_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.preview_scroll.setMinimumHeight(70)
-        self.preview_scroll.setMaximumHeight(180)
+        self.preview_scroll.setMinimumHeight(100)  # 增加最小高度
+        self.preview_scroll.setMaximumHeight(250)  # 增加最大高度
         self.preview_scroll.setWidgetResizable(True)
         self.preview_scroll.setStyleSheet("""
             QScrollArea {

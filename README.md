@@ -2,7 +2,7 @@
 
 **🌐 Language / 語言切換:** **English** | [繁體中文](README.zh-TW.md)
 
-**Original Author:** [Fábio Ferreira](https://x.com/fabiomlferreira)  
+**Original Author:** [Fábio Ferreira](https://x.com/fabiomlferreira) | [Original Project](https://github.com/noopstudios/interactive-feedback-mcp) ⭐  
 **Enhanced Fork:** [Minidoracat](https://github.com/Minidoracat)  
 **UI Design Reference:** [sanshao85/mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector) - Thanks for modern interface design inspiration  
 **Related Resources:** [dotcursorrules.com](https://dotcursorrules.com/) for more AI development workflow tools
@@ -283,7 +283,11 @@ A: Ensure firewall allows local port access, or try setting `FORCE_WEB=true` env
 
 ### Original Author
 **Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)  
-If you find Interactive Feedback MCP useful, the best way to support is by following the original author's X account.
+**Original Project:** [noopstudios/interactive-feedback-mcp](https://github.com/noopstudios/interactive-feedback-mcp)  
+
+If you find Interactive Feedback MCP useful, the best ways to show support are:
+- 🌟 **Star the original project**: [Click here to star the original repo](https://github.com/noopstudios/interactive-feedback-mcp) ⭐
+- 📱 **Follow the original author**: [@fabiomlferreira](https://x.com/fabiomlferreira) on X
 
 ### UI Design Inspiration
 **sanshao85** - [mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)  

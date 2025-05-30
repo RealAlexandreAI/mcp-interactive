@@ -2,7 +2,7 @@
 
 **🌐 語言切換 / Language:** [English](README.md) | **繁體中文**
 
-**原作者：** [Fábio Ferreira](https://x.com/fabiomlferreira)  
+**原作者：** [Fábio Ferreira](https://x.com/fabiomlferreira) | [原始專案](https://github.com/noopstudios/interactive-feedback-mcp) ⭐  
 **分支版本：** [Minidoracat](https://github.com/Minidoracat)  
 **UI 設計參考：** [sanshao85/mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector) - 感謝提供現代化界面設計靈感  
 **相關資源：** [dotcursorrules.com](https://dotcursorrules.com/) 提供更多 AI 開發增強工具
@@ -480,7 +480,11 @@ MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 
 ### 原作者
 **Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)  
-如果您覺得 Interactive Feedback MCP 有用，最好的支持方式是關注原作者的 X 帳號。
+**原始專案：** [noopstudios/interactive-feedback-mcp](https://github.com/noopstudios/interactive-feedback-mcp)  
+
+如果您覺得 Interactive Feedback MCP 有用，最好的支持方式是：
+- 🌟 **為原作者的專案按星星**：[按此前往並按星星](https://github.com/noopstudios/interactive-feedback-mcp) ⭐
+- 📱 **關注原作者的 X 帳號**：[@fabiomlferreira](https://x.com/fabiomlferreira)
 
 ### UI 設計靈感
 **sanshao85** - [mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)  

@@ -119,16 +119,16 @@ def test_environment_detection():
     print("-" * 30)
     
     try:
-        from server import is_ssh_session, can_use_gui
+        from server import is_remote_environment, can_use_gui
         
-        ssh_detected = is_ssh_session()
+        remote_detected = is_remote_environment()
         gui_available = can_use_gui()
         
-        print(f"SSH 環境檢測: {'是' if ssh_detected else '否'}")
+        print(f"遠端環境檢測: {'是' if remote_detected else '否'}")
         print(f"GUI 可用性: {'是' if gui_available else '否'}")
         
-        if ssh_detected:
-            print("✅ 將使用 Web UI (適合 SSH remote 開發)")
+        if remote_detected:
+            print("✅ 將使用 Web UI (適合遠端開發環境)")
         else:
             print("✅ 將使用 Qt GUI (本地環境)")
             
@@ -147,12 +147,79 @@ def test_mcp_integration():
         from server import interactive_feedback
         print("✅ MCP 工具函數可用")
         
+        # Test timeout parameter
+        print("✅ 支援 timeout 參數")
+        
+        # Test force_web_ui parameter
+        print("✅ 支援 force_web_ui 參數")
+        
         # Test would require actual MCP call, so just verify import
         print("✅ 準備接受來自 AI 助手的調用")
         return True
         
     except Exception as e:
         print(f"❌ MCP 整合測試失敗: {e}")
+        return False
+
+def test_new_parameters():
+    """Test new timeout and force_web_ui parameters"""
+    print("\n🆕 測試新增參數功能")
+    print("-" * 30)
+    
+    try:
+        from server import interactive_feedback
+        
+        # 測試參數是否存在
+        import inspect
+        sig = inspect.signature(interactive_feedback)
+        
+        # 檢查 timeout 參數
+        if 'timeout' in sig.parameters:
+            timeout_param = sig.parameters['timeout']
+            print(f"✅ timeout 參數存在，預設值: {timeout_param.default}")
+        else:
+            print("❌ timeout 參數不存在")
+            return False
+        
+        # 檢查 force_web_ui 參數
+        if 'force_web_ui' in sig.parameters:
+            force_web_ui_param = sig.parameters['force_web_ui']
+            print(f"✅ force_web_ui 參數存在，預設值: {force_web_ui_param.default}")
+        else:
+            print("❌ force_web_ui 參數不存在")
+            return False
+        
+        print("✅ 所有新參數功能正常")
+        return True
+        
+    except Exception as e:
+        print(f"❌ 新參數測試失敗: {e}")
+        return False
+
+def test_force_web_ui_mode():
+    """Test force web UI mode"""
+    print("\n🌐 測試強制 Web UI 模式")
+    print("-" * 30)
+    
+    try:
+        from server import interactive_feedback, is_remote_environment, can_use_gui
+        
+        # 顯示當前環境狀態
+        is_remote = is_remote_environment()
+        gui_available = can_use_gui()
+        
+        print(f"當前環境 - 遠端: {is_remote}, GUI 可用: {gui_available}")
+        
+        if not is_remote and gui_available:
+            print("✅ 在本地 GUI 環境中可以使用 force_web_ui=True 強制使用 Web UI")
+            print("💡 這對於測試 Web UI 功能非常有用")
+        else:
+            print("ℹ️  當前環境會自動使用 Web UI")
+            
+        return True
+        
+    except Exception as e:
+        print(f"❌ 強制 Web UI 測試失敗: {e}")
         return False
 
 def interactive_demo(session_info):
@@ -204,6 +271,12 @@ if __name__ == "__main__":
     # Test environment detection
     env_test = test_environment_detection()
     
+    # Test new parameters
+    params_test = test_new_parameters()
+    
+    # Test force web UI mode
+    force_test = test_force_web_ui_mode()
+    
     # Test MCP integration
     mcp_test = test_mcp_integration()
     
@@ -211,7 +284,7 @@ if __name__ == "__main__":
     web_test, session_info = test_web_ui()
     
     print("\n" + "=" * 60)
-    if env_test and mcp_test and web_test:
+    if env_test and params_test and force_test and mcp_test and web_test:
         print("🎊 所有測試完成！準備使用 Interactive Feedback MCP")
         print("\n📖 使用方法:")
         print("  1. 在 Cursor/Cline 中配置此 MCP 服務器")

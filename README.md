@@ -2,6 +2,7 @@
 
 **原作者：** [Fábio Ferreira](https://x.com/fabiomlferreira)  
 **分支版本：** [Minidoracat](https://github.com/Minidoracat)  
+**UI 設計參考：** [sanshao85/mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector) - 感謝提供現代化界面設計靈感  
 **相關資源：** [dotcursorrules.com](https://dotcursorrules.com/) 提供更多 AI 開發增強工具
 
 這是一個簡單的 [MCP 伺服器](https://modelcontextprotocol.io/)，用於在 AI 輔助開發工具（如 [Cursor](https://www.cursor.com)）中實現人在回路（human-in-the-loop）的工作流程。該伺服器允許您執行命令、查看輸出並直接向 AI 提供文字回饋和圖片。同時支援 [Cline](https://cline.bot) 和 [Windsurf](https://windsurf.com)。
@@ -27,6 +28,21 @@
 - **調試控制**：可控制的調試輸出，避免 JSON 解析錯誤
 - **錯誤處理**：強化錯誤處理，確保程序穩定運行
 - **輸出隔離**：嚴格隔離調試輸出與 MCP 通信
+
+## 🖥️ 介面預覽
+
+### Qt GUI 介面（本地環境）
+![Qt GUI Interface](docs/images/qt-gui-interface.png)
+
+### Web UI 介面（SSH Remote 環境）
+![Web UI Interface](docs/images/web-ui-interface.jpeg)
+
+兩種介面都支援：
+- 💬 文字回饋輸入
+- 🖼️ 圖片上傳（支援拖拽、剪貼板粘貼）
+- ⚡ 即時命令執行
+- 🎨 現代化深色主題
+- 📱 響應式設計（Web UI）
 
 ## 🎯 為什麼使用這個工具？
 
@@ -439,6 +455,10 @@ MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 ### 原作者
 **Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)  
 如果您覺得 Interactive Feedback MCP 有用，最好的支持方式是關注原作者的 X 帳號。
+
+### UI 設計靈感
+**sanshao85** - [mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)  
+感謝提供現代化界面設計靈感，讓本專案的 UI 更加美觀和易用。
 
 ### 分支維護者
 如有關於 Web UI 功能、圖片支援或其他問題，歡迎在 [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues) 中提出。

@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-互動式回饋收集 MCP 服務器
-============================
+MCP 伺服器主程式
+================
 
-這是一個基於 Model Context Protocol (MCP) 的服務器，提供互動式用戶回饋收集功能。
-支援文字回饋、圖片上傳，並自動偵測運行環境選擇適當的用戶介面。
+Interactive Feedback MCP 的核心伺服器程式，提供用戶互動回饋功能。
+支援智能環境檢測，自動選擇 Qt GUI 或 Web UI 介面。
 
-作者: Fábio Ferreira
-靈感來源: dotcursorrules.com
-增強功能: 圖片支援和環境偵測
+主要功能：
+- 環境檢測（本地/遠端）
+- 介面選擇（GUI/Web UI）
+- 圖片處理和 MCP 整合
+- 回饋結果標準化
+
+作者: Fábio Ferreira (原作者)
+增強: Minidoracat (Web UI, 圖片支援, 環境檢測)
 """
 
 import os
@@ -25,6 +30,12 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.types import Image as MCPImage
 from mcp.types import TextContent
 from pydantic import Field
+
+# 導入多語系支援
+from .i18n import get_i18n_manager
+
+# 導入統一的調試功能
+from .debug import server_debug_log as debug_log
 
 # ===== 編碼初始化 =====
 def init_encoding():
@@ -90,29 +101,6 @@ mcp = FastMCP(SERVER_NAME, version=__version__)
 
 
 # ===== 工具函數 =====
-def debug_log(message: str) -> None:
-    """輸出調試訊息到標準錯誤，避免污染標準輸出"""
-    # 只在啟用調試模式時才輸出，避免干擾 MCP 通信
-    if not os.getenv("MCP_DEBUG", "").lower() in ("true", "1", "yes", "on"):
-        return
-        
-    try:
-        # 確保消息是字符串類型
-        if not isinstance(message, str):
-            message = str(message)
-        
-        # 安全地輸出到 stderr，處理編碼問題
-        try:
-            print(f"[DEBUG] {message}", file=sys.stderr, flush=True)
-        except UnicodeEncodeError:
-            # 如果遇到編碼問題，使用 ASCII 安全模式
-            safe_message = message.encode('ascii', errors='replace').decode('ascii')
-            print(f"[DEBUG] {safe_message}", file=sys.stderr, flush=True)
-    except Exception:
-        # 最後的備用方案：靜默失敗，不影響主程序
-        pass
-
-
 def is_remote_environment() -> bool:
     """
     檢測是否在遠端環境中運行

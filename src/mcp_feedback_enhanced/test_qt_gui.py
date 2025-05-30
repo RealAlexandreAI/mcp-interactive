@@ -1,17 +1,45 @@
 #!/usr/bin/env python3
-# Test script for Qt GUI functionality
-import os
-import sys
-from pathlib import Path
+# -*- coding: utf-8 -*-
+"""
+Qt GUI 測試模組
+===============
 
-# 添加項目路徑到 Python 路徑
-sys.path.insert(0, str(Path(__file__).parent))
+用於測試 Interactive Feedback MCP 的 Qt GUI 功能。
+包含完整的 GUI 功能測試，支援持久化模式。
+
+功能測試：
+- Qt GUI 界面啟動
+- 多語言支援
+- 圖片上傳功能
+- 回饋提交功能
+- 快捷鍵功能
+
+使用方法：
+    python -m mcp_feedback_enhanced.test_qt_gui [--persistent]
+
+作者: Minidoracat
+"""
+
+import sys
+import os
+from typing import Optional, Dict, Any
+
+# 添加專案根目錄到 Python 路徑
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from .debug import debug_log
+
+# 嘗試導入 Qt GUI 模組
+try:
+    from .feedback_ui import feedback_ui
+    QT_GUI_AVAILABLE = True
+except ImportError as e:
+    debug_log(f"⚠️  無法導入 Qt GUI 模組: {e}")
+    QT_GUI_AVAILABLE = False
 
 def test_qt_gui():
     """測試 Qt GUI 功能"""
     try:
-        from .feedback_ui import feedback_ui
-        
         # 測試參數
         project_directory = os.getcwd()
         prompt = """🎯 圖片預覽和視窗調整測試
@@ -35,54 +63,54 @@ def test_qt_gui():
 
 請測試這些功能並提供回饋！"""
         
-        print("🚀 啟動 Qt GUI 測試...")
-        print("📝 測試項目:")
-        print("   - 圖片預覽功能")
-        print("   - X刪除按鈕")
-        print("   - 視窗大小調整")
-        print("   - 分割器調整")
-        print()
+        debug_log("🚀 啟動 Qt GUI 測試...")
+        debug_log("📝 測試項目:")
+        debug_log("   - 圖片預覽功能")
+        debug_log("   - X刪除按鈕")
+        debug_log("   - 視窗大小調整")
+        debug_log("   - 分割器調整")
+        debug_log()
         
         # 啟動 GUI
         result = feedback_ui(project_directory, prompt)
         
         if result:
-            print("\n✅ 測試完成！")
-            print(f"📄 收到回饋: {result.get('interactive_feedback', '無')}")
+            debug_log("\n✅ 測試完成！")
+            debug_log(f"📄 收到回饋: {result.get('interactive_feedback', '無')}")
             if result.get('images'):
-                print(f"🖼️  收到圖片: {len(result['images'])} 張")
+                debug_log(f"🖼️  收到圖片: {len(result['images'])} 張")
             if result.get('logs'):
-                print(f"📋 命令日誌: {len(result['logs'])} 行")
+                debug_log(f"📋 命令日誌: {len(result['logs'])} 行")
         else:
-            print("\n❌ 測試取消或無回饋")
+            debug_log("\n❌ 測試取消或無回饋")
             
     except ImportError as e:
-        print(f"❌ 導入錯誤: {e}")
-        print("請確保已安裝 PySide6: pip install PySide6")
+        debug_log(f"❌ 導入錯誤: {e}")
+        debug_log("請確保已安裝 PySide6: pip install PySide6")
         return False
     except Exception as e:
-        print(f"❌ 測試錯誤: {e}")
+        debug_log(f"❌ 測試錯誤: {e}")
         return False
     
     return True
 
 if __name__ == "__main__":
-    print("🧪 Interactive Feedback MCP - Qt GUI 測試")
-    print("=" * 50)
+    debug_log("🧪 Interactive Feedback MCP - Qt GUI 測試")
+    debug_log("=" * 50)
     
     # 檢查環境
     try:
         from PySide6.QtWidgets import QApplication
-        print("✅ PySide6 已安裝")
+        debug_log("✅ PySide6 已安裝")
     except ImportError:
-        print("❌ PySide6 未安裝，請執行: pip install PySide6")
+        debug_log("❌ PySide6 未安裝，請執行: pip install PySide6")
         sys.exit(1)
     
     # 運行測試
     success = test_qt_gui()
     
     if success:
-        print("\n🎉 測試程序運行完成")
+        debug_log("\n🎉 測試程序運行完成")
     else:
-        print("\n💥 測試程序運行失敗")
+        debug_log("\n💥 測試程序運行失敗")
         sys.exit(1) 

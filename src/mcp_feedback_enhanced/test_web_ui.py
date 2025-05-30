@@ -1,12 +1,44 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-Test script for Interactive Feedback MCP Web UI
+Web UI 測試模組
+===============
+
+用於測試 Interactive Feedback MCP 的 Web UI 功能。
+包含完整的 Web UI 功能測試，支援持久化模式。
+
+功能測試：
+- Web UI 服務器啟動
+- WebSocket 通訊
+- 回饋提交功能
+- 圖片上傳功能
+- 命令執行功能
+
+使用方法：
+    python -m mcp_feedback_enhanced.test_web_ui [--persistent]
+
+作者: Minidoracat
 """
-import sys
-import threading
+
+import asyncio
+import webbrowser
 import time
-import socket
-from pathlib import Path
+import sys
+import os
+from typing import Dict, Any, Optional
+
+# 添加專案根目錄到 Python 路徑
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from .debug import debug_log
+
+# 嘗試導入 Web UI 模組
+try:
+    from .web_ui import get_web_ui_manager, launch_web_feedback_ui
+    WEB_UI_AVAILABLE = True
+except ImportError as e:
+    debug_log(f"⚠️  無法導入 Web UI 模組: {e}")
+    WEB_UI_AVAILABLE = False
 
 def find_free_port():
     """Find a free port to use for testing"""
@@ -19,44 +51,44 @@ def find_free_port():
 def test_web_ui(keep_running=False):
     """Test the Web UI functionality"""
     
-    print("🧪 測試 Interactive Feedback MCP Web UI")
-    print("=" * 50)
+    debug_log("🧪 測試 Interactive Feedback MCP Web UI")
+    debug_log("=" * 50)
     
     # Test import
     try:
         from .web_ui import WebUIManager, launch_web_feedback_ui
-        print("✅ Web UI 模組匯入成功")
+        debug_log("✅ Web UI 模組匯入成功")
     except ImportError as e:
-        print(f"❌ Web UI 模組匯入失敗: {e}")
+        debug_log(f"❌ Web UI 模組匯入失敗: {e}")
         return False, None
     
     # Find free port
     try:
         free_port = find_free_port()
-        print(f"🔍 找到可用端口: {free_port}")
+        debug_log(f"🔍 找到可用端口: {free_port}")
     except Exception as e:
-        print(f"❌ 尋找可用端口失敗: {e}")
+        debug_log(f"❌ 尋找可用端口失敗: {e}")
         return False, None
     
     # Test manager creation
     try:
         manager = WebUIManager(port=free_port)
-        print("✅ WebUIManager 創建成功")
+        debug_log("✅ WebUIManager 創建成功")
     except Exception as e:
-        print(f"❌ WebUIManager 創建失敗: {e}")
+        debug_log(f"❌ WebUIManager 創建失敗: {e}")
         return False, None
     
     # Test server start (with timeout)
     server_started = False
     try:
-        print("🚀 啟動 Web 服務器...")
+        debug_log("🚀 啟動 Web 服務器...")
         
         def start_server():
             try:
                 manager.start_server()
                 return True
             except Exception as e:
-                print(f"服務器啟動錯誤: {e}")
+                debug_log(f"服務器啟動錯誤: {e}")
                 return False
         
         # Start server in thread
@@ -73,17 +105,17 @@ def test_web_ui(keep_running=False):
             result = s.connect_ex((manager.host, manager.port))
             if result == 0:
                 server_started = True
-                print("✅ Web 服務器啟動成功")
-                print(f"🌐 服務器運行在: http://{manager.host}:{manager.port}")
+                debug_log("✅ Web 服務器啟動成功")
+                debug_log(f"🌐 服務器運行在: http://{manager.host}:{manager.port}")
             else:
-                print(f"❌ 無法連接到服務器端口 {manager.port}")
+                debug_log(f"❌ 無法連接到服務器端口 {manager.port}")
                 
     except Exception as e:
-        print(f"❌ Web 服務器啟動失敗: {e}")
+        debug_log(f"❌ Web 服務器啟動失敗: {e}")
         return False, None
     
     if not server_started:
-        print("❌ 服務器未能正常啟動")
+        debug_log("❌ 服務器未能正常啟動")
         return False, None
     
     # Test session creation
@@ -97,26 +129,26 @@ def test_web_ui(keep_running=False):
             'session_id': session_id,
             'url': f"http://{manager.host}:{manager.port}/session/{session_id}"
         }
-        print(f"✅ 測試會話創建成功 (ID: {session_id[:8]}...)")
-        print(f"🔗 測試 URL: {session_info['url']}")
+        debug_log(f"✅ 測試會話創建成功 (ID: {session_id[:8]}...)")
+        debug_log(f"🔗 測試 URL: {session_info['url']}")
     except Exception as e:
-        print(f"❌ 會話創建失敗: {e}")
+        debug_log(f"❌ 會話創建失敗: {e}")
         return False, None
     
-    print("\n" + "=" * 50)
-    print("🎉 所有測試通過！Web UI 準備就緒")
-    print("📝 注意事項:")
-    print("  - Web UI 會在 SSH remote 環境下自動啟用")
-    print("  - 本地環境會繼續使用 Qt GUI")
-    print("  - 支援即時命令執行和 WebSocket 通訊")
-    print("  - 提供現代化的深色主題界面")
+    debug_log("\n" + "=" * 50)
+    debug_log("🎉 所有測試通過！Web UI 準備就緒")
+    debug_log("📝 注意事項:")
+    debug_log("  - Web UI 會在 SSH remote 環境下自動啟用")
+    debug_log("  - 本地環境會繼續使用 Qt GUI")
+    debug_log("  - 支援即時命令執行和 WebSocket 通訊")
+    debug_log("  - 提供現代化的深色主題界面")
     
     return True, session_info
 
 def test_environment_detection():
     """Test environment detection logic"""
-    print("🔍 測試環境檢測功能")
-    print("-" * 30)
+    debug_log("🔍 測試環境檢測功能")
+    debug_log("-" * 30)
     
     try:
         from .server import is_remote_environment, can_use_gui
@@ -124,47 +156,47 @@ def test_environment_detection():
         remote_detected = is_remote_environment()
         gui_available = can_use_gui()
         
-        print(f"遠端環境檢測: {'是' if remote_detected else '否'}")
-        print(f"GUI 可用性: {'是' if gui_available else '否'}")
+        debug_log(f"遠端環境檢測: {'是' if remote_detected else '否'}")
+        debug_log(f"GUI 可用性: {'是' if gui_available else '否'}")
         
         if remote_detected:
-            print("✅ 將使用 Web UI (適合遠端開發環境)")
+            debug_log("✅ 將使用 Web UI (適合遠端開發環境)")
         else:
-            print("✅ 將使用 Qt GUI (本地環境)")
+            debug_log("✅ 將使用 Qt GUI (本地環境)")
             
         return True
         
     except Exception as e:
-        print(f"❌ 環境檢測失敗: {e}")
+        debug_log(f"❌ 環境檢測失敗: {e}")
         return False
 
 def test_mcp_integration():
     """Test MCP server integration"""
-    print("\n🔧 測試 MCP 整合功能")
-    print("-" * 30)
+    debug_log("\n🔧 測試 MCP 整合功能")
+    debug_log("-" * 30)
     
     try:
         from .server import interactive_feedback
-        print("✅ MCP 工具函數可用")
+        debug_log("✅ MCP 工具函數可用")
         
         # Test timeout parameter
-        print("✅ 支援 timeout 參數")
+        debug_log("✅ 支援 timeout 參數")
         
         # Test force_web_ui parameter
-        print("✅ 支援 force_web_ui 參數")
+        debug_log("✅ 支援 force_web_ui 參數")
         
         # Test would require actual MCP call, so just verify import
-        print("✅ 準備接受來自 AI 助手的調用")
+        debug_log("✅ 準備接受來自 AI 助手的調用")
         return True
         
     except Exception as e:
-        print(f"❌ MCP 整合測試失敗: {e}")
+        debug_log(f"❌ MCP 整合測試失敗: {e}")
         return False
 
 def test_new_parameters():
     """Test new timeout and force_web_ui parameters"""
-    print("\n🆕 測試新增參數功能")
-    print("-" * 30)
+    debug_log("\n🆕 測試新增參數功能")
+    debug_log("-" * 30)
     
     try:
         from .server import interactive_feedback
@@ -176,30 +208,30 @@ def test_new_parameters():
         # 檢查 timeout 參數
         if 'timeout' in sig.parameters:
             timeout_param = sig.parameters['timeout']
-            print(f"✅ timeout 參數存在，預設值: {timeout_param.default}")
+            debug_log(f"✅ timeout 參數存在，預設值: {timeout_param.default}")
         else:
-            print("❌ timeout 參數不存在")
+            debug_log("❌ timeout 參數不存在")
             return False
         
         # 檢查 force_web_ui 參數
         if 'force_web_ui' in sig.parameters:
             force_web_ui_param = sig.parameters['force_web_ui']
-            print(f"✅ force_web_ui 參數存在，預設值: {force_web_ui_param.default}")
+            debug_log(f"✅ force_web_ui 參數存在，預設值: {force_web_ui_param.default}")
         else:
-            print("❌ force_web_ui 參數不存在")
+            debug_log("❌ force_web_ui 參數不存在")
             return False
         
-        print("✅ 所有新參數功能正常")
+        debug_log("✅ 所有新參數功能正常")
         return True
         
     except Exception as e:
-        print(f"❌ 新參數測試失敗: {e}")
+        debug_log(f"❌ 新參數測試失敗: {e}")
         return False
 
 def test_force_web_ui_mode():
     """Test force web UI mode"""
-    print("\n🌐 測試強制 Web UI 模式")
-    print("-" * 30)
+    debug_log("\n🌐 測試強制 Web UI 模式")
+    debug_log("-" * 30)
     
     try:
         from .server import interactive_feedback, is_remote_environment, can_use_gui
@@ -208,65 +240,65 @@ def test_force_web_ui_mode():
         is_remote = is_remote_environment()
         gui_available = can_use_gui()
         
-        print(f"當前環境 - 遠端: {is_remote}, GUI 可用: {gui_available}")
+        debug_log(f"當前環境 - 遠端: {is_remote}, GUI 可用: {gui_available}")
         
         if not is_remote and gui_available:
-            print("✅ 在本地 GUI 環境中可以使用 force_web_ui=True 強制使用 Web UI")
-            print("💡 這對於測試 Web UI 功能非常有用")
+            debug_log("✅ 在本地 GUI 環境中可以使用 force_web_ui=True 強制使用 Web UI")
+            debug_log("💡 這對於測試 Web UI 功能非常有用")
         else:
-            print("ℹ️  當前環境會自動使用 Web UI")
+            debug_log("ℹ️  當前環境會自動使用 Web UI")
             
         return True
         
     except Exception as e:
-        print(f"❌ 強制 Web UI 測試失敗: {e}")
+        debug_log(f"❌ 強制 Web UI 測試失敗: {e}")
         return False
 
 def interactive_demo(session_info):
     """Run interactive demo with the Web UI"""
-    print(f"\n🌐 Web UI 持久化運行模式")
-    print("=" * 50)
-    print(f"服務器地址: http://{session_info['manager'].host}:{session_info['manager'].port}")
-    print(f"測試會話: {session_info['url']}")
-    print("\n📖 操作指南:")
-    print("  1. 在瀏覽器中開啟上面的測試 URL")
-    print("  2. 嘗試以下功能:")
-    print("     - 點擊 '顯示命令區塊' 按鈕")
-    print("     - 輸入命令如 'echo Hello World' 並執行")
-    print("     - 在回饋區域輸入文字")
-    print("     - 使用 Ctrl+Enter 提交回饋")
-    print("  3. 測試 WebSocket 即時通訊功能")
-    print("\n⌨️  控制選項:")
-    print("  - 按 Enter 繼續運行")
-    print("  - 輸入 'q' 或 'quit' 停止服務器")
+    debug_log(f"\n🌐 Web UI 持久化運行模式")
+    debug_log("=" * 50)
+    debug_log(f"服務器地址: http://{session_info['manager'].host}:{session_info['manager'].port}")
+    debug_log(f"測試會話: {session_info['url']}")
+    debug_log("\n📖 操作指南:")
+    debug_log("  1. 在瀏覽器中開啟上面的測試 URL")
+    debug_log("  2. 嘗試以下功能:")
+    debug_log("     - 點擊 '顯示命令區塊' 按鈕")
+    debug_log("     - 輸入命令如 'echo Hello World' 並執行")
+    debug_log("     - 在回饋區域輸入文字")
+    debug_log("     - 使用 Ctrl+Enter 提交回饋")
+    debug_log("  3. 測試 WebSocket 即時通訊功能")
+    debug_log("\n⌨️  控制選項:")
+    debug_log("  - 按 Enter 繼續運行")
+    debug_log("  - 輸入 'q' 或 'quit' 停止服務器")
     
     while True:
         try:
             user_input = input("\n>>> ").strip().lower()
             if user_input in ['q', 'quit', 'exit']:
-                print("🛑 停止服務器...")
+                debug_log("🛑 停止服務器...")
                 break
             elif user_input == '':
-                print(f"🔄 服務器持續運行在: {session_info['url']}")
-                print("   瀏覽器應該仍可正常訪問")
+                debug_log(f"🔄 服務器持續運行在: {session_info['url']}")
+                debug_log("   瀏覽器應該仍可正常訪問")
             else:
-                print("❓ 未知命令。按 Enter 繼續運行，或輸入 'q' 退出")
+                debug_log("❓ 未知命令。按 Enter 繼續運行，或輸入 'q' 退出")
         except KeyboardInterrupt:
-            print("\n🛑 收到中斷信號，停止服務器...")
+            debug_log("\n🛑 收到中斷信號，停止服務器...")
             break
     
-    print("✅ Web UI 測試完成")
+    debug_log("✅ Web UI 測試完成")
 
 if __name__ == "__main__":
-    print("Interactive Feedback MCP - Web UI 測試")
-    print("=" * 60)
+    debug_log("Interactive Feedback MCP - Web UI 測試")
+    debug_log("=" * 60)
     
     # Check if user wants persistent mode
     persistent_mode = len(sys.argv) > 1 and sys.argv[1] in ['--persistent', '-p', '--demo']
     
     if not persistent_mode:
-        print("💡 提示: 使用 'python test_web_ui.py --persistent' 啟動持久化測試模式")
-        print()
+        debug_log("💡 提示: 使用 'python test_web_ui.py --persistent' 啟動持久化測試模式")
+        debug_log()
     
     # Test environment detection
     env_test = test_environment_detection()
@@ -283,30 +315,30 @@ if __name__ == "__main__":
     # Test Web UI
     web_test, session_info = test_web_ui()
     
-    print("\n" + "=" * 60)
+    debug_log("\n" + "=" * 60)
     if env_test and params_test and force_test and mcp_test and web_test:
-        print("🎊 所有測試完成！準備使用 Interactive Feedback MCP")
-        print("\n📖 使用方法:")
-        print("  1. 在 Cursor/Cline 中配置此 MCP 服務器")
-        print("  2. AI 助手會自動調用 interactive_feedback 工具")
-        print("  3. 根據環境自動選擇 GUI 或 Web UI")
-        print("  4. 提供回饋後繼續工作流程")
+        debug_log("🎊 所有測試完成！準備使用 Interactive Feedback MCP")
+        debug_log("\n📖 使用方法:")
+        debug_log("  1. 在 Cursor/Cline 中配置此 MCP 服務器")
+        debug_log("  2. AI 助手會自動調用 interactive_feedback 工具")
+        debug_log("  3. 根據環境自動選擇 GUI 或 Web UI")
+        debug_log("  4. 提供回饋後繼續工作流程")
         
-        print("\n✨ Web UI 新功能:")
-        print("  - 支援 SSH remote 開發環境")
-        print("  - 現代化深色主題界面")
-        print("  - WebSocket 即時通訊")
-        print("  - 自動瀏覽器啟動")
-        print("  - 命令執行和即時輸出")
+        debug_log("\n✨ Web UI 新功能:")
+        debug_log("  - 支援 SSH remote 開發環境")
+        debug_log("  - 現代化深色主題界面")
+        debug_log("  - WebSocket 即時通訊")
+        debug_log("  - 自動瀏覽器啟動")
+        debug_log("  - 命令執行和即時輸出")
         
         if persistent_mode and session_info:
             interactive_demo(session_info)
         else:
-            print("\n✅ 測試完成 - 系統已準備就緒！")
+            debug_log("\n✅ 測試完成 - 系統已準備就緒！")
             if session_info:
-                print(f"💡 您可以現在就在瀏覽器中測試: {session_info['url']}")
-                print("   (服務器會繼續運行一小段時間)")
+                debug_log(f"💡 您可以現在就在瀏覽器中測試: {session_info['url']}")
+                debug_log("   (服務器會繼續運行一小段時間)")
                 time.sleep(10)  # Keep running for a short time for immediate testing
     else:
-        print("❌ 部分測試失敗，請檢查錯誤信息")
+        debug_log("❌ 部分測試失敗，請檢查錯誤信息")
         sys.exit(1) 

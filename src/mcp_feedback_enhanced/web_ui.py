@@ -33,6 +33,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import uvicorn
 
+from .debug import web_debug_log as debug_log
+
 # ===== 常數定義 =====
 MAX_IMAGE_SIZE = 1 * 1024 * 1024  # 1MB 圖片大小限制
 SUPPORTED_IMAGE_TYPES = {'image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp', 'image/webp'}
@@ -518,16 +520,3 @@ if __name__ == "__main__":
             debug_log("\n👋 Web UI 已停止")
     
     asyncio.run(main()) 
-
-# === 工具函數 ===
-def debug_log(message: str) -> None:
-    """輸出調試訊息到標準錯誤，避免污染標準輸出"""
-    # 只在啟用調試模式時才輸出，避免干擾 MCP 通信
-    if not os.getenv("MCP_DEBUG", "").lower() in ("true", "1", "yes", "on"):
-        return
-        
-    try:
-        print(f"[WEB_UI] {message}", file=sys.stderr, flush=True)
-    except Exception:
-        # 靜默失敗，不影響主程序
-        pass 

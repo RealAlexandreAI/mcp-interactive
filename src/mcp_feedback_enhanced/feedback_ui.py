@@ -35,28 +35,7 @@ from PySide6.QtGui import QFont, QPixmap, QDragEnterEvent, QDropEvent, QKeySeque
 # 導入多語系支援
 from .i18n import t, get_i18n_manager
 
-# ===== 調試日誌函數 =====
-def debug_log(message: str) -> None:
-    """輸出調試訊息到標準錯誤，避免污染標準輸出"""
-    # 只在啟用調試模式時才輸出，避免干擾 MCP 通信
-    if not os.getenv("MCP_DEBUG", "").lower() in ("true", "1", "yes", "on"):
-        return
-        
-    try:
-        # 確保消息是字符串類型
-        if not isinstance(message, str):
-            message = str(message)
-        
-        # 安全地輸出到 stderr，處理編碼問題
-        try:
-            print(f"[GUI_DEBUG] {message}", file=sys.stderr, flush=True)
-        except UnicodeEncodeError:
-            # 如果遇到編碼問題，使用 ASCII 安全模式
-            safe_message = message.encode('ascii', errors='replace').decode('ascii')
-            print(f"[GUI_DEBUG] {safe_message}", file=sys.stderr, flush=True)
-    except Exception:
-        # 最後的備用方案：靜默失敗，不影響主程序
-        pass
+from .debug import gui_debug_log as debug_log
 
 # ===== 型別定義 =====
 class FeedbackResult(TypedDict):
@@ -679,6 +658,9 @@ class FeedbackWindow(QMainWindow):
         
         # 操作按鈕
         self._create_action_buttons(layout)
+        
+        # 設置快捷鍵
+        self._setup_shortcuts()
     
     def _create_menu_bar(self) -> None:
         """創建菜單欄"""
@@ -942,6 +924,22 @@ class FeedbackWindow(QMainWindow):
         button_layout.addWidget(self.submit_button)
         
         layout.addLayout(button_layout)
+    
+    def _setup_shortcuts(self) -> None:
+        """設置快捷鍵"""
+        # Ctrl+Enter 提交回饋
+        submit_shortcut = QShortcut(QKeySequence("Ctrl+Return"), self)
+        submit_shortcut.activated.connect(self._submit_feedback)
+        
+        # Escape 取消
+        cancel_shortcut = QShortcut(QKeySequence("Esc"), self)
+        cancel_shortcut.activated.connect(self._cancel_feedback)
+        
+        # 更新提交按鈕的提示文字，顯示快捷鍵
+        if hasattr(self, 'submit_button'):
+            self.submit_button.setToolTip(f"{t('btn_submit_feedback')} (Ctrl+Enter)")
+        if hasattr(self, 'cancel_button'):
+            self.cancel_button.setToolTip(f"{t('btn_cancel')} (Esc)")
     
     def _apply_dark_style(self) -> None:
         """應用深色主題"""

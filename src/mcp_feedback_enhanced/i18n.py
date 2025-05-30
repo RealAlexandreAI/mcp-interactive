@@ -23,6 +23,8 @@ import json
 from typing import Dict, Any, Optional, Union
 from pathlib import Path
 
+from .debug import i18n_debug_log as debug_log
+
 
 class I18nManager:
     """國際化管理器 - 新架構版本"""
@@ -60,13 +62,13 @@ class I18nManager:
                     with open(translation_file, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         self._translations[lang_code] = data
-                        print(f"[I18N] 成功載入語言 {lang_code}: {data.get('meta', {}).get('displayName', lang_code)}")
+                        debug_log(f"成功載入語言 {lang_code}: {data.get('meta', {}).get('displayName', lang_code)}")
                 except Exception as e:
-                    print(f"[I18N] 載入語言檔案失敗 {lang_code}: {e}")
+                    debug_log(f"載入語言檔案失敗 {lang_code}: {e}")
                     # 如果載入失敗，使用空的翻譯
                     self._translations[lang_code] = {}
             else:
-                print(f"[I18N] 找不到語言檔案: {translation_file}")
+                debug_log(f"找不到語言檔案: {translation_file}")
                 self._translations[lang_code] = {}
     
     def _detect_language(self) -> str:
@@ -312,10 +314,10 @@ class I18nManager:
                 if language_code not in self._supported_languages:
                     self._supported_languages.append(language_code)
                 
-                print(f"[I18N] 成功添加語言 {language_code}: {data.get('meta', {}).get('displayName', language_code)}")
+                debug_log(f"成功添加語言 {language_code}: {data.get('meta', {}).get('displayName', language_code)}")
                 return True
         except Exception as e:
-            print(f"[I18N] 添加語言失敗 {language_code}: {e}")
+            debug_log(f"添加語言失敗 {language_code}: {e}")
             return False
 
 

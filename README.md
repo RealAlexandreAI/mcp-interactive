@@ -218,6 +218,11 @@ AI 助手會如此調用 `interactive_feedback` 工具：
 - `"false"`, `"0"`, `"no"`, `"off"` → 使用預設邏輯
 - 未設定 → 根據環境自動檢測
 
+**`INCLUDE_BASE64_DETAIL` 環境變數**：
+- 設定為 `"true"`, `"1"`, `"yes"`, `"on"` 時在回饋中包含完整的圖片 Base64 數據
+- 用於提高與不同 AI 助手的兼容性
+- 預設為 `false`，只顯示 Base64 預覽信息
+
 ## 🔄 工作流程
 
 1. **AI 助手調用** - AI 完成任務後調用 `interactive_feedback`

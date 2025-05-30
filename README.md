@@ -4,18 +4,29 @@
 **分支版本：** [Minidoracat](https://github.com/Minidoracat)  
 **相關資源：** [dotcursorrules.com](https://dotcursorrules.com/) 提供更多 AI 開發增強工具
 
-這是一個簡單的 [MCP 伺服器](https://modelcontextprotocol.io/)，用於在 AI 輔助開發工具（如 [Cursor](https://www.cursor.com)）中實現人在回路（human-in-the-loop）的工作流程。該伺服器允許您執行命令、查看輸出並直接向 AI 提供文字回饋。同時支援 [Cline](https://cline.bot) 和 [Windsurf](https://windsurf.com)。
+這是一個簡單的 [MCP 伺服器](https://modelcontextprotocol.io/)，用於在 AI 輔助開發工具（如 [Cursor](https://www.cursor.com)）中實現人在回路（human-in-the-loop）的工作流程。該伺服器允許您執行命令、查看輸出並直接向 AI 提供文字回饋和圖片。同時支援 [Cline](https://cline.bot) 和 [Windsurf](https://windsurf.com)。
 
-## ✨ 新功能：Web UI 支援
+## ✨ 新功能特色
 
-**🌐 支援 SSH Remote 開發環境**  
-此分支版本新增了 Web UI 功能，完美解決了 SSH remote 開發環境中無法使用 GUI 的問題：
-
-- **自動環境檢測**：系統會自動檢測運行環境
+### 🌐 完整的 SSH Remote 支援
+- **自動環境檢測**：智能檢測運行環境並選擇適當介面
 - **本地環境**：使用原有的 Qt GUI 介面
 - **SSH Remote 環境**：自動切換到現代化 Web UI
 - **即時通訊**：基於 WebSocket 的即時命令輸出和回饋
 - **深色主題**：提供現代化的深色主題界面
+
+### 🖼️ 圖片上傳支援
+- **多格式支援**：PNG、JPG、JPEG、GIF、BMP、WebP
+- **拖拽上傳**：支援拖拽文件到介面
+- **剪貼板支援**：直接從剪貼板粘貼圖片
+- **自動壓縮**：智能壓縮大圖片以符合 1MB 限制
+- **MCP 整合**：圖片自動轉換為 MCP Image 對象
+
+### 🛡️ 穩定性改善
+- **編碼修復**：完全解決中文字符亂碼問題
+- **調試控制**：可控制的調試輸出，避免 JSON 解析錯誤
+- **錯誤處理**：強化錯誤處理，確保程序穩定運行
+- **輸出隔離**：嚴格隔離調試輸出與 MCP 通信
 
 ## 🎯 為什麼使用這個工具？
 
@@ -57,6 +68,11 @@
 - 自動瀏覽器啟動和會話管理
 - 深色主題和響應式設計
 
+### 調試模式控制
+- **生產模式**：默認關閉所有調試輸出，確保與 MCP 客戶端完美兼容
+- **調試模式**：設置 `MCP_DEBUG=true` 啟用詳細調試信息
+- **輸出隔離**：所有調試信息輸出到 stderr，不干擾 MCP 通信
+
 ## 🚀 安裝說明
 
 ### 方法 1：uvx 安裝（推薦）
@@ -74,14 +90,14 @@
 
 2. **測試安裝**
    ```bash
-   # 查看版本信息
-   uvx mcp-feedback-enhanced version
+   # 查看版本信息（推薦使用 @latest 確保最新版本）
+   uvx mcp-feedback-enhanced@latest version
 
    # 執行測試
-   uvx mcp-feedback-enhanced test
+   uvx mcp-feedback-enhanced@latest test
 
    # 持久化測試模式（可在瀏覽器中實際測試）
-   uvx mcp-feedback-enhanced test --persistent
+   uvx mcp-feedback-enhanced@latest test --persistent
    ```
 
 ### 方法 2：從源碼安裝（開發者）
@@ -125,7 +141,7 @@
     "mcp-feedback-enhanced": {
       "command": "uvx",
       "args": [
-        "mcp-feedback-enhanced"
+        "mcp-feedback-enhanced@latest"
       ],
       "timeout": 600,
       "autoApprove": [
@@ -155,7 +171,8 @@
       ],
       "timeout": 600,
       "env": {
-        "FORCE_WEB": "true"
+        "FORCE_WEB": "true",
+        "MCP_DEBUG": "false"
       },
       "autoApprove": [
         "interactive_feedback"
@@ -176,21 +193,24 @@
 ### 使用 uvx 測試
 ```bash
 # 完整功能測試（推薦）
-uvx mcp-feedback-enhanced test
+uvx mcp-feedback-enhanced@latest test
 
 # Qt GUI 專門測試
-uvx mcp-feedback-enhanced test --gui
+uvx mcp-feedback-enhanced@latest test --gui
 
 # Web UI 專門測試
-uvx mcp-feedback-enhanced test --web
+uvx mcp-feedback-enhanced@latest test --web
 
 # 持久化測試模式（測試完不關閉，可互動測試）
-uvx mcp-feedback-enhanced test --persistent
-uvx mcp-feedback-enhanced test --gui --persistent
-uvx mcp-feedback-enhanced test --web --persistent
+uvx mcp-feedback-enhanced@latest test --persistent
+uvx mcp-feedback-enhanced@latest test --gui --persistent
+uvx mcp-feedback-enhanced@latest test --web --persistent
 
 # 查看版本
-uvx mcp-feedback-enhanced version
+uvx mcp-feedback-enhanced@latest version
+
+# 啟用調試模式測試
+MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 ```
 
 ### 從源碼測試
@@ -206,6 +226,9 @@ uv run python -m mcp_feedback_enhanced test --web
 
 # 持久化測試模式
 uv run python -m mcp_feedback_enhanced test --persistent
+
+# 啟用調試模式
+MCP_DEBUG=true uv run python -m mcp_feedback_enhanced test
 ```
 
 ### 開發模式
@@ -224,8 +247,8 @@ uv run fastmcp dev src/mcp_feedback_enhanced/server.py
 ## 🌟 功能特色
 
 ### 🖥️ 雙介面支援
-- **Qt GUI**：適用於本地開發環境
-- **Web UI**：適用於 SSH remote 開發環境
+- **Qt GUI**：適用於本地開發環境，提供原生體驗
+- **Web UI**：適用於 SSH remote 開發環境，現代化界面
 
 ### 🔍 智慧環境檢測
 - 自動檢測 SSH 連線環境變數
@@ -245,6 +268,43 @@ uv run fastmcp dev src/mcp_feedback_enhanced/server.py
 - WebSocket 即時通訊
 - 載入動畫和視覺回饋
 
+### 🖼️ 圖片處理功能
+- 支援多種圖片格式（PNG、JPG、JPEG、GIF、BMP、WebP）
+- 智能文件大小檢測和壓縮
+- 拖拽上傳和剪貼板支援
+- 自動轉換為 MCP Image 對象
+- Base64 編碼和預覽
+
+## 🛠️ 環境變數配置
+
+### 核心環境變數
+
+| 環境變數 | 用途 | 可用值 | 默認值 |
+|---------|------|--------|--------|
+| `FORCE_WEB` | 強制使用 Web UI | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` | `false` |
+| `MCP_DEBUG` | 啟用調試模式 | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` | `false` |
+| `INCLUDE_BASE64_DETAIL` | 圖片回饋包含完整 Base64 | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` | `false` |
+
+### 使用範例
+
+**在 MCP 配置中設定**：
+```json
+"env": {
+  "FORCE_WEB": "true",           // 強制使用 Web UI
+  "MCP_DEBUG": "false",          // 關閉調試輸出（推薦生產環境）
+  "INCLUDE_BASE64_DETAIL": "true" // 包含完整圖片 Base64 數據
+}
+```
+
+**在命令行中設定**：
+```bash
+# 啟用調試模式測試
+MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
+
+# 強制使用 Web UI
+FORCE_WEB=true uvx mcp-feedback-enhanced@latest test
+```
+
 ## 📖 使用範例
 
 ### 1. **推薦 MCP 配置（uvx）**
@@ -256,9 +316,12 @@ uv run fastmcp dev src/mcp_feedback_enhanced/server.py
     "mcp-feedback-enhanced": {
       "command": "uvx",
       "args": [
-        "mcp-feedback-enhanced"
+        "mcp-feedback-enhanced@latest"
       ],
       "timeout": 600,
+      "env": {
+        "MCP_DEBUG": "false"
+      },
       "autoApprove": [
         "interactive_feedback"
       ]
@@ -285,7 +348,9 @@ uv run fastmcp dev src/mcp_feedback_enhanced/server.py
       ],
       "timeout": 600,
       "env": {
-        "FORCE_WEB": "true"
+        "FORCE_WEB": "true",
+        "MCP_DEBUG": "false",
+        "INCLUDE_BASE64_DETAIL": "true"
       },
       "autoApprove": [
         "interactive_feedback"
@@ -306,41 +371,30 @@ AI 助手會如此調用 `interactive_feedback` 工具：
   <arguments>
     {
       "project_directory": "/path/to/your/project",
-      "summary": "我已經實現了您請求的更改並重構了主模組。"
+      "summary": "我已經實現了您請求的更改並重構了主模組。請查看結果並提供回饋。"
     }
   </arguments>
 </use_mcp_tool>
 ```
-
-### 4. **環境變數控制範例**
-
-**在 MCP 配置中設定**：
-```json
-"env": {
-  "FORCE_WEB": "true"    // 強制使用 Web UI
-}
-```
-
-**支援的環境變數值**：
-- `"true"`, `"1"`, `"yes"`, `"on"` → 強制使用 Web UI  
-- `"false"`, `"0"`, `"no"`, `"off"` → 使用預設邏輯
-- 未設定 → 根據環境自動檢測
-
-**`INCLUDE_BASE64_DETAIL` 環境變數**：
-- 設定為 `"true"`, `"1"`, `"yes"`, `"on"` 時在回饋中包含完整的圖片 Base64 數據
-- 用於提高與不同 AI 助手的兼容性
-- 預設為 `false`，只顯示 Base64 預覽信息
 
 ## 🔄 工作流程
 
 1. **AI 助手調用** - AI 完成任務後調用 `interactive_feedback`
 2. **環境檢測** - 系統自動檢測運行環境
 3. **介面啟動** - 根據環境啟動 Qt GUI 或 Web UI
-4. **用戶互動** - 用戶可以執行命令、查看輸出、提供回饋
-5. **回饋傳遞** - 用戶回饋傳回給 AI 助手
+4. **用戶互動** - 用戶可以執行命令、查看輸出、提供文字回饋、上傳圖片
+5. **回饋傳遞** - 用戶回饋（包括圖片）傳回給 AI 助手
 6. **流程繼續** - AI 根據回饋繼續或結束任務
 
 ## 🆕 版本更新
+
+### v2.0.3 - 穩定性改善
+- 🛡️ **完全修復中文字符編碼問題**：支援完美的中文顯示
+- 🔧 **解決 JSON 解析錯誤**：修復 MCP 客戶端的 "Unexpected token" 錯誤
+- 🎛️ **可控調試模式**：透過 `MCP_DEBUG` 環境變數控制調試輸出
+- 🖼️ **強化圖片支援**：改善圖片處理和 Base64 編碼
+- 🚀 **輸出隔離**：嚴格分離調試輸出與 MCP 通信
+- 📦 **套件優化**：改善 uvx 安裝體驗和依賴管理
 
 ### v2.0 - Web UI 支援
 - ✅ 新增 Web UI 介面支援 SSH remote 開發
@@ -356,6 +410,30 @@ AI 助手會如此調用 `interactive_feedback` 工具：
 - ✅ MCP 協議支援
 - ✅ 多平台支援
 
+## 🐛 故障排除
+
+### 常見問題
+
+**Q: 出現 "Unexpected token 'D'" 錯誤**  
+A: 這通常是調試輸出干擾造成的。確保在生產環境中設置 `MCP_DEBUG=false` 或不設置該環境變數。
+
+**Q: 中文字符顯示為亂碼**  
+A: 已在 v2.0.3 中完全修復。如果仍有問題，請更新到最新版本：`uvx mcp-feedback-enhanced@latest`
+
+**Q: 圖片上傳失敗**  
+A: 檢查圖片大小是否超過 1MB 限制，並確保格式為支援的類型（PNG、JPG、JPEG、GIF、BMP、WebP）。
+
+**Q: Web UI 無法啟動**  
+A: 確保防火牆允許本地端口訪問，或嘗試設置 `FORCE_WEB=true` 環境變數。
+
+### 調試模式
+
+如需詳細調試信息，請啟用調試模式：
+```bash
+# 設置調試環境變數
+MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
+```
+
 ## 🙏 致謝與聯繫
 
 ### 原作者
@@ -363,7 +441,7 @@ AI 助手會如此調用 `interactive_feedback` 工具：
 如果您覺得 Interactive Feedback MCP 有用，最好的支持方式是關注原作者的 X 帳號。
 
 ### 分支維護者
-如有關於 Web UI 功能的問題或建議，歡迎在 [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues) 中提出。
+如有關於 Web UI 功能、圖片支援或其他問題，歡迎在 [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues) 中提出。
 
 ### 相關資源
 - [dotcursorrules.com](https://dotcursorrules.com/) - 更多 AI 輔助開發工作流程資源

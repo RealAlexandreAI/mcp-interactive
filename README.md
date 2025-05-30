@@ -463,8 +463,12 @@ MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 ### 分支維護者
 如有關於 Web UI 功能、圖片支援或其他問題，歡迎在 [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues) 中提出。
 
+### 社群支援
+加入我們的 Discord 社群獲得即時協助和討論：
+**Discord 社群：** [https://discord.gg/Gur2V67](https://discord.gg/Gur2V67)  
+有任何問題都可以到社群中尋求幫助！
+
 ### 相關資源
-- [dotcursorrules.com](https://dotcursorrules.com/) - 更多 AI 輔助開發工作流程資源
 - [Model Context Protocol](https://modelcontextprotocol.io/) - MCP 官方文件
 
 ## 📄 授權條款

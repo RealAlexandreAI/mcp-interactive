@@ -96,11 +96,14 @@
       "command": "uv",
       "args": [
         "--directory",
-        "/path/to/your/interactive-feedback-mcp",
+        "G:/github/interactive-feedback-mcp",
         "run",
         "server.py"
       ],
       "timeout": 600,
+      "env": {
+        "FORCE_WEB": "true"
+      },
       "autoApprove": [
         "interactive_feedback"
       ]
@@ -158,6 +161,34 @@ uv run fastmcp dev server.py
 
 ## 📖 使用範例
 
+### 1. **MCP 配置範例**
+
+使用環境變數強制 Web UI：
+```json
+{
+  "mcpServers": {
+    "interactive-feedback-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "path/interactive-feedback-mcp",
+        "run",
+        "server.py"
+      ],
+      "timeout": 600,
+      "env": {
+        "FORCE_WEB": "true"
+      },
+      "autoApprove": [
+        "interactive_feedback"
+      ]
+    }
+  }
+}
+```
+
+### 2. **工具調用範例**
+
 AI 助手會如此調用 `interactive_feedback` 工具：
 
 ```xml
@@ -172,6 +203,20 @@ AI 助手會如此調用 `interactive_feedback` 工具：
   </arguments>
 </use_mcp_tool>
 ```
+
+### 3. **環境變數控制範例**
+
+**在 MCP 配置中設定**：
+```json
+"env": {
+  "FORCE_WEB": "true"    // 強制使用 Web UI
+}
+```
+
+**支援的環境變數值**：
+- `"true"`, `"1"`, `"yes"`, `"on"` → 強制使用 Web UI  
+- `"false"`, `"0"`, `"no"`, `"off"` → 使用預設邏輯
+- 未設定 → 根據環境自動檢測
 
 ## 🔄 工作流程
 

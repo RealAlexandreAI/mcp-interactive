@@ -19,6 +19,7 @@ import tempfile
 import asyncio
 import base64
 from typing import Annotated, List
+import io
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.types import Image as MCPImage
@@ -536,7 +537,55 @@ def main():
     debug_log(f"   建議介面: {'Web UI' if is_remote_environment() or not can_use_gui() else 'Qt GUI'}")
     debug_log("   等待來自 AI 助手的調用...")
     
-    mcp.run()
+    # Windows 特殊處理：設置 stdio 為二進制模式，避免編碼問題
+    if sys.platform == 'win32':
+        debug_log("偵測到 Windows 環境，設置 stdio 二進制模式")
+        try:
+            # 設置 stdin/stdout 為二進制模式，避免 Windows 下的編碼問題
+            import msvcrt
+            msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+            msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+            debug_log("Windows stdio 二進制模式設置成功")
+            
+            # 重新包裝 stdin/stdout 為 UTF-8 編碼的文本流
+            sys.stdin = io.TextIOWrapper(sys.stdin.detach(), encoding='utf-8', errors='replace')
+            sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8', errors='replace', newline='')
+            debug_log("Windows stdio UTF-8 包裝設置成功")
+            
+        except Exception as e:
+            debug_log(f"Windows stdio 設置失敗，使用預設模式: {e}")
+    else:
+        # 非 Windows 系統：確保使用 UTF-8 編碼
+        try:
+            if hasattr(sys.stdin, 'reconfigure'):
+                sys.stdin.reconfigure(encoding='utf-8', errors='replace')
+            if hasattr(sys.stdout, 'reconfigure'):
+                sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            debug_log("非 Windows 系統 UTF-8 編碼設置成功")
+        except Exception as e:
+            debug_log(f"UTF-8 編碼設置失敗: {e}")
+    
+    # 確保 stderr 使用 UTF-8 編碼（用於 debug 訊息）
+    if hasattr(sys.stderr, 'reconfigure'):
+        try:
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+            debug_log("stderr UTF-8 編碼設置成功")
+        except Exception as e:
+            debug_log(f"stderr 編碼設置失敗: {e}")
+    
+    # 強制 stdout 立即刷新，確保 JSON-RPC 消息及時發送
+    sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure') else None
+    
+    try:
+        mcp.run()
+    except KeyboardInterrupt:
+        debug_log("收到中斷信號，正常退出")
+        sys.exit(0)
+    except Exception as e:
+        debug_log(f"MCP 服務器啟動失敗: {e}")
+        import traceback
+        debug_log(f"詳細錯誤: {traceback.format_exc()}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

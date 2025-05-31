@@ -730,13 +730,10 @@
 
         // DOM 元素
         const elements = {
-            connectionStatus: document.getElementById('connectionStatus'),
-            statusText: document.getElementById('statusText'),
             feedbackTextarea: document.getElementById('feedbackText'),
             commandInput: document.getElementById('commandInput'),
             commandOutput: document.getElementById('commandOutput'),
             runCommandBtn: document.getElementById('runBtn'),
-            stopCommandBtn: document.getElementById('stopCommandBtn'),
             submitBtn: document.getElementById('submitBtn'),
             cancelBtn: document.getElementById('cancelBtn')
         };
@@ -747,7 +744,6 @@
             const wsUrl = `${protocol}//${window.location.host}/ws/{{ session_id }}`;
             
             console.log('嘗試連接 WebSocket:', wsUrl);
-            updateConnectionStatus('connecting', '正在連接...');
             
             try {
                 ws = new WebSocket(wsUrl);
@@ -763,7 +759,6 @@
                 console.log('WebSocket 連接成功');
                 isConnected = true;
                 reconnectAttempts = 0;
-                updateConnectionStatus('connected', '已連接');
                 showNotification('WebSocket 連接成功', 'success');
             };
 
@@ -780,7 +775,6 @@
             ws.onclose = function(event) {
                 console.log('WebSocket 連接關閉:', event.code, event.reason);
                 isConnected = false;
-                updateConnectionStatus('disconnected', '連接中斷');
                 
                 // 自動重連（除非是正常關閉）
                 if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
@@ -797,30 +791,22 @@
         function attemptReconnect() {
             if (reconnectAttempts >= maxReconnectAttempts) {
                 console.log('重連次數已達上限');
-                updateConnectionStatus('disconnected', '連接失敗');
                 showNotification('無法重新連接，請重新整理頁面', 'error');
                 return;
             }
 
             reconnectAttempts++;
             console.log(`嘗試重連 (${reconnectAttempts}/${maxReconnectAttempts})`);
-            updateConnectionStatus('connecting', `重連中... (${reconnectAttempts}/${maxReconnectAttempts})`);
             
             initWebSocket();
         }
 
         function handleConnectionError() {
             isConnected = false;
-            updateConnectionStatus('disconnected', '連接錯誤');
             
             if (reconnectAttempts < maxReconnectAttempts) {
                 setTimeout(attemptReconnect, reconnectDelay);
             }
-        }
-
-        function updateConnectionStatus(status, text) {
-            elements.connectionStatus.className = `status-indicator status-${status}`;
-            elements.statusText.textContent = text;
         }
 
         // 頁面初始化
@@ -874,19 +860,26 @@
             }
 
             // 命令執行
-            elements.runCommandBtn.addEventListener('click', runCommand);
-            elements.stopCommandBtn.addEventListener('click', stopCommand);
+            if (elements.runCommandBtn) {
+                elements.runCommandBtn.addEventListener('click', runCommand);
+            }
             
             // 命令輸入框 Enter 鍵
-            elements.commandInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !isCommandRunning) {
-                    runCommand();
-                }
-            });
+            if (elements.commandInput) {
+                elements.commandInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !isCommandRunning) {
+                        runCommand();
+                    }
+                });
+            }
             
             // 回饋提交
-            elements.submitBtn.addEventListener('click', submitFeedback);
-            elements.cancelBtn.addEventListener('click', cancelFeedback);
+            if (elements.submitBtn) {
+                elements.submitBtn.addEventListener('click', submitFeedback);
+            }
+            if (elements.cancelBtn) {
+                elements.cancelBtn.addEventListener('click', cancelFeedback);
+            }
             
             // 快捷鍵支援
             document.addEventListener('keydown', (e) => {
@@ -1277,6 +1270,8 @@
 
         // 命令執行功能
         function runCommand() {
+            if (!elements.commandInput) return;
+            
             const command = elements.commandInput.value.trim();
             if (!command) return;
 
@@ -1288,14 +1283,20 @@
             console.log('執行命令:', command);
             
             // 清空之前的輸出
-            elements.commandOutput.textContent = '';
-            elements.commandOutput.style.display = 'block';
+            if (elements.commandOutput) {
+                elements.commandOutput.textContent = '';
+                elements.commandOutput.style.display = 'block';
+            }
             
             // 更新 UI 狀態
             isCommandRunning = true;
-            elements.runCommandBtn.style.display = 'none';
-            elements.stopCommandBtn.style.display = 'inline-flex';
-            elements.commandInput.disabled = true;
+            if (elements.runCommandBtn) {
+                elements.runCommandBtn.style.display = 'none';
+                elements.runCommandBtn.disabled = true;
+            }
+            if (elements.commandInput) {
+                elements.commandInput.disabled = true;
+            }
             
             // 發送命令執行請求
             const success = sendWebSocketMessage({
@@ -1308,28 +1309,24 @@
             }
         }
 
-        function stopCommand() {
-            console.log('停止命令執行');
-            
-            sendWebSocketMessage({
-                type: 'stop_command'
-            });
-            
-            handleCommandFinished(-1);
-        }
-
-        function appendCommandOutput(output) {
-            elements.commandOutput.textContent += output;
-            elements.commandOutput.scrollTop = elements.commandOutput.scrollHeight;
+        function appendCommandOutput(text) {
+            if (elements.commandOutput) {
+                elements.commandOutput.textContent += text;
+                elements.commandOutput.scrollTop = elements.commandOutput.scrollHeight;
+            }
         }
 
         function handleCommandFinished(exitCode) {
             console.log('命令執行完成，退出碼:', exitCode);
             
             isCommandRunning = false;
-            elements.runCommandBtn.style.display = 'inline-flex';
-            elements.stopCommandBtn.style.display = 'none';
-            elements.commandInput.disabled = false;
+            if (elements.runCommandBtn) {
+                elements.runCommandBtn.style.display = 'inline-flex';
+                elements.runCommandBtn.disabled = false;
+            }
+            if (elements.commandInput) {
+                elements.commandInput.disabled = false;
+            }
             
             const statusText = exitCode === 0 ? '命令執行成功' : '命令執行失敗';
             const notificationType = exitCode === 0 ? 'success' : 'error';
@@ -1340,6 +1337,8 @@
 
         // 回饋提交功能
         function submitFeedback() {
+            if (!elements.feedbackTextarea) return;
+            
             const feedback = elements.feedbackTextarea.value.trim();
             
             if (!feedback && selectedImages.length === 0) {
@@ -1355,8 +1354,10 @@
             console.log('提交回饋:', feedback);
             
             // 顯示提交中狀態
-            elements.submitBtn.textContent = '提交中...';
-            elements.submitBtn.disabled = true;
+            if (elements.submitBtn) {
+                elements.submitBtn.textContent = '提交中...';
+                elements.submitBtn.disabled = true;
+            }
 
             const success = sendWebSocketMessage({
                 type: 'submit_feedback',
@@ -1380,8 +1381,10 @@
                 }, 1500);
             } else {
                 // 恢復按鈕狀態
-                elements.submitBtn.textContent = '✅ 提交回饋';
-                elements.submitBtn.disabled = false;
+                if (elements.submitBtn) {
+                    elements.submitBtn.textContent = '✅ 提交回饋';
+                    elements.submitBtn.disabled = false;
+                }
             }
         }
 
@@ -1403,13 +1406,6 @@
             setTimeout(() => {
                 statusElement.classList.remove('show');
             }, 3000);
-        }
-
-        // 追加命令輸出
-        function appendCommandOutput(text) {
-            const outputElement = document.getElementById('commandOutput');
-            outputElement.textContent += text;
-            outputElement.scrollTop = outputElement.scrollHeight;
         }
 
         // 監聽窗口大小變化

@@ -720,63 +720,202 @@
     <script>
         // 全域變數
         let selectedImages = [];
-        let commandHistory = [];
-        let historyIndex = -1;
+        let currentLanguage = 'zh-TW';
+        let ws = null; // WebSocket 連接
+        let isConnected = false;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const reconnectDelay = 2000; // 2 秒
+        let isCommandRunning = false;
 
-        // 初始化應用程式
+        // DOM 元素
+        const elements = {
+            connectionStatus: document.getElementById('connectionStatus'),
+            statusText: document.getElementById('statusText'),
+            feedbackTextarea: document.getElementById('feedbackText'),
+            commandInput: document.getElementById('commandInput'),
+            commandOutput: document.getElementById('commandOutput'),
+            runCommandBtn: document.getElementById('runBtn'),
+            stopCommandBtn: document.getElementById('stopCommandBtn'),
+            submitBtn: document.getElementById('submitBtn'),
+            cancelBtn: document.getElementById('cancelBtn')
+        };
+
+        // WebSocket 連接初始化
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/{{ session_id }}`;
+            
+            console.log('嘗試連接 WebSocket:', wsUrl);
+            updateConnectionStatus('connecting', '正在連接...');
+            
+            try {
+                ws = new WebSocket(wsUrl);
+                setupWebSocketHandlers();
+            } catch (error) {
+                console.error('WebSocket 連接錯誤:', error);
+                handleConnectionError();
+            }
+        }
+
+        function setupWebSocketHandlers() {
+            ws.onopen = function() {
+                console.log('WebSocket 連接成功');
+                isConnected = true;
+                reconnectAttempts = 0;
+                updateConnectionStatus('connected', '已連接');
+                showNotification('WebSocket 連接成功', 'success');
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                } catch (error) {
+                    console.error('解析 WebSocket 消息失敗:', error);
+                    console.log('原始消息:', event.data);
+                }
+            };
+
+            ws.onclose = function(event) {
+                console.log('WebSocket 連接關閉:', event.code, event.reason);
+                isConnected = false;
+                updateConnectionStatus('disconnected', '連接中斷');
+                
+                // 自動重連（除非是正常關閉）
+                if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
+                    setTimeout(attemptReconnect, reconnectDelay);
+                }
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket 錯誤:', error);
+                handleConnectionError();
+            };
+        }
+
+        function attemptReconnect() {
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                console.log('重連次數已達上限');
+                updateConnectionStatus('disconnected', '連接失敗');
+                showNotification('無法重新連接，請重新整理頁面', 'error');
+                return;
+            }
+
+            reconnectAttempts++;
+            console.log(`嘗試重連 (${reconnectAttempts}/${maxReconnectAttempts})`);
+            updateConnectionStatus('connecting', `重連中... (${reconnectAttempts}/${maxReconnectAttempts})`);
+            
+            initWebSocket();
+        }
+
+        function handleConnectionError() {
+            isConnected = false;
+            updateConnectionStatus('disconnected', '連接錯誤');
+            
+            if (reconnectAttempts < maxReconnectAttempts) {
+                setTimeout(attemptReconnect, reconnectDelay);
+            }
+        }
+
+        function updateConnectionStatus(status, text) {
+            elements.connectionStatus.className = `status-indicator status-${status}`;
+            elements.statusText.textContent = text;
+        }
+
+        // 頁面初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 初始化 WebSocket 連接
+            initWebSocket();
+            
+            // 初始化界面
             initializeApp();
             setupEventListeners();
-            applyTranslations();
-            updateImagePreviewArea(); // 初始化預覽區域
+            changeLanguage(currentLanguage);
+            setupDragAndDrop();
+            setupKeyboardShortcuts();
+            switchTab('feedback');
+            updateImagePreviewArea();
         });
 
-        // 監聽語言變更事件
-        document.addEventListener('languageChanged', function(event) {
+        // 語言切換功能
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            window.i18n.setLanguage(lang);
             applyTranslations();
             updatePlaceholders();
-            updateImagePreviewArea(); // 更新預覽區域文字
-        });
+            updateHtmlLang();
+        }
 
         function initializeApp() {
             // 設置語言選擇器
             const languageSelect = document.getElementById('languageSelect');
-            languageSelect.value = window.i18n.getCurrentLanguage();
+            if (languageSelect) {
+                languageSelect.value = currentLanguage;
+            }
             
             // 更新 HTML lang 屬性
             updateHtmlLang();
-            
-            // 設置拖拽功能
-            setupDragAndDrop();
-            
-            // 設置快捷鍵
-            setupKeyboardShortcuts();
         }
 
         function setupEventListeners() {
             // 語言選擇器事件
-            document.getElementById('languageSelect').addEventListener('change', function(e) {
-                const newLanguage = e.target.value;
-                window.i18n.setLanguage(newLanguage);
-                updateHtmlLang();
-            });
+            const languageSelect = document.getElementById('languageSelect');
+            if (languageSelect) {
+                languageSelect.addEventListener('change', function(e) {
+                    changeLanguage(e.target.value);
+                });
+            }
 
             // 文件輸入事件
-            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                fileInput.addEventListener('change', handleFileSelect);
+            }
+
+            // 命令執行
+            elements.runCommandBtn.addEventListener('click', runCommand);
+            elements.stopCommandBtn.addEventListener('click', stopCommand);
+            
+            // 命令輸入框 Enter 鍵
+            elements.commandInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !isCommandRunning) {
+                    runCommand();
+                }
+            });
+            
+            // 回饋提交
+            elements.submitBtn.addEventListener('click', submitFeedback);
+            elements.cancelBtn.addEventListener('click', cancelFeedback);
+            
+            // 快捷鍵支援
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    submitFeedback();
+                }
+            });
+            
+            // 窗口關閉時清理 WebSocket
+            window.addEventListener('beforeunload', () => {
+                if (ws && isConnected) {
+                    ws.close(1000, '頁面關閉');
+                }
+            });
         }
 
         function updateHtmlLang() {
             const htmlRoot = document.getElementById('html-root');
-            const currentLang = window.i18n.getCurrentLanguage();
-            
-            // 語言代碼映射
-            const langMap = {
-                'zh-TW': 'zh-TW',
-                'zh-CN': 'zh-CN',
-                'en': 'en'
-            };
-            
-            htmlRoot.setAttribute('lang', langMap[currentLang] || 'en');
+            if (htmlRoot) {
+                // 語言代碼映射
+                const langMap = {
+                    'zh-TW': 'zh-TW',
+                    'zh-CN': 'zh-CN',
+                    'en': 'en'
+                };
+                
+                htmlRoot.setAttribute('lang', langMap[currentLanguage] || 'en');
+            }
         }
 
         function applyTranslations() {
@@ -784,56 +923,88 @@
             document.title = t('app_title');
             
             // 更新標題區域
-            document.getElementById('pageTitle').textContent = t('app_title');
-            document.getElementById('projectDirLabel').textContent = t('project_directory');
-            document.getElementById('languageLabel').textContent = t('language_selector') + ':';
+            const pageTitle = document.getElementById('pageTitle');
+            if (pageTitle) pageTitle.textContent = t('app_title');
+            
+            const projectDirLabel = document.getElementById('projectDirLabel');
+            if (projectDirLabel) projectDirLabel.textContent = t('project_directory');
+            
+            const languageLabel = document.getElementById('languageLabel');
+            if (languageLabel) languageLabel.textContent = t('language_selector') + ':';
             
             // 更新語言選項
             const languageSelect = document.getElementById('languageSelect');
-            const options = languageSelect.querySelectorAll('option');
-            options.forEach(option => {
-                const value = option.value;
-                option.textContent = window.i18n.getLanguageDisplayName(value);
-            });
+            if (languageSelect) {
+                const options = languageSelect.querySelectorAll('option');
+                options.forEach(option => {
+                    const value = option.value;
+                    option.textContent = window.i18n.getLanguageDisplayName(value);
+                });
+            }
             
             // 更新摘要區域
-            document.getElementById('summaryTitle').innerHTML = t('ai_summary');
+            const summaryTitle = document.getElementById('summaryTitle');
+            if (summaryTitle) summaryTitle.innerHTML = t('ai_summary');
             
             // 更新分頁標籤
-            document.getElementById('feedbackTabBtn').innerHTML = t('feedback_tab');
-            document.getElementById('commandTabBtn').innerHTML = t('command_tab');
+            const feedbackTabBtn = document.getElementById('feedbackTabBtn');
+            if (feedbackTabBtn) feedbackTabBtn.innerHTML = t('feedback_tab');
+            
+            const commandTabBtn = document.getElementById('commandTabBtn');
+            if (commandTabBtn) commandTabBtn.innerHTML = t('command_tab');
             
             // 更新回饋區域
-            document.getElementById('feedbackLabel').textContent = t('feedback_title');
-            document.getElementById('feedbackDescription').textContent = t('feedback_description');
+            const feedbackLabel = document.getElementById('feedbackLabel');
+            if (feedbackLabel) feedbackLabel.textContent = t('feedback_title');
+            
+            const feedbackDescription = document.getElementById('feedbackDescription');
+            if (feedbackDescription) feedbackDescription.textContent = t('feedback_description');
             
             // 更新命令區域
-            document.getElementById('commandLabel').textContent = t('command_title');
-            document.getElementById('commandDescription').textContent = t('command_description');
-            document.getElementById('runBtn').innerHTML = t('btn_run_command');
+            const commandLabel = document.getElementById('commandLabel');
+            if (commandLabel) commandLabel.textContent = t('command_title');
+            
+            const commandDescription = document.getElementById('commandDescription');
+            if (commandDescription) commandDescription.textContent = t('command_description');
+            
+            const runBtn = document.getElementById('runBtn');
+            if (runBtn) runBtn.innerHTML = t('btn_run_command');
             
             // 更新圖片區域
-            document.getElementById('imagesTitle').textContent = t('images_title');
-            document.getElementById('selectFilesBtn').innerHTML = t('btn_select_files');
-            document.getElementById('pasteBtn').innerHTML = t('btn_paste_clipboard');
-            document.getElementById('clearBtn').innerHTML = t('btn_clear_all');
-            document.getElementById('dropZone').textContent = t('images_drag_hint');
+            const imagesTitle = document.getElementById('imagesTitle');
+            if (imagesTitle) imagesTitle.textContent = t('images_title');
+            
+            const selectFilesBtn = document.getElementById('selectFilesBtn');
+            if (selectFilesBtn) selectFilesBtn.innerHTML = t('btn_select_files');
+            
+            const pasteBtn = document.getElementById('pasteBtn');
+            if (pasteBtn) pasteBtn.innerHTML = t('btn_paste_clipboard');
+            
+            const clearBtn = document.getElementById('clearBtn');
+            if (clearBtn) clearBtn.innerHTML = t('btn_clear_all');
+            
+            const dropZone = document.getElementById('dropZone');
+            if (dropZone) dropZone.textContent = t('images_drag_hint');
             
             // 更新按鈕
-            document.getElementById('cancelBtn').innerHTML = t('btn_cancel');
-            document.getElementById('submitBtn').innerHTML = t('btn_submit_feedback');
+            const cancelBtn = document.getElementById('cancelBtn');
+            if (cancelBtn) cancelBtn.innerHTML = t('btn_cancel');
             
-            // 更新圖片狀態
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) submitBtn.innerHTML = t('btn_submit_feedback');
+            
+            // 更新圖片狀態和預覽區域
             updateImageStatus();
-            
-            // 更新預覽區域
             updateImagePreviewArea();
         }
 
         function updatePlaceholders() {
             // 更新輸入框的 placeholder
-            document.getElementById('feedbackText').placeholder = t('feedback_placeholder');
-            document.getElementById('commandInput').placeholder = t('command_placeholder');
+            const feedbackText = document.getElementById('feedbackText');
+            if (feedbackText) feedbackText.placeholder = t('feedback_placeholder');
+            
+            const commandInput = document.getElementById('commandInput');
+            if (commandInput) commandInput.placeholder = t('command_placeholder');
         }
 
         function setupKeyboardShortcuts() {
@@ -1106,66 +1277,121 @@
 
         // 命令執行功能
         function runCommand() {
-            const command = document.getElementById('commandInput').value.trim();
+            const command = elements.commandInput.value.trim();
             if (!command) return;
 
-            const outputElement = document.getElementById('commandOutput');
-            outputElement.textContent += `$ ${command}\n`;
+            if (!isConnected) {
+                showStatusMessage('WebSocket 未連接', 'error');
+                return;
+            }
+
+            console.log('執行命令:', command);
             
-            // 這裡可以根據需要實現實際的命令執行
-            // 暫時顯示一個模擬的輸出
-            setTimeout(() => {
-                outputElement.textContent += t('command_running') + '\n';
-                setTimeout(() => {
-                    outputElement.textContent += t('command_finished') + '\n\n';
-                    outputElement.scrollTop = outputElement.scrollHeight;
-                }, 1000);
-            }, 100);
+            // 清空之前的輸出
+            elements.commandOutput.textContent = '';
+            elements.commandOutput.style.display = 'block';
             
-            // 清空輸入框
-            document.getElementById('commandInput').value = '';
+            // 更新 UI 狀態
+            isCommandRunning = true;
+            elements.runCommandBtn.style.display = 'none';
+            elements.stopCommandBtn.style.display = 'inline-flex';
+            elements.commandInput.disabled = true;
+            
+            // 發送命令執行請求
+            const success = sendWebSocketMessage({
+                type: 'run_command',
+                command: command
+            });
+            
+            if (!success) {
+                handleCommandFinished(-1);
+            }
+        }
+
+        function stopCommand() {
+            console.log('停止命令執行');
+            
+            sendWebSocketMessage({
+                type: 'stop_command'
+            });
+            
+            handleCommandFinished(-1);
+        }
+
+        function appendCommandOutput(output) {
+            elements.commandOutput.textContent += output;
+            elements.commandOutput.scrollTop = elements.commandOutput.scrollHeight;
+        }
+
+        function handleCommandFinished(exitCode) {
+            console.log('命令執行完成，退出碼:', exitCode);
+            
+            isCommandRunning = false;
+            elements.runCommandBtn.style.display = 'inline-flex';
+            elements.stopCommandBtn.style.display = 'none';
+            elements.commandInput.disabled = false;
+            
+            const statusText = exitCode === 0 ? '命令執行成功' : '命令執行失敗';
+            const notificationType = exitCode === 0 ? 'success' : 'error';
+            showNotification(statusText, notificationType);
+            
+            appendCommandOutput(`\n--- 命令執行完成 (退出碼: ${exitCode}) ---\n`);
         }
 
         // 回饋提交功能
         function submitFeedback() {
-            const feedback = document.getElementById('feedbackText').value.trim();
-            const commandLogs = document.getElementById('commandOutput').textContent;
+            const feedback = elements.feedbackTextarea.value.trim();
             
             if (!feedback && selectedImages.length === 0) {
                 showStatusMessage(t('feedback_placeholder').split('\n')[0], 'error');
                 return;
             }
 
-            // 準備提交數據
-            const submitData = {
-                interactive_feedback: feedback,
-                command_logs: commandLogs,
+            if (!isConnected) {
+                showStatusMessage('WebSocket 未連接，無法提交', 'error');
+                return;
+            }
+
+            console.log('提交回饋:', feedback);
+            
+            // 顯示提交中狀態
+            elements.submitBtn.textContent = '提交中...';
+            elements.submitBtn.disabled = true;
+
+            const success = sendWebSocketMessage({
+                type: 'submit_feedback',
+                feedback: feedback,
                 images: selectedImages.map(img => ({
-                    filename: img.filename,
+                    name: img.filename,
                     data: img.data,
-                    size: img.size,
-                    type: img.type
+                    size: img.size
                 }))
-            };
+            });
 
-            // 顯示提交狀態
-            const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = t('uploading');
-            submitBtn.disabled = true;
-
-            // 模擬提交過程
-            setTimeout(() => {
-                showStatusMessage(t('upload_success'), 'success');
+            if (success) {
+                showNotification('回饋已提交', 'success');
                 
-                // 實際的提交邏輯應該在這裡實現
-                // 例如：發送到伺服器端點
-                console.log('提交數據:', submitData);
-                
+                // 短暫延遲後關閉窗口
                 setTimeout(() => {
+                    if (ws) {
+                        ws.close(1000, '回饋已提交');
+                    }
                     window.close();
-                }, 1000);
-            }, 500);
+                }, 1500);
+            } else {
+                // 恢復按鈕狀態
+                elements.submitBtn.textContent = '✅ 提交回饋';
+                elements.submitBtn.disabled = false;
+            }
+        }
+
+        function cancelFeedback() {
+            if (confirm('確定要取消回饋嗎？')) {
+                if (ws) {
+                    ws.close(1000, '用戶取消');
+                }
+                window.close();
+            }
         }
 
         // 狀態提示功能
@@ -1193,6 +1419,75 @@
                 updateGridIndicator();
             }
         });
+
+        // 通知系統
+        function showNotification(message, type = 'info') {
+            // 移除現有通知
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // 創建新通知
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // 顯示動畫
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            // 自動隱藏
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // 處理 WebSocket 消息
+        function handleWebSocketMessage(data) {
+            console.log('收到 WebSocket 消息:', data);
+            
+            switch(data.type) {
+                case 'command_output':
+                    appendCommandOutput(data.output);
+                    break;
+                    
+                case 'command_finished':
+                    handleCommandFinished(data.exit_code);
+                    break;
+                    
+                case 'command_error':
+                    appendCommandOutput(`錯誤: ${data.error}\n`);
+                    handleCommandFinished(-1);
+                    break;
+                    
+                case 'ping':
+                    // 回應 ping
+                    sendWebSocketMessage({ type: 'pong' });
+                    break;
+                    
+                default:
+                    console.log('未知的消息類型:', data.type);
+            }
+        }
+
+        function sendWebSocketMessage(message) {
+            if (ws && isConnected) {
+                try {
+                    ws.send(JSON.stringify(message));
+                    return true;
+                } catch (error) {
+                    console.error('發送 WebSocket 消息失敗:', error);
+                    return false;
+                }
+            } else {
+                console.warn('WebSocket 未連接，無法發送消息');
+                showNotification('連接中斷，無法發送消息', 'warning');
+                return false;
+            }
+        }
     </script>
 </body>
 </html>

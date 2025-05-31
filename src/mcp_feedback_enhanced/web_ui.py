@@ -12,21 +12,23 @@
 增強功能: 圖片支援和現代化界面設計
 """
 
-import os
-import sys
-import json
-import uuid
 import asyncio
-import webbrowser
-import threading
+import json
+import logging
+import os
+import socket
 import subprocess
-import psutil
+import sys
+import threading
 import time
+import webbrowser
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+import uuid
+from datetime import datetime
 import base64
 import tempfile
 from typing import Dict, Optional, List
-from pathlib import Path
-
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -230,13 +232,31 @@ class WebFeedbackSession:
 class WebUIManager:
     """Web UI 管理器"""
     
-    def __init__(self, host: str = "127.0.0.1", port: int = 8765):
+    def __init__(self, host: str = "127.0.0.1", port: int = None):
         self.host = host
-        self.port = port
+        self.port = port or self._find_free_port()
         self.app = FastAPI(title="Interactive Feedback MCP Web UI")
         self.sessions: Dict[str, WebFeedbackSession] = {}
         self.server_thread: Optional[threading.Thread] = None
         self.setup_routes()
+
+    def _find_free_port(self, start_port: int = 8765, max_attempts: int = 100) -> int:
+        """尋找可用的端口"""
+        for port in range(start_port, start_port + max_attempts):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind((self.host, port))
+                    debug_log(f"找到可用端口: {port}")
+                    return port
+            except OSError:
+                continue
+        
+        # 如果沒有找到可用端口，使用系統分配
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((self.host, 0))
+            port = s.getsockname()[1]
+            debug_log(f"使用系統分配端口: {port}")
+            return port
 
     def setup_routes(self):
         """設置路由"""
@@ -346,20 +366,45 @@ class WebUIManager:
 
     def start_server(self):
         """啟動伺服器"""
-        def run_server():
-            uvicorn.run(
-                self.app,
-                host=self.host,
-                port=self.port,
-                log_level="error",
-                access_log=False
-            )
+        max_retries = 10
+        retry_count = 0
+        
+        def run_server_with_retry():
+            nonlocal retry_count
+            while retry_count < max_retries:
+                try:
+                    debug_log(f"嘗試在端口 {self.port} 啟動伺服器（第 {retry_count + 1} 次嘗試）")
+                    uvicorn.run(
+                        self.app,
+                        host=self.host,
+                        port=self.port,
+                        log_level="error",
+                        access_log=False
+                    )
+                    break  # 成功啟動，跳出循環
+                except OSError as e:
+                    if "10048" in str(e) or "Address already in use" in str(e):
+                        retry_count += 1
+                        debug_log(f"端口 {self.port} 被占用，尋找新端口（第 {retry_count} 次重試）")
+                        if retry_count < max_retries:
+                            # 尋找新的可用端口
+                            self.port = self._find_free_port(self.port + 1)
+                            debug_log(f"切換到新端口: {self.port}")
+                        else:
+                            debug_log(f"已達到最大重試次數 {max_retries}，無法啟動伺服器")
+                            raise Exception(f"無法找到可用端口，已嘗試 {max_retries} 次")
+                    else:
+                        debug_log(f"伺服器啟動失敗: {e}")
+                        raise e
+                except Exception as e:
+                    debug_log(f"伺服器啟動時發生未預期錯誤: {e}")
+                    raise e
 
-        self.server_thread = threading.Thread(target=run_server, daemon=True)
+        self.server_thread = threading.Thread(target=run_server_with_retry, daemon=True)
         self.server_thread.start()
         
-        # 等待伺服器啟動
-        time.sleep(2)
+        # 等待伺服器啟動，並給足夠時間處理重試
+        time.sleep(3)
 
     def open_browser(self, url: str):
         """開啟瀏覽器"""
@@ -395,8 +440,13 @@ class WebUIManager:
             <style>
                 body {{ font-family: Arial, sans-serif; margin: 20px; background: #1e1e1e; color: white; }}
                 .container {{ max-width: 800px; margin: 0 auto; }}
-                textarea {{ width: 100%; height: 200px; background: #2d2d30; color: white; border: 1px solid #464647; }}
-                button {{ background: #007acc; color: white; padding: 10px 20px; border: none; cursor: pointer; }}
+                textarea {{ width: 100%; height: 200px; background: #2d2d30; color: white; border: 1px solid #464647; padding: 10px; }}
+                button {{ background: #007acc; color: white; padding: 10px 20px; border: none; cursor: pointer; margin: 5px; }}
+                button:hover {{ background: #005a9e; }}
+                .notification {{ position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: white; font-weight: bold; z-index: 10000; }}
+                .notification.error {{ background: #dc3545; }}
+                .notification.warning {{ background: #ffc107; }}
+                .notification.info {{ background: #007acc; }}
             </style>
         </head>
         <body>
@@ -410,19 +460,113 @@ class WebUIManager:
                     <h3>您的回饋:</h3>
                     <textarea id="feedback" placeholder="請輸入您的回饋..."></textarea>
                 </div>
-                <button onclick="submitFeedback()">提交回饋</button>
+                <button onclick="submitFeedback()" class="submit-btn">提交回饋</button>
+                <button onclick="cancelFeedback()">取消</button>
             </div>
             <script>
-                const ws = new WebSocket('ws://localhost:{self.port}/ws/{session_id}');
-                function submitFeedback() {{
-                    const feedback = document.getElementById('feedback').value;
-                    ws.send(JSON.stringify({{
-                        type: 'submit_feedback',
-                        feedback: feedback,
-                        images: []
-                    }}));
-                    alert('回饋已提交！');
+                // ===== 全域變數 =====
+                let ws = null;
+
+                // ===== WebSocket 連接 =====
+                function connectWebSocket() {{
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${{protocol}}//${{window.location.host}}/ws/{session_id}`;
+                    
+                    ws = new WebSocket(wsUrl);
+                    
+                    ws.onopen = function() {{
+                        console.log('WebSocket 連接成功');
+                    }};
+                    
+                    ws.onmessage = function(event) {{
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    }};
+                    
+                    ws.onclose = function() {{
+                        console.log('WebSocket 連接已關閉');
+                    }};
+                    
+                    ws.onerror = function(error) {{
+                        console.error('WebSocket 錯誤:', error);
+                    }};
                 }}
+
+                function handleWebSocketMessage(data) {{
+                    if (data.type === 'command_output') {{
+                        // 處理命令輸出（如果需要）
+                        console.log('命令輸出:', data.output);
+                    }} else if (data.type === 'command_finished') {{
+                        console.log('命令完成，返回碼:', data.exit_code);
+                    }}
+                }}
+
+                // ===== 回饋提交 =====
+                function submitFeedback() {{
+                    const feedback = document.getElementById('feedback').value.trim();
+                    
+                    if (!feedback) {{
+                        showNotification('請輸入回饋內容！', 'warning');
+                        return;
+                    }}
+
+                    if (ws && ws.readyState === WebSocket.OPEN) {{
+                        // 顯示提交中狀態
+                        const submitBtn = document.querySelector('.submit-btn');
+                        const originalText = submitBtn.textContent;
+                        submitBtn.textContent = '提交中...';
+                        submitBtn.disabled = true;
+
+                        ws.send(JSON.stringify({{
+                            type: 'submit_feedback',
+                            feedback: feedback,
+                            images: []
+                        }}));
+
+                        // 簡短延遲後自動關閉，不顯示 alert
+                        setTimeout(() => {{
+                            window.close();
+                        }}, 500);
+                    }} else {{
+                        showNotification('WebSocket 連接異常，請重新整理頁面', 'error');
+                    }}
+                }}
+
+                // 添加通知函數，替代 alert
+                function showNotification(message, type = 'info') {{
+                    // 創建通知元素
+                    const notification = document.createElement('div');
+                    notification.className = `notification ${{type}}`;
+                    notification.textContent = message;
+                    
+                    document.body.appendChild(notification);
+                    
+                    // 3 秒後自動移除
+                    setTimeout(() => {{
+                        if (notification.parentNode) {{
+                            notification.parentNode.removeChild(notification);
+                        }}
+                    }}, 3000);
+                }}
+
+                function cancelFeedback() {{
+                    if (confirm('確定要取消回饋嗎？')) {{
+                        window.close();
+                    }}
+                }}
+
+                // ===== 快捷鍵支援 =====
+                document.addEventListener('keydown', function(e) {{
+                    if (e.ctrlKey && e.key === 'Enter') {{
+                        e.preventDefault();
+                        submitFeedback();
+                    }}
+                }});
+
+                // ===== 初始化 =====
+                document.addEventListener('DOMContentLoaded', function() {{
+                    connectWebSocket();
+                }});
             </script>
         </body>
         </html>
@@ -430,15 +574,21 @@ class WebUIManager:
 
 
 # ===== 全域管理器 =====
-_web_ui_manager: Optional[WebUIManager] = None
+_web_ui_managers: Dict[int, WebUIManager] = {}
 
 def get_web_ui_manager() -> WebUIManager:
-    """獲取全域 Web UI 管理器"""
-    global _web_ui_manager
-    if _web_ui_manager is None:
-        _web_ui_manager = WebUIManager()
-        _web_ui_manager.start_server()
-    return _web_ui_manager
+    """獲取 Web UI 管理器 - 每個進程獲得獨立的實例"""
+    process_id = os.getpid()
+    
+    global _web_ui_managers
+    if process_id not in _web_ui_managers:
+        # 為每個進程創建獨立的管理器，使用不同的端口
+        manager = WebUIManager()
+        manager.start_server()
+        _web_ui_managers[process_id] = manager
+        debug_log(f"為進程 {process_id} 創建新的 Web UI 管理器，端口: {manager.port}")
+    
+    return _web_ui_managers[process_id]
 
 async def launch_web_feedback_ui(project_directory: str, summary: str) -> dict:
     """啟動 Web 回饋 UI 並等待回饋"""
@@ -482,12 +632,14 @@ async def launch_web_feedback_ui(project_directory: str, summary: str) -> dict:
 
 def stop_web_ui():
     """停止 Web UI"""
-    global _web_ui_manager
-    if _web_ui_manager:
+    global _web_ui_managers
+    if _web_ui_managers:
         # 清理所有會話
-        for session_id in list(_web_ui_manager.sessions.keys()):
-            _web_ui_manager.remove_session(session_id)
-        _web_ui_manager = None
+        for process_id, manager in list(_web_ui_managers.items()):
+            for session_id in list(manager.sessions.keys()):
+                manager.remove_session(session_id)
+            manager.sessions.clear()
+            _web_ui_managers.pop(process_id)
 
 
 # ===== 主程式入口 =====

@@ -20,6 +20,7 @@ import subprocess
 import base64
 import uuid
 import time
+import platform
 from typing import Optional, TypedDict, List, Dict
 from pathlib import Path
 
@@ -27,7 +28,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QTextEdit, QGroupBox,
     QScrollArea, QFrame, QGridLayout, QFileDialog, QMessageBox,
-    QTabWidget, QSizePolicy, QComboBox, QMenuBar, QMenu
+    QTabWidget, QSizePolicy, QComboBox, QMenuBar, QMenu, QSplitter
 )
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont, QPixmap, QDragEnterEvent, QDropEvent, QKeySequence, QShortcut, QAction
@@ -138,13 +139,13 @@ class ImagePreviewWidget(QLabel):
             }
         """)
         self.delete_button.clicked.connect(self._on_delete_clicked)
-        self.delete_button.setToolTip(t('images_clear'))
+        self.delete_button.setToolTip(t('images.clear'))
         
     def _on_delete_clicked(self) -> None:
         """處理刪除按鈕點擊事件"""
         reply = QMessageBox.question(
-            self, t('images_delete_title'), 
-            t('images_delete_confirm', filename=os.path.basename(self.image_path)),
+            self, t('images.deleteTitle'), 
+            t('images.deleteConfirm', filename=os.path.basename(self.image_path)),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
@@ -172,50 +173,106 @@ class ImageUploadWidget(QWidget):
         layout.setContentsMargins(12, 8, 12, 8)
         
         # 標題
-        self.title = QLabel(t('images_title'))
+        self.title = QLabel(t('images.title'))
         self.title.setFont(QFont("", 10, QFont.Bold))
         self.title.setStyleSheet("color: #007acc; margin: 1px 0;")
         layout.addWidget(self.title)
         
-        # 操作按鈕
-        self._create_buttons(layout)
-        
-        # 拖拽區域
-        self._create_drop_zone(layout)
-        
-        # 狀態標籤 - 移到預覽區域前面
-        self.status_label = QLabel(t('images_status', count=0))
+        # 狀態標籤
+        self.status_label = QLabel(t('images.status', count=0))
         self.status_label.setStyleSheet("color: #9e9e9e; font-size: 10px; margin: 5px 0;")
         layout.addWidget(self.status_label)
         
-        # 圖片預覽區域
-        self._create_preview_area(layout)
+        # 統一的圖片區域（整合按鈕、拖拽、預覽）
+        self._create_unified_image_area(layout)
     
-    def _create_buttons(self, layout: QVBoxLayout) -> None:
-        """創建操作按鈕"""
-        button_layout = QHBoxLayout()
+    def _create_unified_image_area(self, layout: QVBoxLayout) -> None:
+        """創建統一的圖片區域"""
+        # 創建滾動區域
+        self.preview_scroll = QScrollArea()
+        self.preview_widget = QWidget()
+        self.preview_layout = QVBoxLayout(self.preview_widget)
+        self.preview_layout.setSpacing(6)
+        self.preview_layout.setContentsMargins(8, 8, 8, 8)
+        
+        # 創建操作按鈕區域
+        self._create_buttons_in_area()
+        
+        # 創建拖拽提示標籤（初始顯示）
+        self.drop_hint_label = QLabel(t('images.dragHint'))
+        self.drop_hint_label.setAlignment(Qt.AlignCenter)
+        self.drop_hint_label.setMinimumHeight(60)
+        self.drop_hint_label.setStyleSheet("""
+            QLabel {
+                border: 2px dashed #464647;
+                border-radius: 6px;
+                background-color: #2d2d30;
+                color: #9e9e9e;
+                font-size: 11px;
+                margin: 4px 0;
+            }
+        """)
+        
+        # 創建圖片網格容器
+        self.images_grid_widget = QWidget()
+        self.images_grid_layout = QGridLayout(self.images_grid_widget)
+        self.images_grid_layout.setSpacing(4)
+        self.images_grid_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        
+        # 將部分添加到主布局
+        self.preview_layout.addWidget(self.button_widget)  # 按鈕始終顯示
+        self.preview_layout.addWidget(self.drop_hint_label)
+        self.preview_layout.addWidget(self.images_grid_widget)
+        
+        # 初始時隱藏圖片網格
+        self.images_grid_widget.hide()
+        
+        # 設置滾動區域
+        self.preview_scroll.setWidget(self.preview_widget)
+        self.preview_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.preview_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.preview_scroll.setMinimumHeight(120)  # 增加最小高度以容納按鈕
+        self.preview_scroll.setMaximumHeight(200)  # 調整最大高度
+        self.preview_scroll.setWidgetResizable(True)
+        self.preview_scroll.setStyleSheet("""
+            QScrollArea {
+                border: 1px solid #464647;
+                border-radius: 4px;
+                background-color: #1e1e1e;
+            }
+        """)
+        
+        layout.addWidget(self.preview_scroll)
+    
+    def _create_buttons_in_area(self) -> None:
+        """在統一區域內創建操作按鈕"""
+        self.button_widget = QWidget()
+        button_layout = QHBoxLayout(self.button_widget)
+        button_layout.setContentsMargins(0, 0, 0, 4)
+        button_layout.setSpacing(6)
         
         # 選擇文件按鈕
-        self.file_button = QPushButton(t('btn_select_files'))
+        self.file_button = QPushButton(t('buttons.selectFiles'))
         self.file_button.clicked.connect(self.select_files)
         
         # 剪貼板按鈕
-        self.paste_button = QPushButton(t('btn_paste_clipboard'))
+        self.paste_button = QPushButton(t('buttons.pasteClipboard'))
         self.paste_button.clicked.connect(self.paste_from_clipboard)
         
         # 清除按鈕
-        self.clear_button = QPushButton(t('btn_clear_all'))
+        self.clear_button = QPushButton(t('buttons.clearAll'))
         self.clear_button.clicked.connect(self.clear_all_images)
         
-        # 設置按鈕樣式
+        # 設置按鈕樣式（更緊湊）
         button_style = """
             QPushButton {
                 color: white;
                 border: none;
-                padding: 5px 10px;
-                border-radius: 4px;
+                padding: 4px 8px;
+                border-radius: 3px;
                 font-weight: bold;
-                font-size: 11px;
+                font-size: 10px;
+                min-height: 24px;
             }
             QPushButton:hover {
                 opacity: 0.8;
@@ -254,55 +311,13 @@ class ImageUploadWidget(QWidget):
         button_layout.addWidget(self.file_button)
         button_layout.addWidget(self.paste_button)
         button_layout.addWidget(self.clear_button)
-        button_layout.addStretch()
-        
-        layout.addLayout(button_layout)
-        
-    def _create_drop_zone(self, layout: QVBoxLayout) -> None:
-        """創建拖拽區域"""
-        self.drop_zone = QLabel(t('images_drag_hint'))
-        self.drop_zone.setFixedHeight(50)
-        self.drop_zone.setAlignment(Qt.AlignCenter)
-        self.drop_zone.setStyleSheet("""
-            QLabel {
-                border: 2px dashed #464647;
-                border-radius: 6px;
-                background-color: #2d2d30;
-                color: #9e9e9e;
-                font-size: 11px;
-            }
-        """)
-        layout.addWidget(self.drop_zone)
-        
-    def _create_preview_area(self, layout: QVBoxLayout) -> None:
-        """創建圖片預覽區域"""
-        self.preview_scroll = QScrollArea()
-        self.preview_widget = QWidget()
-        self.preview_layout = QGridLayout(self.preview_widget)
-        self.preview_layout.setSpacing(4)
-        self.preview_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        
-        self.preview_scroll.setWidget(self.preview_widget)
-        self.preview_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.preview_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.preview_scroll.setMinimumHeight(100)  # 增加最小高度
-        self.preview_scroll.setMaximumHeight(250)  # 增加最大高度
-        self.preview_scroll.setWidgetResizable(True)
-        self.preview_scroll.setStyleSheet("""
-            QScrollArea {
-                border: 1px solid #464647;
-                border-radius: 4px;
-                background-color: #1e1e1e;
-            }
-        """)
-        
-        layout.addWidget(self.preview_scroll)
-        
+        button_layout.addStretch()  # 左對齊按鈕
+    
     def select_files(self) -> None:
         """選擇文件對話框"""
         files, _ = QFileDialog.getOpenFileNames(
             self,
-            t('images_select'),
+            t('images.select'),
             "",
             "Image files (*.png *.jpg *.jpeg *.gif *.bmp *.webp);;All files (*)"
         )
@@ -471,20 +486,30 @@ class ImageUploadWidget(QWidget):
     def _refresh_preview(self) -> None:
         """刷新預覽布局"""
         # 清除現有預覽
-        while self.preview_layout.count():
-            child = self.preview_layout.takeAt(0)
+        while self.images_grid_layout.count():
+            child = self.images_grid_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
+        
+        # 根據圖片數量決定顯示內容
+        if len(self.images) == 0:
+            # 沒有圖片時，顯示拖拽提示
+            self.drop_hint_label.show()
+            self.images_grid_widget.hide()
+        else:
+            # 有圖片時，隱藏拖拽提示，顯示圖片網格
+            self.drop_hint_label.hide()
+            self.images_grid_widget.show()
+            
+            # 重新添加圖片預覽
+            for i, (image_id, image_info) in enumerate(self.images.items()):
+                preview = ImagePreviewWidget(image_info["path"], image_id, self)
+                preview.remove_clicked.connect(self._remove_image)
                 
-        # 重新添加圖片預覽
-        for i, (image_id, image_info) in enumerate(self.images.items()):
-            preview = ImagePreviewWidget(image_info["path"], image_id, self)
-            preview.remove_clicked.connect(self._remove_image)
-            
-            row = i // 5
-            col = i % 5
-            self.preview_layout.addWidget(preview, row, col)
-            
+                row = i // 5
+                col = i % 5
+                self.images_grid_layout.addWidget(preview, row, col)
+    
     def _remove_image(self, image_id: str) -> None:
         """移除圖片"""
         if image_id in self.images:
@@ -511,7 +536,7 @@ class ImageUploadWidget(QWidget):
         """更新狀態標籤"""
         count = len(self.images)
         if count == 0:
-            self.status_label.setText(t('images_status', count=0))
+            self.status_label.setText(t('images.status', count=0))
         else:
             total_size = sum(img["size"] for img in self.images.values())
             
@@ -523,7 +548,7 @@ class ImageUploadWidget(QWidget):
                 size_kb = total_size / 1024
                 size_str = f"{size_kb:.1f} KB"
             
-            self.status_label.setText(t('images_status_with_size', count=count, size=size_str))
+            self.status_label.setText(t('images.statusWithSize', count=count, size=size_str))
             
             # 詳細調試信息
             debug_log(f"=== 圖片狀態更新 ===")
@@ -558,7 +583,7 @@ class ImageUploadWidget(QWidget):
             for url in event.mimeData().urls():
                 if url.isLocalFile() and self._is_image_file(url.toLocalFile()):
                     event.acceptProposedAction()
-                    self.drop_zone.setStyleSheet("""
+                    self.drop_hint_label.setStyleSheet("""
                         QLabel {
                             border: 2px dashed #007acc;
                             border-radius: 6px;
@@ -572,7 +597,7 @@ class ImageUploadWidget(QWidget):
     
     def dragLeaveEvent(self, event) -> None:
         """拖拽離開事件"""
-        self.drop_zone.setStyleSheet("""
+        self.drop_hint_label.setStyleSheet("""
             QLabel {
                 border: 2px dashed #464647;
                 border-radius: 6px;
@@ -624,19 +649,19 @@ class ImageUploadWidget(QWidget):
         """更新界面文字（用於語言切換）"""
         # 更新標題
         if hasattr(self, 'title'):
-            self.title.setText(t('images_title'))
+            self.title.setText(t('images.title'))
         
         # 更新按鈕文字
         if hasattr(self, 'file_button'):
-            self.file_button.setText(t('btn_select_files'))
+            self.file_button.setText(t('buttons.selectFiles'))
         if hasattr(self, 'paste_button'):
-            self.paste_button.setText(t('btn_paste_clipboard'))
+            self.paste_button.setText(t('buttons.pasteClipboard'))
         if hasattr(self, 'clear_button'):
-            self.clear_button.setText(t('btn_clear_all'))
+            self.clear_button.setText(t('buttons.clearAll'))
         
         # 更新拖拽區域文字
-        if hasattr(self, 'drop_zone'):
-            self.drop_zone.setText(t('images_drag_hint'))
+        if hasattr(self, 'drop_hint_label'):
+            self.drop_hint_label.setText(t('images.dragHint'))
         
         # 更新狀態文字
         self._update_status()
@@ -663,112 +688,46 @@ class FeedbackWindow(QMainWindow):
         
     def _setup_ui(self) -> None:
         """設置用戶介面"""
-        self.setWindowTitle(t('app_title'))
-        self.setMinimumSize(900, 700)
-        self.resize(1000, 800)
+        self.setWindowTitle(t('app.title'))
+        self.setMinimumSize(1000, 800)
+        self.resize(1200, 900)
         
         # 中央元件
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
-        layout.setSpacing(8)
-        layout.setContentsMargins(16, 8, 16, 12)
         
-        # 頂部工具欄（包含語言選擇器）
-        self._create_toolbar(layout)
+        # 主布局
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(16, 8, 16, 12)
         
-        # AI 工作摘要區域
-        self._create_summary_section(layout)
+        # 頂部專案目錄信息
+        self._create_project_header(main_layout)
         
-        # 分頁區域
-        self._create_tabs(layout)
+        # 分頁區域（包含AI摘要、語言設置、回饋、命令）
+        self._create_tabs(main_layout)
         
         # 操作按鈕
-        self._create_action_buttons(layout)
+        self._create_action_buttons(main_layout)
         
         # 設置快捷鍵
         self._setup_shortcuts()
     
-    def _create_toolbar(self, layout: QVBoxLayout) -> None:
-        """創建頂部工具欄"""
-        toolbar_widget = QWidget()
-        toolbar_layout = QHBoxLayout(toolbar_widget)
-        toolbar_layout.setContentsMargins(0, 0, 0, 8)
+    def _create_project_header(self, layout: QVBoxLayout) -> None:
+        """創建專案目錄頭部信息"""
+        header_widget = QWidget()
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(0, 0, 0, 8)
         
-        # 左側佔位符（可以添加其他工具）
-        toolbar_layout.addStretch()
+        # 專案目錄信息
+        self.project_label = QLabel(f"{t('app.projectDirectory')}: {self.project_dir}")
+        self.project_label.setStyleSheet("color: #9e9e9e; font-size: 12px; padding: 4px 0;")  # 增大字體
+        self.project_label.setWordWrap(True)
+        header_layout.addWidget(self.project_label)
         
-        # 語言選擇器
-        self.language_label = QLabel(t('language_selector'))
-        self.language_label.setStyleSheet("font-weight: bold; color: #e0e0e0;")
-        toolbar_layout.addWidget(self.language_label)
+        header_layout.addStretch()
         
-        self.language_selector = QComboBox()
-        self.language_selector.setMinimumWidth(120)
-        self.language_selector.setStyleSheet("""
-            QComboBox {
-                background-color: #404040;
-                border: 1px solid #606060;
-                border-radius: 4px;
-                padding: 4px 8px;
-                color: #e0e0e0;
-                font-size: 11px;
-            }
-            QComboBox:hover {
-                border-color: #0078d4;
-            }
-            QComboBox::drop-down {
-                border: none;
-                width: 20px;
-            }
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                border-top: 6px solid #e0e0e0;
-                margin-right: 4px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #404040;
-                border: 1px solid #606060;
-                selection-background-color: #0078d4;
-                color: #e0e0e0;
-            }
-        """)
-        
-        # 填充語言選項
-        self._populate_language_selector()
-        
-        # 連接語言切換信號
-        self.language_selector.currentIndexChanged.connect(self._on_language_changed)
-        
-        toolbar_layout.addWidget(self.language_selector)
-        
-        layout.addWidget(toolbar_widget)
-    
-    def _populate_language_selector(self) -> None:
-        """填充語言選擇器"""
-        # 保存當前選擇
-        current_lang = self.i18n.get_current_language()
-        
-        # 清空並重新填充
-        self.language_selector.clear()
-        for lang_code in self.i18n.get_supported_languages():
-            display_name = self.i18n.get_language_display_name(lang_code)
-            self.language_selector.addItem(display_name, lang_code)
-        
-        # 設置當前選中的語言
-        for i in range(self.language_selector.count()):
-            if self.language_selector.itemData(i) == current_lang:
-                self.language_selector.setCurrentIndex(i)
-                break
-    
-    def _on_language_changed(self, index: int) -> None:
-        """處理語言變更"""
-        lang_code = self.language_selector.itemData(index)
-        if lang_code and self.i18n.set_language(lang_code):
-            # 發送語言變更信號
-            self.language_changed.emit()
+        layout.addWidget(header_widget)
     
     def _create_menu_bar(self) -> None:
         """創建菜單欄"""
@@ -783,7 +742,7 @@ class FeedbackWindow(QMainWindow):
     def _refresh_ui_texts(self) -> None:
         """刷新界面文字"""
         # 更新窗口標題
-        self.setWindowTitle(t('app_title'))
+        self.setWindowTitle(t('app.title'))
         
         # 更新工具欄文字
         self._update_toolbar_texts()
@@ -798,7 +757,7 @@ class FeedbackWindow(QMainWindow):
         """更新工具欄文字"""
         # 更新語言選擇器標籤
         if hasattr(self, 'language_label'):
-            self.language_label.setText(t('language_selector'))
+            self.language_label.setText(t('language.selector'))
         
         # 更新語言選擇器選項
         if hasattr(self, 'language_selector'):
@@ -813,19 +772,34 @@ class FeedbackWindow(QMainWindow):
     
     def _update_widget_texts(self) -> None:
         """更新元件文字"""
-        # 更新摘要標題
-        if hasattr(self, 'summary_title'):
-            self.summary_title.setText(t('ai_summary'))
+        # 更新分頁標籤
+        if hasattr(self, 'tab_widget'):
+            # AI 摘要分頁
+            self.tab_widget.setTabText(0, t('tabs.summary'))
+            # 回饋分頁
+            self.tab_widget.setTabText(1, t('tabs.feedback'))
+            # 命令分頁
+            self.tab_widget.setTabText(2, t('tabs.command'))
+            # 語言設置分頁
+            self.tab_widget.setTabText(3, t('tabs.language'))
         
-        # 更新摘要內容（如果是測試摘要）
+        # 更新專案目錄標籤
+        if hasattr(self, 'project_label'):
+            self.project_label.setText(f"{t('app.projectDirectory')}: {self.project_dir}")
+        
+        # 更新 AI 摘要相關文字
+        if hasattr(self, 'summary_title'):
+            self.summary_title.setText(t('aiSummary'))
+        
+        # 更新AI摘要內容（如果是測試摘要）
         if hasattr(self, 'summary_text'):
             # 檢查是否為測試摘要，需要動態翻譯
             if self._is_test_summary():
                 # 判斷是哪種測試類型並重新獲取翻譯
-                if '圖片預覽' in self.summary or 'Image Preview' in self.summary or '图片预览' in self.summary:
+                if any(keyword in self.summary for keyword in ['圖片預覽', 'Image Preview', '图片预览', '視窗調整', 'Window Adjustment', '窗口调整']):
                     # Qt GUI 測試
                     translated_summary = t('test.qtGuiSummary')
-                elif 'Web UI' in self.summary:
+                elif any(keyword in self.summary for keyword in ['Web UI', 'WebSocket', 'web ui']):
                     # Web UI 測試
                     translated_summary = t('test.webUiSummary')
                 else:
@@ -835,41 +809,53 @@ class FeedbackWindow(QMainWindow):
                 # 更新儲存的摘要以保持一致
                 self.summary = translated_summary
         
-        # 更新專案目錄標籤
-        if hasattr(self, 'project_label'):
-            self.project_label.setText(f"{t('project_directory')}: {self.project_dir}")
+        # 更新語言設置分頁的文字
+        if hasattr(self, 'language_title_label'):
+            self.language_title_label.setText(t('language.settings'))
+        if hasattr(self, 'language_label'):
+            self.language_label.setText(t('language.selector'))
+        if hasattr(self, 'language_description_label'):
+            self.language_description_label.setText(t('language.description'))
         
-        # 更新分頁標籤
-        if hasattr(self, 'tab_widget'):
-            self.tab_widget.setTabText(0, t('feedback_tab'))
-            self.tab_widget.setTabText(1, t('command_tab'))
+        # 重新填充語言選擇器（確保顯示名稱正確）
+        if hasattr(self, 'language_selector'):
+            # 暫時斷開信號連接
+            self.language_selector.currentIndexChanged.disconnect()
+            self._populate_language_selector()
+            # 重新連接信號
+            self.language_selector.currentIndexChanged.connect(self._on_language_changed)
+        
+        # 更新回饋相關文字
+        if hasattr(self, 'feedback_title'):
+            self.feedback_title.setText(t('feedback.title'))
+        if hasattr(self, 'feedback_description'):
+            self.feedback_description.setText(t('feedback.description'))
+        if hasattr(self, 'feedback_input'):
+            # 同時支持 Windows 和 macOS 的快捷鍵提示
+            placeholder_text = t('feedback.placeholder').replace("Ctrl+Enter", "Ctrl+Enter/Cmd+Enter").replace("Ctrl+V", "Ctrl+V/Cmd+V")
+            self.feedback_input.setPlaceholderText(placeholder_text)
+        
+        # 更新命令相關文字
+        if hasattr(self, 'command_title'):
+            self.command_title.setText(t('command.title'))
+        if hasattr(self, 'command_description'):
+            self.command_description.setText(t('command.description'))
+        if hasattr(self, 'command_input'):
+            self.command_input.setPlaceholderText(t('command.placeholder'))
+        if hasattr(self, 'command_output_label'):
+            self.command_output_label.setText(t('command.output'))
         
         # 更新按鈕文字
         if hasattr(self, 'submit_button'):
-            self.submit_button.setText(t('btn_submit_feedback'))
+            self.submit_button.setText(t('buttons.submitFeedback'))
+            # 同時顯示 Windows 和 macOS 快捷鍵提示
+            self.submit_button.setToolTip(f"{t('buttons.submitFeedback')} (Ctrl+Enter/Cmd+Enter)")
         if hasattr(self, 'cancel_button'):
-            self.cancel_button.setText(t('btn_cancel'))
-        if hasattr(self, 'run_button'):
-            self.run_button.setText(t('btn_run_command'))
+            self.cancel_button.setText(t('buttons.cancel'))
+            self.cancel_button.setToolTip(f"{t('buttons.cancel')} (Esc)")
+        if hasattr(self, 'run_command_button'):
+            self.run_command_button.setText(t('buttons.runCommand'))
         
-        # 更新回饋區域標籤
-        if hasattr(self, 'feedback_title'):
-            self.feedback_title.setText(t('feedback_title'))
-        if hasattr(self, 'feedback_description'):
-            self.feedback_description.setText(t('feedback_description'))
-        if hasattr(self, 'feedback_input'):
-            self.feedback_input.setPlaceholderText(t('feedback_placeholder'))
-        
-        # 更新命令區域標籤
-        if hasattr(self, 'command_title'):
-            self.command_title.setText(t('command_title'))
-        if hasattr(self, 'command_description'):
-            self.command_description.setText(t('command_description'))
-        if hasattr(self, 'command_input'):
-            self.command_input.setPlaceholderText(t('command_placeholder'))
-        if hasattr(self, 'output_title'):
-            self.output_title.setText(t('command_output'))
-    
     def _is_test_summary(self) -> bool:
         """檢查是否為測試摘要，使用更嚴格的檢測邏輯"""
         # 更嚴格的測試摘要特徵組合檢測
@@ -907,45 +893,152 @@ class FeedbackWindow(QMainWindow):
         if hasattr(self, 'image_upload'):
             self.image_upload.update_texts()
 
-    def _create_summary_section(self, layout: QVBoxLayout) -> None:
-        """創建 AI 工作摘要區域"""
-        summary_group = QGroupBox()
-        summary_group.setTitle("")
-        summary_group.setMaximumHeight(200)
-        summary_layout = QVBoxLayout(summary_group)
-        summary_layout.setSpacing(8)
-        summary_layout.setContentsMargins(12, 8, 12, 12)
-        
-        # 標題與項目信息
-        header_layout = QHBoxLayout()
+    def _create_summary_tab(self) -> None:
+        """創建AI工作摘要分頁"""
+        summary_widget = QWidget()
+        summary_layout = QVBoxLayout(summary_widget)
+        summary_layout.setSpacing(12)  # 增加間距
+        summary_layout.setContentsMargins(18, 18, 18, 18)  # 增加邊距
         
         # AI 工作摘要標題
-        self.summary_title = QLabel(t('ai_summary'))
-        self.summary_title.setFont(QFont("", 12, QFont.Bold))
-        self.summary_title.setStyleSheet("color: #007acc; margin-bottom: 5px;")
-        header_layout.addWidget(self.summary_title)
+        self.summary_title = QLabel(t('aiSummary'))
+        self.summary_title.setFont(QFont("", 16, QFont.Bold))  # 增大字體
+        self.summary_title.setStyleSheet("color: #007acc; margin-bottom: 10px; padding: 6px 0;")
+        summary_layout.addWidget(self.summary_title)
         
-        header_layout.addStretch()
-        
-        # 專案目錄信息
-        self.project_label = QLabel(f"{t('project_directory')}: {self.project_dir}")
-        self.project_label.setStyleSheet("color: #9e9e9e; font-size: 11px;")
-        header_layout.addWidget(self.project_label)
-        
-        summary_layout.addLayout(header_layout)
-        
-        # 摘要內容（可滾動的文本區域）- 儲存為實例變數以支援動態更新
+        # 摘要內容
         self.summary_text = QTextEdit()
         self.summary_text.setPlainText(self.summary)
         self.summary_text.setReadOnly(True)
-        self.summary_text.setMaximumHeight(120)
-        summary_layout.addWidget(self.summary_text)
+        self.summary_text.setStyleSheet("""
+            QTextEdit {
+                background-color: #3a3a3a;
+                border: 1px solid #555;
+                border-radius: 6px;
+                padding: 16px;
+                font-size: 13px;
+                line-height: 1.5;
+            }
+        """)
         
-        layout.addWidget(summary_group)
+        summary_layout.addWidget(self.summary_text, 1)
+        
+        self.tab_widget.addTab(summary_widget, t('tabs.summary'))
     
+    def _create_language_tab(self) -> None:
+        """創建語言設置分頁"""
+        language_widget = QWidget()
+        language_layout = QVBoxLayout(language_widget)
+        language_layout.setSpacing(12)
+        language_layout.setContentsMargins(16, 16, 16, 16)
+        
+        # 語言設置標題
+        self.language_title_label = QLabel(t('language.settings'))
+        self.language_title_label.setFont(QFont("", 16, QFont.Bold))  # 增大字體
+        self.language_title_label.setStyleSheet("color: #007acc; margin-bottom: 8px; padding: 4px 0;")
+        language_layout.addWidget(self.language_title_label)
+        
+        # 語言選擇區域
+        selector_group = QGroupBox()
+        selector_layout = QVBoxLayout(selector_group)
+        selector_layout.setSpacing(12)  # 增加間距
+        selector_layout.setContentsMargins(16, 16, 16, 16)  # 增加邊距
+        
+        # 語言選擇器標籤和下拉框
+        selector_row = QHBoxLayout()
+        
+        self.language_label = QLabel(t('language.selector'))
+        self.language_label.setStyleSheet("font-weight: bold; color: #e0e0e0; font-size: 14px;")  # 增大字體
+        selector_row.addWidget(self.language_label)
+        
+        self.language_selector = QComboBox()
+        self.language_selector.setMinimumWidth(180)  # 增加寬度
+        self.language_selector.setMinimumHeight(35)  # 增加高度
+        self.language_selector.setStyleSheet("""
+            QComboBox {
+                background-color: #404040;
+                border: 1px solid #606060;
+                border-radius: 4px;
+                padding: 8px 12px;
+                color: #e0e0e0;
+                font-size: 14px;
+            }
+            QComboBox:hover {
+                border-color: #0078d4;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 25px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 7px solid #e0e0e0;
+                margin-right: 6px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #404040;
+                border: 1px solid #606060;
+                selection-background-color: #0078d4;
+                color: #e0e0e0;
+                font-size: 14px;
+            }
+        """)
+        
+        # 填充語言選項
+        self._populate_language_selector()
+        
+        # 連接語言切換信號
+        self.language_selector.currentIndexChanged.connect(self._on_language_changed)
+        
+        selector_row.addWidget(self.language_selector)
+        selector_row.addStretch()
+        
+        selector_layout.addLayout(selector_row)
+        
+        # 語言說明
+        self.language_description_label = QLabel(t('language.description'))
+        self.language_description_label.setStyleSheet("color: #9e9e9e; font-size: 12px; margin-top: 12px;")  # 增大字體
+        self.language_description_label.setWordWrap(True)
+        selector_layout.addWidget(self.language_description_label)
+        
+        language_layout.addWidget(selector_group)
+        language_layout.addStretch()
+        
+        self.tab_widget.addTab(language_widget, t('tabs.language'))
+    
+    def _populate_language_selector(self) -> None:
+        """填充語言選擇器"""
+        # 保存當前選擇
+        current_lang = self.i18n.get_current_language()
+        
+        # 清空並重新填充
+        self.language_selector.clear()
+        for lang_code in self.i18n.get_supported_languages():
+            display_name = self.i18n.get_language_display_name(lang_code)
+            self.language_selector.addItem(display_name, lang_code)
+        
+        # 設置當前選中的語言
+        for i in range(self.language_selector.count()):
+            if self.language_selector.itemData(i) == current_lang:
+                self.language_selector.setCurrentIndex(i)
+                break
+    
+    def _on_language_changed(self, index: int) -> None:
+        """處理語言變更"""
+        lang_code = self.language_selector.itemData(index)
+        if lang_code and self.i18n.set_language(lang_code):
+            # 發送語言變更信號
+            self.language_changed.emit()
+
     def _create_tabs(self, layout: QVBoxLayout) -> None:
-        """創建分頁標籤"""
+        """創建分頁標籤（重新組織結構）"""
         self.tab_widget = QTabWidget()
+        self.tab_widget.setMinimumHeight(500)  # 增加分頁區域高度
+        
+        # AI 工作摘要分頁
+        self._create_summary_tab()
         
         # 回饋分頁
         self._create_feedback_tab()
@@ -953,108 +1046,221 @@ class FeedbackWindow(QMainWindow):
         # 命令分頁  
         self._create_command_tab()
         
-        layout.addWidget(self.tab_widget)
+        # 語言設置分頁
+        self._create_language_tab()
         
+        layout.addWidget(self.tab_widget, 1)  # 讓分頁區域能夠擴展
+    
     def _create_feedback_tab(self) -> None:
-        """創建回饋分頁"""
+        """創建回饋分頁（修復布局比例）"""
         feedback_widget = QWidget()
-        layout = QVBoxLayout(feedback_widget)
-        layout.setSpacing(8)
-        layout.setContentsMargins(12, 12, 12, 12)
+        
+        # 使用分割器來管理回饋輸入和圖片區域
+        feedback_splitter = QSplitter(Qt.Vertical)
+        feedback_splitter.setChildrenCollapsible(False)
         
         # 回饋輸入區域
+        feedback_input_widget = QWidget()
+        feedback_input_widget.setMinimumHeight(200)  # 設置最小高度，確保輸入框可見
+        feedback_input_layout = QVBoxLayout(feedback_input_widget)
+        feedback_input_layout.setSpacing(8)
+        feedback_input_layout.setContentsMargins(12, 12, 12, 8)
+        
         feedback_group = QGroupBox()
         feedback_layout = QVBoxLayout(feedback_group)
         feedback_layout.setSpacing(8)
         feedback_layout.setContentsMargins(12, 8, 12, 12)
         
         # 回饋標題和說明
-        self.feedback_title = QLabel(t('feedback_title'))
-        self.feedback_title.setFont(QFont("", 11, QFont.Bold))
-        self.feedback_title.setStyleSheet("color: #007acc; margin-bottom: 5px;")
+        self.feedback_title = QLabel(t('feedback.title'))
+        self.feedback_title.setFont(QFont("", 13, QFont.Bold))  # 增大字體
+        self.feedback_title.setStyleSheet("color: #007acc; margin-bottom: 6px;")
         feedback_layout.addWidget(self.feedback_title)
         
         # 說明文字
-        self.feedback_description = QLabel(t('feedback_description'))
-        self.feedback_description.setStyleSheet("color: #9e9e9e; font-size: 10px; margin-bottom: 8px;")
+        self.feedback_description = QLabel(t('feedback.description'))
+        self.feedback_description.setStyleSheet("color: #9e9e9e; font-size: 11px; margin-bottom: 10px;")  # 增大字體
         self.feedback_description.setWordWrap(True)
         feedback_layout.addWidget(self.feedback_description)
         
-        # 文字輸入框
+        # 文字輸入框（調整最小高度並設置合理的最大高度）
         self.feedback_input = SmartTextEdit()
-        self.feedback_input.setPlaceholderText(t('feedback_placeholder'))
-        self.feedback_input.setMinimumHeight(120)
+        # 同時支持 Windows 和 macOS 的快捷鍵提示
+        placeholder_text = t('feedback.placeholder').replace("Ctrl+Enter", "Ctrl+Enter/Cmd+Enter").replace("Ctrl+V", "Ctrl+V/Cmd+V")
+        self.feedback_input.setPlaceholderText(placeholder_text)
+        
+        self.feedback_input.setMinimumHeight(120)  # 增加最小高度
+        self.feedback_input.setMaximumHeight(450)  # 增加最大高度
+        # 設置輸入框字體
+        self.feedback_input.setStyleSheet("""
+            QTextEdit {
+                background-color: #2d2d30;
+                border: 1px solid #464647;
+                border-radius: 4px;
+                padding: 10px;
+                color: #ffffff;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+        """)
         # 連接智能貼上信號
         self.feedback_input.image_paste_requested.connect(self._handle_image_paste_from_textarea)
-        feedback_layout.addWidget(self.feedback_input)
+        feedback_layout.addWidget(self.feedback_input, 1)  # 讓輸入框能夠擴展
         
-        layout.addWidget(feedback_group, stretch=2)  # 給更多空間
+        feedback_input_layout.addWidget(feedback_group, 1)
         
         # 圖片上傳區域
-        self.image_upload = ImageUploadWidget()
-        layout.addWidget(self.image_upload, stretch=3)  # 給圖片區域更多空間
+        image_upload_widget = QWidget()
+        image_upload_widget.setMinimumHeight(140)  # 設置最小高度
+        image_upload_widget.setMaximumHeight(250)  # 設置最大高度，防止過度擴展
+        image_upload_layout = QVBoxLayout(image_upload_widget)
+        image_upload_layout.setSpacing(8)
+        image_upload_layout.setContentsMargins(12, 8, 12, 12)
         
-        self.tab_widget.addTab(feedback_widget, t('feedback_tab'))
+        self.image_upload = ImageUploadWidget()
+        image_upload_layout.addWidget(self.image_upload, 1)  # 讓圖片上傳區域能夠擴展
+        
+        # 添加到分割器
+        feedback_splitter.addWidget(feedback_input_widget)
+        feedback_splitter.addWidget(image_upload_widget)
+        
+        # 調整分割器的初始比例和最小尺寸
+        feedback_splitter.setStretchFactor(0, 3)  # 回饋輸入區域較大
+        feedback_splitter.setStretchFactor(1, 1)  # 圖片上傳區域較小
+        feedback_splitter.setSizes([300, 140])    # 設置初始大小
+        
+        # 設置分割器的最小尺寸，防止子元件被過度壓縮
+        feedback_splitter.setMinimumHeight(340)   # 設置分割器最小高度
+        
+        # 設置主布局
+        main_layout = QVBoxLayout(feedback_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(feedback_splitter)
+        
+        self.tab_widget.addTab(feedback_widget, t('tabs.feedback'))
         
     def _create_command_tab(self) -> None:
-        """創建命令分頁"""
+        """創建命令分頁（優化布局）"""
         command_widget = QWidget()
-        layout = QVBoxLayout(command_widget)
-        layout.setSpacing(8)
-        layout.setContentsMargins(12, 12, 12, 12)
+        
+        # 使用分割器來管理命令輸入和輸出區域
+        command_splitter = QSplitter(Qt.Vertical)
+        command_splitter.setChildrenCollapsible(False)
         
         # 命令輸入區域
+        command_input_widget = QWidget()
+        command_input_layout = QVBoxLayout(command_input_widget)
+        command_input_layout.setSpacing(8)
+        command_input_layout.setContentsMargins(12, 12, 12, 8)
+        
         command_group = QGroupBox()
         command_layout = QVBoxLayout(command_group)
         command_layout.setSpacing(8)
         command_layout.setContentsMargins(12, 8, 12, 12)
         
         # 命令標題
-        self.command_title = QLabel(t('command_title'))
-        self.command_title.setFont(QFont("", 11, QFont.Bold))
-        self.command_title.setStyleSheet("color: #007acc; margin-bottom: 5px;")
+        self.command_title = QLabel(t('command.title'))
+        self.command_title.setFont(QFont("", 13, QFont.Bold))  # 增大字體
+        self.command_title.setStyleSheet("color: #007acc; margin-bottom: 6px;")
         command_layout.addWidget(self.command_title)
         
         # 說明文字
-        self.command_description = QLabel(t('command_description'))
-        self.command_description.setStyleSheet("color: #9e9e9e; font-size: 10px; margin-bottom: 8px;")
+        self.command_description = QLabel(t('command.description'))
+        self.command_description.setStyleSheet("color: #9e9e9e; font-size: 11px; margin-bottom: 10px;")  # 增大字體
         self.command_description.setWordWrap(True)
         command_layout.addWidget(self.command_description)
         
         # 命令輸入和執行按鈕
         input_layout = QHBoxLayout()
         self.command_input = QLineEdit()
-        self.command_input.setPlaceholderText(t('command_placeholder'))
+        self.command_input.setPlaceholderText(t('command.placeholder'))
+        self.command_input.setMinimumHeight(36)  # 增加輸入框高度
+        self.command_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #2d2d30;
+                border: 1px solid #464647;
+                border-radius: 4px;
+                padding: 8px 10px;
+                color: #ffffff;
+                font-size: 12px;
+            }
+        """)
         self.command_input.returnPressed.connect(self._run_command)
         input_layout.addWidget(self.command_input)
         
-        self.run_button = QPushButton(t('btn_run_command'))
-        self.run_button.clicked.connect(self._run_command)
-        self.run_button.setFixedWidth(100)
-        input_layout.addWidget(self.run_button)
+        self.run_command_button = QPushButton(t('buttons.runCommand'))
+        self.run_command_button.clicked.connect(self._run_command)
+        self.run_command_button.setFixedSize(110, 36)  # 調整按鈕大小
+        self.run_command_button.setStyleSheet("""
+            QPushButton {
+                background-color: #0e639c;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #005a9e;
+            }
+        """)
+        input_layout.addWidget(self.run_command_button)
         
         command_layout.addLayout(input_layout)
-        layout.addWidget(command_group)
+        command_input_layout.addWidget(command_group)
         
         # 命令輸出區域
-        output_group = QGroupBox()
-        output_layout = QVBoxLayout(output_group)
+        output_widget = QWidget()
+        output_layout = QVBoxLayout(output_widget)
         output_layout.setSpacing(8)
         output_layout.setContentsMargins(12, 8, 12, 12)
         
-        self.output_title = QLabel(t('command_output'))
-        self.output_title.setFont(QFont("", 11, QFont.Bold))
-        self.output_title.setStyleSheet("color: #007acc; margin-bottom: 5px;")
-        output_layout.addWidget(self.output_title)
+        output_group = QGroupBox()
+        output_group_layout = QVBoxLayout(output_group)
+        output_group_layout.setSpacing(8)
+        output_group_layout.setContentsMargins(12, 8, 12, 12)
+        
+        self.command_output_label = QLabel(t('command.output'))
+        self.command_output_label.setFont(QFont("", 13, QFont.Bold))  # 增大字體
+        self.command_output_label.setStyleSheet("color: #007acc; margin-bottom: 6px;")
+        output_group_layout.addWidget(self.command_output_label)
         
         self.command_output = QTextEdit()
         self.command_output.setReadOnly(True)
-        self.command_output.setFont(QFont("Consolas", 9))
-        output_layout.addWidget(self.command_output)
+        self.command_output.setFont(QFont("Consolas", 11))  # 增大等寬字體
+        self.command_output.setMinimumHeight(220)  # 增加最小高度
+        # 改進輸出區域樣式
+        self.command_output.setStyleSheet("""
+            QTextEdit {
+                background-color: #2a2a2a;
+                border: 1px solid #555;
+                border-radius: 6px;
+                padding: 12px;
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 11px;
+                color: #e0e0e0;
+                line-height: 1.3;
+            }
+        """)
+        output_group_layout.addWidget(self.command_output, 1)
         
-        layout.addWidget(output_group, stretch=1)
+        output_layout.addWidget(output_group, 1)
         
-        self.tab_widget.addTab(command_widget, t('command_tab'))
+        # 添加到分割器
+        command_splitter.addWidget(command_input_widget)
+        command_splitter.addWidget(output_widget)
+        
+        # 設置分割器的初始比例（命令輸入:輸出 = 1:3）
+        command_splitter.setStretchFactor(0, 1)
+        command_splitter.setStretchFactor(1, 3)
+        command_splitter.setSizes([120, 350])
+        
+        # 設置主布局
+        main_layout = QVBoxLayout(command_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(command_splitter)
+        
+        self.tab_widget.addTab(command_widget, t('tabs.command'))
         
     def _create_action_buttons(self, layout: QVBoxLayout) -> None:
         """創建操作按鈕"""
@@ -1062,39 +1268,45 @@ class FeedbackWindow(QMainWindow):
         button_layout.addStretch()
         
         # 取消按鈕
-        self.cancel_button = QPushButton(t('btn_cancel'))
+        self.cancel_button = QPushButton(t('buttons.cancel'))
         self.cancel_button.clicked.connect(self._cancel_feedback)
-        self.cancel_button.setFixedSize(120, 35)
+        self.cancel_button.setFixedSize(130, 40)  # 增大按鈕尺寸
+        self.cancel_button.setStyleSheet("""
+            QPushButton {
+                background-color: #666666;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+        """)
         button_layout.addWidget(self.cancel_button)
         
         # 提交按鈕
-        self.submit_button = QPushButton(t('btn_submit_feedback'))
+        self.submit_button = QPushButton(t('buttons.submitFeedback'))
         self.submit_button.clicked.connect(self._submit_feedback)
-        self.submit_button.setFixedSize(140, 35)
+        self.submit_button.setFixedSize(160, 40)  # 增大按鈕尺寸
         self.submit_button.setDefault(True)
+        self.submit_button.setStyleSheet("""
+            QPushButton {
+                background-color: #0e639c;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #005a9e;
+            }
+        """)
         button_layout.addWidget(self.submit_button)
         
         layout.addLayout(button_layout)
-    
-    def _setup_shortcuts(self) -> None:
-        """設置快捷鍵"""
-        # Ctrl+Enter 提交回饋 (支援主鍵盤和數字鍵盤)
-        submit_shortcut1 = QShortcut(QKeySequence("Ctrl+Return"), self)
-        submit_shortcut1.activated.connect(self._submit_feedback)
-        
-        # 數字鍵盤的 Enter 鍵 (Qt.Key_Enter)
-        submit_shortcut2 = QShortcut(QKeySequence("Ctrl+Enter"), self)
-        submit_shortcut2.activated.connect(self._submit_feedback)
-        
-        # Escape 取消
-        cancel_shortcut = QShortcut(QKeySequence("Esc"), self)
-        cancel_shortcut.activated.connect(self._cancel_feedback)
-        
-        # 更新提交按鈕的提示文字，顯示快捷鍵
-        if hasattr(self, 'submit_button'):
-            self.submit_button.setToolTip(f"{t('btn_submit_feedback')} (Ctrl+Enter)")
-        if hasattr(self, 'cancel_button'):
-            self.cancel_button.setToolTip(f"{t('btn_cancel')} (Esc)")
     
     def _apply_dark_style(self) -> None:
         """應用深色主題"""
@@ -1248,6 +1460,26 @@ class FeedbackWindow(QMainWindow):
                 debug_log(f"視窗關閉時清理了 {temp_files_cleaned} 個臨時文件")
         
         event.accept()
+
+    def _setup_shortcuts(self) -> None:
+        """設置快捷鍵"""
+        # 同時支持 Windows (Ctrl) 和 macOS (Cmd) 快捷鍵
+        
+        # Windows/Linux: Ctrl+Enter 提交回饋
+        ctrl_submit_shortcut1 = QShortcut(QKeySequence("Ctrl+Return"), self)
+        ctrl_submit_shortcut2 = QShortcut(QKeySequence("Ctrl+Enter"), self)
+        ctrl_submit_shortcut1.activated.connect(self._submit_feedback)
+        ctrl_submit_shortcut2.activated.connect(self._submit_feedback)
+        
+        # macOS: Cmd+Enter 提交回饋
+        cmd_submit_shortcut1 = QShortcut(QKeySequence("Cmd+Return"), self)
+        cmd_submit_shortcut2 = QShortcut(QKeySequence("Cmd+Enter"), self)
+        cmd_submit_shortcut1.activated.connect(self._submit_feedback)
+        cmd_submit_shortcut2.activated.connect(self._submit_feedback)
+        
+        # Escape 取消（通用）
+        cancel_shortcut = QShortcut(QKeySequence("Esc"), self)
+        cancel_shortcut.activated.connect(self._cancel_feedback)
 
 
 # ===== 主要入口函數 =====

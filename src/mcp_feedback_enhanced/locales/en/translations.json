@@ -13,8 +13,10 @@
     "settings": "Settings"
   },
   "tabs": {
+    "summary": "📋 AI Summary",
     "feedback": "💬 Feedback",
     "command": "⚡ Command",
+    "language": "🌐 Language Settings",
     "images": "🖼️ Images"
   },
   "feedback": {
@@ -35,7 +37,7 @@
     "clear": "Clear",
     "status": "{count} images selected",
     "statusWithSize": "{count} images selected (Total {size})",
-    "dragHint": "🎯 Drag images here or press Ctrl+V to paste from clipboard (PNG, JPG, JPEG, GIF, BMP, WebP)",
+    "dragHint": "🎯 Drag images here or press Ctrl+V/Cmd+V to paste from clipboard (PNG, JPG, JPEG, GIF, BMP, WebP)",
     "deleteConfirm": "Are you sure you want to remove image \"{filename}\"?",
     "deleteTitle": "Confirm Delete",
     "sizeWarning": "Image file size cannot exceed 1MB",
@@ -45,6 +47,11 @@
     "paste_no_image": "No image in clipboard to paste",
     "paste_image_from_textarea": "Image intelligently pasted from text area to image area",
     "images_clear": "Clear all images"
+  },
+  "language": {
+    "settings": "Language Settings",
+    "selector": "🌐 Language Selection",
+    "description": "Choose your preferred interface language. Language changes take effect immediately."
   },
   "buttons": {
     "submit": "Submit Feedback",

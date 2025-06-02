@@ -13,8 +13,10 @@
     "settings": "設定"
   },
   "tabs": {
+    "summary": "📋 AI 摘要",
     "feedback": "💬 回饋",
     "command": "⚡ 命令",
+    "language": "🌐 語言設置",
     "images": "🖼️ 圖片"
   },
   "feedback": {
@@ -35,7 +37,7 @@
     "clear": "清除",
     "status": "已選擇 {count} 張圖片",
     "statusWithSize": "已選擇 {count} 張圖片 (總計 {size})",
-    "dragHint": "🎯 拖拽圖片到這裡 或 按 Ctrl+V 貼上剪貼簿圖片 (PNG、JPG、JPEG、GIF、BMP、WebP)",
+    "dragHint": "🎯 拖拽圖片到這裡 或 按 Ctrl+V/Cmd+V 貼上剪貼簿圖片 (PNG、JPG、JPEG、GIF、BMP、WebP)",
     "deleteConfirm": "確定要移除圖片 \"{filename}\" 嗎？",
     "deleteTitle": "確認刪除",
     "sizeWarning": "圖片文件大小不能超過 1MB",
@@ -45,6 +47,11 @@
     "paste_no_image": "剪貼簿中沒有圖片可貼上",
     "paste_image_from_textarea": "已將圖片從文字框智能貼到圖片區域",
     "images_clear": "清除所有圖片"
+  },
+  "language": {
+    "settings": "語言設置",
+    "selector": "🌐 語言選擇",
+    "description": "選擇您偏好的界面語言。語言變更會立即生效。"
   },
   "buttons": {
     "submit": "提交回饋",

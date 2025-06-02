@@ -298,6 +298,31 @@ class WebUIManager:
             else:
                 return HTMLResponse(self._get_simple_feedback_html(session_id, session))
 
+        @self.app.get("/api/translations")
+        async def get_translations():
+            """提供語系檔案 API"""
+            try:
+                translations = {}
+                locales_dir = package_dir / "locales"
+                
+                if locales_dir.exists():
+                    for lang_dir in locales_dir.iterdir():
+                        if lang_dir.is_dir():
+                            lang_code = lang_dir.name
+                            translation_file = lang_dir / "translations.json"
+                            
+                            if translation_file.exists():
+                                try:
+                                    with open(translation_file, 'r', encoding='utf-8') as f:
+                                        translations[lang_code] = json.load(f)
+                                except Exception as e:
+                                    debug_log(f"載入語言檔案失敗 {lang_code}: {e}")
+                
+                return JSONResponse(translations)
+            except Exception as e:
+                debug_log(f"語系 API 錯誤: {e}")
+                return JSONResponse({}, status_code=500)
+
         @self.app.websocket("/ws/{session_id}")
         async def websocket_endpoint(websocket: WebSocket, session_id: str):
             """WebSocket 連接處理"""

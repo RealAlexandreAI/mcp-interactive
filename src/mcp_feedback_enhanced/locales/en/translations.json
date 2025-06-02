@@ -82,5 +82,9 @@
     "zhTw": "繁體中文",
     "en": "English",
     "zhCn": "简体中文"
+  },
+  "test": {
+    "qtGuiSummary": "🎯 Image Preview and Window Adjustment Test\n\nThis is a test session to verify the following features:\n\n✅ Test Items:\n1. Image upload and preview functionality\n2. Image X delete button in top-right corner\n3. Free window resizing\n4. Flexible splitter adjustment\n5. Dynamic layout of all areas\n6. Smart Ctrl+V image paste functionality\n\n📋 Test Steps:\n1. Try uploading some images (drag & drop, file selection, clipboard)\n2. Check if image preview displays correctly\n3. Click the X button in the top-right corner of images to delete them\n4. Try resizing the window, check if it can be freely adjusted\n5. Drag the splitter to adjust area sizes\n6. Press Ctrl+V in the text box to test smart paste functionality\n7. Provide any feedback or issues found\n\nPlease test these features and provide feedback!",
+    "webUiSummary": "Test Web UI Functionality\n\n🎯 **Test Items:**\n- Web UI server startup and operation\n- WebSocket real-time communication\n- Feedback submission functionality\n- Image upload and preview\n- Command execution functionality\n- Smart Ctrl+V image paste\n- Multi-language interface switching\n\n📋 **Test Steps:**\n1. Test image upload (drag & drop, file selection, clipboard)\n2. Press Ctrl+V in text box to test smart paste\n3. Try switching languages (Traditional Chinese/Simplified Chinese/English)\n4. Test command execution functionality\n5. Submit feedback and images\n\nPlease test these features and provide feedback!"
   }
 } 

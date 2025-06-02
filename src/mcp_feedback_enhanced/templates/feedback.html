@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW" id="html-root">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,7 +104,8 @@
             }
         }
 
-        .feedback-section, .summary-section {
+        .feedback-section,
+        .summary-section {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
@@ -180,7 +182,8 @@
             color: var(--text-primary);
         }
 
-        .text-input, .command-input {
+        .text-input,
+        .command-input {
             width: 100%;
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
@@ -199,13 +202,15 @@
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
         }
 
-        .text-input:focus, .command-input:focus {
+        .text-input:focus,
+        .command-input:focus {
             outline: none;
             border-color: var(--accent-color);
             box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
         }
 
-        .text-input::placeholder, .command-input::placeholder {
+        .text-input::placeholder,
+        .command-input::placeholder {
             color: var(--text-secondary);
         }
 
@@ -333,7 +338,7 @@
             border-radius: 6px;
             padding: 15px;
             background: var(--bg-tertiary);
-            background-image: 
+            background-image:
                 linear-gradient(90deg, rgba(70, 70, 71, 0.1) 1px, transparent 1px),
                 linear-gradient(rgba(70, 70, 71, 0.1) 1px, transparent 1px);
             background-size: 120px 120px;
@@ -509,11 +514,11 @@
             .container {
                 padding: 15px;
             }
-            
+
             .header-content {
                 padding: 0 15px;
             }
-            
+
             .image-preview-area {
                 grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
                 gap: 10px;
@@ -553,14 +558,14 @@
                 flex-direction: column;
                 gap: 15px;
             }
-            
+
             .image-preview-area {
                 grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
                 gap: 8px;
                 padding: 10px;
                 max-height: 300px;
             }
-            
+
             .image-preview {
                 height: 80px;
             }
@@ -572,7 +577,7 @@
                 gap: 15px;
                 padding: 20px;
             }
-            
+
             .image-preview {
                 height: 120px;
             }
@@ -602,6 +607,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="header">
         <div class="header-content">
@@ -653,11 +659,8 @@
                         <div class="section-description" id="feedbackDescription">
                             請在這裡輸入您的回饋、建議或問題。您的意見將幫助 AI 更好地理解您的需求。
                         </div>
-                        <textarea 
-                            id="feedbackText" 
-                            class="text-input" 
-                            placeholder="請在這裡輸入您的回饋、建議或問題...&#10;&#10;💡 小提示：&#10;• 按 Ctrl+Enter 可快速提交回饋&#10;• 按 Ctrl+V 可直接貼上剪貼簿圖片"
-                        ></textarea>
+                        <textarea id="feedbackText" class="text-input"
+                            placeholder="請在這裡輸入您的回饋、建議或問題...&#10;&#10;💡 小提示：&#10;• 按 Ctrl+Enter 可快速提交回饋&#10;• 按 Ctrl+V 可直接貼上剪貼簿圖片"></textarea>
                     </div>
 
                     <!-- 圖片上傳區域 -->
@@ -665,7 +668,8 @@
                         <h3 id="imagesTitle">🖼️ 圖片附件（可選）</h3>
                         <div class="upload-buttons">
                             <button class="upload-btn" onclick="selectFiles()" id="selectFilesBtn">📁 選擇文件</button>
-                            <button class="upload-btn success" onclick="pasteFromClipboard()" id="pasteBtn">📋 剪貼板</button>
+                            <button class="upload-btn success" onclick="pasteFromClipboard()" id="pasteBtn">📋
+                                剪貼板</button>
                             <button class="upload-btn danger" onclick="clearAllImages()" id="clearBtn">❌ 清除</button>
                         </div>
                         <div class="drop-zone" id="dropZone">
@@ -685,13 +689,8 @@
                         </div>
                         <div class="command-section">
                             <div class="command-input-wrapper">
-                                <input 
-                                    type="text" 
-                                    id="commandInput" 
-                                    class="command-input" 
-                                    placeholder="輸入要執行的命令..."
-                                    onkeypress="if(event.key==='Enter') runCommand()"
-                                >
+                                <input type="text" id="commandInput" class="command-input" placeholder="輸入要執行的命令..."
+                                    onkeypress="if(event.key==='Enter') runCommand()">
                             </div>
                             <button class="run-button" onclick="runCommand()" id="runBtn">▶️ 執行</button>
                         </div>
@@ -716,7 +715,7 @@
 
     <!-- 引入國際化模組 -->
     <script src="/static/i18n.js"></script>
-    
+
     <script>
         // 全域變數
         let selectedImages = [];
@@ -742,9 +741,9 @@
         function initWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws/{{ session_id }}`;
-            
+
             console.log('嘗試連接 WebSocket:', wsUrl);
-            
+
             try {
                 ws = new WebSocket(wsUrl);
                 setupWebSocketHandlers();
@@ -755,14 +754,14 @@
         }
 
         function setupWebSocketHandlers() {
-            ws.onopen = function() {
+            ws.onopen = function () {
                 console.log('WebSocket 連接成功');
                 isConnected = true;
                 reconnectAttempts = 0;
                 showNotification('WebSocket 連接成功', 'success');
             };
 
-            ws.onmessage = function(event) {
+            ws.onmessage = function (event) {
                 try {
                     const data = JSON.parse(event.data);
                     handleWebSocketMessage(data);
@@ -772,17 +771,17 @@
                 }
             };
 
-            ws.onclose = function(event) {
+            ws.onclose = function (event) {
                 console.log('WebSocket 連接關閉:', event.code, event.reason);
                 isConnected = false;
-                
+
                 // 自動重連（除非是正常關閉）
                 if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
                     setTimeout(attemptReconnect, reconnectDelay);
                 }
             };
 
-            ws.onerror = function(error) {
+            ws.onerror = function (error) {
                 console.error('WebSocket 錯誤:', error);
                 handleConnectionError();
             };
@@ -797,23 +796,31 @@
 
             reconnectAttempts++;
             console.log(`嘗試重連 (${reconnectAttempts}/${maxReconnectAttempts})`);
-            
+
             initWebSocket();
         }
 
         function handleConnectionError() {
             isConnected = false;
-            
+
             if (reconnectAttempts < maxReconnectAttempts) {
                 setTimeout(attemptReconnect, reconnectDelay);
             }
         }
 
         // 頁面初始化
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function () {
+            // 先初始化 i18n 載入翻譯
+            try {
+                await window.initI18n();
+                console.log('[I18N] 翻譯載入完成');
+            } catch (error) {
+                console.warn('[I18N] 翻譯載入失敗，使用內嵌翻譯:', error);
+            }
+
             // 初始化 WebSocket 連接
             initWebSocket();
-            
+
             // 初始化界面
             initializeApp();
             setupEventListeners();
@@ -839,7 +846,7 @@
             if (languageSelect) {
                 languageSelect.value = currentLanguage;
             }
-            
+
             // 更新 HTML lang 屬性
             updateHtmlLang();
         }
@@ -848,7 +855,7 @@
             // 語言選擇器事件
             const languageSelect = document.getElementById('languageSelect');
             if (languageSelect) {
-                languageSelect.addEventListener('change', function(e) {
+                languageSelect.addEventListener('change', function (e) {
                     changeLanguage(e.target.value);
                 });
             }
@@ -863,7 +870,7 @@
             if (elements.runCommandBtn) {
                 elements.runCommandBtn.addEventListener('click', runCommand);
             }
-            
+
             // 命令輸入框 Enter 鍵
             if (elements.commandInput) {
                 elements.commandInput.addEventListener('keydown', (e) => {
@@ -872,7 +879,7 @@
                     }
                 });
             }
-            
+
             // 回饋提交
             if (elements.submitBtn) {
                 elements.submitBtn.addEventListener('click', submitFeedback);
@@ -880,7 +887,7 @@
             if (elements.cancelBtn) {
                 elements.cancelBtn.addEventListener('click', cancelFeedback);
             }
-            
+
             // 快捷鍵支援
             document.addEventListener('keydown', (e) => {
                 if (e.ctrlKey && e.key === 'Enter') {
@@ -888,7 +895,7 @@
                     submitFeedback();
                 }
             });
-            
+
             // 窗口關閉時清理 WebSocket
             window.addEventListener('beforeunload', () => {
                 if (ws && isConnected) {
@@ -906,7 +913,7 @@
                     'zh-CN': 'zh-CN',
                     'en': 'en'
                 };
-                
+
                 htmlRoot.setAttribute('lang', langMap[currentLanguage] || 'en');
             }
         }
@@ -914,17 +921,17 @@
         function applyTranslations() {
             // 更新頁面標題
             document.title = t('app_title');
-            
+
             // 更新標題區域
             const pageTitle = document.getElementById('pageTitle');
             if (pageTitle) pageTitle.textContent = t('app_title');
-            
+
             const projectDirLabel = document.getElementById('projectDirLabel');
             if (projectDirLabel) projectDirLabel.textContent = t('project_directory');
-            
+
             const languageLabel = document.getElementById('languageLabel');
             if (languageLabel) languageLabel.textContent = t('language_selector') + ':';
-            
+
             // 更新語言選項
             const languageSelect = document.getElementById('languageSelect');
             if (languageSelect) {
@@ -934,58 +941,95 @@
                     option.textContent = window.i18n.getLanguageDisplayName(value);
                 });
             }
-            
+
             // 更新摘要區域
             const summaryTitle = document.getElementById('summaryTitle');
             if (summaryTitle) summaryTitle.innerHTML = t('ai_summary');
-            
+
+            // 動態更新 AI 工作摘要內容（如果是測試內容）
+            const summaryContent = document.getElementById('summaryContent');
+            if (summaryContent) {
+                const currentSummary = summaryContent.textContent || summaryContent.innerHTML;
+                
+                // 更嚴格的測試摘要檢測邏輯 - 必須同時包含多個特徵
+                const isTestSummary = (
+                    // Qt GUI 測試特徵組合
+                    (currentSummary.includes('測試 Qt GUI 功能') && currentSummary.includes('🎯 **功能測試項目')) ||
+                    (currentSummary.includes('Test Qt GUI Functionality') && currentSummary.includes('🎯 **Test Items')) ||
+                    (currentSummary.includes('测试 Qt GUI 功能') && currentSummary.includes('🎯 **功能测试项目')) ||
+                    
+                    // Web UI 測試特徵組合
+                    (currentSummary.includes('測試 Web UI 功能') && currentSummary.includes('🎯 **功能測試項目')) ||
+                    (currentSummary.includes('Test Web UI Functionality') && currentSummary.includes('🎯 **Test Items')) ||
+                    (currentSummary.includes('测试 Web UI 功能') && currentSummary.includes('🎯 **功能测试项目')) ||
+                    
+                    // 具體測試項目特徵組合
+                    (currentSummary.includes('圖片上傳和預覽') && currentSummary.includes('智能 Ctrl+V 圖片貼上')) ||
+                    (currentSummary.includes('Image upload and preview') && currentSummary.includes('Smart Ctrl+V image paste')) ||
+                    (currentSummary.includes('图片上传和预览') && currentSummary.includes('智能 Ctrl+V 图片粘贴')) ||
+                    
+                    // WebSocket 和服務器特徵組合
+                    (currentSummary.includes('WebSocket 即時通訊') && currentSummary.includes('Web UI 服務器啟動')) ||
+                    (currentSummary.includes('WebSocket real-time communication') && currentSummary.includes('Web UI server startup')) ||
+                    (currentSummary.includes('WebSocket 即时通讯') && currentSummary.includes('Web UI 服务器启动'))
+                );
+                
+                if (isTestSummary) {
+                    // 使用對應語言的測試摘要
+                    const testSummary = t('test.webUiSummary');
+                    if (testSummary && testSummary !== 'test.webUiSummary') {
+                        summaryContent.textContent = testSummary;
+                    }
+                }
+            }
+
             // 更新分頁標籤
             const feedbackTabBtn = document.getElementById('feedbackTabBtn');
             if (feedbackTabBtn) feedbackTabBtn.innerHTML = t('feedback_tab');
-            
+
             const commandTabBtn = document.getElementById('commandTabBtn');
             if (commandTabBtn) commandTabBtn.innerHTML = t('command_tab');
-            
+
             // 更新回饋區域
             const feedbackLabel = document.getElementById('feedbackLabel');
             if (feedbackLabel) feedbackLabel.textContent = t('feedback_title');
-            
+
             const feedbackDescription = document.getElementById('feedbackDescription');
             if (feedbackDescription) feedbackDescription.textContent = t('feedback_description');
-            
+
             // 更新命令區域
             const commandLabel = document.getElementById('commandLabel');
             if (commandLabel) commandLabel.textContent = t('command_title');
-            
+
             const commandDescription = document.getElementById('commandDescription');
             if (commandDescription) commandDescription.textContent = t('command_description');
-            
+
             const runBtn = document.getElementById('runBtn');
             if (runBtn) runBtn.innerHTML = t('btn_run_command');
-            
+
             // 更新圖片區域
             const imagesTitle = document.getElementById('imagesTitle');
             if (imagesTitle) imagesTitle.textContent = t('images_title');
-            
+
             const selectFilesBtn = document.getElementById('selectFilesBtn');
             if (selectFilesBtn) selectFilesBtn.innerHTML = t('btn_select_files');
-            
+
             const pasteBtn = document.getElementById('pasteBtn');
             if (pasteBtn) pasteBtn.innerHTML = t('btn_paste_clipboard');
-            
+
             const clearBtn = document.getElementById('clearBtn');
             if (clearBtn) clearBtn.innerHTML = t('btn_clear_all');
-            
+
             const dropZone = document.getElementById('dropZone');
             if (dropZone) dropZone.textContent = t('images_drag_hint');
-            
+
             // 更新按鈕
             const cancelBtn = document.getElementById('cancelBtn');
             if (cancelBtn) cancelBtn.innerHTML = t('btn_cancel');
-            
+
             const submitBtn = document.getElementById('submitBtn');
             if (submitBtn) submitBtn.innerHTML = t('btn_submit_feedback');
-            
+
             // 更新圖片狀態和預覽區域
             updateImageStatus();
             updateImagePreviewArea();
@@ -995,19 +1039,19 @@
             // 更新輸入框的 placeholder
             const feedbackText = document.getElementById('feedbackText');
             if (feedbackText) feedbackText.placeholder = t('feedback_placeholder');
-            
+
             const commandInput = document.getElementById('commandInput');
             if (commandInput) commandInput.placeholder = t('command_placeholder');
         }
 
         function setupKeyboardShortcuts() {
             // Ctrl+Enter 快速提交
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.ctrlKey && e.key === 'Enter') {
                     e.preventDefault();
                     submitFeedback();
                 }
-                
+
                 // Ctrl+V 智能貼上
                 if (e.ctrlKey && e.key === 'v') {
                     // 先檢查剪貼簿是否包含圖片
@@ -1016,7 +1060,7 @@
                             // 如果有圖片，無論焦點在哪裡都優先貼到圖片區域
                             e.preventDefault();
                             pasteFromClipboard();
-                            
+
                             // 提供額外的使用者提示
                             const activeElement = document.activeElement;
                             const isInTextArea = activeElement && activeElement.id === 'feedbackText';
@@ -1027,11 +1071,11 @@
                             // 如果沒有圖片，檢查是否在文字輸入區域
                             const activeElement = document.activeElement;
                             const isTextInput = activeElement && (
-                                activeElement.tagName === 'TEXTAREA' || 
-                                activeElement.tagName === 'INPUT' || 
+                                activeElement.tagName === 'TEXTAREA' ||
+                                activeElement.tagName === 'INPUT' ||
                                 activeElement.contentEditable === 'true'
                             );
-                            
+
                             if (isTextInput) {
                                 // 在文字輸入區域且剪貼簿只有文字，允許正常的文字貼上
                                 // 不需要 preventDefault()，讓瀏覽器執行預設行為
@@ -1073,15 +1117,15 @@
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            
+
             // 移除所有按鈕的活動狀態
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             // 顯示選中的分頁
             document.getElementById(tabName).classList.add('active');
-            
+
             // 設置對應按鈕為活動狀態
             if (tabName === 'feedback') {
                 document.getElementById('feedbackTabBtn').classList.add('active');
@@ -1093,7 +1137,7 @@
         // 設置拖拽功能
         function setupDragAndDrop() {
             const dropZone = document.getElementById('dropZone');
-            
+
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 dropZone.addEventListener(eventName, preventDefaults, false);
                 document.body.addEventListener(eventName, preventDefaults, false);
@@ -1155,7 +1199,7 @@
             }
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 const imageData = {
                     id: Date.now() + Math.random(),
                     filename: file.name,
@@ -1163,7 +1207,7 @@
                     size: file.size,
                     type: file.type
                 };
-                
+
                 selectedImages.push(imageData);
                 updateImagePreview();
                 updateImageStatus();
@@ -1177,7 +1221,7 @@
             try {
                 const items = await navigator.clipboard.read();
                 let hasImage = false;
-                
+
                 for (const item of items) {
                     for (const type of item.types) {
                         if (type.startsWith('image/')) {
@@ -1188,7 +1232,7 @@
                         }
                     }
                 }
-                
+
                 if (!hasImage) {
                     showStatusMessage(t('paste_failed'), 'error');
                 }
@@ -1200,10 +1244,10 @@
         // 圖片預覽更新
         function updateImagePreview() {
             const previewArea = document.getElementById('imagePreviewArea');
-            
+
             // 清除現有內容
             previewArea.innerHTML = '';
-            
+
             if (selectedImages.length === 0) {
                 // 空狀態 - 移除 has-images 類別
                 previewArea.classList.remove('has-images');
@@ -1211,15 +1255,15 @@
             } else {
                 // 有圖片 - 添加 has-images 類別
                 previewArea.classList.add('has-images');
-                
+
                 selectedImages.forEach(img => {
                     const preview = document.createElement('div');
                     preview.className = 'image-preview';
-                    
+
                     const imgElement = document.createElement('img');
                     imgElement.src = `data:${img.type};base64,${img.data}`;
                     imgElement.alt = img.filename;
-                    
+
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'image-delete';
                     deleteBtn.innerHTML = '×';
@@ -1229,12 +1273,12 @@
                             removeImage(img.id);
                         }
                     };
-                    
+
                     preview.appendChild(imgElement);
                     preview.appendChild(deleteBtn);
                     previewArea.appendChild(preview);
                 });
-                
+
                 // 添加網格指示器
                 updateGridIndicator();
             }
@@ -1242,19 +1286,19 @@
 
         function updateImagePreviewArea() {
             const previewArea = document.getElementById('imagePreviewArea');
-            
+
             if (selectedImages.length === 0) {
                 // 計算當前可顯示的列數
                 const containerWidth = previewArea.clientWidth - 30; // 減去 padding
                 const minItemWidth = 100; // 最小項目寬度
                 const gap = 12; // 間距
-                
+
                 const maxColumns = Math.floor((containerWidth + gap) / (minItemWidth + gap));
                 const actualColumns = Math.max(1, maxColumns);
-                
+
                 const emptyText = `📋 圖片預覽區域\n\n💡 目前寬度可顯示 ${actualColumns} 列圖片\n區域寬度: ${Math.round(containerWidth)}px`;
                 previewArea.setAttribute('data-empty-text', emptyText);
-                
+
                 // 移除網格指示器
                 const existingIndicator = previewArea.querySelector('.preview-grid-indicator');
                 if (existingIndicator) {
@@ -1265,20 +1309,20 @@
 
         function updateGridIndicator() {
             const previewArea = document.getElementById('imagePreviewArea');
-            
+
             // 移除現有指示器
             const existingIndicator = previewArea.querySelector('.preview-grid-indicator');
             if (existingIndicator) {
                 existingIndicator.remove();
             }
-            
+
             // 計算當前列數
             const containerWidth = previewArea.clientWidth - 30;
             const minItemWidth = 100;
             const gap = 12;
             const maxColumns = Math.floor((containerWidth + gap) / (minItemWidth + gap));
             const actualColumns = Math.max(1, maxColumns);
-            
+
             // 添加新指示器
             const indicator = document.createElement('div');
             indicator.className = 'preview-grid-indicator';
@@ -1294,8 +1338,8 @@
 
         function clearAllImages() {
             if (selectedImages.length > 0) {
-                const confirmMessage = t('images_delete_confirm', { 
-                    filename: `${selectedImages.length} ${t('images_status', { count: selectedImages.length }).match(/\d+\s+(\S+)/)[1]}` 
+                const confirmMessage = t('images_delete_confirm', {
+                    filename: `${selectedImages.length} ${t('images_status', { count: selectedImages.length }).match(/\d+\s+(\S+)/)[1]}`
                 });
                 if (confirm(confirmMessage)) {
                     selectedImages = [];
@@ -1308,19 +1352,19 @@
         function updateImageStatus() {
             const count = selectedImages.length;
             const statusElement = document.getElementById('imageStatus');
-            
+
             if (count === 0) {
                 statusElement.textContent = t('images_status', { count: 0 });
             } else {
                 const totalSize = selectedImages.reduce((sum, img) => sum + img.size, 0);
-                
+
                 let sizeStr;
                 if (totalSize >= 1024 * 1024) {
                     sizeStr = `${(totalSize / (1024 * 1024)).toFixed(1)} MB`;
                 } else {
                     sizeStr = `${(totalSize / 1024).toFixed(1)} KB`;
                 }
-                
+
                 statusElement.textContent = t('images_status_with_size', { count, size: sizeStr });
             }
         }
@@ -1328,7 +1372,7 @@
         // 命令執行功能
         function runCommand() {
             if (!elements.commandInput) return;
-            
+
             const command = elements.commandInput.value.trim();
             if (!command) return;
 
@@ -1338,13 +1382,13 @@
             }
 
             console.log('執行命令:', command);
-            
+
             // 清空之前的輸出
             if (elements.commandOutput) {
                 elements.commandOutput.textContent = '';
                 elements.commandOutput.style.display = 'block';
             }
-            
+
             // 更新 UI 狀態
             isCommandRunning = true;
             if (elements.runCommandBtn) {
@@ -1354,13 +1398,13 @@
             if (elements.commandInput) {
                 elements.commandInput.disabled = true;
             }
-            
+
             // 發送命令執行請求
             const success = sendWebSocketMessage({
                 type: 'run_command',
                 command: command
             });
-            
+
             if (!success) {
                 handleCommandFinished(-1);
             }
@@ -1375,7 +1419,7 @@
 
         function handleCommandFinished(exitCode) {
             console.log('命令執行完成，退出碼:', exitCode);
-            
+
             isCommandRunning = false;
             if (elements.runCommandBtn) {
                 elements.runCommandBtn.style.display = 'inline-flex';
@@ -1384,20 +1428,20 @@
             if (elements.commandInput) {
                 elements.commandInput.disabled = false;
             }
-            
+
             const statusText = exitCode === 0 ? '命令執行成功' : '命令執行失敗';
             const notificationType = exitCode === 0 ? 'success' : 'error';
             showNotification(statusText, notificationType);
-            
+
             appendCommandOutput(`\n--- 命令執行完成 (退出碼: ${exitCode}) ---\n`);
         }
 
         // 回饋提交功能
         function submitFeedback() {
             if (!elements.feedbackTextarea) return;
-            
+
             const feedback = elements.feedbackTextarea.value.trim();
-            
+
             if (!feedback && selectedImages.length === 0) {
                 showStatusMessage(t('feedback_placeholder').split('\n')[0], 'error');
                 return;
@@ -1409,7 +1453,7 @@
             }
 
             console.log('提交回饋:', feedback);
-            
+
             // 顯示提交中狀態
             if (elements.submitBtn) {
                 elements.submitBtn.textContent = '提交中...';
@@ -1428,7 +1472,7 @@
 
             if (success) {
                 showNotification('回饋已提交', 'success');
-                
+
                 // 短暫延遲後關閉窗口
                 setTimeout(() => {
                     if (ws) {
@@ -1459,14 +1503,14 @@
             const statusElement = document.getElementById('statusMessage');
             statusElement.textContent = message;
             statusElement.className = `status-message ${type} show`;
-            
+
             setTimeout(() => {
                 statusElement.classList.remove('show');
             }, 3000);
         }
 
         // 監聽窗口大小變化
-        window.addEventListener('resize', function() {
+        window.addEventListener('resize', function () {
             updateImagePreviewArea();
             if (selectedImages.length > 0) {
                 updateGridIndicator();
@@ -1485,12 +1529,12 @@
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             notification.textContent = message;
-            
+
             document.body.appendChild(notification);
-            
+
             // 顯示動畫
             setTimeout(() => notification.classList.add('show'), 100);
-            
+
             // 自動隱藏
             setTimeout(() => {
                 notification.classList.remove('show');
@@ -1501,26 +1545,26 @@
         // 處理 WebSocket 消息
         function handleWebSocketMessage(data) {
             console.log('收到 WebSocket 消息:', data);
-            
-            switch(data.type) {
+
+            switch (data.type) {
                 case 'command_output':
                     appendCommandOutput(data.output);
                     break;
-                    
+
                 case 'command_finished':
                     handleCommandFinished(data.exit_code);
                     break;
-                    
+
                 case 'command_error':
                     appendCommandOutput(`錯誤: ${data.error}\n`);
                     handleCommandFinished(-1);
                     break;
-                    
+
                 case 'ping':
                     // 回應 ping
                     sendWebSocketMessage({ type: 'pong' });
                     break;
-                    
+
                 default:
                     console.log('未知的消息類型:', data.type);
             }
@@ -1543,4 +1587,5 @@
         }
     </script>
 </body>
+
 </html>

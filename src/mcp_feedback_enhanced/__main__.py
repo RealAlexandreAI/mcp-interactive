@@ -13,6 +13,7 @@ MCP Interactive Feedback Enhanced - 主程式入口
 
 import sys
 import argparse
+import os
 
 def main():
     """主程式入口點"""
@@ -56,6 +57,9 @@ def run_server():
 
 def run_tests(args):
     """執行測試"""
+    # 啟用調試模式以顯示測試過程
+    os.environ["MCP_DEBUG"] = "true"
+    
     if args.web:
         print("🧪 執行 Web UI 測試...")
         from .test_web_ui import test_web_ui, interactive_demo

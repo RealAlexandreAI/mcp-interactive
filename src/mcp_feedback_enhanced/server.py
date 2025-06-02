@@ -373,8 +373,7 @@ def launch_gui(project_dir: str, summary: str) -> dict:
 async def interactive_feedback(
     project_directory: Annotated[str, Field(description="專案目錄路徑")] = ".",
     summary: Annotated[str, Field(description="AI 工作完成的摘要說明")] = "我已完成了您請求的任務。",
-    timeout: Annotated[int, Field(description="等待用戶回饋的超時時間（秒）")] = 600,
-    force_web_ui: Annotated[bool, Field(description="強制使用 Web UI（用於測試或特殊需求）")] = False
+    timeout: Annotated[int, Field(description="等待用戶回饋的超時時間（秒）")] = 600
 ) -> List:
     """
     收集用戶的互動回饋，支援文字和圖片
@@ -382,13 +381,17 @@ async def interactive_feedback(
     此工具會自動偵測運行環境：
     - 遠端環境：使用 Web UI
     - 本地環境：使用 Qt GUI
-    - 可透過 force_web_ui 參數或 FORCE_WEB 環境變數強制使用 Web UI
+    - 可透過 FORCE_WEB 環境變數強制使用 Web UI
     
     用戶可以：
     1. 執行命令來驗證結果
     2. 提供文字回饋
     3. 上傳圖片作為回饋
     4. 查看 AI 的工作摘要
+    
+    介面控制（按優先級排序）：
+    1. **FORCE_WEB 環境變數**：在 mcp.json 中設置 "FORCE_WEB": "true"
+    2. 自動檢測：根據運行環境自動選擇
     
     調試模式：
     - 設置環境變數 MCP_DEBUG=true 可啟用詳細調試輸出
@@ -398,26 +401,26 @@ async def interactive_feedback(
         project_directory: 專案目錄路徑
         summary: AI 工作完成的摘要說明
         timeout: 等待用戶回饋的超時時間（秒），預設為 600 秒（10 分鐘）
-        force_web_ui: 強制使用 Web UI，即使在本地環境也使用 Web UI（用於測試）
         
     Returns:
         List: 包含 TextContent 和 MCPImage 對象的列表
     """
-    # 檢查環境變數，如果設定了 FORCE_WEB 就覆蓋 force_web_ui 參數
+    # 檢查環境變數 FORCE_WEB
+    force_web = False
     env_force_web = os.getenv("FORCE_WEB", "").lower()
     if env_force_web in ("true", "1", "yes", "on"):
-        force_web_ui = True
+        force_web = True
         debug_log("環境變數 FORCE_WEB 已啟用，強制使用 Web UI")
     elif env_force_web in ("false", "0", "no", "off"):
-        force_web_ui = False
+        force_web = False
         debug_log("環境變數 FORCE_WEB 已停用，使用預設邏輯")
     
     # 環境偵測
     is_remote = is_remote_environment()
     can_gui = can_use_gui()
-    use_web_ui = is_remote or not can_gui or force_web_ui
+    use_web_ui = is_remote or not can_gui or force_web
     
-    debug_log(f"環境偵測結果 - 遠端: {is_remote}, GUI 可用: {can_gui}, 強制 Web UI: {force_web_ui}")
+    debug_log(f"環境偵測結果 - 遠端: {is_remote}, GUI 可用: {can_gui}, 強制 Web UI: {force_web}")
     debug_log(f"決定使用介面: {'Web UI' if use_web_ui else 'Qt GUI'}")
     
     try:

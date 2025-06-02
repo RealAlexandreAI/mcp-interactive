@@ -268,6 +268,10 @@ class I18nManager:
             'language_zh_tw': 'languageNames.zhTw',
             'language_en': 'languageNames.en',
             'language_zh_cn': 'languageNames.zhCn',
+            
+            # 測試
+            'test_qt_gui_summary': 'test.qtGuiSummary',
+            'test_web_ui_summary': 'test.webUiSummary',
         }
         
         # 檢查是否有對應的新鍵

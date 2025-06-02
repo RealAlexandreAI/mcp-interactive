@@ -26,185 +26,27 @@ class I18nManager {
     }
     
     /**
-     * 獲取內嵌的備用翻譯
+     * 獲取內嵌的備用翻譯（僅保留基本錯誤訊息）
      */
     _getEmbeddedTranslations() {
         return {
             'zh-TW': {
-                app: {
-                    title: 'Interactive Feedback MCP',
-                    projectDirectory: '專案目錄',
-                    language: '語言'
-                },
-                tabs: {
-                    feedback: '💬 回饋',
-                    command: '⚡ 命令'
-                },
-                feedback: {
-                    title: '💬 您的回饋',
-                    description: '請在這裡輸入您的回饋、建議或問題。您的意見將幫助 AI 更好地理解您的需求。',
-                    placeholder: '請在這裡輸入您的回饋、建議或問題...\n\n💡 小提示：\n• 按 Ctrl+Enter 可快速提交回饋\n• 按 Ctrl+V 可直接貼上剪貼簿圖片'
-                },
-                command: {
-                    title: '⚡ 命令執行',
-                    description: '您可以在此執行系統命令來驗證結果或獲取更多資訊。',
-                    placeholder: '輸入要執行的命令...',
-                    output: '命令輸出'
-                },
-                images: {
-                    title: '🖼️ 圖片附件（可選）',
-                    status: '已選擇 {count} 張圖片',
-                    statusWithSize: '已選擇 {count} 張圖片 (總計 {size})',
-                    dragHint: '🎯 拖拽圖片到這裡 或 按 Ctrl+V 貼上剪貼簿圖片 (PNG、JPG、JPEG、GIF、BMP、WebP)',
-                    deleteConfirm: '確定要移除圖片 "{filename}" 嗎？',
-                    deleteTitle: '確認刪除'
-                },
-                buttons: {
-                    selectFiles: '📁 選擇文件',
-                    pasteClipboard: '📋 剪貼板',
-                    clearAll: '✕ 清除',
-                    runCommand: '▶️ 執行',
-                    submitFeedback: '✅ 提交回饋',
-                    cancel: '❌ 取消'
-                },
-                status: {
-                    uploading: '上傳中...',
-                    uploadSuccess: '上傳成功',
-                    uploadFailed: '上傳失敗',
-                    commandRunning: '命令執行中...',
-                    commandFinished: '命令執行完成',
-                    pasteSuccess: '已從剪貼板貼上圖片',
-                    pasteFailed: '無法從剪貼板獲取圖片',
-                    paste_no_image: '剪貼簿中沒有圖片可貼上',
-                    paste_image_from_textarea: '已將圖片從文字框智能貼到圖片區域',
-                    invalidFileType: '不支援的文件類型',
-                    fileTooLarge: '文件過大（最大 1MB）'
-                },
-                aiSummary: '📋 AI 工作摘要',
-                languageSelector: '🌐 語言選擇',
-                languageNames: {
-                    zhTw: '繁體中文',
-                    en: 'English',
-                    zhCn: '简体中文'
-                }
+                app: { title: 'Interactive Feedback MCP' },
+                loading: '載入中...',
+                error: '載入失敗',
+                retry: '重試'
             },
-            
             'en': {
-                app: {
-                    title: 'Interactive Feedback MCP',
-                    projectDirectory: 'Project Directory',
-                    language: 'Language'
-                },
-                tabs: {
-                    feedback: '💬 Feedback',
-                    command: '⚡ Commands'
-                },
-                feedback: {
-                    title: '💬 Your Feedback',
-                    description: 'Please enter your feedback, suggestions, or questions here. Your input helps AI better understand your needs.',
-                    placeholder: 'Please enter your feedback, suggestions, or questions here...\n\n💡 Tips:\n• Press Ctrl+Enter to submit quickly\n• Press Ctrl+V to paste images from clipboard'
-                },
-                command: {
-                    title: '⚡ Command Execution',
-                    description: 'You can execute system commands here to verify results or get additional information.',
-                    placeholder: 'Enter command to execute...',
-                    output: 'Command Output'
-                },
-                images: {
-                    title: '🖼️ Image Attachments (Optional)',
-                    status: '{count} images selected',
-                    statusWithSize: '{count} images selected (Total {size})',
-                    dragHint: '🎯 Drag images here or press Ctrl+V to paste from clipboard (PNG, JPG, JPEG, GIF, BMP, WebP)',
-                    deleteConfirm: 'Are you sure you want to remove image "{filename}"?',
-                    deleteTitle: 'Confirm Delete'
-                },
-                buttons: {
-                    selectFiles: '📁 Select Files',
-                    pasteClipboard: '📋 Clipboard',
-                    clearAll: '✕ Clear',
-                    runCommand: '▶️ Run',
-                    submitFeedback: '✅ Submit Feedback',
-                    cancel: '❌ Cancel'
-                },
-                status: {
-                    uploading: 'Uploading...',
-                    uploadSuccess: 'Upload successful',
-                    uploadFailed: 'Upload failed',
-                    commandRunning: 'Command running...',
-                    commandFinished: 'Command finished',
-                    pasteSuccess: 'Image pasted from clipboard',
-                    pasteFailed: 'Failed to get image from clipboard',
-                    paste_no_image: 'No image to paste from clipboard',
-                    paste_image_from_textarea: 'Image pasted from text area to image area',
-                    invalidFileType: 'Unsupported file type',
-                    fileTooLarge: 'File too large (max 1MB)'
-                },
-                aiSummary: '📋 AI Work Summary',
-                languageSelector: '🌐 Language',
-                languageNames: {
-                    zhTw: '繁體中文',
-                    en: 'English',
-                    zhCn: '简体中文'
-                }
+                app: { title: 'Interactive Feedback MCP' },
+                loading: 'Loading...',
+                error: 'Loading failed',
+                retry: 'Retry'
             },
-            
             'zh-CN': {
-                app: {
-                    title: 'Interactive Feedback MCP',
-                    projectDirectory: '项目目录',
-                    language: '语言'
-                },
-                tabs: {
-                    feedback: '💬 反馈',
-                    command: '⚡ 命令'
-                },
-                feedback: {
-                    title: '💬 您的反馈',
-                    description: '请在这里输入您的反馈、建议或问题。您的意见将帮助 AI 更好地理解您的需求。',
-                    placeholder: '请在这里输入您的反馈、建议或问题...\n\n💡 小提示：\n• 按 Ctrl+Enter 可快速提交反馈\n• 按 Ctrl+V 可直接贴上剪贴板图片'
-                },
-                command: {
-                    title: '⚡ 命令执行',
-                    description: '您可以在此执行系统命令来验证结果或获取更多信息。',
-                    placeholder: '输入要执行的命令...',
-                    output: '命令输出'
-                },
-                images: {
-                    title: '🖼️ 图片附件（可选）',
-                    status: '已选择 {count} 张图片',
-                    statusWithSize: '已选择 {count} 张图片 (总计 {size})',
-                    dragHint: '🎯 拖拽图片到这里 或 按 Ctrl+V 贴上剪贴板图片 (PNG、JPG、JPEG、GIF、BMP、WebP)',
-                    deleteConfirm: '确定要移除图片 "{filename}" 吗？',
-                    deleteTitle: '确认删除'
-                },
-                buttons: {
-                    selectFiles: '📁 选择文件',
-                    pasteClipboard: '📋 剪贴板',
-                    clearAll: '✕ 清除',
-                    runCommand: '▶️ 执行',
-                    submitFeedback: '✅ 提交反馈',
-                    cancel: '❌ 取消'
-                },
-                status: {
-                    uploading: '上传中...',
-                    uploadSuccess: '上传成功',
-                    uploadFailed: '上传失败',
-                    commandRunning: '命令执行中...',
-                    commandFinished: '命令执行完成',
-                    pasteSuccess: '已从剪贴板粘贴图片',
-                    pasteFailed: '无法从剪贴板获取图片',
-                    paste_no_image: '剪贴板中没有图片可粘贴',
-                    paste_image_from_textarea: '已将图片从文字框智能贴到图片区域',
-                    invalidFileType: '不支持的文件类型',
-                    fileTooLarge: '文件过大（最大 1MB）'
-                },
-                aiSummary: '📋 AI 工作摘要',
-                languageSelector: '🌐 语言选择',
-                languageNames: {
-                    zhTw: '繁體中文',
-                    en: 'English',
-                    zhCn: '简体中文'
-                }
+                app: { title: 'Interactive Feedback MCP' },
+                loading: '加载中...',
+                error: '加载失败',
+                retry: '重试'
             }
         };
     }

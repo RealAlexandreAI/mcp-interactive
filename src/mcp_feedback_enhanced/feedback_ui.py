@@ -745,6 +745,24 @@ class FeedbackWindow(QMainWindow):
         if hasattr(self, 'summary_title'):
             self.summary_title.setText(t('ai_summary'))
         
+        # 更新摘要內容（如果是測試摘要）
+        if hasattr(self, 'summary_text'):
+            # 檢查是否為測試摘要，需要動態翻譯
+            if self._is_test_summary():
+                # 判斷是哪種測試類型並重新獲取翻譯
+                if '圖片預覽' in self.summary or 'Image Preview' in self.summary or '图片预览' in self.summary:
+                    # Qt GUI 測試
+                    translated_summary = t('test.qtGuiSummary')
+                elif 'Web UI' in self.summary:
+                    # Web UI 測試
+                    translated_summary = t('test.webUiSummary')
+                else:
+                    translated_summary = self.summary
+                
+                self.summary_text.setPlainText(translated_summary)
+                # 更新儲存的摘要以保持一致
+                self.summary = translated_summary
+        
         # 更新專案目錄標籤
         if hasattr(self, 'project_label'):
             self.project_label.setText(f"{t('project_directory')}: {self.project_dir}")
@@ -780,6 +798,38 @@ class FeedbackWindow(QMainWindow):
         if hasattr(self, 'output_title'):
             self.output_title.setText(t('command_output'))
     
+    def _is_test_summary(self) -> bool:
+        """檢查是否為測試摘要，使用更嚴格的檢測邏輯"""
+        # 更嚴格的測試摘要特徵組合檢測
+        test_patterns = [
+            # Qt GUI 測試特徵
+            ('測試 Qt GUI 功能', '🎯 **功能測試項目'),
+            ('Test Qt GUI Functionality', '🎯 **Test Items'),
+            ('测试 Qt GUI 功能', '🎯 **功能测试项目'),
+            
+            # Web UI 測試特徵  
+            ('測試 Web UI 功能', '🎯 **功能測試項目'),
+            ('Test Web UI Functionality', '🎯 **Test Items'),
+            ('测试 Web UI 功能', '🎯 **功能测试项目'),
+            
+            # 具體的測試項目描述
+            ('圖片上傳和預覽', '智能 Ctrl+V 圖片貼上'),
+            ('Image upload and preview', 'Smart Ctrl+V image paste'),
+            ('图片上传和预览', '智能 Ctrl+V 图片粘贴'),
+            
+            # WebSocket 和服務器啟動描述
+            ('WebSocket 即時通訊', 'Web UI 服務器啟動'),
+            ('WebSocket real-time communication', 'Web UI server startup'),
+            ('WebSocket 即时通讯', 'Web UI 服务器启动')
+        ]
+        
+        # 必須同時包含模式中的兩個特徵才認為是測試摘要
+        for pattern1, pattern2 in test_patterns:
+            if pattern1 in self.summary and pattern2 in self.summary:
+                return True
+        
+        return False
+    
     def _update_image_upload_texts(self) -> None:
         """更新圖片上傳元件的文字"""
         if hasattr(self, 'image_upload'):
@@ -812,12 +862,12 @@ class FeedbackWindow(QMainWindow):
         
         summary_layout.addLayout(header_layout)
         
-        # 摘要內容（可滾動的文本區域）
-        summary_text = QTextEdit()
-        summary_text.setPlainText(self.summary)
-        summary_text.setReadOnly(True)
-        summary_text.setMaximumHeight(120)
-        summary_layout.addWidget(summary_text)
+        # 摘要內容（可滾動的文本區域）- 儲存為實例變數以支援動態更新
+        self.summary_text = QTextEdit()
+        self.summary_text.setPlainText(self.summary)
+        self.summary_text.setReadOnly(True)
+        self.summary_text.setMaximumHeight(120)
+        summary_layout.addWidget(self.summary_text)
         
         layout.addWidget(summary_group)
     

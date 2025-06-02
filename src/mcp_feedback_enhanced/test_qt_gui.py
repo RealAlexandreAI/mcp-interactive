@@ -28,6 +28,7 @@ from typing import Optional, Dict, Any
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from .debug import debug_log
+from .i18n import t
 
 # 嘗試導入 Qt GUI 模組
 try:
@@ -42,26 +43,8 @@ def test_qt_gui():
     try:
         # 測試參數
         project_directory = os.getcwd()
-        prompt = """🎯 圖片預覽和視窗調整測試
-
-這是一個測試會話，用於驗證以下功能：
-
-✅ 功能測試項目：
-1. 圖片上傳和預覽功能
-2. 圖片右上角X刪除按鈕
-3. 視窗自由調整大小
-4. 分割器的靈活調整
-5. 各區域的動態佈局
-
-📋 測試步驟：
-1. 嘗試上傳一些圖片（拖拽、文件選擇、剪貼板）
-2. 檢查圖片預覽是否正常顯示
-3. 點擊圖片右上角的X按鈕刪除圖片
-4. 嘗試調整視窗大小，檢查是否可以自由調整
-5. 拖動分割器調整各區域大小
-6. 提供任何回饋或發現的問題
-
-請測試這些功能並提供回饋！"""
+        # 使用國際化系統獲取測試摘要
+        prompt = t('test.qtGuiSummary')
         
         debug_log("🚀 啟動 Qt GUI 測試...")
         debug_log("📝 測試項目:")
@@ -69,6 +52,7 @@ def test_qt_gui():
         debug_log("   - X刪除按鈕")
         debug_log("   - 視窗大小調整")
         debug_log("   - 分割器調整")
+        debug_log("   - 智能 Ctrl+V 功能")
         debug_log("")
         
         # 啟動 GUI

@@ -34,6 +34,7 @@ from typing import Dict, Any, Optional
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from .debug import debug_log
+from .i18n import t
 
 # 嘗試導入 Web UI 模組
 try:
@@ -42,6 +43,10 @@ try:
 except ImportError as e:
     debug_log(f"⚠️  無法導入 Web UI 模組: {e}")
     WEB_UI_AVAILABLE = False
+
+def get_test_summary():
+    """獲取測試摘要，使用國際化系統"""
+    return t('test.webUiSummary')
 
 def find_free_port():
     """Find a free port to use for testing"""
@@ -125,7 +130,8 @@ def test_web_ui(keep_running=False):
     session_info = None
     try:
         project_dir = str(Path.cwd())
-        summary = "測試 Web UI 功能"
+        # 使用國際化系統獲取測試摘要
+        summary = t('test.webUiSummary')
         session_id = manager.create_session(project_dir, summary)
         session_info = {
             'manager': manager,
@@ -145,6 +151,7 @@ def test_web_ui(keep_running=False):
     debug_log("  - 本地環境會繼續使用 Qt GUI")
     debug_log("  - 支援即時命令執行和 WebSocket 通訊")
     debug_log("  - 提供現代化的深色主題界面")
+    debug_log("  - 支援智能 Ctrl+V 圖片貼上功能")
     
     return True, session_info
 
@@ -185,8 +192,8 @@ def test_mcp_integration():
         # Test timeout parameter
         debug_log("✅ 支援 timeout 參數")
         
-        # Test force_web_ui parameter
-        debug_log("✅ 支援 force_web_ui 參數")
+        # Test environment-based Web UI selection
+        debug_log("✅ 支援基於環境變數的 Web UI 選擇")
         
         # Test would require actual MCP call, so just verify import
         debug_log("✅ 準備接受來自 AI 助手的調用")
@@ -197,8 +204,8 @@ def test_mcp_integration():
         return False
 
 def test_new_parameters():
-    """Test new timeout and force_web_ui parameters"""
-    debug_log("\n🆕 測試新增參數功能")
+    """Test timeout parameter and environment variable support"""
+    debug_log("\n🆕 測試參數功能")
     debug_log("-" * 30)
     
     try:
@@ -216,45 +223,50 @@ def test_new_parameters():
             debug_log("❌ timeout 參數不存在")
             return False
         
-        # 檢查 force_web_ui 參數
-        if 'force_web_ui' in sig.parameters:
-            force_web_ui_param = sig.parameters['force_web_ui']
-            debug_log(f"✅ force_web_ui 參數存在，預設值: {force_web_ui_param.default}")
+        # 檢查環境變數支援
+        import os
+        current_force_web = os.getenv("FORCE_WEB")
+        if current_force_web:
+            debug_log(f"✅ 檢測到 FORCE_WEB 環境變數: {current_force_web}")
         else:
-            debug_log("❌ force_web_ui 參數不存在")
-            return False
+            debug_log("ℹ️  FORCE_WEB 環境變數未設定（將使用預設邏輯）")
         
-        debug_log("✅ 所有新參數功能正常")
+        debug_log("✅ 參數功能正常")
         return True
         
     except Exception as e:
-        debug_log(f"❌ 新參數測試失敗: {e}")
+        debug_log(f"❌ 參數測試失敗: {e}")
         return False
 
-def test_force_web_ui_mode():
-    """Test force web UI mode"""
-    debug_log("\n🌐 測試強制 Web UI 模式")
+def test_environment_web_ui_mode():
+    """Test environment-based Web UI mode"""
+    debug_log("\n🌐 測試環境變數控制 Web UI 模式")
     debug_log("-" * 30)
     
     try:
         from .server import interactive_feedback, is_remote_environment, can_use_gui
+        import os
         
         # 顯示當前環境狀態
         is_remote = is_remote_environment()
         gui_available = can_use_gui()
+        force_web_env = os.getenv("FORCE_WEB", "").lower()
         
         debug_log(f"當前環境 - 遠端: {is_remote}, GUI 可用: {gui_available}")
+        debug_log(f"FORCE_WEB 環境變數: {force_web_env or '未設定'}")
         
-        if not is_remote and gui_available:
-            debug_log("✅ 在本地 GUI 環境中可以使用 force_web_ui=True 強制使用 Web UI")
-            debug_log("💡 這對於測試 Web UI 功能非常有用")
+        if force_web_env in ("true", "1", "yes", "on"):
+            debug_log("✅ FORCE_WEB 已啟用，將強制使用 Web UI")
+        elif not is_remote and gui_available:
+            debug_log("ℹ️  本地 GUI 環境，將使用 Qt GUI")
+            debug_log("💡 可設定 FORCE_WEB=true 強制使用 Web UI 進行測試")
         else:
-            debug_log("ℹ️  當前環境會自動使用 Web UI")
+            debug_log("ℹ️  將自動使用 Web UI（遠端環境或 GUI 不可用）")
             
         return True
         
     except Exception as e:
-        debug_log(f"❌ 強制 Web UI 測試失敗: {e}")
+        debug_log(f"❌ 環境變數測試失敗: {e}")
         return False
 
 def interactive_demo(session_info):
@@ -309,8 +321,8 @@ if __name__ == "__main__":
     # Test new parameters
     params_test = test_new_parameters()
     
-    # Test force web UI mode
-    force_test = test_force_web_ui_mode()
+    # Test environment-based Web UI mode
+    env_web_test = test_environment_web_ui_mode()
     
     # Test MCP integration
     mcp_test = test_mcp_integration()
@@ -319,7 +331,7 @@ if __name__ == "__main__":
     web_test, session_info = test_web_ui()
     
     debug_log("\n" + "=" * 60)
-    if env_test and params_test and force_test and mcp_test and web_test:
+    if env_test and params_test and env_web_test and mcp_test and web_test:
         debug_log("🎊 所有測試完成！準備使用 Interactive Feedback MCP")
         debug_log("\n📖 使用方法:")
         debug_log("  1. 在 Cursor/Cline 中配置此 MCP 服務器")

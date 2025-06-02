@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Web UI 測試模組
-===============
+Interactive Feedback MCP - Web UI 測試模組
+========================================
 
 用於測試 Interactive Feedback MCP 的 Web UI 功能。
-包含完整的 Web UI 功能測試，支援持久化模式。
+包含完整的 Web UI 功能測試。
 
 功能測試：
 - Web UI 服務器啟動
+- 會話管理功能
 - WebSocket 通訊
-- 回饋提交功能
-- 圖片上傳功能
+- 多語言支援
 - 命令執行功能
 
 使用方法：
-    python -m mcp_feedback_enhanced.test_web_ui [--persistent]
+    python -m mcp_feedback_enhanced.test_web_ui
 
 作者: Minidoracat
 """
@@ -271,7 +271,7 @@ def test_environment_web_ui_mode():
 
 def interactive_demo(session_info):
     """Run interactive demo with the Web UI"""
-    debug_log(f"\n🌐 Web UI 持久化運行模式")
+    debug_log(f"\n🌐 Web UI 互動測試模式")
     debug_log("=" * 50)
     debug_log(f"服務器地址: http://{session_info['manager'].host}:{session_info['manager'].port}")
     debug_log(f"測試會話: {session_info['url']}")
@@ -308,13 +308,6 @@ if __name__ == "__main__":
     debug_log("Interactive Feedback MCP - Web UI 測試")
     debug_log("=" * 60)
     
-    # Check if user wants persistent mode
-    persistent_mode = len(sys.argv) > 1 and sys.argv[1] in ['--persistent', '-p', '--demo']
-    
-    if not persistent_mode:
-        debug_log("💡 提示: 使用 'python test_web_ui.py --persistent' 啟動持久化測試模式")
-        debug_log()
-    
     # Test environment detection
     env_test = test_environment_detection()
     
@@ -346,14 +339,11 @@ if __name__ == "__main__":
         debug_log("  - 自動瀏覽器啟動")
         debug_log("  - 命令執行和即時輸出")
         
-        if persistent_mode and session_info:
-            interactive_demo(session_info)
-        else:
-            debug_log("\n✅ 測試完成 - 系統已準備就緒！")
-            if session_info:
-                debug_log(f"💡 您可以現在就在瀏覽器中測試: {session_info['url']}")
-                debug_log("   (服務器會繼續運行一小段時間)")
-                time.sleep(10)  # Keep running for a short time for immediate testing
+        debug_log("\n✅ 測試完成 - 系統已準備就緒！")
+        if session_info:
+            debug_log(f"💡 您可以現在就在瀏覽器中測試: {session_info['url']}")
+            debug_log("   (服務器會繼續運行一小段時間)")
+            time.sleep(10)  # Keep running for a short time for immediate testing
     else:
         debug_log("❌ 部分測試失敗，請檢查錯誤信息")
         sys.exit(1) 

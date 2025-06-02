@@ -57,9 +57,6 @@ pip install uv
 
 # Quick test
 uvx mcp-feedback-enhanced@latest test
-
-# Interactive test
-uvx mcp-feedback-enhanced@latest test --persistent
 ```
 
 ### 2. MCP Configuration
@@ -122,8 +119,8 @@ For best results, add these rules to your AI assistant:
 uvx mcp-feedback-enhanced@latest version       # Check version
 
 # Interface-specific testing
-uvx mcp-feedback-enhanced@latest test --gui    # Qt GUI only
-uvx mcp-feedback-enhanced@latest test --web    # Web UI only
+uvx mcp-feedback-enhanced@latest test --gui    # Quick test Qt GUI
+uvx mcp-feedback-enhanced@latest test --web    # Test Web UI (keeps running)
 
 # Debug mode
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
@@ -134,8 +131,26 @@ MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 git clone https://github.com/Minidoracat/mcp-feedback-enhanced.git
 cd mcp-feedback-enhanced
 uv sync
-uv run python -m mcp_feedback_enhanced test
 ```
+
+**Local Testing Methods**
+```bash
+# Method 1: Standard test (recommended)
+uv run python -m mcp_feedback_enhanced test
+
+# Method 2: Complete test suite (macOS dev environment)
+uvx --with-editable . mcp-feedback-enhanced test
+
+# Method 3: Interface-specific testing
+uvx --with-editable . mcp-feedback-enhanced test --gui    # Quick test Qt GUI
+uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (keeps running)
+```
+
+**Testing Descriptions**
+- **Standard Test**: Complete functionality check, suitable for daily development verification
+- **Complete Test**: Deep testing of all components, suitable for pre-release verification
+- **Qt GUI Test**: Quick launch and test of local graphical interface
+- **Web UI Test**: Start Web server and keep running for complete Web functionality testing
 
 ## 🆕 Version Highlights
 

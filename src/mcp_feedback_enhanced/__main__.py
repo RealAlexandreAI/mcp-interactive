@@ -28,9 +28,8 @@ def main():
     
     # 測試命令
     test_parser = subparsers.add_parser('test', help='執行測試')
-    test_parser.add_argument('--web', action='store_true', help='測試 Web UI')
-    test_parser.add_argument('--gui', action='store_true', help='測試 Qt GUI')
-    test_parser.add_argument('--persistent', action='store_true', help='持久化測試模式')
+    test_parser.add_argument('--web', action='store_true', help='測試 Web UI (自動持續運行)')
+    test_parser.add_argument('--gui', action='store_true', help='測試 Qt GUI (快速測試)')
     
     # 版本命令
     version_parser = subparsers.add_parser('version', help='顯示版本資訊')
@@ -66,7 +65,11 @@ def run_tests(args):
         success, session_info = test_web_ui()
         if not success:
             sys.exit(1)
-        if args.persistent and session_info:
+        # Web UI 測試自動啟用持續模式
+        if session_info:
+            print("📝 Web UI 測試完成，進入持續模式...")
+            print("💡 提示：服務器將持續運行，可在瀏覽器中測試互動功能")
+            print("💡 按 Ctrl+C 停止服務器")
             interactive_demo(session_info)
     elif args.gui:
         print("🧪 執行 Qt GUI 測試...")
@@ -107,10 +110,6 @@ def run_tests(args):
             sys.exit(1)
         
         print("🎉 所有測試通過！")
-        
-        # 如果是持久化模式且有會話資訊，進入互動模式
-        if args.persistent and session_info:
-            interactive_demo(session_info)
 
 def show_version():
     """顯示版本資訊"""

@@ -57,9 +57,6 @@ pip install uv
 
 # 快速測試
 uvx mcp-feedback-enhanced@latest test
-
-# 可互動測試
-uvx mcp-feedback-enhanced@latest test --persistent
 ```
 
 ### 2. 配置 MCP
@@ -122,8 +119,8 @@ uvx mcp-feedback-enhanced@latest test --persistent
 uvx mcp-feedback-enhanced@latest version       # 檢查版本
 
 # 指定介面測試
-uvx mcp-feedback-enhanced@latest test --gui    # 僅測試 Qt GUI
-uvx mcp-feedback-enhanced@latest test --web    # 僅測試 Web UI
+uvx mcp-feedback-enhanced@latest test --gui    # 快速測試 Qt GUI
+uvx mcp-feedback-enhanced@latest test --web    # 測試 Web UI (自動持續運行)
 
 # 調試模式
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
@@ -134,8 +131,26 @@ MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 git clone https://github.com/Minidoracat/mcp-feedback-enhanced.git
 cd mcp-feedback-enhanced
 uv sync
-uv run python -m mcp_feedback_enhanced test
 ```
+
+**本地測試方式**
+```bash
+# 方式一：標準測試（推薦）
+uv run python -m mcp_feedback_enhanced test
+
+# 方式二：完整測試套件（macOS 開發環境）
+uvx --with-editable . mcp-feedback-enhanced test
+
+# 方式三：指定介面測試
+uvx --with-editable . mcp-feedback-enhanced test --gui    # 快速測試 Qt GUI
+uvx --with-editable . mcp-feedback-enhanced test --web    # 測試 Web UI (自動持續運行)
+```
+
+**測試說明**
+- **標準測試**：執行完整的功能檢查，適合日常開發驗證
+- **完整測試**：包含所有組件的深度測試，適合發布前驗證
+- **Qt GUI 測試**：快速啟動並測試本地圖形界面
+- **Web UI 測試**：啟動 Web 服務器並保持運行，便於完整測試 Web 功能
 
 ## 🆕 版本亮點
 

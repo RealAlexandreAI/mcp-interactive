@@ -5,7 +5,7 @@ Qt GUI 測試模組
 ===============
 
 用於測試 Interactive Feedback MCP 的 Qt GUI 功能。
-包含完整的 GUI 功能測試，支援持久化模式。
+包含完整的 GUI 功能測試。
 
 功能測試：
 - Qt GUI 界面啟動
@@ -15,7 +15,7 @@ Qt GUI 測試模組
 - 快捷鍵功能
 
 使用方法：
-    python -m mcp_feedback_enhanced.test_qt_gui [--persistent]
+    python -m mcp_feedback_enhanced.test_qt_gui
 
 作者: Minidoracat
 """

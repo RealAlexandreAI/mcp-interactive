@@ -97,7 +97,19 @@ REMOTE_ENV_VARS = ['REMOTE_CONTAINERS', 'CODESPACES']
 
 # 初始化 MCP 服務器
 from . import __version__
-mcp = FastMCP(SERVER_NAME, version=__version__)
+
+# 確保 log_level 設定為正確的大寫格式
+fastmcp_settings = {}
+
+# 檢查環境變數並設定正確的 log_level
+env_log_level = os.getenv("FASTMCP_LOG_LEVEL", "").upper()
+if env_log_level in ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"):
+    fastmcp_settings["log_level"] = env_log_level
+else:
+    # 預設使用 INFO 等級
+    fastmcp_settings["log_level"] = "INFO"
+
+mcp = FastMCP(SERVER_NAME, version=__version__, **fastmcp_settings)
 
 
 # ===== 工具函數 =====

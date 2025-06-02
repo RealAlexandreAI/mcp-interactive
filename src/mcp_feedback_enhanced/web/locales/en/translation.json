@@ -10,7 +10,8 @@
         "commands": "⚡ Commands",
         "command": "⚡ Commands",
         "settings": "⚙️ Settings",
-        "combined": "📝 Combined Mode"
+        "combined": "📝 Combined Mode",
+        "about": "ℹ️ About"
     },
     "feedback": {
         "title": "💬 Provide Feedback",
@@ -134,5 +135,20 @@
     "dynamic": {
         "aiSummary": "Test Web UI Functionality\n\n🎯 **Test Items:**\n- Web UI server startup and operation\n- WebSocket real-time communication\n- Feedback submission functionality\n- Image upload and preview\n- Command execution functionality\n- Smart Ctrl+V image pasting\n- Multi-language interface functionality\n\n📋 **Test Steps:**\n1. Test image upload (drag-drop, file selection, clipboard)\n2. Press Ctrl+V in text box to test smart pasting\n3. Try switching languages (Traditional Chinese/Simplified Chinese/English)\n4. Test command execution functionality\n5. Submit feedback and images\n\nPlease test these features and provide feedback!",
         "terminalWelcome": "Welcome to Interactive Feedback Terminal\n========================================\nProject Directory: {sessionId}\nEnter commands and press Enter or click Execute button\nSupported commands: ls, dir, pwd, cat, type, etc.\n\n$ "
+    },
+    "about": {
+        "title": "ℹ️ About",
+        "description": "A powerful MCP server that provides human-in-the-loop interactive feedback functionality for AI-assisted development tools. Supports both Qt GUI and Web UI interfaces, with rich features including image upload, command execution, multi-language support, and more.",
+        "appInfo": "Application Information",
+        "version": "Version",
+        "projectLinks": "Project Links",
+        "githubProject": "GitHub Project",
+        "visitGithub": "Visit GitHub",
+        "contact": "Contact & Support",
+        "discordSupport": "Discord Support",
+        "joinDiscord": "Join Discord",
+        "contactDescription": "For technical support, issue reports, or feature suggestions, please contact us through Discord community or GitHub Issues.",
+        "thanks": "Thanks & Contributions",
+        "thanksText": "Thanks to the original author Fábio Ferreira (@fabiomlferreira) for creating the original interactive-feedback-mcp project.\n\nThis enhanced version is developed and maintained by Minidoracat, greatly expanding the project functionality with GUI interface, image support, multi-language capabilities, and many other improvements.\n\nSpecial thanks to sanshao85's mcp-feedback-collector project for UI design inspiration.\n\nOpen source collaboration makes technology better!"
     }
 }

@@ -16,6 +16,7 @@ from fastapi import Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from ...debug import web_debug_log as debug_log
+from ... import __version__
 
 if TYPE_CHECKING:
     from ..main import WebUIManager
@@ -47,7 +48,8 @@ def setup_routes(manager: 'WebUIManager'):
             "session_id": session_id,
             "project_directory": session.project_directory,
             "summary": session.summary,
-            "title": "Interactive Feedback - 回饋收集"
+            "title": "Interactive Feedback - 回饋收集",
+            "version": __version__
         })
 
     @manager.app.get("/api/translations")

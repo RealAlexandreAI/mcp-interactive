@@ -692,6 +692,9 @@
                     <button class="tab-button" data-tab="settings" data-i18n="tabs.settings">
                         ⚙️ 設定
                     </button>
+                    <button class="tab-button" data-tab="about" data-i18n="tabs.about">
+                        ℹ️ 關於
+                    </button>
                 </div>
             </div>
 
@@ -886,6 +889,88 @@
                             </div>
                             <div id="combinedImagePreviewContainer" class="image-preview-container"></div>
                             <input type="file" id="combinedImageInput" multiple accept="image/*" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 關於分頁 -->
+            <div id="tab-about" class="tab-content">
+                <div class="section-description" data-i18n="about.description">
+                    關於 MCP Feedback Enhanced - 應用程式資訊、專案連結和致謝。
+                </div>
+
+                <!-- 主要資訊卡片 -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <h3 class="settings-card-title" style="margin: 0;">MCP Feedback Enhanced</h3>
+                            <span style="color: var(--accent-color); font-weight: bold; font-size: 16px;">v{{ version }}</span>
+                        </div>
+                    </div>
+                    <div class="settings-card-body">
+                        <!-- 應用程式描述 -->
+                        <div class="setting-item" style="border-bottom: none; padding-bottom: 16px;">
+                            <div class="setting-info">
+                                <div class="setting-description" data-i18n="about.description" style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
+                                    一個強大的 MCP 伺服器，為 AI 輔助開發工具提供人在回路的互動回饋功能。支援 Qt GUI 和 Web UI 雙介面，並具備圖片上傳、命令執行、多語言等豐富功能。
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 分隔線 -->
+                        <div style="height: 1px; background: var(--border-color); margin: 16px 0;"></div>
+
+                        <!-- GitHub 專案 -->
+                        <div class="setting-item" style="border-bottom: none; padding-bottom: 12px;">
+                            <div class="setting-info">
+                                <div class="setting-label">📂 <span data-i18n="about.githubProject">GitHub 專案</span></div>
+                                <div class="setting-description" style="color: var(--text-secondary); font-size: 11px; margin-left: 24px;">
+                                    https://github.com/Minidoracat/mcp-feedback-enhanced
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="window.open('https://github.com/Minidoracat/mcp-feedback-enhanced', '_blank')" style="font-size: 12px; padding: 6px 16px;">
+                                <span data-i18n="about.visitGithub">訪問 GitHub</span>
+                            </button>
+                        </div>
+
+                        <!-- 分隔線 -->
+                        <div style="height: 1px; background: var(--border-color); margin: 16px 0;"></div>
+
+                        <!-- Discord 支援 -->
+                        <div class="setting-item" style="border-bottom: none; padding-bottom: 12px;">
+                            <div class="setting-info">
+                                <div class="setting-label">💬 <span data-i18n="about.discordSupport">Discord 支援</span></div>
+                                <div class="setting-description" style="color: var(--text-secondary); font-size: 11px; margin-left: 24px;">
+                                    https://discord.gg/ACjf9Q58
+                                </div>
+                                <div class="setting-description" data-i18n="about.contactDescription" style="color: var(--text-secondary); font-size: 12px; margin-left: 24px; margin-top: 8px;">
+                                    如需技術支援、問題回報或功能建議，歡迎透過 Discord 社群或 GitHub Issues 與我們聯繫。
+                                </div>
+                            </div>
+                            <button class="btn" onclick="window.open('https://discord.gg/ACjf9Q58', '_blank')" style="background: #5865F2; color: white; font-size: 12px; padding: 6px 16px; border: none;">
+                                <span data-i18n="about.joinDiscord">加入 Discord</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 致謝與貢獻卡片 -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title" data-i18n="about.thanks">🙏 致謝與貢獻</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="setting-item" style="border-bottom: none;">
+                            <div class="setting-info">
+                                <div class="text-input" data-i18n="about.thanksText" style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px; color: var(--text-primary); font-size: 12px; line-height: 1.5; min-height: 140px; max-height: 200px; overflow-y: auto; white-space: pre-wrap;">感謝原作者 Fábio Ferreira (@fabiomlferreira) 創建了原始的 interactive-feedback-mcp 專案。
+
+本增強版本由 Minidoracat 開發和維護，大幅擴展了專案功能，新增了 GUI 介面、圖片支援、多語言能力以及許多其他改進功能。
+
+同時感謝 sanshao85 的 mcp-feedback-collector 專案提供的 UI 設計靈感。
+
+開源協作讓技術變得更美好！</div>
+                            </div>
                         </div>
                     </div>
                 </div>

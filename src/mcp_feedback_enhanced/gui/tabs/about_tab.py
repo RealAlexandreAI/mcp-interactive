@@ -15,6 +15,7 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QFont, QDesktopServices
 
 from ...i18n import t
+from ... import __version__
 
 
 class AboutTab(QWidget):
@@ -76,7 +77,7 @@ class AboutTab(QWidget):
         
         title_layout.addStretch()
         
-        self.version_label = QLabel("v2.1.0")
+        self.version_label = QLabel(f"v{__version__}")
         self.version_label.setStyleSheet("font-size: 16px; color: #007acc; font-weight: bold;")
         title_layout.addWidget(self.version_label)
         
@@ -242,7 +243,7 @@ class AboutTab(QWidget):
         self.thanks_group.setTitle(t('about.thanks'))
         
         # 更新版本資訊
-        self.version_label.setText("v2.1.0")
+        self.version_label.setText(f"v{__version__}")
         
         # 更新描述文字
         self.app_description.setText(t('about.description'))

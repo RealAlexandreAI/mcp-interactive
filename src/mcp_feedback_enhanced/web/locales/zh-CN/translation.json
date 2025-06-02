@@ -10,7 +10,8 @@
         "commands": "⚡ 命令",
         "command": "⚡ 命令",
         "settings": "⚙️ 设置",
-        "combined": "📝 合并模式"
+        "combined": "📝 合并模式",
+        "about": "ℹ️ 关于"
     },
     "feedback": {
         "title": "💬 提供反馈",
@@ -134,5 +135,20 @@
     "dynamic": {
         "aiSummary": "测试 Web UI 功能\n\n🎯 **功能测试项目：**\n- Web UI 服务器启动和运行\n- WebSocket 实时通讯\n- 反馈提交功能\n- 图片上传和预览\n- 命令执行功能\n- 智能 Ctrl+V 图片粘贴\n- 多语言界面功能\n\n📋 **测试步骤：**\n1. 测试图片上传（拖拽、选择文件、剪贴板）\n2. 在文本框内按 Ctrl+V 测试智能粘贴\n3. 尝试切换语言（繁中/简中/英文）\n4. 测试命令执行功能\n5. 提交反馈和图片\n\n请测试这些功能并提供反馈！",
         "terminalWelcome": "欢迎使用交互反馈终端\n========================================\n项目目录: {sessionId}\n输入命令后按 Enter 或点击执行按钮\n支持的命令: ls, dir, pwd, cat, type 等\n\n$ "
+    },
+    "about": {
+        "title": "ℹ️ 关于",
+        "description": "一个强大的 MCP 服务器，为 AI 辅助开发工具提供人在回路的交互反馈功能。支持 Qt GUI 和 Web UI 双界面，并具备图片上传、命令执行、多语言等丰富功能。",
+        "appInfo": "应用程序信息",
+        "version": "版本",
+        "projectLinks": "项目链接",
+        "githubProject": "GitHub 项目",
+        "visitGithub": "访问 GitHub",
+        "contact": "联系与支持",
+        "discordSupport": "Discord 支持",
+        "joinDiscord": "加入 Discord",
+        "contactDescription": "如需技术支持、问题反馈或功能建议，欢迎通过 Discord 社群或 GitHub Issues 与我们联系。",
+        "thanks": "致谢与贡献",
+        "thanksText": "感谢原作者 Fábio Ferreira (@fabiomlferreira) 创建了原始的 interactive-feedback-mcp 项目。\n\n本增强版本由 Minidoracat 开发和维护，大幅扩展了项目功能，新增了 GUI 界面、图片支持、多语言能力以及许多其他改进功能。\n\n同时感谢 sanshao85 的 mcp-feedback-collector 项目提供的 UI 设计灵感。\n\n开源协作让技术变得更美好！"
     }
 }

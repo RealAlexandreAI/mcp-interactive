@@ -22,7 +22,9 @@
   "feedback": {
     "title": "Your Feedback",
     "description": "Please describe your thoughts, suggestions, or modifications needed for the AI's work.",
-    "placeholder": "Please enter your feedback, suggestions, or questions here...\n\n💡 Tips:\n• Press Ctrl+Enter (numpad supported) to submit quickly\n• Press Ctrl+V to paste images from clipboard"
+    "placeholder": "Please enter your feedback, suggestions, or questions here...\n\n💡 Tips:\n• Press Ctrl+Enter (numpad supported) to submit quickly\n• Press Ctrl+V to paste images from clipboard",
+    "emptyTitle": "Feedback Content Empty",
+    "emptyMessage": "Please enter feedback content before submitting. You can describe your thoughts, suggestions, or areas that need modification."
   },
   "command": {
     "title": "Command Execution",

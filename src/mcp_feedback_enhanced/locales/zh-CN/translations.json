@@ -22,7 +22,9 @@
   "feedback": {
     "title": "您的反馈",
     "description": "请描述您对 AI 工作结果的想法、建议或需要修改的地方。",
-    "placeholder": "请在这里输入您的反馈、建议或问题...\n\n💡 小提示：\n• 按 Ctrl+Enter（支持数字键盘）可快速提交反馈\n• 按 Ctrl+V 可直接粘贴剪贴板图片"
+    "placeholder": "请在这里输入您的反馈、建议或问题...\n\n💡 小提示：\n• 按 Ctrl+Enter（支持数字键盘）可快速提交反馈\n• 按 Ctrl+V 可直接粘贴剪贴板图片",
+    "emptyTitle": "反馈内容为空",
+    "emptyMessage": "请先输入反馈内容再提交。您可以描述想法、建议或需要修改的地方。"
   },
   "command": {
     "title": "命令执行",

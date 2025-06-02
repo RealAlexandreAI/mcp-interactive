@@ -1422,8 +1422,21 @@ class FeedbackWindow(QMainWindow):
     
     def _submit_feedback(self) -> None:
         """提交回饋"""
+        feedback_text = self.feedback_input.toPlainText().strip()
+        
+        # 檢查回饋內容是否為空
+        if not feedback_text:
+            QMessageBox.information(
+                self, 
+                t('feedback.emptyTitle'), 
+                t('feedback.emptyMessage')
+            )
+            # 將焦點設置到回饋輸入框
+            self.feedback_input.setFocus()
+            return
+        
         self.result = {
-            "interactive_feedback": self.feedback_input.toPlainText(),
+            "interactive_feedback": feedback_text,
             "command_logs": self.command_output.toPlainText(),
             "images": self.image_upload.get_images_data()
         }

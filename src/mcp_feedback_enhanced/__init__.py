@@ -15,6 +15,7 @@ MCP Interactive Feedback Enhanced
 - 命令執行功能
 - 圖片上傳支援
 - 現代化深色主題
+- 重構的模組化架構
 """
 
 __version__ = "2.0.16"
@@ -23,13 +24,18 @@ __email__ = "minidora0702@gmail.com"
 
 from .server import main as run_server
 from .gui import feedback_ui
-from .web_ui import WebUIManager
+
+# 導入新的 Web UI 模組
+from .web import WebUIManager, launch_web_feedback_ui, get_web_ui_manager, stop_web_ui
 
 # 主要導出介面
 __all__ = [
     "run_server",
     "feedback_ui", 
     "WebUIManager",
+    "launch_web_feedback_ui",
+    "get_web_ui_manager", 
+    "stop_web_ui",
     "__version__",
     "__author__",
 ]

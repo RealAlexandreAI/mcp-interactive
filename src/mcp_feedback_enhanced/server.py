@@ -514,10 +514,11 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
     debug_log(f"啟動 Web UI 介面，超時時間: {timeout} 秒")
     
     try:
-        from .web_ui import get_web_ui_manager
+        # 使用新的 web 模組
+        from .web import launch_web_feedback_ui
         
         # 直接運行 Web UI 會話
-        return await _run_web_ui_session(project_dir, summary, timeout)
+        return await launch_web_feedback_ui(project_dir, summary)
     except ImportError as e:
         debug_log(f"無法導入 Web UI 模組: {e}")
         return {
@@ -525,77 +526,14 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
             "interactive_feedback": f"Web UI 模組導入失敗: {str(e)}",
             "images": []
         }
-
-
-async def _run_web_ui_session(project_dir: str, summary: str, timeout: int) -> dict:
-    """
-    運行 Web UI 會話
-    
-    Args:
-        project_dir: 專案目錄路徑
-        summary: AI 工作摘要
-        timeout: 超時時間（秒）
-        
-    Returns:
-        dict: 收集到的回饋資料
-    """
-    from .web_ui import get_web_ui_manager
-    
-    manager = get_web_ui_manager()
-    
-    # 創建會話
-    session_id = manager.create_session(project_dir, summary)
-    session_url = f"http://{manager.host}:{manager.port}/session/{session_id}"
-    
-    debug_log(f"Web UI 已啟動: {session_url}")
-    # 注意：不能使用 print() 污染 stdout，會破壞 MCP 通信
-    # try:
-    #     print(f"Web UI 已啟動: {session_url}")
-    # except UnicodeEncodeError:
-    #     print(f"Web UI launched: {session_url}")
-    
-    # 開啟瀏覽器
-    manager.open_browser(session_url)
-    
-    try:
-        # 等待用戶回饋
-        session = manager.get_session(session_id)
-        if not session:
-            raise RuntimeError("會話創建失敗")
-            
-        result = await session.wait_for_feedback(timeout=timeout)
-        debug_log(f"Web UI 回饋收集成功，超時時間: {timeout} 秒")
-        return result
-        
-    except TimeoutError:
-        timeout_msg = f"等待用戶回饋超時（{timeout} 秒）"
-        debug_log(f"⏰ {timeout_msg}")
-        # 注意：不能使用 print() 污染 stdout，會破壞 MCP 通信
-        # try:
-        #     print(f"等待用戶回饋超時（{timeout} 秒）")
-        # except UnicodeEncodeError:
-        #     print(f"Feedback timeout ({timeout} seconds)")
-        return {
-            "command_logs": "",
-            "interactive_feedback": f"回饋超時（{timeout} 秒）",
-            "images": []
-        }
     except Exception as e:
         error_msg = f"Web UI 錯誤: {e}"
         debug_log(f"❌ {error_msg}")
-        # 注意：不能使用 print() 污染 stdout，會破壞 MCP 通信
-        # try:
-        #     print(f"Web UI 錯誤: {e}")
-        # except UnicodeEncodeError:
-        #     print(f"Web UI error: {e}")
         return {
             "command_logs": "",
             "interactive_feedback": f"錯誤: {str(e)}",
             "images": []
         }
-    finally:
-        # 清理會話
-        manager.remove_session(session_id)
 
 
 @mcp.tool()

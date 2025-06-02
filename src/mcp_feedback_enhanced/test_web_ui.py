@@ -38,8 +38,10 @@ from .i18n import t
 
 # 嘗試導入 Web UI 模組
 try:
-    from .web_ui import get_web_ui_manager, launch_web_feedback_ui
+    # 使用新的 web 模組
+    from .web import WebUIManager, launch_web_feedback_ui, get_web_ui_manager
     WEB_UI_AVAILABLE = True
+    debug_log("✅ 使用新的 web 模組")
 except ImportError as e:
     debug_log(f"⚠️  無法導入 Web UI 模組: {e}")
     WEB_UI_AVAILABLE = False
@@ -64,7 +66,8 @@ def test_web_ui(keep_running=False):
     
     # Test import
     try:
-        from .web_ui import WebUIManager, launch_web_feedback_ui
+        # 使用新的 web 模組
+        from .web import WebUIManager, launch_web_feedback_ui
         debug_log("✅ Web UI 模組匯入成功")
     except ImportError as e:
         debug_log(f"❌ Web UI 模組匯入失敗: {e}")

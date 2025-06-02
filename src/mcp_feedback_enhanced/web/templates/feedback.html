@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh-TW" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        :root {
+            /* 深色主題顏色變數 */
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #2d2d30;
+            --bg-tertiary: #252526;
+            --surface-color: #333333;
+            --text-primary: #cccccc;
+            --text-secondary: #9e9e9e;
+            --accent-color: #007acc;
+            --accent-hover: #005a9e;
+            --border-color: #464647;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --error-color: #f44336;
+            --info-color: #2196f3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 頭部 */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin: 0;
+        }
+
+        .project-info {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .language-selector select {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        /* 主內容區域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        /* 分頁樣式 */
+        .tabs {
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 2px;
+        }
+
+        .tab-button {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .tab-button.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+            background: var(--bg-tertiary);
+        }
+
+        .tab-button:hover:not(.active) {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* 隱藏的分頁按鈕 */
+        .tab-button.hidden {
+            display: none;
+        }
+
+        /* 分頁內容 */
+        .tab-content {
+            display: none;
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            min-height: 600px;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 分割器樣式（用於合併模式） */
+        .splitter-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            gap: 8px;
+        }
+
+        .splitter-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .splitter-handle {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            cursor: row-resize;
+            transition: background 0.3s ease;
+            margin: 4px 0;
+        }
+
+        .splitter-handle:hover {
+            background: var(--accent-color);
+        }
+
+        /* 表單元素統一寬度 */
+        .input-group {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .input-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .text-input,
+        .command-input {
+            width: 100%;
+            max-width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 220px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .text-input:focus,
+        .command-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .command-input {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            min-height: 80px;
+        }
+
+        /* 新增：單行命令輸入框樣式 */
+        .command-input-line {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            transition: border-color 0.3s ease;
+        }
+
+        .command-input-line:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        /* 圖片上傳區域 */
+        .image-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+            min-height: 120px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-upload-area:hover {
+            border-color: var(--accent-color);
+            background: rgba(0, 122, 204, 0.05);
+        }
+
+        .image-upload-area.dragover {
+            border-color: var(--accent-color);
+            background: rgba(0, 122, 204, 0.1);
+        }
+
+        .image-upload-area.has-images {
+            padding: 16px;
+            text-align: left;
+            min-height: auto;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+
+        .image-upload-area.has-images #imageUploadText {
+            display: none;
+        }
+
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .image-upload-area.has-images .image-preview-container {
+            margin-top: 0;
+        }
+
+        .image-preview {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-remove {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: var(--error-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 命令輸出區域 */
+        .command-output {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            overflow-y: auto;
+            height: 320px;
+            width: 100%;
+            box-sizing: border-box;
+            /* 添加 terminal 風格 */
+            background: #0f0f0f;
+            border: 2px solid var(--border-color);
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+            /* 確保尺寸固定 */
+            flex-shrink: 0;
+            resize: none;
+        }
+
+        /* Terminal 提示符樣式 */
+        .terminal-prompt {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* 按鈕 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-color);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        /* 底部操作按鈕 */
+        .footer-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            border-radius: 0 0 8px 8px;
+            margin-top: auto;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .tab-buttons {
+                flex-wrap: wrap;
+            }
+            
+            .footer-actions {
+                flex-direction: column-reverse;
+            }
+            
+            /* 小屏幕下調整命令輸出區域高度 */
+            .command-output {
+                height: 250px;
+            }
+        }
+
+        /* 更小屏幕的調整 */
+        @media (max-width: 480px) {
+            .command-output {
+                height: 200px;
+                font-size: 12px;
+            }
+        }
+
+        /* 設定頁面樣式 */
+        .settings-group {
+            margin-bottom: 24px;
+        }
+
+        .settings-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .setting-description {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-color);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(26px);
+        }
+
+        /* 分頁描述文字 */
+        .section-description {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-color);
+        }
+
+        /* 現代化語言選擇器樣式 */
+        .language-selector-modern {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .language-options {
+            display: flex;
+            gap: 12px;
+        }
+
+        .language-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        .language-option:hover {
+            border-color: var(--accent-color);
+            background: rgba(0, 122, 204, 0.1);
+        }
+
+        .language-option.active {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .language-flag {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .language-name {
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .language-option.active .language-name {
+            color: white;
+        }
+
+        /* 現代化設定卡片樣式 */
+        .settings-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .settings-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .settings-card-header {
+            background: var(--bg-secondary);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .settings-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-card-body {
+            padding: 20px;
+        }
+
+        .settings-card .setting-item {
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .settings-card .setting-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .settings-card .setting-label {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .settings-card .setting-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* 合併模式樣式 */
+        .combined-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .combined-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 頭部 -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title" data-i18n="app.title">Interactive Feedback MCP</h1>
+                <div class="project-info">
+                    <span data-i18n="app.projectDirectory">專案目錄</span>: {{ project_directory }}
+                </div>
+            </div>
+        </header>
+
+        <!-- 主內容 -->
+        <main class="main-content">
+            <!-- 分頁導航 -->
+            <div class="tabs">
+                <div class="tab-buttons">
+                    <!-- 合併模式分頁 - 移到最左邊第一個 -->
+                    <button class="tab-button hidden" data-tab="combined" data-i18n="tabs.combined">
+                        📝 合併模式
+                    </button>
+                    <button class="tab-button active" data-tab="feedback" data-i18n="tabs.feedback">
+                        💬 回饋
+                    </button>
+                    <button class="tab-button" data-tab="summary" data-i18n="tabs.summary">
+                        📋 AI 摘要
+                    </button>
+                    <button class="tab-button" data-tab="command" data-i18n="tabs.command">
+                        ⚡ 命令
+                    </button>
+                    <button class="tab-button" data-tab="settings" data-i18n="tabs.settings">
+                        ⚙️ 設定
+                    </button>
+                </div>
+            </div>
+
+            <!-- 回饋分頁 -->
+            <div id="tab-feedback" class="tab-content active">
+                <div class="section-description" data-i18n="feedback.description">
+                    請提供您對 AI 工作成果的回饋意見。您可以輸入文字回饋並上傳相關圖片。
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
+                    <textarea 
+                        id="feedbackText" 
+                        class="text-input" 
+                        data-i18n-placeholder="feedback.detailedPlaceholder"
+                        placeholder="請在這裡輸入您的回饋...
+
+💡 小提示：
+• 按 Ctrl+Enter/Cmd+Enter (支援數字鍵盤) 可快速提交
+• 按 Ctrl+V/Cmd+V 可直接貼上剪貼板圖片"
+                    ></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label" data-i18n="feedback.imageLabel">圖片附件（可選）</label>
+                    <div id="imageUploadArea" class="image-upload-area">
+                        <div id="imageUploadText" data-i18n="feedback.imageUploadText">
+                            📎 點擊選擇圖片或拖放圖片到此處<br>
+                            <small>支援 PNG、JPG、JPEG、GIF、BMP、WebP 等格式</small>
+                        </div>
+                        <div id="imagePreviewContainer" class="image-preview-container"></div>
+                        <input type="file" id="imageInput" multiple accept="image/*" style="display: none;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI 摘要分頁 -->
+            <div id="tab-summary" class="tab-content">
+                <div class="section-description" data-i18n="summary.description">
+                    以下是 AI 助手完成的工作摘要，請仔細查看並提供您的回饋意見。
+                </div>
+                
+                <div class="input-group">
+                    <div id="summaryContent" class="text-input" style="min-height: 300px; white-space: pre-wrap; cursor: text;" data-dynamic-content="aiSummary">
+                        {{ summary }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 命令分頁 -->
+            <div id="tab-command" class="tab-content">
+                <div class="section-description" data-i18n="command.description">
+                    在此執行命令來驗證結果或收集更多資訊。命令將在專案目錄中執行。
+                </div>
+                
+                <!-- 命令輸出區域 - 放在上面 -->
+                <div class="input-group">
+                    <label class="input-label" data-i18n="command.outputLabel">命令輸出</label>
+                    <div id="commandOutput" class="command-output"></div>
+                </div>
+
+                <!-- 命令輸入區域 - 放在下面 -->
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label class="input-label" data-i18n="command.inputLabel">命令輸入</label>
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
+                            <span style="color: var(--accent-color); font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-weight: bold;">$</span>
+                            <input 
+                                type="text"
+                                id="commandInput" 
+                                class="command-input-line" 
+                                data-i18n-placeholder="command.placeholder"
+                                placeholder="輸入要執行的命令..."
+                                style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 8px 12px; color: var(--text-primary); font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 14px;"
+                            />
+                        </div>
+                        <button id="runCommandBtn" class="btn btn-primary" data-i18n="command.runButton" style="white-space: nowrap;">
+                            ▶️ 執行
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 設定分頁 -->
+            <div id="tab-settings" class="tab-content">
+                <div class="section-description" data-i18n="settings.description">
+                    調整介面設定和偏好選項。
+                </div>
+
+                <!-- 介面設定卡片 -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title" data-i18n="settings.interface">🎨 介面設定</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="settings.combinedMode">合併模式</div>
+                                <div class="setting-description" data-i18n="settings.combinedModeDesc">
+                                    將 AI 摘要和回饋輸入合併在同一個分頁中
+                                </div>
+                            </div>
+                            <div id="combinedModeToggle" class="toggle-switch">
+                                <div class="toggle-knob"></div>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="settings.autoClose">自動關閉頁面</div>
+                                <div class="setting-description" data-i18n="settings.autoCloseDesc">
+                                    提交回饋後自動關閉頁面
+                                </div>
+                            </div>
+                            <div id="autoCloseToggle" class="toggle-switch active">
+                                <div class="toggle-knob"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 語言設定卡片 -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title" data-i18n="settings.language">🌐 語言設定</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="settings.currentLanguage">當前語言</div>
+                                <div class="setting-description" data-i18n="settings.languageDesc">
+                                    選擇界面顯示語言
+                                </div>
+                            </div>
+                            <div class="language-selector-modern">
+                                <div class="language-options">
+                                    <div class="language-option" data-lang="zh-TW">
+                                        <div class="language-flag">🇹🇼</div>
+                                        <div class="language-name">繁體中文</div>
+                                    </div>
+                                    <div class="language-option" data-lang="zh-CN">
+                                        <div class="language-flag">🇨🇳</div>
+                                        <div class="language-name">简体中文</div>
+                                    </div>
+                                    <div class="language-option" data-lang="en">
+                                        <div class="language-flag">🇺🇸</div>
+                                        <div class="language-name">English</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 合併模式分頁 - 新增 -->
+            <div id="tab-combined" class="tab-content">
+                <div class="section-description">
+                    合併模式：AI 摘要和回饋輸入在同一頁面中，方便對照查看。
+                </div>
+                
+                <!-- AI 摘要區域 -->
+                <div class="combined-section">
+                    <h3 class="combined-section-title">📋 AI 工作摘要</h3>
+                    <div class="combined-summary">
+                        <div id="combinedSummaryContent" class="text-input" style="min-height: 200px; white-space: pre-wrap; cursor: text;" data-dynamic-content="aiSummary">
+                            {{ summary }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 回饋輸入區域 -->
+                <div class="combined-section">
+                    <h3 class="combined-section-title">💬 提供回饋</h3>
+                    
+                    <div class="input-group">
+                        <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
+                        <textarea 
+                            id="combinedFeedbackText" 
+                            class="text-input" 
+                            data-i18n-placeholder="feedback.detailedPlaceholder"
+                            placeholder="請在這裡輸入您的回饋..."
+                            style="min-height: 150px;"
+                        ></textarea>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label" data-i18n="feedback.imageLabel">圖片附件（可選）</label>
+                        <div id="combinedImageUploadArea" class="image-upload-area" style="min-height: 100px;">
+                            <div id="combinedImageUploadText" data-i18n="feedback.imageUploadText">
+                                📎 點擊選擇圖片或拖放圖片到此處<br>
+                                <small>支援 PNG、JPG、JPEG、GIF、BMP、WebP 等格式</small>
+                            </div>
+                            <div id="combinedImagePreviewContainer" class="image-preview-container"></div>
+                            <input type="file" id="combinedImageInput" multiple accept="image/*" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部操作按鈕 -->
+        <footer class="footer-actions">
+            <button id="cancelBtn" class="btn btn-secondary" data-i18n="buttons.cancel">
+                ❌ 取消
+            </button>
+            <button id="submitBtn" class="btn btn-success" data-i18n="buttons.submit">
+                ✅ 提交回饋
+            </button>
+        </footer>
+    </div>
+
+    <!-- WebSocket 和 JavaScript -->
+    <script src="/static/js/i18n.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        // 初始化頁面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化 WebSocket 連接
+            const sessionId = '{{ session_id }}';
+            window.feedbackApp = new FeedbackApp(sessionId);
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,138 @@
+{
+    "app": {
+        "title": "MCP Interactive Feedback System",
+        "subtitle": "AI Assistant Interactive Feedback Platform",
+        "projectDirectory": "Project Directory"
+    },
+    "tabs": {
+        "feedback": "💬 Feedback",
+        "summary": "📋 AI Summary",
+        "commands": "⚡ Commands",
+        "command": "⚡ Commands",
+        "settings": "⚙️ Settings",
+        "combined": "📝 Combined Mode"
+    },
+    "feedback": {
+        "title": "💬 Provide Feedback",
+        "description": "Please provide your feedback on the AI assistant's work. You can enter text feedback and upload related images.",
+        "textLabel": "Text Feedback",
+        "placeholder": "Please enter your feedback here...",
+        "detailedPlaceholder": "Please enter your feedback here...\n\n💡 Tips:\n• Press Ctrl+Enter/Cmd+Enter (numpad supported) for quick submit\n• Press Ctrl+V/Cmd+V to paste clipboard images directly",
+        "imageLabel": "Image Attachments (Optional)",
+        "imageUploadText": "📎 Click to select images or drag and drop images here\nSupports PNG, JPG, JPEG, GIF, BMP, WebP formats",
+        "submit": "✅ Submit Feedback",
+        "uploading": "Uploading...",
+        "dragdrop": "Drag and drop images here or click to upload",
+        "selectfiles": "Select Files",
+        "processing": "Processing...",
+        "success": "Feedback submitted successfully!",
+        "error": "Error submitting feedback",
+        "shortcuts": {
+            "submit": "Ctrl+Enter to submit (Cmd+Enter on Mac, numpad supported)",
+            "clear": "Ctrl+Delete to clear (Cmd+Delete on Mac)",
+            "paste": "Ctrl+V to paste images (Cmd+V on Mac)"
+        }
+    },
+    "summary": {
+        "title": "📋 AI Work Summary",
+        "description": "Below is the work summary completed by the AI assistant. Please review carefully and provide your feedback.",
+        "placeholder": "AI work summary will be displayed here...",
+        "empty": "No summary content available",
+        "lastupdate": "Last updated",
+        "refresh": "Refresh"
+    },
+    "commands": {
+        "title": "⚡ Command Execution",
+        "description": "Execute commands here to verify results or collect more information. Commands will be executed in the project directory.",
+        "inputLabel": "Command Input",
+        "placeholder": "Enter command to execute...",
+        "execute": "▶️ Execute",
+        "runButton": "▶️ Execute",
+        "clear": "Clear",
+        "output": "Command Output",
+        "outputLabel": "Command Output",
+        "running": "Running...",
+        "completed": "Completed",
+        "error": "Execution Error",
+        "history": "Command History"
+    },
+    "command": {
+        "title": "⚡ Command Execution",
+        "description": "Execute commands here to verify results or collect more information. Commands will be executed in the project directory.",
+        "inputLabel": "Command Input",
+        "placeholder": "Enter command to execute...",
+        "execute": "▶️ Execute",
+        "runButton": "▶️ Execute",
+        "clear": "Clear",
+        "output": "Command Output",
+        "outputLabel": "Command Output",
+        "running": "Running...",
+        "completed": "Completed",
+        "error": "Execution Error",
+        "history": "Command History"
+    },
+    "settings": {
+        "title": "⚙️ Settings",
+        "description": "Adjust interface settings and preference options.",
+        "language": "Language",
+        "currentLanguage": "Current Language",
+        "languageDesc": "Select interface display language",
+        "interface": "Interface Settings",
+        "combinedMode": "Combined Mode",
+        "combinedModeDesc": "Merge AI summary and feedback input in the same tab",
+        "autoClose": "Auto Close Page",
+        "autoCloseDesc": "Automatically close page after submitting feedback",
+        "theme": "Theme",
+        "notifications": "Notifications",
+        "advanced": "Advanced Settings",
+        "save": "Save Settings",
+        "reset": "Reset",
+        "timeout": "Connection Timeout (seconds)",
+        "autorefresh": "Auto Refresh",
+        "debug": "Debug Mode"
+    },
+    "languages": {
+        "zh-TW": "繁體中文",
+        "zh-CN": "简体中文",
+        "en": "English"
+    },
+    "themes": {
+        "dark": "Dark",
+        "light": "Light",
+        "auto": "Auto"
+    },
+    "status": {
+        "connected": "Connected",
+        "connecting": "Connecting...",
+        "disconnected": "Disconnected",
+        "reconnecting": "Reconnecting...",
+        "error": "Connection Error"
+    },
+    "notifications": {
+        "feedback_sent": "Feedback sent",
+        "command_executed": "Command executed",
+        "settings_saved": "Settings saved",
+        "connection_lost": "Connection lost",
+        "connection_restored": "Connection restored"
+    },
+    "errors": {
+        "connection_failed": "Connection failed",
+        "upload_failed": "Upload failed",
+        "command_failed": "Command execution failed",
+        "invalid_input": "Invalid input",
+        "timeout": "Request timeout"
+    },
+    "buttons": {
+        "ok": "OK",
+        "cancel": "❌ Cancel",
+        "submit": "✅ Submit Feedback",
+        "retry": "Retry",
+        "close": "Close",
+        "upload": "Upload",
+        "download": "Download"
+    },
+    "dynamic": {
+        "aiSummary": "Test Web UI Functionality\n\n🎯 **Test Items:**\n- Web UI server startup and operation\n- WebSocket real-time communication\n- Feedback submission functionality\n- Image upload and preview\n- Command execution functionality\n- Smart Ctrl+V image pasting\n- Multi-language interface functionality\n\n📋 **Test Steps:**\n1. Test image upload (drag-drop, file selection, clipboard)\n2. Press Ctrl+V in text box to test smart pasting\n3. Try switching languages (Traditional Chinese/Simplified Chinese/English)\n4. Test command execution functionality\n5. Submit feedback and images\n\nPlease test these features and provide feedback!",
+        "terminalWelcome": "Welcome to Interactive Feedback Terminal\n========================================\nProject Directory: {sessionId}\nEnter commands and press Enter or click Execute button\nSupported commands: ls, dir, pwd, cat, type, etc.\n\n$ "
+    }
+}

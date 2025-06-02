@@ -11,10 +11,12 @@ from .feedback_tab import FeedbackTab
 from .summary_tab import SummaryTab
 from .command_tab import CommandTab
 from .settings_tab import SettingsTab
+from .about_tab import AboutTab
 
 __all__ = [
     'FeedbackTab',
     'SummaryTab', 
     'CommandTab',
-    'SettingsTab'
+    'SettingsTab',
+    'AboutTab'
 ] 

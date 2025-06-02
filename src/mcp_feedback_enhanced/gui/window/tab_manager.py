@@ -11,7 +11,7 @@ from typing import Dict, Any
 from PySide6.QtWidgets import QTabWidget, QSplitter, QWidget, QVBoxLayout, QScrollArea, QSizePolicy
 from PySide6.QtCore import Signal, Qt
 
-from ..tabs import FeedbackTab, SummaryTab, CommandTab, SettingsTab
+from ..tabs import FeedbackTab, SummaryTab, CommandTab, SettingsTab, AboutTab
 from ..widgets import SmartTextEdit, ImageUploadWidget
 from ...i18n import t
 from ...debug import gui_debug_log as debug_log
@@ -35,6 +35,7 @@ class TabManager:
         self.summary_tab = None
         self.command_tab = None
         self.settings_tab = None
+        self.about_tab = None
         self.combined_feedback_tab = None
     
     def create_tabs(self) -> None:
@@ -61,6 +62,10 @@ class TabManager:
         # 設置分頁
         self.settings_tab = SettingsTab(self.combined_mode)
         self.tab_widget.addTab(self.settings_tab, t('tabs.language'))
+        
+        # 關於分頁
+        self.about_tab = AboutTab()
+        self.tab_widget.addTab(self.about_tab, t('tabs.about'))
         
         debug_log(f"分頁創建完成，模式: {'合併' if self.combined_mode else '分離'}")
     
@@ -168,16 +173,18 @@ class TabManager:
     def update_tab_texts(self) -> None:
         """更新分頁標籤文字"""
         if self.combined_mode:
-            # 合併模式：只有回饋、命令、設置
+            # 合併模式：回饋、命令、設置、關於
             self.tab_widget.setTabText(0, t('tabs.feedback'))
             self.tab_widget.setTabText(1, t('tabs.command'))
             self.tab_widget.setTabText(2, t('tabs.language'))
+            self.tab_widget.setTabText(3, t('tabs.about'))
         else:
-            # 分離模式：回饋、摘要、命令、設置
+            # 分離模式：回饋、摘要、命令、設置、關於
             self.tab_widget.setTabText(0, t('tabs.feedback'))
             self.tab_widget.setTabText(1, t('tabs.summary'))
             self.tab_widget.setTabText(2, t('tabs.command'))
             self.tab_widget.setTabText(3, t('tabs.language'))
+            self.tab_widget.setTabText(4, t('tabs.about'))
         
         # 更新各分頁的內部文字
         if self.feedback_tab:
@@ -188,6 +195,8 @@ class TabManager:
             self.command_tab.update_texts()
         if self.settings_tab:
             self.settings_tab.update_texts()
+        if self.about_tab:
+            self.about_tab.update_texts()
     
     def get_feedback_data(self) -> Dict[str, Any]:
         """獲取回饋數據"""

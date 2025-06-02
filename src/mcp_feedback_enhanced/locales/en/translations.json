@@ -21,7 +21,22 @@
     "feedback": "💬 Feedback",
     "command": "⚡ Command",
     "language": "⚙️ Settings",
-    "images": "🖼️ Images"
+    "images": "🖼️ Images",
+    "about": "ℹ️ About"
+  },
+  "about": {
+    "appInfo": "Application Information",
+    "version": "Version",
+    "description": "A powerful MCP server that provides human-in-the-loop interactive feedback functionality for AI-assisted development tools. Supports dual interfaces (Qt GUI and Web UI) with rich features including image upload, command execution, and multi-language support.",
+    "projectLinks": "Project Links",
+    "githubProject": "GitHub Project",
+    "visitGithub": "Visit GitHub",
+    "contact": "Contact & Support",
+    "discordSupport": "Discord Support",
+    "joinDiscord": "Join Discord",
+    "contactDescription": "For technical support, issue reports, or feature suggestions, feel free to contact us through Discord community or GitHub Issues.",
+    "thanks": "Thanks & Contributions",
+    "thanksText": "Special thanks to the original author Fábio Ferreira (@fabiomlferreira) for creating the original interactive-feedback-mcp project.\n\nThis enhanced version is developed and maintained by Minidoracat, who has significantly expanded the project with GUI interface, image support, multi-language capabilities, and many other improvements.\n\nAlso thanks to sanshao85's mcp-feedback-collector project for UI design inspiration.\n\nOpen source collaboration makes technology better!"
   },
   "feedback": {
     "title": "Your Feedback",

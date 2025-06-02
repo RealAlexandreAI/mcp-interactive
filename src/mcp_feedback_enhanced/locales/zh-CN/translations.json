@@ -21,7 +21,8 @@
     "feedback": "💬 反馈",
     "command": "⚡ 命令",
     "language": "⚙️ 设置",
-    "images": "🖼️ 图片"
+    "images": "🖼️ 图片",
+    "about": "ℹ️ 关于"
   },
   "feedback": {
     "title": "您的反馈",
@@ -130,5 +131,19 @@
   "test": {
     "qtGuiSummary": "🎯 图片预览和窗口调整测试\n\n这是一个测试会话，用于验证以下功能：\n\n✅ 功能测试项目：\n1. 图片上传和预览功能\n2. 图片右上角X删除按钮\n3. 窗口自由调整大小\n4. 分割器的灵活调整\n5. 各区域的动态布局\n6. 智能 Ctrl+V 图片粘贴功能\n\n📋 测试步骤：\n1. 尝试上传一些图片（拖拽、文件选择、剪贴板）\n2. 检查图片预览是否正常显示\n3. 点击图片右上角的X按钮删除图片\n4. 尝试调整窗口大小，检查是否可以自由调整\n5. 拖动分割器调整各区域大小\n6. 在文本框内按 Ctrl+V 测试智能粘贴功能\n7. 提供任何回馈或发现的问题\n\n请测试这些功能并提供回馈！",
     "webUiSummary": "测试 Web UI 功能\n\n🎯 **功能测试项目：**\n- Web UI 服务器启动和运行\n- WebSocket 即时通讯\n- 回馈提交功能\n- 图片上传和预览\n- 命令执行功能\n- 智能 Ctrl+V 图片粘贴\n- 多语言界面切换\n\n📋 **测试步骤：**\n1. 测试图片上传（拖拽、选择文件、剪贴板）\n2. 在文本框内按 Ctrl+V 测试智能粘贴\n3. 尝试切换语言（繁中/简中/英文）\n4. 测试命令执行功能\n5. 提交回馈和图片\n\n请测试这些功能并提供回馈！"
+  },
+  "about": {
+    "appInfo": "应用程序信息",
+    "version": "版本",
+    "description": "一个强大的 MCP 服务器，为 AI 辅助开发工具提供人在回路的交互反馈功能。支持 Qt GUI 和 Web UI 双界面，并具备图片上传、命令执行、多语言等丰富功能。",
+    "projectLinks": "项目链接",
+    "githubProject": "GitHub 项目",
+    "visitGithub": "访问 GitHub",
+    "contact": "联系与支持",
+    "discordSupport": "Discord 支持",
+    "joinDiscord": "加入 Discord",
+    "contactDescription": "如需技术支持、问题反馈或功能建议，欢迎通过 Discord 社群或 GitHub Issues 与我们联系。",
+    "thanks": "致谢与贡献",
+    "thanksText": "感谢原作者 Fábio Ferreira (@fabiomlferreira) 创建了原始的 interactive-feedback-mcp 项目。\n\n本增强版本由 Minidoracat 开发和维护，大幅扩展了项目功能，新增了 GUI 界面、图片支持、多语言能力以及许多其他改进功能。\n\n同时感谢 sanshao85 的 mcp-feedback-collector 项目提供的 UI 设计灵感。\n\n开源协作让技术变得更美好！"
   }
 } 

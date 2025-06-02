@@ -1006,9 +1006,13 @@ class FeedbackWindow(QMainWindow):
     
     def _setup_shortcuts(self) -> None:
         """設置快捷鍵"""
-        # Ctrl+Enter 提交回饋
-        submit_shortcut = QShortcut(QKeySequence("Ctrl+Return"), self)
-        submit_shortcut.activated.connect(self._submit_feedback)
+        # Ctrl+Enter 提交回饋 (支援主鍵盤和數字鍵盤)
+        submit_shortcut1 = QShortcut(QKeySequence("Ctrl+Return"), self)
+        submit_shortcut1.activated.connect(self._submit_feedback)
+        
+        # 數字鍵盤的 Enter 鍵 (Qt.Key_Enter)
+        submit_shortcut2 = QShortcut(QKeySequence("Ctrl+Enter"), self)
+        submit_shortcut2.activated.connect(self._submit_feedback)
         
         # Escape 取消
         cancel_shortcut = QShortcut(QKeySequence("Esc"), self)

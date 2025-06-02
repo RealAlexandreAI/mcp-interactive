@@ -19,8 +19,8 @@
   },
   "feedback": {
     "title": "Your Feedback",
-    "description": "Please describe your thoughts, suggestions, or changes needed for the AI work results.",
-    "placeholder": "Please enter your feedback, suggestions, or questions here...\n\n💡 Tips:\n• Press Ctrl+Enter to submit quickly\n• Press Ctrl+V to paste images from clipboard"
+    "description": "Please describe your thoughts, suggestions, or modifications needed for the AI's work.",
+    "placeholder": "Please enter your feedback, suggestions, or questions here...\n\n💡 Tips:\n• Press Ctrl+Enter (numpad supported) to submit quickly\n• Press Ctrl+V to paste images from clipboard"
   },
   "command": {
     "title": "Command Execution",

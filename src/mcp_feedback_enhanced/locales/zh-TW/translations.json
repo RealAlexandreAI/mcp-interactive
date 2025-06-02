@@ -20,7 +20,7 @@
   "feedback": {
     "title": "您的回饋",
     "description": "請描述您對 AI 工作結果的想法、建議或需要修改的地方。",
-    "placeholder": "請在這裡輸入您的回饋、建議或問題...\n\n💡 小提示：\n• 按 Ctrl+Enter 可快速提交回饋\n• 按 Ctrl+V 可直接貼上剪貼簿圖片"
+    "placeholder": "請在這裡輸入您的回饋、建議或問題...\n\n💡 小提示：\n• 按 Ctrl+Enter（支援數字鍵盤）可快速提交回饋\n• 按 Ctrl+V 可直接貼上剪貼簿圖片"
   },
   "command": {
     "title": "命令執行",

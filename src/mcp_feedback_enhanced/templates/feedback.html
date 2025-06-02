@@ -890,7 +890,8 @@
 
             // 快捷鍵支援
             document.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.key === 'Enter') {
+                // 支援主鍵盤和數字鍵盤的 Ctrl+Enter
+                if (e.ctrlKey && (e.key === 'Enter' || e.code === 'NumpadEnter')) {
                     e.preventDefault();
                     submitFeedback();
                 }
@@ -1045,9 +1046,9 @@
         }
 
         function setupKeyboardShortcuts() {
-            // Ctrl+Enter 快速提交
+            // Ctrl+Enter 快速提交 (支援主鍵盤和數字鍵盤)
             document.addEventListener('keydown', function (e) {
-                if (e.ctrlKey && e.key === 'Enter') {
+                if (e.ctrlKey && (e.key === 'Enter' || e.code === 'NumpadEnter')) {
                     e.preventDefault();
                     submitFeedback();
                 }

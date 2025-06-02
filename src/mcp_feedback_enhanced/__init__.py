@@ -17,7 +17,7 @@ MCP Interactive Feedback Enhanced
 - 現代化深色主題
 """
 
-__version__ = "2.0.14"
+__version__ = "2.0.15"
 __author__ = "Minidoracat"
 __email__ = "minidora0702@gmail.com"
 

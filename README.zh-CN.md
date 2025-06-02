@@ -118,6 +118,9 @@ uvx mcp-feedback-enhanced@latest test --persistent
 
 ### 测试选项
 ```bash
+# 版本查询
+uvx mcp-feedback-enhanced@latest version       # 检查版本
+
 # 指定介面测试
 uvx mcp-feedback-enhanced@latest test --gui    # 仅测试 Qt GUI
 uvx mcp-feedback-enhanced@latest test --web    # 仅测试 Web UI

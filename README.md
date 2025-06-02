@@ -118,6 +118,9 @@ For best results, add these rules to your AI assistant:
 
 ### Testing Options
 ```bash
+# Version check
+uvx mcp-feedback-enhanced@latest version       # Check version
+
 # Interface-specific testing
 uvx mcp-feedback-enhanced@latest test --gui    # Qt GUI only
 uvx mcp-feedback-enhanced@latest test --web    # Web UI only

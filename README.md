@@ -22,9 +22,15 @@ This is an [MCP server](https://modelcontextprotocol.io/) that implements **huma
 ## 🌟 Key Features
 
 ### 🖥️ Dual Interface System
-- **Qt GUI**: Native experience for local environments
-- **Web UI**: Modern interface for remote SSH environments
+- **Qt GUI**: Native experience for local environments, modular refactored design
+- **Web UI**: Modern interface for remote SSH environments, brand new architecture
 - **Smart Switching**: Auto-detect environment and choose optimal interface
+
+### 🎨 Brand New Interface Design (v2.1.0)
+- **Modular Architecture**: Both GUI and Web UI adopt modular design
+- **Centralized Management**: Reorganized folder structure for easier maintenance
+- **Modern Themes**: Improved visual design and user experience
+- **Responsive Layout**: Adapts to different screen sizes and window dimensions
 
 ### 🖼️ Image Support
 - **Format Support**: PNG, JPG, JPEG, GIF, BMP, WebP
@@ -32,17 +38,27 @@ This is an [MCP server](https://modelcontextprotocol.io/) that implements **huma
 - **Auto Processing**: Smart compression to ensure 1MB limit compliance
 
 ### 🌏 Multi-language
-- **Three Languages**: Traditional Chinese, English, Simplified Chinese
+- **Three Languages**: English, Traditional Chinese, Simplified Chinese
 - **Smart Detection**: Auto-select based on system language
 - **Live Switching**: Change language directly within interface
 
 ## 🖥️ Interface Preview
 
-![Qt GUI Interface](docs/images/gui-en.png)  
-*Qt GUI Interface - Local Environment*
+### Qt GUI Interface (Refactored Version)
+<div align="center">
+  <img src="docs/images/en/gui1.png" width="400" alt="Qt GUI Main Interface" />
+  <img src="docs/images/en/gui2.png" width="400" alt="Qt GUI Settings Interface" />
+</div>
 
-![Web UI Interface](docs/images/web-en.png)  
-*Web UI Interface - SSH Remote Environment*
+*Qt GUI Interface - Modular refactoring, supporting local environments*
+
+### Web UI Interface (Refactored Version)
+<div align="center">
+  <img src="docs/images/en/web1.png" width="400" alt="Web UI Main Interface" />
+  <img src="docs/images/en/web2.png" width="400" alt="Web UI Settings Interface" />
+</div>
+
+*Web UI Interface - Brand new architecture, suitable for SSH Remote environments*
 
 **Keyboard Shortcuts**
 - `Ctrl+Enter`: Submit feedback (supports both main keyboard and numpad)
@@ -120,7 +136,7 @@ uvx mcp-feedback-enhanced@latest version       # Check version
 
 # Interface-specific testing
 uvx mcp-feedback-enhanced@latest test --gui    # Quick test Qt GUI
-uvx mcp-feedback-enhanced@latest test --web    # Test Web UI (keeps running)
+uvx mcp-feedback-enhanced@latest test --web    # Test Web UI (auto continuous running)
 
 # Debug mode
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
@@ -138,12 +154,12 @@ uv sync
 # Method 1: Standard test (recommended)
 uv run python -m mcp_feedback_enhanced test
 
-# Method 2: Complete test suite (macOS dev environment)
+# Method 2: Complete test suite (macOS and Windows dev environment)
 uvx --with-editable . mcp-feedback-enhanced test
 
 # Method 3: Interface-specific testing
 uvx --with-editable . mcp-feedback-enhanced test --gui    # Quick test Qt GUI
-uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (keeps running)
+uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto continuous running)
 ```
 
 **Testing Descriptions**
@@ -154,7 +170,16 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (keeps r
 
 ## 🆕 Version Highlights
 
-### v2.0.14 (Latest)
+### v2.1.0 (Latest Refactored Version)
+- 🎨 **Complete Refactoring**: GUI and Web UI adopt modular architecture
+- 📁 **Centralized Management**: Reorganized folder structure, improved maintainability
+- 🖥️ **Interface Optimization**: Modern design and improved user experience
+- 🍎 **macOS Interface Optimization**: Specialized improvements for macOS user experience
+- ⚙️ **Feature Enhancement**: New settings options and auto-close page functionality
+- 🌐 **Language Switching**: Fixed Web UI content update issues when switching languages
+- ℹ️ **About Page**: Added about page with version info, project links, and acknowledgments
+
+### v2.0.14
 - ⌨️ Enhanced Shortcuts: Ctrl+Enter supports numpad
 - 🖼️ Smart Image Pasting: Ctrl+V directly pastes clipboard images
 
@@ -197,14 +222,3 @@ If you find this useful, please:
 
 ### Design Inspiration
 **sanshao85** - [mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)
-
-### Community Support
-- **Discord:** [https://discord.gg/Gur2V67](https://discord.gg/Gur2V67)
-- **Issues:** [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
-
-## 📄 License
-
-MIT License - See [LICENSE](LICENSE) file for details
-
----
-**🌟 Welcome to Star and share with more developers!**

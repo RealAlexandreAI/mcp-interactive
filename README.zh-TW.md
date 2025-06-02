@@ -22,9 +22,15 @@
 ## 🌟 主要功能
 
 ### 🖥️ 雙介面系統
-- **Qt GUI**：本地環境原生體驗
-- **Web UI**：遠端 SSH 環境現代化界面
+- **Qt GUI**：本地環境原生體驗，模組化重構設計
+- **Web UI**：遠端 SSH 環境現代化界面，全新架構
 - **智能切換**：自動檢測環境並選擇最適介面
+
+### 🎨 全新界面設計（v2.1.0）
+- **模組化架構**：GUI 和 Web UI 均採用模組化設計
+- **集中管理**：資料夾結構重新組織，維護更容易
+- **現代化主題**：改進的視覺設計和用戶體驗
+- **響應式布局**：適應不同螢幕尺寸和視窗大小
 
 ### 🖼️ 圖片支援
 - **格式支援**：PNG、JPG、JPEG、GIF、BMP、WebP
@@ -38,11 +44,21 @@
 
 ## 🖥️ 介面預覽
 
-![Qt GUI Interface](docs/images/gui-zh-tw.png)  
-*Qt GUI 介面 - 本地環境*
+### Qt GUI 介面（重構版）
+<div align="center">
+  <img src="docs/images/zh-TW/gui1.png" width="400" alt="Qt GUI 主介面" />
+  <img src="docs/images/zh-TW/gui2.png" width="400" alt="Qt GUI 設定介面" />
+</div>
 
-![Web UI Interface](docs/images/web-zh-tw.png)  
-*Web UI 介面 - SSH Remote 環境*
+*Qt GUI 介面 - 模組化重構，支援本地環境*
+
+### Web UI 介面（重構版）
+<div align="center">
+  <img src="docs/images/zh-TW/web1.png" width="400" alt="Web UI 主介面" />
+  <img src="docs/images/zh-TW/web2.png" width="400" alt="Web UI 設定介面" />
+</div>
+
+*Web UI 介面 - 全新架構，適合 SSH Remote 環境*
 
 **快捷鍵支援**
 - `Ctrl+Enter`：提交回饋（主鍵盤與數字鍵盤皆支援）
@@ -138,7 +154,7 @@ uv sync
 # 方式一：標準測試（推薦）
 uv run python -m mcp_feedback_enhanced test
 
-# 方式二：完整測試套件（macOS 開發環境）
+# 方式二：完整測試套件（macOS 和 windows 通用開發環境）
 uvx --with-editable . mcp-feedback-enhanced test
 
 # 方式三：指定介面測試
@@ -154,7 +170,16 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # 測試 Web UI (自�
 
 ## 🆕 版本亮點
 
-### v2.0.14（最新）
+### v2.1.0（最新重構版）
+- 🎨 **全面重構**：GUI 和 Web UI 採用模組化架構
+- 📁 **集中管理**：重新組織資料夾結構，提升維護性
+- 🖥️ **界面優化**：現代化設計和改進的用戶體驗
+- 🍎 **macOS 介面優化**：針對 macOS 用戶體驗進行專項改進
+- ⚙️ **功能增強**：新增設定選項和自動關閉頁面功能
+- 🌐 **語言切換**：修復 Web UI 語言切換時內容更新問題
+- ℹ️ **About 頁面**：新增關於頁面，包含版本資訊、專案連結和致謝內容
+
+### v2.0.14
 - ⌨️ 增強快捷鍵：Ctrl+Enter 支援數字鍵盤
 - 🖼️ 智能圖片貼上：Ctrl+V 直接貼上剪貼板圖片
 

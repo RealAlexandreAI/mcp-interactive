@@ -9,7 +9,7 @@
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QTabWidget, QPushButton, QMessageBox
+    QTabWidget, QPushButton, QMessageBox, QScrollArea, QSizePolicy
 )
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
@@ -78,8 +78,69 @@ class FeedbackWindow(QMainWindow):
     
     def _create_tab_area(self, layout: QVBoxLayout) -> None:
         """創建分頁區域"""
+        # 創建滾動區域來包裝整個分頁組件
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setMinimumHeight(500)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: 1px solid #464647;
+                border-radius: 4px;
+                background-color: #2b2b2b;
+            }
+            QScrollArea > QWidget > QWidget {
+                background-color: #2b2b2b;
+            }
+            QScrollArea QScrollBar:vertical {
+                background-color: #2a2a2a;
+                width: 8px;
+                border-radius: 4px;
+                margin: 0;
+            }
+            QScrollArea QScrollBar::handle:vertical {
+                background-color: #555;
+                border-radius: 4px;
+                min-height: 20px;
+                margin: 1px;
+            }
+            QScrollArea QScrollBar::handle:vertical:hover {
+                background-color: #777;
+            }
+            QScrollArea QScrollBar::add-line:vertical,
+            QScrollArea QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
+                height: 0px;
+            }
+            QScrollArea QScrollBar:horizontal {
+                background-color: #2a2a2a;
+                height: 8px;
+                border-radius: 4px;
+                margin: 0;
+            }
+            QScrollArea QScrollBar::handle:horizontal {
+                background-color: #555;
+                border-radius: 4px;
+                min-width: 20px;
+                margin: 1px;
+            }
+            QScrollArea QScrollBar::handle:horizontal:hover {
+                background-color: #777;
+            }
+            QScrollArea QScrollBar::add-line:horizontal,
+            QScrollArea QScrollBar::sub-line:horizontal {
+                border: none;
+                background: none;
+                width: 0px;
+            }
+        """)
+        
         self.tab_widget = QTabWidget()
         self.tab_widget.setMinimumHeight(500)
+        # 設置分頁組件的大小策略，確保能觸發滾動
+        self.tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
         # 初始化分頁管理器
         self.tab_manager = TabManager(
@@ -92,7 +153,10 @@ class FeedbackWindow(QMainWindow):
         # 創建分頁
         self.tab_manager.create_tabs()
         
-        layout.addWidget(self.tab_widget, 1)
+        # 將分頁組件放入滾動區域
+        scroll_area.setWidget(self.tab_widget)
+        
+        layout.addWidget(scroll_area, 1)
     
     def _create_action_buttons(self, layout: QVBoxLayout) -> None:
         """創建操作按鈕"""
@@ -174,6 +238,7 @@ class FeedbackWindow(QMainWindow):
             QTabWidget::pane {
                 border: 1px solid #464647;
                 border-radius: 4px;
+                background-color: #2b2b2b;
             }
             QTabBar::tab {
                 background-color: #2d2d30;
@@ -184,6 +249,37 @@ class FeedbackWindow(QMainWindow):
             }
             QTabBar::tab:selected {
                 background-color: #007acc;
+            }
+            QSplitter {
+                background-color: #2b2b2b;
+            }
+            QSplitter::handle {
+                background-color: #3c3c3c;
+                border: 1px solid #555555;
+                border-radius: 3px;
+                margin: 0px;
+            }
+            QSplitter::handle:horizontal {
+                width: 6px;
+                background-color: #3c3c3c;
+                border: 1px solid #555555;
+                border-radius: 3px;
+                margin: 0px;
+            }
+            QSplitter::handle:vertical {
+                height: 6px;
+                background-color: #3c3c3c;
+                border: 1px solid #555555;
+                border-radius: 3px;
+                margin: 0px;
+            }
+            QSplitter::handle:hover {
+                background-color: #606060;
+                border-color: #808080;
+            }
+            QSplitter::handle:pressed {
+                background-color: #007acc;
+                border-color: #005a9e;
             }
         """)
     

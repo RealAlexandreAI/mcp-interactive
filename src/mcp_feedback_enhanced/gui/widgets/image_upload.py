@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QDragEnterEvent, QDropEvent
+from PySide6.QtWidgets import QSizePolicy
 
 # 導入多語系支援
 from ...i18n import t
@@ -42,7 +43,7 @@ class ImageUploadWidget(QWidget):
         """設置用戶介面"""
         layout = QVBoxLayout(self)
         layout.setSpacing(6)
-        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setContentsMargins(0, 8, 0, 8)  # 調整邊距使其與其他區域一致
         
         # 標題
         self.title = QLabel(t('images.title'))
@@ -63,6 +64,9 @@ class ImageUploadWidget(QWidget):
         # 創建滾動區域
         self.preview_scroll = QScrollArea()
         self.preview_widget = QWidget()
+        self.preview_widget.setMinimumHeight(140)  # 設置預覽部件的最小高度
+        # 設置尺寸策略，允許垂直擴展
+        self.preview_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.preview_layout = QVBoxLayout(self.preview_widget)
         self.preview_layout.setSpacing(6)
         self.preview_layout.setContentsMargins(8, 8, 8, 8)
@@ -73,7 +77,8 @@ class ImageUploadWidget(QWidget):
         # 創建拖拽提示標籤（初始顯示）
         self.drop_hint_label = QLabel(t('images.dragHint'))
         self.drop_hint_label.setAlignment(Qt.AlignCenter)
-        self.drop_hint_label.setMinimumHeight(60)
+        self.drop_hint_label.setMinimumHeight(80)  # 增加最小高度
+        self.drop_hint_label.setMaximumHeight(120) # 設置最大高度
         self.drop_hint_label.setStyleSheet("""
             QLabel {
                 border: 2px dashed #464647;
@@ -82,6 +87,7 @@ class ImageUploadWidget(QWidget):
                 color: #9e9e9e;
                 font-size: 11px;
                 margin: 4px 0;
+                padding: 16px 8px;
             }
         """)
         
@@ -101,16 +107,60 @@ class ImageUploadWidget(QWidget):
         
         # 設置滾動區域
         self.preview_scroll.setWidget(self.preview_widget)
-        self.preview_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.preview_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # 改回按需顯示滾動條
         self.preview_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.preview_scroll.setMinimumHeight(120)  # 增加最小高度以容納按鈕
-        self.preview_scroll.setMaximumHeight(200)  # 調整最大高度
+        self.preview_scroll.setMinimumHeight(160)  # 增加最小高度，確保有足夠空間
+        self.preview_scroll.setMaximumHeight(300)  # 增加最大高度
         self.preview_scroll.setWidgetResizable(True)
+        
+        # 增強的滾動區域樣式，改善 macOS 兼容性
         self.preview_scroll.setStyleSheet("""
             QScrollArea {
                 border: 1px solid #464647;
                 border-radius: 4px;
                 background-color: #1e1e1e;
+            }
+            QScrollArea QScrollBar:vertical {
+                background-color: #2a2a2a;
+                width: 14px;
+                border-radius: 7px;
+                margin: 0;
+            }
+            QScrollArea QScrollBar::handle:vertical {
+                background-color: #555;
+                border-radius: 7px;
+                min-height: 30px;
+                margin: 2px;
+            }
+            QScrollArea QScrollBar::handle:vertical:hover {
+                background-color: #777;
+            }
+            QScrollArea QScrollBar::add-line:vertical,
+            QScrollArea QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
+                height: 0px;
+            }
+            QScrollArea QScrollBar:horizontal {
+                background-color: #2a2a2a;
+                height: 14px;
+                border-radius: 7px;
+                margin: 0;
+            }
+            QScrollArea QScrollBar::handle:horizontal {
+                background-color: #555;
+                border-radius: 7px;
+                min-width: 30px;
+                margin: 2px;
+            }
+            QScrollArea QScrollBar::handle:horizontal:hover {
+                background-color: #777;
+            }
+            QScrollArea QScrollBar::add-line:horizontal,
+            QScrollArea QScrollBar::sub-line:horizontal {
+                border: none;
+                background: none;
+                width: 0px;
             }
         """)
         
@@ -358,6 +408,14 @@ class ImageUploadWidget(QWidget):
                 row = i // 5
                 col = i % 5
                 self.images_grid_layout.addWidget(preview, row, col)
+        
+        # 強制更新佈局和滾動區域
+        self.preview_widget.updateGeometry()
+        self.preview_scroll.updateGeometry()
+        
+        # 確保滾動區域能正確計算內容大小
+        from PySide6.QtWidgets import QApplication
+        QApplication.processEvents()
     
     def _remove_image(self, image_id: str) -> None:
         """移除圖片"""

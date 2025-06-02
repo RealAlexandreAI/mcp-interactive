@@ -76,4 +76,28 @@ class ConfigManager:
     def set_language(self, language: str) -> None:
         """設置語言"""
         self.set('language', language)
-        debug_log(f"語言設置: {language}") 
+        debug_log(f"語言設置: {language}")
+    
+    def get_splitter_sizes(self, splitter_name: str) -> list:
+        """獲取分割器尺寸"""
+        sizes = self.get(f'splitter_sizes.{splitter_name}', [])
+        if sizes:
+            debug_log(f"載入分割器 {splitter_name} 尺寸: {sizes}")
+        return sizes
+    
+    def set_splitter_sizes(self, splitter_name: str, sizes: list) -> None:
+        """設置分割器尺寸"""
+        self.set(f'splitter_sizes.{splitter_name}', sizes)
+        debug_log(f"保存分割器 {splitter_name} 尺寸: {sizes}")
+    
+    def get_window_geometry(self) -> dict:
+        """獲取窗口幾何信息"""
+        geometry = self.get('window_geometry', {})
+        if geometry:
+            debug_log(f"載入窗口幾何信息: {geometry}")
+        return geometry
+    
+    def set_window_geometry(self, geometry: dict) -> None:
+        """設置窗口幾何信息"""
+        self.set('window_geometry', geometry)
+        debug_log(f"保存窗口幾何信息: {geometry}") 

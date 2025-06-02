@@ -50,6 +50,9 @@ Both interfaces support:
 - 💬 Text feedback input
 - 🖼️ Image upload (supports drag & drop, clipboard paste)
 - ⚡ Real-time command execution
+- ⌨️ **Keyboard Shortcuts**:
+  - Ctrl+Enter for quick feedback submission (supports main keyboard and numpad)
+  - Ctrl+V to paste images directly in feedback dialog
 - 🎨 Modern dark theme
 - 📱 Responsive design (Web UI)
 - 🌐 Multi-language support (Traditional Chinese, English, Simplified Chinese)
@@ -190,6 +193,19 @@ If you need to use source version or want to customize environment variables:
 
 **Remember to modify the path to your actual project directory!**
 
+## 🔄 Workflow
+
+1. **AI Assistant Call** - AI calls `mcp-feedback-enhanced` after completing tasks
+2. **Environment Detection** - System automatically detects runtime environment
+3. **Interface Launch** - Launches Qt GUI or Web UI based on environment
+4. **User Interaction** - Users can:
+   - Execute commands and view output
+   - Provide text feedback (supports Ctrl+Enter quick submission, compatible with main keyboard and numpad)
+   - Upload images (drag & drop, clipboard paste Ctrl+V)
+   - Use multi-language interface switching
+5. **Feedback Delivery** - User feedback (including images) is sent back to AI assistant
+6. **Process Continuation** - AI continues or ends task based on feedback
+
 ## 🧪 Testing and Development
 
 ### Testing with uvx
@@ -215,7 +231,16 @@ MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 
 ## 🆕 Version History
 
-### v2.0.9 - Multi-language Architecture Enhancement (Latest)
+### v2.0.14 - Enhanced Keyboard Shortcuts (Latest)
+- ⌨️ **Numpad Support**: Ctrl+Enter shortcut now supports both main keyboard and numpad Enter keys
+- 🖼️ **Smart Image Pasting**: Ctrl+V can directly paste clipboard images in feedback dialog without additional upload steps
+- 🎮 **Dual Shortcut Mechanism**: GUI uses dual QShortcut setup ensuring full compatibility
+- 🌐 **Web UI Shortcut Enhancement**: Uses key/code dual detection mechanism supporting all Enter key variants
+- 💡 **User Experience Improvements**: Updated trilingual hint texts clearly indicating numpad support and image pasting functionality
+- 🔧 **API Simplification**: Removed `force_web_ui` parameter, simplified API design with only environment variable control
+- 📝 **Documentation Updates**: Updated all related documentation, removed redundant examples
+
+### v2.0.9 - Multi-language Architecture Enhancement
 - 🌏 **Complete Multi-language Architecture Restructuring**: Migrated from embedded translations to structured JSON-based system
 - 📁 **Organized Language Files**: Separated language files into `src/mcp_feedback_enhanced/locales/` directory structure
 - 🔧 **Enhanced Internationalization**: Dynamic loading with nested key structure and browser language detection

@@ -667,15 +667,15 @@ class FeedbackWindow(QMainWindow):
         self.setMinimumSize(900, 700)
         self.resize(1000, 800)
         
-        # 創建菜單欄
-        self._create_menu_bar()
-        
         # 中央元件
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
         layout.setSpacing(8)
         layout.setContentsMargins(16, 8, 16, 12)
+        
+        # 頂部工具欄（包含語言選擇器）
+        self._create_toolbar(layout)
         
         # AI 工作摘要區域
         self._create_summary_section(layout)
@@ -689,40 +689,104 @@ class FeedbackWindow(QMainWindow):
         # 設置快捷鍵
         self._setup_shortcuts()
     
+    def _create_toolbar(self, layout: QVBoxLayout) -> None:
+        """創建頂部工具欄"""
+        toolbar_widget = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar_widget)
+        toolbar_layout.setContentsMargins(0, 0, 0, 8)
+        
+        # 左側佔位符（可以添加其他工具）
+        toolbar_layout.addStretch()
+        
+        # 語言選擇器
+        self.language_label = QLabel(t('language_selector'))
+        self.language_label.setStyleSheet("font-weight: bold; color: #e0e0e0;")
+        toolbar_layout.addWidget(self.language_label)
+        
+        self.language_selector = QComboBox()
+        self.language_selector.setMinimumWidth(120)
+        self.language_selector.setStyleSheet("""
+            QComboBox {
+                background-color: #404040;
+                border: 1px solid #606060;
+                border-radius: 4px;
+                padding: 4px 8px;
+                color: #e0e0e0;
+                font-size: 11px;
+            }
+            QComboBox:hover {
+                border-color: #0078d4;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 6px solid #e0e0e0;
+                margin-right: 4px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #404040;
+                border: 1px solid #606060;
+                selection-background-color: #0078d4;
+                color: #e0e0e0;
+            }
+        """)
+        
+        # 填充語言選項
+        self._populate_language_selector()
+        
+        # 連接語言切換信號
+        self.language_selector.currentIndexChanged.connect(self._on_language_changed)
+        
+        toolbar_layout.addWidget(self.language_selector)
+        
+        layout.addWidget(toolbar_widget)
+    
+    def _populate_language_selector(self) -> None:
+        """填充語言選擇器"""
+        # 保存當前選擇
+        current_lang = self.i18n.get_current_language()
+        
+        # 清空並重新填充
+        self.language_selector.clear()
+        for lang_code in self.i18n.get_supported_languages():
+            display_name = self.i18n.get_language_display_name(lang_code)
+            self.language_selector.addItem(display_name, lang_code)
+        
+        # 設置當前選中的語言
+        for i in range(self.language_selector.count()):
+            if self.language_selector.itemData(i) == current_lang:
+                self.language_selector.setCurrentIndex(i)
+                break
+    
+    def _on_language_changed(self, index: int) -> None:
+        """處理語言變更"""
+        lang_code = self.language_selector.itemData(index)
+        if lang_code and self.i18n.set_language(lang_code):
+            # 發送語言變更信號
+            self.language_changed.emit()
+    
     def _create_menu_bar(self) -> None:
         """創建菜單欄"""
-        menubar = self.menuBar()
-        
-        # 語言菜單
-        self.language_menu = menubar.addMenu(t('language_selector'))
-        self.language_actions = {}
-        
-        # 添加語言選項
-        for lang_code in self.i18n.get_supported_languages():
-            action = QAction(self.i18n.get_language_display_name(lang_code), self)
-            action.setCheckable(True)
-            action.setChecked(lang_code == self.i18n.get_current_language())
-            action.triggered.connect(lambda checked, lang=lang_code: self._change_language(lang))
-            self.language_menu.addAction(action)
-            self.language_actions[lang_code] = action
+        # 移除菜單欄實現，改用工具欄中的下拉選擇器
+        pass
     
     def _change_language(self, language: str) -> None:
         """更改語言"""
-        if self.i18n.set_language(language):
-            # 更新所有菜單項目的勾選狀態
-            for lang_code, action in self.language_actions.items():
-                action.setChecked(lang_code == language)
-            
-            # 發送語言變更信號
-            self.language_changed.emit()
+        # 移除舊的實現，語言變更現在通過下拉選擇器處理
+        pass
     
     def _refresh_ui_texts(self) -> None:
         """刷新界面文字"""
         # 更新窗口標題
         self.setWindowTitle(t('app_title'))
         
-        # 更新菜單文字
-        self._update_menu_texts()
+        # 更新工具欄文字
+        self._update_toolbar_texts()
         
         # 更新標籤和按鈕文字
         self._update_widget_texts()
@@ -730,14 +794,22 @@ class FeedbackWindow(QMainWindow):
         # 更新圖片上傳元件的文字
         self._update_image_upload_texts()
     
-    def _update_menu_texts(self) -> None:
-        """更新菜單文字"""
-        # 更新語言菜單標題
-        self.language_menu.setTitle(t('language_selector'))
+    def _update_toolbar_texts(self) -> None:
+        """更新工具欄文字"""
+        # 更新語言選擇器標籤
+        if hasattr(self, 'language_label'):
+            self.language_label.setText(t('language_selector'))
         
-        # 更新語言選項文字
-        for lang_code, action in self.language_actions.items():
-            action.setText(self.i18n.get_language_display_name(lang_code))
+        # 更新語言選擇器選項
+        if hasattr(self, 'language_selector'):
+            # 暫時斷開信號連接以避免觸發語言變更
+            self.language_selector.currentIndexChanged.disconnect()
+            
+            # 重新填充語言選項
+            self._populate_language_selector()
+            
+            # 重新連接信號
+            self.language_selector.currentIndexChanged.connect(self._on_language_changed)
     
     def _update_widget_texts(self) -> None:
         """更新元件文字"""

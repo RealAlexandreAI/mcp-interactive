@@ -465,15 +465,14 @@ class ImageUploadWidget(QWidget):
                     "size": file_size
                 }
                 added_count += 1
-                debug_log(f"圖片添加成功: {os.path.basename(file_path)}, 數據大小: {len(raw_data)} bytes")
+                debug_log(f"圖片添加成功: {os.path.basename(file_path)}")
                 
             except Exception as e:
                 debug_log(f"添加圖片失敗: {e}")
                 QMessageBox.warning(self, "錯誤", f"無法載入圖片 {os.path.basename(file_path)}:\n{str(e)}")
                 
-        debug_log(f"共添加 {added_count} 張圖片")
-        debug_log(f"當前總共有 {len(self.images)} 張圖片")
         if added_count > 0:
+            debug_log(f"共添加 {added_count} 張圖片，當前總數: {len(self.images)}")
             self._refresh_preview()
             self._update_status()
             self.images_changed.emit()
@@ -550,21 +549,8 @@ class ImageUploadWidget(QWidget):
             
             self.status_label.setText(t('images.statusWithSize', count=count, size=size_str))
             
-            # 詳細調試信息
-            debug_log(f"=== 圖片狀態更新 ===")
-            debug_log(f"圖片數量: {count}")
-            debug_log(f"總大小: {total_size} bytes ({size_str})")
-            for i, (image_id, img) in enumerate(self.images.items(), 1):
-                data_size = len(img["data"]) if isinstance(img["data"], bytes) else 0
-                # 智能顯示每張圖片的大小
-                if data_size < 1024:
-                    data_str = f"{data_size} B"
-                elif data_size < 1024 * 1024:
-                    data_str = f"{data_size/1024:.1f} KB"
-                else:
-                    data_str = f"{data_size/(1024*1024):.1f} MB"
-                debug_log(f"圖片 {i}: {img['name']} - 數據大小: {data_str}")
-            debug_log(f"==================")
+            # 基本調試信息
+            debug_log(f"圖片狀態: {count} 張圖片，總大小: {size_str}")
             
     def get_images_data(self) -> List[dict]:
         """獲取圖片數據"""
@@ -672,6 +658,58 @@ class FeedbackWindow(QMainWindow):
     """回饋收集主窗口"""
     language_changed = Signal()
     
+    # 統一按鈕樣式常量
+    BUTTON_BASE_STYLE = """
+        QPushButton {
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        QPushButton:hover {
+            opacity: 0.8;
+        }
+    """
+    
+    PRIMARY_BUTTON_STYLE = BUTTON_BASE_STYLE + """
+        QPushButton { 
+            background-color: #0e639c; 
+        }
+        QPushButton:hover { 
+            background-color: #005a9e; 
+        }
+    """
+    
+    SUCCESS_BUTTON_STYLE = BUTTON_BASE_STYLE + """
+        QPushButton { 
+            background-color: #4caf50; 
+        }
+        QPushButton:hover { 
+            background-color: #45a049; 
+        }
+    """
+    
+    DANGER_BUTTON_STYLE = BUTTON_BASE_STYLE + """
+        QPushButton { 
+            background-color: #f44336; 
+            color: #ffffff;
+        }
+        QPushButton:hover { 
+            background-color: #d32f2f; 
+            color: #ffffff;
+        }
+    """
+    
+    SECONDARY_BUTTON_STYLE = BUTTON_BASE_STYLE + """
+        QPushButton {
+            background-color: #666666;
+        }
+        QPushButton:hover {
+            background-color: #555555;
+        }
+    """
+    
     def __init__(self, project_dir: str, summary: str):
         super().__init__()
         self.project_dir = project_dir
@@ -719,25 +757,15 @@ class FeedbackWindow(QMainWindow):
         header_layout = QHBoxLayout(header_widget)
         header_layout.setContentsMargins(0, 0, 0, 8)
         
-        # 專案目錄信息
+        # 專案目錄信息 - 修改為單行顯示
         self.project_label = QLabel(f"{t('app.projectDirectory')}: {self.project_dir}")
-        self.project_label.setStyleSheet("color: #9e9e9e; font-size: 12px; padding: 4px 0;")  # 增大字體
-        self.project_label.setWordWrap(True)
+        self.project_label.setStyleSheet("color: #9e9e9e; font-size: 12px; padding: 4px 0;")
+        # 移除 setWordWrap(True) 以實現單行顯示
         header_layout.addWidget(self.project_label)
         
         header_layout.addStretch()
         
         layout.addWidget(header_widget)
-    
-    def _create_menu_bar(self) -> None:
-        """創建菜單欄"""
-        # 移除菜單欄實現，改用工具欄中的下拉選擇器
-        pass
-    
-    def _change_language(self, language: str) -> None:
-        """更改語言"""
-        # 移除舊的實現，語言變更現在通過下拉選擇器處理
-        pass
     
     def _refresh_ui_texts(self) -> None:
         """刷新界面文字"""
@@ -774,13 +802,13 @@ class FeedbackWindow(QMainWindow):
         """更新元件文字"""
         # 更新分頁標籤
         if hasattr(self, 'tab_widget'):
-            # AI 摘要分頁
-            self.tab_widget.setTabText(0, t('tabs.summary'))
-            # 回饋分頁
-            self.tab_widget.setTabText(1, t('tabs.feedback'))
-            # 命令分頁
+            # 回饋分頁 - 現在是第一個
+            self.tab_widget.setTabText(0, t('tabs.feedback'))
+            # AI 摘要分頁 - 現在是第二個
+            self.tab_widget.setTabText(1, t('tabs.summary'))
+            # 命令分頁 - 現在是第三個
             self.tab_widget.setTabText(2, t('tabs.command'))
-            # 語言設置分頁
+            # 語言設置分頁 - 現在是第四個
             self.tab_widget.setTabText(3, t('tabs.language'))
         
         # 更新專案目錄標籤
@@ -1037,11 +1065,11 @@ class FeedbackWindow(QMainWindow):
         self.tab_widget = QTabWidget()
         self.tab_widget.setMinimumHeight(500)  # 增加分頁區域高度
         
-        # AI 工作摘要分頁
-        self._create_summary_tab()
-        
-        # 回饋分頁
+        # 回饋分頁 - 移到第一個位置
         self._create_feedback_tab()
+        
+        # AI 工作摘要分頁 - 移到第二個位置
+        self._create_summary_tab()
         
         # 命令分頁  
         self._create_command_tab()
@@ -1140,128 +1168,125 @@ class FeedbackWindow(QMainWindow):
         self.tab_widget.addTab(feedback_widget, t('tabs.feedback'))
         
     def _create_command_tab(self) -> None:
-        """創建命令分頁（優化布局）"""
+        """創建命令分頁（終端機風格布局）"""
         command_widget = QWidget()
+        command_layout = QVBoxLayout(command_widget)
+        command_layout.setSpacing(0)  # 緊湊佈局
+        command_layout.setContentsMargins(0, 0, 0, 0)
         
-        # 使用分割器來管理命令輸入和輸出區域
-        command_splitter = QSplitter(Qt.Vertical)
-        command_splitter.setChildrenCollapsible(False)
+        # 命令標題區域（頂部）
+        header_widget = QWidget()
+        header_layout = QVBoxLayout(header_widget)
+        header_layout.setSpacing(6)
+        header_layout.setContentsMargins(12, 8, 12, 8)
         
-        # 命令輸入區域
-        command_input_widget = QWidget()
-        command_input_layout = QVBoxLayout(command_input_widget)
-        command_input_layout.setSpacing(8)
-        command_input_layout.setContentsMargins(12, 12, 12, 8)
-        
-        command_group = QGroupBox()
-        command_layout = QVBoxLayout(command_group)
-        command_layout.setSpacing(8)
-        command_layout.setContentsMargins(12, 8, 12, 12)
-        
-        # 命令標題
         self.command_title = QLabel(t('command.title'))
-        self.command_title.setFont(QFont("", 13, QFont.Bold))  # 增大字體
-        self.command_title.setStyleSheet("color: #007acc; margin-bottom: 6px;")
-        command_layout.addWidget(self.command_title)
+        self.command_title.setFont(QFont("", 13, QFont.Bold))
+        self.command_title.setStyleSheet("color: #007acc; margin-bottom: 4px;")
+        header_layout.addWidget(self.command_title)
         
-        # 說明文字
         self.command_description = QLabel(t('command.description'))
-        self.command_description.setStyleSheet("color: #9e9e9e; font-size: 11px; margin-bottom: 10px;")  # 增大字體
+        self.command_description.setStyleSheet("color: #9e9e9e; font-size: 11px; margin-bottom: 6px;")
         self.command_description.setWordWrap(True)
-        command_layout.addWidget(self.command_description)
+        header_layout.addWidget(self.command_description)
         
-        # 命令輸入和執行按鈕
-        input_layout = QHBoxLayout()
-        self.command_input = QLineEdit()
-        self.command_input.setPlaceholderText(t('command.placeholder'))
-        self.command_input.setMinimumHeight(36)  # 增加輸入框高度
-        self.command_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #2d2d30;
-                border: 1px solid #464647;
-                border-radius: 4px;
-                padding: 8px 10px;
-                color: #ffffff;
-                font-size: 12px;
-            }
-        """)
-        self.command_input.returnPressed.connect(self._run_command)
-        input_layout.addWidget(self.command_input)
+        command_layout.addWidget(header_widget)
         
-        self.run_command_button = QPushButton(t('buttons.runCommand'))
-        self.run_command_button.clicked.connect(self._run_command)
-        self.run_command_button.setFixedSize(110, 36)  # 調整按鈕大小
-        self.run_command_button.setStyleSheet("""
-            QPushButton {
-                background-color: #0e639c;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                font-weight: bold;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #005a9e;
-            }
-        """)
-        input_layout.addWidget(self.run_command_button)
-        
-        command_layout.addLayout(input_layout)
-        command_input_layout.addWidget(command_group)
-        
-        # 命令輸出區域
+        # 命令輸出區域（中間，佔大部分空間）
         output_widget = QWidget()
         output_layout = QVBoxLayout(output_widget)
-        output_layout.setSpacing(8)
-        output_layout.setContentsMargins(12, 8, 12, 12)
-        
-        output_group = QGroupBox()
-        output_group_layout = QVBoxLayout(output_group)
-        output_group_layout.setSpacing(8)
-        output_group_layout.setContentsMargins(12, 8, 12, 12)
+        output_layout.setSpacing(6)
+        output_layout.setContentsMargins(12, 4, 12, 8)
         
         self.command_output_label = QLabel(t('command.output'))
-        self.command_output_label.setFont(QFont("", 13, QFont.Bold))  # 增大字體
-        self.command_output_label.setStyleSheet("color: #007acc; margin-bottom: 6px;")
-        output_group_layout.addWidget(self.command_output_label)
+        self.command_output_label.setFont(QFont("", 12, QFont.Bold))
+        self.command_output_label.setStyleSheet("color: #007acc; margin-bottom: 4px;")
+        output_layout.addWidget(self.command_output_label)
         
         self.command_output = QTextEdit()
         self.command_output.setReadOnly(True)
-        self.command_output.setFont(QFont("Consolas", 11))  # 增大等寬字體
-        self.command_output.setMinimumHeight(220)  # 增加最小高度
-        # 改進輸出區域樣式
+        self.command_output.setFont(QFont("Consolas", 11))
+        # 終端機風格樣式
         self.command_output.setStyleSheet("""
             QTextEdit {
-                background-color: #2a2a2a;
-                border: 1px solid #555;
+                background-color: #1a1a1a;
+                border: 1px solid #333;
                 border-radius: 6px;
                 padding: 12px;
-                font-family: 'Consolas', 'Monaco', monospace;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
                 font-size: 11px;
-                color: #e0e0e0;
-                line-height: 1.3;
+                color: #00ff00;
+                line-height: 1.4;
+            }
+            QScrollBar:vertical {
+                background-color: #2a2a2a;
+                width: 12px;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #555;
+                border-radius: 6px;
+                min-height: 20px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background-color: #666;
             }
         """)
-        output_group_layout.addWidget(self.command_output, 1)
+        output_layout.addWidget(self.command_output, 1)  # 佔據剩餘空間
         
-        output_layout.addWidget(output_group, 1)
+        command_layout.addWidget(output_widget, 1)  # 輸出區域佔大部分空間
         
-        # 添加到分割器
-        command_splitter.addWidget(command_input_widget)
-        command_splitter.addWidget(output_widget)
+        # 命令輸入區域（底部，固定高度）
+        input_widget = QWidget()
+        input_widget.setFixedHeight(70)  # 固定高度
+        input_layout = QVBoxLayout(input_widget)
+        input_layout.setSpacing(6)
+        input_layout.setContentsMargins(12, 8, 12, 12)
         
-        # 設置分割器的初始比例（命令輸入:輸出 = 1:3）
-        command_splitter.setStretchFactor(0, 1)
-        command_splitter.setStretchFactor(1, 3)
-        command_splitter.setSizes([120, 350])
+        # 命令輸入和執行按鈕（水平布局）
+        input_row_layout = QHBoxLayout()
+        input_row_layout.setSpacing(8)
         
-        # 設置主布局
-        main_layout = QVBoxLayout(command_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.addWidget(command_splitter)
+        # 提示符號標籤
+        prompt_label = QLabel("$")
+        prompt_label.setStyleSheet("color: #00ff00; font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; font-weight: bold;")
+        prompt_label.setFixedWidth(20)
+        input_row_layout.addWidget(prompt_label)
+        
+        self.command_input = QLineEdit()
+        self.command_input.setPlaceholderText(t('command.placeholder'))
+        self.command_input.setMinimumHeight(36)
+        # 終端機風格輸入框
+        self.command_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #1a1a1a;
+                border: 2px solid #333;
+                border-radius: 4px;
+                padding: 8px 12px;
+                color: #00ff00;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border-color: #007acc;
+                background-color: #1e1e1e;
+            }
+        """)
+        self.command_input.returnPressed.connect(self._run_command)
+        input_row_layout.addWidget(self.command_input, 1)  # 佔據大部分空間
+        
+        self.run_command_button = QPushButton(t('buttons.runCommand'))
+        self.run_command_button.clicked.connect(self._run_command)
+        self.run_command_button.setFixedSize(80, 36)
+        self.run_command_button.setStyleSheet(self.PRIMARY_BUTTON_STYLE)
+        input_row_layout.addWidget(self.run_command_button)
+        
+        input_layout.addLayout(input_row_layout)
+        
+        command_layout.addWidget(input_widget)  # 輸入區域在底部
         
         self.tab_widget.addTab(command_widget, t('tabs.command'))
-        
+    
     def _create_action_buttons(self, layout: QVBoxLayout) -> None:
         """創建操作按鈕"""
         button_layout = QHBoxLayout()
@@ -1271,19 +1296,7 @@ class FeedbackWindow(QMainWindow):
         self.cancel_button = QPushButton(t('buttons.cancel'))
         self.cancel_button.clicked.connect(self._cancel_feedback)
         self.cancel_button.setFixedSize(130, 40)  # 增大按鈕尺寸
-        self.cancel_button.setStyleSheet("""
-            QPushButton {
-                background-color: #666666;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                font-weight: bold;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #555555;
-            }
-        """)
+        self.cancel_button.setStyleSheet(self.SECONDARY_BUTTON_STYLE)
         button_layout.addWidget(self.cancel_button)
         
         # 提交按鈕
@@ -1291,19 +1304,7 @@ class FeedbackWindow(QMainWindow):
         self.submit_button.clicked.connect(self._submit_feedback)
         self.submit_button.setFixedSize(160, 40)  # 增大按鈕尺寸
         self.submit_button.setDefault(True)
-        self.submit_button.setStyleSheet("""
-            QPushButton {
-                background-color: #0e639c;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                font-weight: bold;
-                font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: #005a9e;
-            }
-        """)
+        self.submit_button.setStyleSheet(self.PRIMARY_BUTTON_STYLE)
         button_layout.addWidget(self.submit_button)
         
         layout.addLayout(button_layout)
@@ -1370,15 +1371,147 @@ class FeedbackWindow(QMainWindow):
         except Exception as e:
             debug_log(f"智能貼上失敗: {e}")
 
+    def _append_command_output(self, text: str) -> None:
+        """添加命令輸出並自動滾動到底部"""
+        if hasattr(self, 'command_output'):
+            # 移動光標到最後
+            cursor = self.command_output.textCursor()
+            cursor.movePosition(cursor.MoveOperation.End)
+            self.command_output.setTextCursor(cursor)
+            
+            # 插入文本
+            self.command_output.insertPlainText(text)
+            
+            # 確保滾動到最底部
+            scrollbar = self.command_output.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
+            
+            # 刷新界面
+            QApplication.processEvents()
+
+    def _read_command_output(self) -> None:
+        """讀取命令輸出（非阻塞方式）"""
+        if not hasattr(self, 'command_process') or not self.command_process:
+            if hasattr(self, 'timer'):
+                self.timer.stop()
+            return
+            
+        # 檢查進程是否還在運行
+        if self.command_process.poll() is None:
+            try:
+                # 檢查是否有可讀取的輸出（非阻塞）
+                import select
+                import sys
+                
+                if sys.platform == "win32":
+                    # Windows 下使用不同的方法
+                    try:
+                        # 嘗試讀取一行，但設置較短的超時
+                        import threading
+                        import queue
+                        
+                        if not hasattr(self, '_output_queue'):
+                            self._output_queue = queue.Queue()
+                            self._reader_thread = threading.Thread(
+                                target=self._read_process_output_thread,
+                                daemon=True
+                            )
+                            self._reader_thread.start()
+                        
+                        # 從隊列中獲取輸出（非阻塞）
+                        try:
+                            while True:
+                                output = self._output_queue.get_nowait()
+                                if output is None:  # 進程結束信號
+                                    break
+                                self._append_command_output(output)
+                        except queue.Empty:
+                            pass  # 沒有新輸出，繼續等待
+                            
+                    except ImportError:
+                        # 如果threading不可用，使用原來的方法但加上非阻塞檢查
+                        output = self.command_process.stdout.readline()
+                        if output:
+                            filtered_output = self._filter_command_output(output)
+                            if filtered_output:
+                                self._append_command_output(filtered_output)
+                else:
+                    # Unix/Linux/macOS 下使用 select
+                    ready, _, _ = select.select([self.command_process.stdout], [], [], 0.1)
+                    if ready:
+                        output = self.command_process.stdout.readline()
+                        if output:
+                            # 過濾不必要的輸出行
+                            filtered_output = self._filter_command_output(output)
+                            if filtered_output:
+                                self._append_command_output(filtered_output)
+                
+                # 檢查命令執行超時（30秒）
+                if not hasattr(self, '_command_start_time'):
+                    self._command_start_time = time.time()
+                elif time.time() - self._command_start_time > 30:
+                    self._append_command_output(f"\n⚠️ 命令執行超過30秒，自動終止...")
+                    self._terminate_command()
+                    
+            except Exception as e:
+                debug_log(f"讀取命令輸出錯誤: {e}")
+        else:
+            # 進程結束，停止計時器並讀取剩餘輸出
+            if hasattr(self, 'timer'):
+                self.timer.stop()
+            
+            # 清理資源
+            if hasattr(self, '_output_queue'):
+                delattr(self, '_output_queue')
+            if hasattr(self, '_reader_thread'):
+                delattr(self, '_reader_thread')
+            if hasattr(self, '_command_start_time'):
+                delattr(self, '_command_start_time')
+                
+            try:
+                # 讀取剩餘的輸出
+                remaining_output, _ = self.command_process.communicate(timeout=2)
+                if remaining_output and remaining_output.strip():
+                    filtered_output = self._filter_command_output(remaining_output)
+                    if filtered_output:
+                        self._append_command_output(filtered_output)
+            except subprocess.TimeoutExpired:
+                debug_log("讀取剩餘輸出超時")
+            except Exception as e:
+                debug_log(f"讀取剩餘輸出錯誤: {e}")
+            
+            return_code = self.command_process.returncode
+            self._append_command_output(f"\n進程結束，返回碼: {return_code}\n")
+
     def _run_command(self) -> None:
         """執行命令"""
         command = self.command_input.text().strip()
         if not command:
             return
 
-        self.command_output.append(f"$ {command}")
+        # 如果已經有命令在執行，先停止
+        if hasattr(self, 'timer') and self.timer.isActive():
+            self._terminate_command()
+
+        self._append_command_output(f"$ {command}\n")
+        
+        # 清空輸入欄位
+        self.command_input.clear()
+        
+        # 保存當前命令用於輸出過濾
+        self._last_command = command
         
         try:
+            # 準備環境變數以避免不必要的輸出
+            env = os.environ.copy()
+            # 禁用npm的進度顯示和其他多餘輸出
+            env['NO_UPDATE_NOTIFIER'] = '1'
+            env['NPM_CONFIG_UPDATE_NOTIFIER'] = 'false'
+            env['NPM_CONFIG_FUND'] = 'false'
+            env['NPM_CONFIG_AUDIT'] = 'false'
+            env['NPM_CONFIG_PROGRESS'] = 'false'
+            env['CI'] = 'true'  # 這會讓很多工具使用非互動模式
+            
             # 在專案目錄中執行命令
             self.command_process = subprocess.Popen(
                 command,
@@ -1388,8 +1521,18 @@ class FeedbackWindow(QMainWindow):
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                universal_newlines=True
+                universal_newlines=True,
+                env=env  # 使用修改過的環境變數
             )
+            
+            # 初始化命令開始時間
+            self._command_start_time = time.time()
+            
+            # 清理之前的資源
+            if hasattr(self, '_output_queue'):
+                delattr(self, '_output_queue')
+            if hasattr(self, '_reader_thread'):
+                delattr(self, '_reader_thread')
             
             # 使用計時器讀取輸出
             self.timer = QTimer()
@@ -1397,29 +1540,107 @@ class FeedbackWindow(QMainWindow):
             self.timer.start(100)
             
         except Exception as e:
-            self.command_output.append(f"錯誤: {str(e)}")
+            self._append_command_output(f"錯誤: {str(e)}\n")
+            # 發生錯誤時也要確保輸入欄位已清空
+            self.command_input.clear()
     
-    def _read_command_output(self) -> None:
-        """讀取命令輸出"""
-        if self.command_process and self.command_process.poll() is None:
+    def _read_process_output_thread(self) -> None:
+        """在後台線程中讀取進程輸出（Windows專用）"""
+        try:
+            while self.command_process and self.command_process.poll() is None:
+                try:
+                    output = self.command_process.stdout.readline()
+                    if output:
+                        # 過濾不必要的輸出行
+                        filtered_output = self._filter_command_output(output)
+                        if filtered_output:
+                            self._output_queue.put(filtered_output)
+                    else:
+                        # 沒有輸出時稍微休眠，避免CPU過度使用
+                        time.sleep(0.05)
+                except Exception as e:
+                    debug_log(f"後台線程讀取輸出錯誤: {e}")
+                    break
+            
+            # 進程結束，發送結束信號
+            if hasattr(self, '_output_queue'):
+                self._output_queue.put(None)
+                
+        except Exception as e:
+            debug_log(f"後台線程錯誤: {e}")
+
+    def _filter_command_output(self, output: str) -> str:
+        """過濾命令輸出，移除不必要的信息"""
+        if not output or not output.strip():
+            return ""
+        
+        # 需要過濾的模式
+        filter_patterns = [
+            # npm 相關的無關輸出
+            "npm WARN config global",
+            "npm WARN config user",
+            "npm notice",
+            "npm fund",
+            "npm audit",
+            "added",
+            "found 0 vulnerabilities",
+            "up to date",
+            "packages are looking for funding",
+            "run `npm fund` for details",
+            # Python 相關的無關輸出
+            "WARNING:",
+            "Traceback",
+            # 其他工具的無關輸出
+            "deprecated",
+            "WARN",
+        ]
+        
+        # 檢查是否包含過濾模式
+        for pattern in filter_patterns:
+            if pattern.lower() in output.lower():
+                return ""
+        
+        # 對於npm --version，只保留版本號行
+        if hasattr(self, '_last_command') and 'npm' in self._last_command and '--version' in self._last_command:
+            # 如果輸出看起來像版本號（數字.數字.數字格式）
+            import re
+            version_pattern = r'^\d+\.\d+\.\d+'
+            if re.match(version_pattern, output.strip()):
+                return output
+            # 過濾掉其他非版本號的輸出
+            elif not any(char.isdigit() for char in output):
+                return ""
+        
+        return output
+
+    def _terminate_command(self) -> None:
+        """終止當前執行的命令"""
+        if hasattr(self, 'timer'):
+            self.timer.stop()
+            
+        if hasattr(self, 'command_process') and self.command_process:
             try:
-                output = self.command_process.stdout.readline()
-                if output:
-                    self.command_output.insertPlainText(output)
-                    # 自動滾動到底部
-                    cursor = self.command_output.textCursor()
-                    cursor.movePosition(cursor.End)
-                    self.command_output.setTextCursor(cursor)
-            except:
-                pass
-        else:
-            # 進程結束
-            if hasattr(self, 'timer'):
-                self.timer.stop()
-            if self.command_process:
-                return_code = self.command_process.returncode
-                self.command_output.append(f"\n進程結束，返回碼: {return_code}\n")
-    
+                # 嘗試優雅地終止進程
+                self.command_process.terminate()
+                
+                # 等待一段時間，如果進程沒有結束，強制殺死
+                try:
+                    self.command_process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    self.command_process.kill()
+                    self._append_command_output("強制終止進程")
+                    
+            except Exception as e:
+                debug_log(f"終止命令進程錯誤: {e}")
+        
+        # 清理資源
+        if hasattr(self, '_output_queue'):
+            delattr(self, '_output_queue')
+        if hasattr(self, '_reader_thread'):
+            delattr(self, '_reader_thread')
+        if hasattr(self, '_command_start_time'):
+            delattr(self, '_command_start_time')
+
     def _submit_feedback(self) -> None:
         """提交回饋"""
         feedback_text = self.feedback_input.toPlainText().strip()
@@ -1448,13 +1669,9 @@ class FeedbackWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:
         """處理視窗關閉事件"""
-        if hasattr(self, 'timer'):
-            self.timer.stop()
-        if self.command_process:
-            try:
-                self.command_process.terminate()
-            except:
-                pass
+        # 清理命令執行相關資源
+        if hasattr(self, 'timer') or hasattr(self, 'command_process'):
+            self._terminate_command()
         
         # 清理圖片上傳組件中的臨時文件
         if hasattr(self, 'image_upload') and self.image_upload:

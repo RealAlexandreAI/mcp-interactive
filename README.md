@@ -1,6 +1,6 @@
 # Interactive Feedback MCP
 
-**🌐 Language / 語言切換:** **English** | [繁體中文](README.zh-TW.md)
+**🌐 Language / 語言切換:** **English** | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
 **Original Author:** [Fábio Ferreira](https://x.com/fabiomlferreira) | [Original Project](https://github.com/noopstudios/interactive-feedback-mcp) ⭐  
 **Enhanced Fork:** [Minidoracat](https://github.com/Minidoracat)  
@@ -81,6 +81,26 @@ For best results, add the following custom prompts to your AI assistant (e.g., i
 ```
 
 This ensures your AI assistant uses this MCP server to request user feedback before marking tasks as complete.
+
+## 🔧 Environment Detection & Configuration
+
+The system automatically detects the runtime environment and selects the appropriate interface:
+
+### Qt GUI (Local Environment)
+- Uses Qt's `QSettings` for project-based configuration storage
+- Includes command settings, auto-execution options, window geometry states, etc.
+- Settings are typically stored in platform-specific locations (Windows Registry, macOS plist files, Linux config directories)
+
+### Web UI (SSH Remote Environment)
+- Modern interface based on FastAPI and WebSocket
+- Supports real-time command execution and output display
+- Automatic browser launch and session management
+- Dark theme and responsive design
+
+### Debug Mode Control
+- **Production Mode**: Default off for all debug output, ensuring perfect compatibility with MCP clients
+- **Debug Mode**: Set `MCP_DEBUG=true` to enable detailed debug information
+- **Output Isolation**: All debug information outputs to stderr, not interfering with MCP communication
 
 ## 🚀 Installation
 
@@ -193,18 +213,9 @@ If you need to use source version or want to customize environment variables:
 
 **Remember to modify the path to your actual project directory!**
 
-## 🔄 Workflow
+### Cline / Windsurf Configuration
 
-1. **AI Assistant Call** - AI calls `mcp-feedback-enhanced` after completing tasks
-2. **Environment Detection** - System automatically detects runtime environment
-3. **Interface Launch** - Launches Qt GUI or Web UI based on environment
-4. **User Interaction** - Users can:
-   - Execute commands and view output
-   - Provide text feedback (supports Ctrl+Enter quick submission, compatible with main keyboard and numpad)
-   - Upload images (drag & drop, clipboard paste Ctrl+V)
-   - Use multi-language interface switching
-5. **Feedback Delivery** - User feedback (including images) is sent back to AI assistant
-6. **Process Continuation** - AI continues or ends task based on feedback
+Similar configuration principles: Configure server commands in the MCP settings of each tool, using `mcp-feedback-enhanced` as the server identifier.
 
 ## 🧪 Testing and Development
 
@@ -221,6 +232,8 @@ uvx mcp-feedback-enhanced@latest test --web
 
 # Persistent test mode (doesn't close after test, allows interactive testing)
 uvx mcp-feedback-enhanced@latest test --persistent
+uvx mcp-feedback-enhanced@latest test --gui --persistent
+uvx mcp-feedback-enhanced@latest test --web --persistent
 
 # View version
 uvx mcp-feedback-enhanced@latest version
@@ -229,7 +242,181 @@ uvx mcp-feedback-enhanced@latest version
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 ```
 
-## 🆕 Version History
+### Testing from Source
+```bash
+# Complete functionality test
+uv run python -m mcp_feedback_enhanced test
+
+# Qt GUI specific test
+uv run python -m mcp_feedback_enhanced test --gui
+
+# Web UI specific test
+uv run python -m mcp_feedback_enhanced test --web
+
+# Persistent test mode
+uv run python -m mcp_feedback_enhanced test --persistent
+
+# Enable debug mode
+MCP_DEBUG=true uv run python -m mcp_feedback_enhanced test
+```
+
+### Development Mode
+Run server with FastMCP development mode and open test interface:
+```bash
+# From source
+uv run fastmcp dev src/mcp_feedback_enhanced/server.py
+```
+
+### Test Options Description
+- **No parameter `test`**: Execute complete test suite (environment detection, parameter validation, MCP integration, Web UI)
+- **`--gui`**: Specifically test Qt GUI functionality and interface
+- **`--web`**: Specifically test Web UI functionality and WebSocket communication
+- **`--persistent`**: Persistent mode, keeps running after test completion for interactive testing
+
+## 🌟 Feature Highlights
+
+### 🖥️ Dual Interface Support
+- **Qt GUI**: Suitable for local development environments, providing native experience
+- **Web UI**: Suitable for SSH remote development environments, modern interface
+
+### 🔍 Smart Environment Detection
+- Auto-detect SSH connection environment variables
+- Detect DISPLAY settings (Linux)
+- Detect VSCode Remote development environment
+- Automatically select the most suitable interface
+
+### 💻 Command Execution Features
+- Real-time command execution and output display
+- Support command interruption and process tree termination
+- Automatic working directory setup
+- Command history recording
+
+### 🎨 Modern Interface
+- Dark theme design
+- Responsive layout (supports mobile browsers)
+- WebSocket real-time communication
+- Loading animations and visual feedback
+
+### 🖼️ Image Processing Features
+- Support multiple image formats (PNG, JPG, JPEG, GIF, BMP, WebP)
+- Smart file size detection and compression
+- Drag & drop upload and clipboard support
+- Automatic conversion to MCP Image objects
+- Base64 encoding and preview
+
+## 🛠️ Environment Variables
+
+### Core Environment Variables
+
+| Environment Variable | Purpose | Available Values | Default |
+|---------------------|---------|------------------|---------|
+| `FORCE_WEB` | Force use Web UI | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` | `false` |
+| `MCP_DEBUG` | Enable debug mode | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` | `false` |
+| `INCLUDE_BASE64_DETAIL` | Include full Base64 in image feedback | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` | `false` |
+
+### Usage Examples
+
+**In MCP configuration**:
+```json
+"env": {
+  "FORCE_WEB": "true",           // Force use Web UI
+  "MCP_DEBUG": "false",          // Turn off debug output (recommended for production)
+  "INCLUDE_BASE64_DETAIL": "true" // Include full image Base64 data
+}
+```
+
+**In command line**:
+```bash
+# Enable debug mode testing
+MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
+```
+
+## 📖 Usage Examples
+
+### 1. **Recommended MCP Configuration (uvx)**
+
+Simple configuration using uvx:
+```json
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
+      "command": "uvx",
+      "args": [
+        "mcp-feedback-enhanced@latest"
+      ],
+      "timeout": 600,
+      "env": {
+        "MCP_DEBUG": "false"
+      },
+      "autoApprove": [
+        "interactive_feedback"
+      ]
+    }
+  }
+}
+```
+
+### 2. **Custom Environment Variable Configuration**
+
+If you need custom environment variables (e.g., force Web UI):
+```json
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/path/to/mcp-feedback-enhanced",
+        "run",
+        "python",
+        "-m",
+        "mcp_feedback_enhanced"
+      ],
+      "timeout": 600,
+      "env": {
+        "FORCE_WEB": "true",
+        "MCP_DEBUG": "false",
+        "INCLUDE_BASE64_DETAIL": "true"
+      },
+      "autoApprove": [
+        "interactive_feedback"
+      ]
+    }
+  }
+}
+```
+
+### 3. **Tool Call Example**
+
+AI assistant will call the `mcp-feedback-enhanced` tool like this:
+
+```xml
+<use_mcp_tool>
+  <server_name>mcp-feedback-enhanced</server_name>
+  <tool_name>interactive_feedback</tool_name>
+  <arguments>
+    {
+      "project_directory": "/path/to/your/project",
+      "summary": "I have implemented your requested changes and refactored the main module. Please review the results and provide feedback."
+    }
+  </arguments>
+</use_mcp_tool>
+```
+
+## 🔄 Workflow
+
+1. **AI Assistant Call** - AI calls `mcp-feedback-enhanced` after completing tasks
+2. **Environment Detection** - System automatically detects runtime environment
+3. **Interface Launch** - Launches Qt GUI or Web UI based on environment
+4. **User Interaction** - Users can:
+   - Execute commands and view output
+   - Provide text feedback (supports Ctrl+Enter quick submission, compatible with main keyboard and numpad)
+   - Upload images (drag & drop, clipboard paste Ctrl+V)
+   - Use multi-language interface switching
+5. **Feedback Delivery** - User feedback (including images) is sent back to AI assistant
+6. **Process Continuation** - AI continues or ends task based on feedback
+
+## 🆕 Version Updates
 
 ### v2.0.14 - Enhanced Keyboard Shortcuts (Latest)
 - ⌨️ **Numpad Support**: Ctrl+Enter shortcut now supports both main keyboard and numpad Enter keys
@@ -248,8 +435,6 @@ MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 - 🔄 **Backward Compatibility**: Maintained full compatibility with existing code while enabling modern features
 - 🖼️ **Interface Screenshots Update**: Added comprehensive screenshots showcasing both English and Traditional Chinese interfaces
 - 📝 **Documentation Enhancement**: Updated README files with multi-language screenshots and feature descriptions
-
-### v2.0.7 - Stability and Performance Improvements
 - 🛡️ **Enhanced Error Handling**: Improved stability and error recovery mechanisms
 - 🚀 **Performance Optimizations**: Faster startup times and improved resource management
 - 🔧 **Bug Fixes**: Various minor fixes and improvements
@@ -258,6 +443,8 @@ MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 - 🖱️ **Interaction Fixes**: Improved drag-and-drop indicators and empty state hints
 - 📱 **Responsive Design**: Better layout adaptation for different screen sizes
 - 🌐 **Language Switching**: Fixed Qt GUI language switching with proper checkmarks
+
+### v2.0.3 - Encoding and Communication Fix
 - 🛡️ **Complete Chinese Character Encoding Fix**: Perfect Chinese character display support
 - 🔧 **JSON Parsing Error Resolution**: Fixed MCP client "Unexpected token" errors
 - 🎛️ **Controllable Debug Mode**: Debug output control via `MCP_DEBUG` environment variable
@@ -278,16 +465,6 @@ MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
 - ✅ **MCP Protocol Support**: Full Model Context Protocol implementation
 - ✅ **Cross-platform Support**: Windows, macOS, and Linux compatibility
 
-## 🛠️ Environment Variables
-
-### Core Environment Variables
-
-| Environment Variable | Purpose | Available Values | Default |
-|---------------------|---------|------------------|---------|
-| `FORCE_WEB` | Force use Web UI | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` | `false` |
-| `MCP_DEBUG` | Enable debug mode | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` | `false` |
-| `INCLUDE_BASE64_DETAIL` | Include full Base64 in image feedback | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` | `false` |
-
 ## 🐛 Troubleshooting
 
 ### Common Issues
@@ -303,6 +480,14 @@ A: Check if image size exceeds 1MB limit and ensure format is supported (PNG, JP
 
 **Q: Web UI won't start**  
 A: Ensure firewall allows local port access, or try setting `FORCE_WEB=true` environment variable.
+
+### Debug Mode
+
+For detailed debug information, please enable debug mode:
+```bash
+# Set debug environment variable
+MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
+```
 
 ## 🙏 Acknowledgments & Contact
 
@@ -327,7 +512,6 @@ Join our Discord community for real-time assistance and discussions:
 Feel free to ask any questions in the community!
 
 ### Related Resources
-- [dotcursorrules.com](https://dotcursorrules.com/) - More AI-assisted development workflow resources
 - [Model Context Protocol](https://modelcontextprotocol.io/) - Official MCP documentation
 
 ## 📄 License

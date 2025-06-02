@@ -22,7 +22,7 @@ __author__ = "Minidoracat"
 __email__ = "minidora0702@gmail.com"
 
 from .server import main as run_server
-from .feedback_ui import feedback_ui
+from .gui import feedback_ui
 from .web_ui import WebUIManager
 
 # 主要導出介面

@@ -15,6 +15,7 @@ Interactive Feedback MCP 的核心伺服器程式，提供用戶互動回饋功�
 
 作者: Fábio Ferreira (原作者)
 增強: Minidoracat (Web UI, 圖片支援, 環境檢測)
+重構: 模塊化設計
 """
 
 import os
@@ -237,8 +238,8 @@ def create_feedback_text(feedback_data: dict) -> str:
         text_parts.append(f"=== 用戶回饋 ===\n{feedback_data['interactive_feedback']}")
     
     # 命令執行日誌
-    if feedback_data.get("logs"):
-        text_parts.append(f"=== 命令執行日誌 ===\n{feedback_data['logs']}")
+    if feedback_data.get("command_logs"):
+        text_parts.append(f"=== 命令執行日誌 ===\n{feedback_data['command_logs']}")
     
     # 圖片附件概要
     if feedback_data.get("images"):
@@ -369,12 +370,28 @@ def launch_gui(project_dir: str, summary: str) -> dict:
     debug_log("啟動 Qt GUI 介面")
     
     try:
-        from .feedback_ui import feedback_ui
-        return feedback_ui(project_dir, summary)
-    except ImportError as e:
-        debug_log(f"無法導入 feedback_ui 模組: {e}")
+        from .gui import feedback_ui
+        result = feedback_ui(project_dir, summary)
+        
+        if result is None:
+            # 用戶取消
+            return {
+                "command_logs": "",
+                "interactive_feedback": "用戶取消了回饋。",
+                "images": []
+            }
+        
+        # 轉換鍵名以保持向後兼容
         return {
-            "logs": "",
+            "command_logs": result.get("command_logs", ""),
+            "interactive_feedback": result.get("interactive_feedback", ""),
+            "images": result.get("images", [])
+        }
+        
+    except ImportError as e:
+        debug_log(f"無法導入 GUI 模組: {e}")
+        return {
+            "command_logs": "",
             "interactive_feedback": f"Qt GUI 模組導入失敗: {str(e)}",
             "images": []
         }
@@ -458,7 +475,7 @@ async def interactive_feedback(
         feedback_items = []
         
         # 添加文字回饋
-        if result.get("interactive_feedback") or result.get("logs") or result.get("images"):
+        if result.get("interactive_feedback") or result.get("command_logs") or result.get("images"):
             feedback_text = create_feedback_text(result)
             feedback_items.append(TextContent(type="text", text=feedback_text))
             debug_log("文字回饋已添加")
@@ -504,7 +521,7 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
     except ImportError as e:
         debug_log(f"無法導入 Web UI 模組: {e}")
         return {
-            "logs": "",
+            "command_logs": "",
             "interactive_feedback": f"Web UI 模組導入失敗: {str(e)}",
             "images": []
         }
@@ -559,7 +576,7 @@ async def _run_web_ui_session(project_dir: str, summary: str, timeout: int) -> d
         # except UnicodeEncodeError:
         #     print(f"Feedback timeout ({timeout} seconds)")
         return {
-            "logs": "",
+            "command_logs": "",
             "interactive_feedback": f"回饋超時（{timeout} 秒）",
             "images": []
         }
@@ -572,7 +589,7 @@ async def _run_web_ui_session(project_dir: str, summary: str, timeout: int) -> d
         # except UnicodeEncodeError:
         #     print(f"Web UI error: {e}")
         return {
-            "logs": "",
+            "command_logs": "",
             "interactive_feedback": f"錯誤: {str(e)}",
             "images": []
         }

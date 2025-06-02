@@ -32,7 +32,7 @@ from .i18n import t
 
 # 嘗試導入 Qt GUI 模組
 try:
-    from .feedback_ui import feedback_ui
+    from .gui import feedback_ui
     QT_GUI_AVAILABLE = True
 except ImportError as e:
     debug_log(f"⚠️  無法導入 Qt GUI 模組: {e}")

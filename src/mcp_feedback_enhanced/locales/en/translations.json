@@ -10,13 +10,17 @@
     "title": "Interactive Feedback Collection",
     "projectDirectory": "Project Directory",
     "language": "Language",
-    "settings": "Settings"
+    "settings": "Settings",
+    "confirmCancel": "Confirm Cancel",
+    "confirmCancelMessage": "Are you sure you want to cancel feedback? All input content will be lost.",
+    "layoutChangeTitle": "Interface Layout Change",
+    "layoutChangeMessage": "Layout mode has been changed and requires reloading the interface to take effect.\nReload now?"
   },
   "tabs": {
     "summary": "📋 AI Summary",
     "feedback": "💬 Feedback",
     "command": "⚡ Command",
-    "language": "🌐 Language Settings",
+    "language": "⚙️ Settings",
     "images": "🖼️ Images"
   },
   "feedback": {
@@ -55,6 +59,21 @@
     "selector": "🌐 Language Selection",
     "description": "Choose your preferred interface language. Language changes take effect immediately."
   },
+  "settings": {
+    "title": "Application Settings",
+    "language": {
+      "title": "Language Settings",
+      "selector": "🌐 Language Selection",
+      "description": "Choose your preferred interface language. Language changes take effect immediately."
+    },
+    "layout": {
+      "title": "Interface Layout",
+      "combinedMode": "Combined Mode",
+      "combinedModeDescription": "Display AI summary and feedback on the same page for easy comparison",
+      "separateMode": "Separate Mode",
+      "separateModeDescription": "AI summary and feedback are in separate tabs"
+    }
+  },
   "buttons": {
     "submit": "Submit Feedback",
     "cancel": "Cancel",
@@ -85,7 +104,24 @@
     "invalidFileType": "Unsupported file type",
     "fileTooLarge": "File too large (max 1MB)"
   },
-  "aiSummary": "AI Work Summary",
+  "errors": {
+    "title": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "interfaceReloadError": "Error occurred while reloading interface: {error}",
+    "imageSaveEmpty": "Saved image file is empty! Location: {path}",
+    "imageSaveFailed": "Image save failed!",
+    "clipboardSaveFailed": "Failed to save clipboard image!",
+    "noValidImage": "No valid image in clipboard!",
+    "noImageContent": "No image content in clipboard!",
+    "emptyFile": "Image {filename} is an empty file!",
+    "loadImageFailed": "Failed to load image {filename}:\n{error}",
+    "dragInvalidFiles": "Please drag valid image files!",
+    "confirmClearAll": "Are you sure you want to clear all {count} images?",
+    "confirmClearTitle": "Confirm Clear",
+    "fileSizeExceeded": "Image {filename} size is {size}MB, exceeding 1MB limit!\nRecommend using image editing software to compress before uploading.",
+    "dataSizeExceeded": "Image {filename} data size exceeds 1MB limit!"
+  },
   "languageSelector": "🌐 Language",
   "languageNames": {
     "zhTw": "繁體中文",

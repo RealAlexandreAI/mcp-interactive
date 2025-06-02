@@ -283,18 +283,26 @@ class I18nManager:
     
     def get_language_display_name(self, language_code: str) -> str:
         """獲取語言的顯示名稱"""
-        # 從當前語言的翻譯中獲取
-        lang_key = f"languageNames.{language_code.replace('-', '').lower()}"
+        # 直接從當前語言的翻譯中獲取，避免遞歸
+        current_translations = self._translations.get(self._current_language, {})
+        
+        # 根據語言代碼構建鍵值
+        lang_key = None
         if language_code == 'zh-TW':
             lang_key = 'languageNames.zhTw'
         elif language_code == 'zh-CN':
             lang_key = 'languageNames.zhCn'
         elif language_code == 'en':
             lang_key = 'languageNames.en'
+        else:
+            # 通用格式
+            lang_key = f"languageNames.{language_code.replace('-', '').lower()}"
         
-        display_name = self.t(lang_key)
-        if display_name != lang_key:  # 如果找到了翻譯
-            return display_name
+        # 直接獲取翻譯，避免調用 self.t() 產生遞歸
+        if lang_key:
+            display_name = self._get_nested_value(current_translations, lang_key)
+            if display_name:
+                return display_name
         
         # 回退到元資料中的顯示名稱
         meta = self.get_language_info(language_code)

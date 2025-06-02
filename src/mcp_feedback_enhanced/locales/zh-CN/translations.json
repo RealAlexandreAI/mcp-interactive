@@ -10,13 +10,17 @@
     "title": "交互式反馈收集",
     "projectDirectory": "项目目录",
     "language": "语言",
-    "settings": "设置"
+    "settings": "设置",
+    "confirmCancel": "确认取消",
+    "confirmCancelMessage": "确定要取消反馈吗？所有输入的内容将会丢失。",
+    "layoutChangeTitle": "界面布局变更",
+    "layoutChangeMessage": "布局模式已变更，需要重新加载界面才能生效。\n是否现在重新加载？"
   },
   "tabs": {
     "summary": "📋 AI 摘要",
     "feedback": "💬 反馈",
     "command": "⚡ 命令",
-    "language": "🌐 语言设置",
+    "language": "⚙️ 设置",
     "images": "🖼️ 图片"
   },
   "feedback": {
@@ -50,10 +54,20 @@
     "paste_image_from_textarea": "已将图片从文本框智能贴到图片区域",
     "images_clear": "清除所有图片"
   },
-  "language": {
-    "settings": "语言设置",
-    "selector": "🌐 语言选择",
-    "description": "选择您偏好的界面语言。语言更改会立即生效。"
+  "settings": {
+    "title": "应用设置",
+    "language": {
+      "title": "语言设置",
+      "selector": "🌐 语言选择",
+      "description": "选择您偏好的界面语言。语言更改会立即生效。"
+    },
+    "layout": {
+      "title": "界面布局",
+      "combinedMode": "合并模式",
+      "combinedModeDescription": "将 AI 摘要和反馈放在同一页面，便于对照阅读",
+      "separateMode": "分离模式",
+      "separateModeDescription": "AI 摘要和反馈分别在不同页签"
+    }
   },
   "buttons": {
     "submit": "提交反馈",
@@ -84,6 +98,24 @@
     "pasteFailed": "无法从剪贴板获取图片",
     "invalidFileType": "不支持的文件类型",
     "fileTooLarge": "文件过大（最大 1MB）"
+  },
+  "errors": {
+    "title": "错误",
+    "warning": "警告",
+    "info": "提示",
+    "interfaceReloadError": "重新加载界面时发生错误: {error}",
+    "imageSaveEmpty": "保存的图片文件为空！位置: {path}",
+    "imageSaveFailed": "图片保存失败！",
+    "clipboardSaveFailed": "无法保存剪贴板图片！",
+    "noValidImage": "剪贴板中没有有效的图片！",
+    "noImageContent": "剪贴板中没有图片内容！",
+    "emptyFile": "图片 {filename} 是空文件！",
+    "loadImageFailed": "无法加载图片 {filename}:\n{error}",
+    "dragInvalidFiles": "请拖拽有效的图片文件！",
+    "confirmClearAll": "确定要清除所有 {count} 张图片吗？",
+    "confirmClearTitle": "确认清除",
+    "fileSizeExceeded": "图片 {filename} 大小为 {size}MB，超过 1MB 限制！\n建议使用图片编辑软件压缩后再上传。",
+    "dataSizeExceeded": "图片 {filename} 数据大小超过 1MB 限制！"
   },
   "aiSummary": "AI 工作摘要",
   "languageSelector": "🌐 语言选择",

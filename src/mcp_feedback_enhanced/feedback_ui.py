@@ -45,6 +45,33 @@ class FeedbackResult(TypedDict):
     images: List[dict]
 
 
+# ===== 自定義文字輸入框 =====
+class SmartTextEdit(QTextEdit):
+    """支援智能 Ctrl+V 的文字輸入框"""
+    image_paste_requested = Signal()
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+    def keyPressEvent(self, event):
+        """處理按鍵事件，實現智能 Ctrl+V"""
+        if event.key() == Qt.Key_V and event.modifiers() == Qt.ControlModifier:
+            # 檢查剪貼簿是否有圖片
+            clipboard = QApplication.clipboard()
+            
+            if clipboard.mimeData().hasImage():
+                # 如果有圖片，發送信號通知主窗口處理圖片貼上
+                self.image_paste_requested.emit()
+                # 不執行預設的文字貼上行為
+                return
+            else:
+                # 如果沒有圖片，執行正常的文字貼上
+                super().keyPressEvent(event)
+        else:
+            # 其他按鍵正常處理
+            super().keyPressEvent(event)
+
+
 # ===== 圖片預覽元件 =====
 class ImagePreviewWidget(QLabel):
     """圖片預覽元件"""
@@ -832,9 +859,11 @@ class FeedbackWindow(QMainWindow):
         feedback_layout.addWidget(self.feedback_description)
         
         # 文字輸入框
-        self.feedback_input = QTextEdit()
+        self.feedback_input = SmartTextEdit()
         self.feedback_input.setPlaceholderText(t('feedback_placeholder'))
         self.feedback_input.setMinimumHeight(120)
+        # 連接智能貼上信號
+        self.feedback_input.image_paste_requested.connect(self._handle_image_paste_from_textarea)
         feedback_layout.addWidget(self.feedback_input)
         
         layout.addWidget(feedback_group, stretch=2)  # 給更多空間
@@ -989,6 +1018,19 @@ class FeedbackWindow(QMainWindow):
                 background-color: #007acc;
                 }
             """)
+
+    def _handle_image_paste_from_textarea(self) -> None:
+        """處理從文字框智能貼上圖片的功能"""
+        try:
+            # 調用圖片上傳組件的剪貼簿貼上功能
+            self.image_upload.paste_from_clipboard()
+            
+            # 顯示智能貼上提示
+            # 可以在這裡添加狀態提示，比如狀態欄或臨時通知
+            debug_log("智能貼上：已將圖片從文字框貼到圖片區域")
+            
+        except Exception as e:
+            debug_log(f"智能貼上失敗: {e}")
 
     def _run_command(self) -> None:
         """執行命令"""

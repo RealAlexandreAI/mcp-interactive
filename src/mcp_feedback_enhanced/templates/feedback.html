@@ -656,7 +656,7 @@
                         <textarea 
                             id="feedbackText" 
                             class="text-input" 
-                            placeholder="請在這裡輸入您的回饋、建議或問題...&#10;&#10;💡 小提示：按 Ctrl+Enter 可快速提交回饋"
+                            placeholder="請在這裡輸入您的回饋、建議或問題...&#10;&#10;💡 小提示：&#10;• 按 Ctrl+Enter 可快速提交回饋&#10;• 按 Ctrl+V 可直接貼上剪貼簿圖片"
                         ></textarea>
                     </div>
 
@@ -669,7 +669,7 @@
                             <button class="upload-btn danger" onclick="clearAllImages()" id="clearBtn">❌ 清除</button>
                         </div>
                         <div class="drop-zone" id="dropZone">
-                            🎯 拖拽圖片到這裡 (PNG、JPG、JPEG、GIF、BMP、WebP)
+                            🎯 拖拽圖片到這裡 或 按 Ctrl+V 貼上剪貼簿圖片 (PNG、JPG、JPEG、GIF、BMP、WebP)
                         </div>
                         <div class="image-status" id="imageStatus">已選擇 0 張圖片</div>
                         <div class="image-preview-area" id="imagePreviewArea"></div>
@@ -1007,7 +1007,64 @@
                     e.preventDefault();
                     submitFeedback();
                 }
+                
+                // Ctrl+V 智能貼上
+                if (e.ctrlKey && e.key === 'v') {
+                    // 先檢查剪貼簿是否包含圖片
+                    checkClipboardForImage().then(hasImage => {
+                        if (hasImage) {
+                            // 如果有圖片，無論焦點在哪裡都優先貼到圖片區域
+                            e.preventDefault();
+                            pasteFromClipboard();
+                            
+                            // 提供額外的使用者提示
+                            const activeElement = document.activeElement;
+                            const isInTextArea = activeElement && activeElement.id === 'feedbackText';
+                            if (isInTextArea) {
+                                showStatusMessage(t('paste_image_from_textarea'), 'success');
+                            }
+                        } else {
+                            // 如果沒有圖片，檢查是否在文字輸入區域
+                            const activeElement = document.activeElement;
+                            const isTextInput = activeElement && (
+                                activeElement.tagName === 'TEXTAREA' || 
+                                activeElement.tagName === 'INPUT' || 
+                                activeElement.contentEditable === 'true'
+                            );
+                            
+                            if (isTextInput) {
+                                // 在文字輸入區域且剪貼簿只有文字，允許正常的文字貼上
+                                // 不需要 preventDefault()，讓瀏覽器執行預設行為
+                            } else {
+                                // 不在文字輸入區域且沒有圖片時，提示用戶
+                                e.preventDefault();
+                                showStatusMessage(t('paste_no_image'), 'info');
+                            }
+                        }
+                    }).catch(err => {
+                        // 如果檢查剪貼簿失敗，允許正常的文字貼上行為
+                        console.warn('檢查剪貼簿失敗:', err);
+                    });
+                }
             });
+        }
+
+        // 檢查剪貼簿是否包含圖片
+        async function checkClipboardForImage() {
+            try {
+                const items = await navigator.clipboard.read();
+                for (const item of items) {
+                    for (const type of item.types) {
+                        if (type.startsWith('image/')) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            } catch (err) {
+                // 如果無法讀取剪貼簿，返回 false
+                return false;
+            }
         }
 
         // 分頁切換功能

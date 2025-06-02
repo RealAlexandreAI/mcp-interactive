@@ -20,7 +20,7 @@
   "feedback": {
     "title": "Your Feedback",
     "description": "Please describe your thoughts, suggestions, or changes needed for the AI work results.",
-    "placeholder": "Please enter your feedback, suggestions, or questions here...\n\n💡 Tip: Press Ctrl+Enter to submit quickly"
+    "placeholder": "Please enter your feedback, suggestions, or questions here...\n\n💡 Tips:\n• Press Ctrl+Enter to submit quickly\n• Press Ctrl+V to paste images from clipboard"
   },
   "command": {
     "title": "Command Execution",
@@ -35,11 +35,16 @@
     "clear": "Clear",
     "status": "{count} images selected",
     "statusWithSize": "{count} images selected (Total {size})",
-    "dragHint": "🎯 Drag images here (PNG, JPG, JPEG, GIF, BMP, WebP)",
+    "dragHint": "🎯 Drag images here or press Ctrl+V to paste from clipboard (PNG, JPG, JPEG, GIF, BMP, WebP)",
     "deleteConfirm": "Are you sure you want to remove image \"{filename}\"?",
     "deleteTitle": "Confirm Delete",
     "sizeWarning": "Image file size cannot exceed 1MB",
-    "formatError": "Unsupported image format"
+    "formatError": "Unsupported image format",
+    "paste_images": "📋 Paste from Clipboard",
+    "paste_failed": "Paste failed, no image in clipboard",
+    "paste_no_image": "No image in clipboard to paste",
+    "paste_image_from_textarea": "Image intelligently pasted from text area to image area",
+    "images_clear": "Clear all images"
   },
   "buttons": {
     "submit": "Submit Feedback",

@@ -43,7 +43,7 @@ class I18nManager {
                 feedback: {
                     title: '💬 您的回饋',
                     description: '請在這裡輸入您的回饋、建議或問題。您的意見將幫助 AI 更好地理解您的需求。',
-                    placeholder: '請在這裡輸入您的回饋、建議或問題...\n\n💡 小提示：按 Ctrl+Enter 可快速提交回饋'
+                    placeholder: '請在這裡輸入您的回饋、建議或問題...\n\n💡 小提示：\n• 按 Ctrl+Enter 可快速提交回饋\n• 按 Ctrl+V 可直接貼上剪貼簿圖片'
                 },
                 command: {
                     title: '⚡ 命令執行',
@@ -55,7 +55,7 @@ class I18nManager {
                     title: '🖼️ 圖片附件（可選）',
                     status: '已選擇 {count} 張圖片',
                     statusWithSize: '已選擇 {count} 張圖片 (總計 {size})',
-                    dragHint: '🎯 拖拽圖片到這裡 (PNG、JPG、JPEG、GIF、BMP、WebP)',
+                    dragHint: '🎯 拖拽圖片到這裡 或 按 Ctrl+V 貼上剪貼簿圖片 (PNG、JPG、JPEG、GIF、BMP、WebP)',
                     deleteConfirm: '確定要移除圖片 "{filename}" 嗎？',
                     deleteTitle: '確認刪除'
                 },
@@ -75,6 +75,8 @@ class I18nManager {
                     commandFinished: '命令執行完成',
                     pasteSuccess: '已從剪貼板貼上圖片',
                     pasteFailed: '無法從剪貼板獲取圖片',
+                    paste_no_image: '剪貼簿中沒有圖片可貼上',
+                    paste_image_from_textarea: '已將圖片從文字框智能貼到圖片區域',
                     invalidFileType: '不支援的文件類型',
                     fileTooLarge: '文件過大（最大 1MB）'
                 },
@@ -100,7 +102,7 @@ class I18nManager {
                 feedback: {
                     title: '💬 Your Feedback',
                     description: 'Please enter your feedback, suggestions, or questions here. Your input helps AI better understand your needs.',
-                    placeholder: 'Please enter your feedback, suggestions, or questions here...\n\n💡 Tip: Press Ctrl+Enter to submit quickly'
+                    placeholder: 'Please enter your feedback, suggestions, or questions here...\n\n💡 Tips:\n• Press Ctrl+Enter to submit quickly\n• Press Ctrl+V to paste images from clipboard'
                 },
                 command: {
                     title: '⚡ Command Execution',
@@ -112,7 +114,7 @@ class I18nManager {
                     title: '🖼️ Image Attachments (Optional)',
                     status: '{count} images selected',
                     statusWithSize: '{count} images selected (Total {size})',
-                    dragHint: '🎯 Drag images here (PNG, JPG, JPEG, GIF, BMP, WebP)',
+                    dragHint: '🎯 Drag images here or press Ctrl+V to paste from clipboard (PNG, JPG, JPEG, GIF, BMP, WebP)',
                     deleteConfirm: 'Are you sure you want to remove image "{filename}"?',
                     deleteTitle: 'Confirm Delete'
                 },
@@ -132,6 +134,8 @@ class I18nManager {
                     commandFinished: 'Command finished',
                     pasteSuccess: 'Image pasted from clipboard',
                     pasteFailed: 'Failed to get image from clipboard',
+                    paste_no_image: 'No image to paste from clipboard',
+                    paste_image_from_textarea: 'Image pasted from text area to image area',
                     invalidFileType: 'Unsupported file type',
                     fileTooLarge: 'File too large (max 1MB)'
                 },
@@ -157,7 +161,7 @@ class I18nManager {
                 feedback: {
                     title: '💬 您的反馈',
                     description: '请在这里输入您的反馈、建议或问题。您的意见将帮助 AI 更好地理解您的需求。',
-                    placeholder: '请在这里输入您的反馈、建议或问题...\n\n💡 小提示：按 Ctrl+Enter 可快速提交反馈'
+                    placeholder: '请在这里输入您的反馈、建议或问题...\n\n💡 小提示：\n• 按 Ctrl+Enter 可快速提交反馈\n• 按 Ctrl+V 可直接贴上剪贴板图片'
                 },
                 command: {
                     title: '⚡ 命令执行',
@@ -169,7 +173,7 @@ class I18nManager {
                     title: '🖼️ 图片附件（可选）',
                     status: '已选择 {count} 张图片',
                     statusWithSize: '已选择 {count} 张图片 (总计 {size})',
-                    dragHint: '🎯 拖拽图片到这里 (PNG、JPG、JPEG、GIF、BMP、WebP)',
+                    dragHint: '🎯 拖拽图片到这里 或 按 Ctrl+V 贴上剪贴板图片 (PNG、JPG、JPEG、GIF、BMP、WebP)',
                     deleteConfirm: '确定要移除图片 "{filename}" 吗？',
                     deleteTitle: '确认删除'
                 },
@@ -189,6 +193,8 @@ class I18nManager {
                     commandFinished: '命令执行完成',
                     pasteSuccess: '已从剪贴板粘贴图片',
                     pasteFailed: '无法从剪贴板获取图片',
+                    paste_no_image: '剪贴板中没有图片可粘贴',
+                    paste_image_from_textarea: '已将图片从文字框智能贴到图片区域',
                     invalidFileType: '不支持的文件类型',
                     fileTooLarge: '文件过大（最大 1MB）'
                 },
@@ -361,6 +367,8 @@ class I18nManager {
             'command_finished': 'status.commandFinished',
             'paste_success': 'status.pasteSuccess',
             'paste_failed': 'status.pasteFailed',
+            'paste_no_image': 'status.paste_no_image',
+            'paste_image_from_textarea': 'status.paste_image_from_textarea',
             'invalid_file_type': 'status.invalidFileType',
             'file_too_large': 'status.fileTooLarge'
         };

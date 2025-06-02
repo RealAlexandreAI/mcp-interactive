@@ -69,7 +69,7 @@ def test_qt_gui():
         debug_log("   - X刪除按鈕")
         debug_log("   - 視窗大小調整")
         debug_log("   - 分割器調整")
-        debug_log()
+        debug_log("")
         
         # 啟動 GUI
         result = feedback_ui(project_directory, prompt)

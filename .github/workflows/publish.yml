@@ -70,10 +70,167 @@ jobs:
         NEW_VERSION="${{ steps.bump_version.outputs.new }}"
         sed -i "s/__version__ = \".*\"/__version__ = \"$NEW_VERSION\"/" src/mcp_feedback_enhanced/__init__.py
     
-    - name: Commit version bump
+    - name: Check Release Notes
+      id: check_notes
+      run: |
+        NEW_VERSION="v${{ steps.bump_version.outputs.new }}"
+        RELEASE_DIR="RELEASE_NOTES/${NEW_VERSION}"
+        
+        if [ ! -d "$RELEASE_DIR" ]; then
+          echo "❌ Error: Release notes directory not found at $RELEASE_DIR"
+          echo "Please create release notes before publishing!"
+          echo "Required files:"
+          echo "  - $RELEASE_DIR/en.md"
+          echo "  - $RELEASE_DIR/zh-TW.md"
+          exit 1
+        fi
+        
+        if [ ! -f "$RELEASE_DIR/en.md" ]; then
+          echo "❌ Error: English release notes not found at $RELEASE_DIR/en.md"
+          exit 1
+        fi
+        
+        if [ ! -f "$RELEASE_DIR/zh-TW.md" ]; then
+          echo "❌ Error: Traditional Chinese release notes not found at $RELEASE_DIR/zh-TW.md"
+          exit 1
+        fi
+        
+        if [ ! -f "$RELEASE_DIR/zh-CN.md" ]; then
+          echo "❌ Error: Simplified Chinese release notes not found at $RELEASE_DIR/zh-CN.md"
+          exit 1
+        fi
+        
+        echo "✅ Release notes found for $NEW_VERSION"
+        echo "release_dir=$RELEASE_DIR" >> $GITHUB_OUTPUT
+    
+    - name: Generate Release Body
+      id: release_body
+      run: |
+        NEW_VERSION="v${{ steps.bump_version.outputs.new }}"
+        RELEASE_DIR="${{ steps.check_notes.outputs.release_dir }}"
+        
+        # Create multi-language release body
+        cat > release_body.md << 'EOF'
+        ## 🌐 Multi-Language Release Notes
+        
+        ### 🇺🇸 English
+        EOF
+        
+        # Add English content
+        cat "$RELEASE_DIR/en.md" >> release_body.md
+        
+        # Add separator
+        cat >> release_body.md << 'EOF'
+        
+        ---
+        
+        ### 🇹🇼 繁體中文
+        EOF
+        
+        # Add Traditional Chinese content
+        cat "$RELEASE_DIR/zh-TW.md" >> release_body.md
+        
+        # Add separator
+        cat >> release_body.md << 'EOF'
+        
+        ---
+        
+        ### 🇨🇳 简体中文
+        EOF
+        
+        # Add Simplified Chinese content
+        cat "$RELEASE_DIR/zh-CN.md" >> release_body.md
+        
+        # Add installation section
+        cat >> release_body.md << 'EOF'
+        
+        ---
+        
+        ## 📦 Installation & Update
+        
+        ```bash
+        # Quick test latest version
+        uvx mcp-feedback-enhanced@latest test
+        
+        # Update to this specific version
+        EOF
+        
+        echo "uvx mcp-feedback-enhanced@$NEW_VERSION test" >> release_body.md
+        
+        cat >> release_body.md << 'EOF'
+        ```
+        
+        ## 🔗 Links
+        - **Documentation**: [README.md](https://github.com/Minidoracat/mcp-feedback-enhanced/blob/main/README.md)
+        - **Full Changelog**: [CHANGELOG](https://github.com/Minidoracat/mcp-feedback-enhanced/blob/main/RELEASE_NOTES/)
+        - **Issues**: [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
+        
+        ---
+        **Release automatically generated from RELEASE_NOTES system** 🤖
+        EOF
+        
+        echo "Release body generated successfully"
+    
+    - name: Sync CHANGELOG Files
+      run: |
+        NEW_VERSION="v${{ steps.bump_version.outputs.new }}"
+        RELEASE_DIR="${{ steps.check_notes.outputs.release_dir }}"
+        
+        # Function to add version to changelog
+        add_to_changelog() {
+          local lang_file="$1"
+          local changelog_file="$2"
+          local temp_file="changelog_temp.md"
+          
+          # Get the header and separator
+          head -n 5 "$changelog_file" > "$temp_file"
+          
+          # Add the new version content
+          cat "$lang_file" >> "$temp_file"
+          
+          # Add separator
+          echo "" >> "$temp_file"
+          echo "---" >> "$temp_file"
+          echo "" >> "$temp_file"
+          
+          # Add the rest of the changelog (skip header)
+          tail -n +7 "$changelog_file" >> "$temp_file"
+          
+          # Replace the original file
+          mv "$temp_file" "$changelog_file"
+          
+          echo "✅ Updated $changelog_file"
+        }
+        
+        # Check if CHANGELOG files exist
+        if [ -f "RELEASE_NOTES/CHANGELOG.en.md" ]; then
+          add_to_changelog "$RELEASE_DIR/en.md" "RELEASE_NOTES/CHANGELOG.en.md"
+        else
+          echo "⚠️ CHANGELOG.en.md not found, skipping"
+        fi
+        
+        if [ -f "RELEASE_NOTES/CHANGELOG.zh-TW.md" ]; then
+          add_to_changelog "$RELEASE_DIR/zh-TW.md" "RELEASE_NOTES/CHANGELOG.zh-TW.md"
+        else
+          echo "⚠️ CHANGELOG.zh-TW.md not found, skipping"
+        fi
+        
+        if [ -f "RELEASE_NOTES/CHANGELOG.zh-CN.md" ]; then
+          add_to_changelog "$RELEASE_DIR/zh-CN.md" "RELEASE_NOTES/CHANGELOG.zh-CN.md"
+        else
+          echo "⚠️ CHANGELOG.zh-CN.md not found, skipping"
+        fi
+        
+        echo "📝 CHANGELOG files synchronized"
+    
+    - name: Commit version bump and changelog updates
       run: |
         git add .
-        git commit -m "🔖 Release v${{ steps.bump_version.outputs.new }}"
+        git commit -m "🔖 Release v${{ steps.bump_version.outputs.new }}
+
+        - Updated version to ${{ steps.bump_version.outputs.new }}
+        - Synchronized CHANGELOG files with release notes
+        - Auto-generated from RELEASE_NOTES system"
         git tag "v${{ steps.bump_version.outputs.new }}"
     
     - name: Build package
@@ -94,28 +251,26 @@ jobs:
         git push origin "v${{ steps.bump_version.outputs.new }}"
     
     - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: "v${{ steps.bump_version.outputs.new }}"
-        release_name: "Release v${{ steps.bump_version.outputs.new }}"
-        body: |
-          ## Changes in v${{ steps.bump_version.outputs.new }}
-          
-          **Version Type:** ${{ github.event.inputs.version_type }}
-          **Previous Version:** v${{ steps.current_version.outputs.current }}
-          
-          This release was automatically generated.
-          
-          ### Installation
-          ```bash
-          uvx mcp-feedback-enhanced@latest
-          ```
-          
-          ### What's New
-          - Auto-generated release from GitHub Actions
-          - Updated package version from ${{ steps.current_version.outputs.current }} to ${{ steps.bump_version.outputs.new }}
-          
+        name: "Release v${{ steps.bump_version.outputs.new }}"
+        body_path: release_body.md
         draft: false
-        prerelease: false 
+        prerelease: false
+        generate_release_notes: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Summary
+      run: |
+        echo "🎉 Release v${{ steps.bump_version.outputs.new }} completed successfully!"
+        echo ""
+        echo "📦 Published to PyPI: https://pypi.org/project/mcp-feedback-enhanced/"
+        echo "🚀 GitHub Release: https://github.com/Minidoracat/mcp-feedback-enhanced/releases/tag/v${{ steps.bump_version.outputs.new }}"
+        echo "📝 CHANGELOG files have been automatically updated"
+        echo ""
+        echo "✅ Next steps:"
+        echo "  - Check the release on GitHub"
+        echo "  - Verify the package on PyPI"
+        echo "  - Test installation with: uvx mcp-feedback-enhanced@v${{ steps.bump_version.outputs.new }} test" 

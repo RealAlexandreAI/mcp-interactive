@@ -193,13 +193,21 @@ class FeedbackWindow(QMainWindow):
     
     def _setup_shortcuts(self) -> None:
         """設置快捷鍵"""
-        # Ctrl+Enter 或 Cmd+Enter 提交回饋
-        submit_shortcut = QShortcut(QKeySequence("Ctrl+Return"), self)
-        submit_shortcut.activated.connect(self._submit_feedback)
+        # Ctrl+Enter (主鍵盤) 提交回饋
+        submit_shortcut_main = QShortcut(QKeySequence("Ctrl+Return"), self)
+        submit_shortcut_main.activated.connect(self._submit_feedback)
         
-        # macOS 支援
-        submit_shortcut_mac = QShortcut(QKeySequence("Meta+Return"), self)
-        submit_shortcut_mac.activated.connect(self._submit_feedback)
+        # Ctrl+Enter (數字鍵盤) 提交回饋
+        submit_shortcut_keypad = QShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_Enter), self)
+        submit_shortcut_keypad.activated.connect(self._submit_feedback)
+        
+        # macOS 支援 Cmd+Return (主鍵盤)
+        submit_shortcut_mac_main = QShortcut(QKeySequence("Meta+Return"), self)
+        submit_shortcut_mac_main.activated.connect(self._submit_feedback)
+
+        # macOS 支援 Cmd+Enter (數字鍵盤)
+        submit_shortcut_mac_keypad = QShortcut(QKeySequence(Qt.Modifier.META | Qt.Key.Key_Enter), self)
+        submit_shortcut_mac_keypad.activated.connect(self._submit_feedback)
         
         # Escape 取消回饋
         cancel_shortcut = QShortcut(QKeySequence(Qt.Key_Escape), self)

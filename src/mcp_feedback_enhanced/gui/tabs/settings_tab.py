@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QComboBox, QRadioButton, QButtonGroup, QMessageBox,
     QCheckBox, QPushButton, QFrame
 )
+from ..widgets import SwitchWithLabel
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QFont
 
@@ -152,11 +153,6 @@ class SettingsTab(QWidget):
         # 保存引用以便更新
         self.ui_elements['language_header'] = header
         
-        desc = self._create_description(t('settings.language.description'))
-        layout.addWidget(desc)
-        # 保存引用以便更新
-        self.ui_elements['language_desc'] = desc
-        
         # 語言選擇器容器
         lang_container = QHBoxLayout()
         lang_container.setContentsMargins(0, 0, 0, 0)
@@ -209,11 +205,6 @@ class SettingsTab(QWidget):
         layout.addWidget(header)
         # 保存引用以便更新
         self.ui_elements['layout_header'] = header
-        
-        desc = self._create_description(t('settings.layout.description'))
-        layout.addWidget(desc)
-        # 保存引用以便更新
-        self.ui_elements['layout_desc'] = desc
         
         # 選項容器
         options_layout = QVBoxLayout()
@@ -304,60 +295,15 @@ class SettingsTab(QWidget):
         # 保存引用以便更新
         self.ui_elements['window_header'] = header
         
-        desc = self._create_description(t('settings.window.alwaysCenterDescription'))
-        layout.addWidget(desc)
-        # 保存引用以便更新
-        self.ui_elements['window_desc'] = desc
-        
         # 選項容器
         options_layout = QVBoxLayout()
-        options_layout.setSpacing(2)
+        options_layout.setSpacing(8)
         
-        self.always_center_checkbox = QCheckBox(t('settings.window.alwaysCenter'))
-        self.always_center_checkbox.setChecked(self.config_manager.get_always_center_window())
-        self.always_center_checkbox.setStyleSheet("""
-            QCheckBox {
-                font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
-                font-size: 13px;
-                color: #ffffff;
-                spacing: 8px;
-                padding: 2px 0px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-            }
-            QCheckBox::indicator:unchecked {
-                border: 2px solid #666666;
-                border-radius: 3px;
-                background-color: transparent;
-            }
-            QCheckBox::indicator:checked {
-                border: 2px solid #0078d4;
-                border-radius: 3px;
-                background-color: #0078d4;
-                image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEwIDNMNC41IDguNUwyIDYiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+);
-            }
-            QCheckBox::indicator:hover {
-                border-color: #0078d4;
-            }
-        """)
-        self.always_center_checkbox.stateChanged.connect(self._on_always_center_changed)
-        options_layout.addWidget(self.always_center_checkbox)
-        
-        center_hint = QLabel(f"    {t('settings.window.alwaysCenterDescription')}")
-        center_hint.setStyleSheet("""
-            QLabel {
-                font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
-                color: #888888;
-                font-size: 11px;
-                margin-left: 20px;
-                margin-bottom: 4px;
-            }
-        """)
-        options_layout.addWidget(center_hint)
-        # 保存引用以便更新
-        self.ui_elements['center_hint'] = center_hint
+        # 使用現代化的 Switch 組件
+        self.always_center_switch = SwitchWithLabel(t('settings.window.alwaysCenter'))
+        self.always_center_switch.setChecked(self.config_manager.get_always_center_window())
+        self.always_center_switch.toggled.connect(self._on_always_center_changed)
+        options_layout.addWidget(self.always_center_switch)
         
         layout.addLayout(options_layout)
     
@@ -367,11 +313,6 @@ class SettingsTab(QWidget):
         layout.addWidget(header)
         # 保存引用以便更新
         self.ui_elements['reset_header'] = header
-        
-        desc = self._create_description(t('settings.reset.description'))
-        layout.addWidget(desc)
-        # 保存引用以便更新
-        self.ui_elements['reset_desc'] = desc
         
         reset_container = QHBoxLayout()
         reset_container.setContentsMargins(0, 0, 0, 0)
@@ -475,12 +416,11 @@ class SettingsTab(QWidget):
             # 發出佈局變更請求信號
             self.layout_change_requested.emit(new_combined_mode, new_orientation)
     
-    def _on_always_center_changed(self, state: int) -> None:
+    def _on_always_center_changed(self, checked: bool) -> None:
         """視窗定位選項變更事件處理"""
-        always_center = state == Qt.CheckState.Checked.value
         # 立即保存設定
-        self.config_manager.set_always_center_window(always_center)
-        debug_log(f"視窗定位設置已保存: {always_center}")  # 調試輸出
+        self.config_manager.set_always_center_window(checked)
+        debug_log(f"視窗定位設置已保存: {checked}")  # 調試輸出
     
     def _on_reset_settings(self) -> None:
         """重置設定事件處理"""
@@ -507,15 +447,7 @@ class SettingsTab(QWidget):
         if 'reset_header' in self.ui_elements:
             self.ui_elements['reset_header'].setText(f"🔄  {t('settings.reset.title')}")
         
-        # 更新描述文字
-        if 'language_desc' in self.ui_elements:
-            self.ui_elements['language_desc'].setText(t('settings.language.description'))
-        if 'layout_desc' in self.ui_elements:
-            self.ui_elements['layout_desc'].setText(t('settings.layout.description'))
-        if 'window_desc' in self.ui_elements:
-            self.ui_elements['window_desc'].setText(t('settings.window.alwaysCenterDescription'))
-        if 'reset_desc' in self.ui_elements:
-            self.ui_elements['reset_desc'].setText(t('settings.reset.description'))
+
         
         # 更新提示文字
         if 'separate_hint' in self.ui_elements:
@@ -524,16 +456,14 @@ class SettingsTab(QWidget):
             self.ui_elements['vertical_hint'].setText(f"    {t('settings.layout.combinedVerticalDescription')}")
         if 'horizontal_hint' in self.ui_elements:
             self.ui_elements['horizontal_hint'].setText(f"    {t('settings.layout.combinedHorizontalDescription')}")
-        if 'center_hint' in self.ui_elements:
-            self.ui_elements['center_hint'].setText(f"    {t('settings.window.alwaysCenterDescription')}")
         
         # 更新按鈕文字
         if hasattr(self, 'reset_button'):
             self.reset_button.setText(t('settings.reset.button'))
         
-        # 更新複選框文字
-        if hasattr(self, 'always_center_checkbox'):
-            self.always_center_checkbox.setText(t('settings.window.alwaysCenter'))
+        # 更新切換開關文字
+        if hasattr(self, 'always_center_switch'):
+            self.always_center_switch.setText(t('settings.window.alwaysCenter'))
         
         # 更新單選按鈕文字
         if hasattr(self, 'separate_mode_radio'):
@@ -557,9 +487,9 @@ class SettingsTab(QWidget):
         self._set_initial_layout_state()
         
         # 重新載入視窗設定
-        if hasattr(self, 'always_center_checkbox'):
+        if hasattr(self, 'always_center_switch'):
             always_center = self.config_manager.get_always_center_window()
-            self.always_center_checkbox.setChecked(always_center)
+            self.always_center_switch.setChecked(always_center)
             debug_log(f"重新載入視窗定位設置: {always_center}")  # 調試輸出
     
     def set_layout_mode(self, combined_mode: bool) -> None:

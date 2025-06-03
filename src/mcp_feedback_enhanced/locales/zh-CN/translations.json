@@ -67,12 +67,10 @@
     "title": "应用设置",
     "language": {
       "title": "语言设置",
-      "selector": "🌐 语言选择",
-      "description": "选择您偏好的界面语言。语言更改会立即生效。"
+      "selector": "🌐 语言选择"
     },
     "layout": {
       "title": "界面布局",
-      "description": "选择 AI 摘要和反馈输入区域的显示方式",
       "separateMode": "分离模式",
       "separateModeDescription": "AI 摘要和反馈分别在不同页签",
       "combinedVertical": "合并模式（垂直布局）",
@@ -82,12 +80,10 @@
     },
     "window": {
       "title": "窗口定位",
-      "alwaysCenter": "总是在主屏幕中心显示窗口",
-      "alwaysCenterDescription": "建议在多屏幕环境或遇到窗口定位问题时开启此选项"
+      "alwaysCenter": "总是在主屏幕中心显示窗口"
     },
     "reset": {
       "title": "重置设置",
-      "description": "清除所有已保存的设置，恢复到默认状态",
       "button": "重置设置",
       "confirmTitle": "确认重置设置",
       "confirmMessage": "确定要重置所有设置吗？这将清除所有已保存的偏好设置并恢复到默认状态。",

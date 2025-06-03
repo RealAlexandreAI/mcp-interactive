@@ -8,9 +8,12 @@ GUI 自定義元件模組
 from .text_edit import SmartTextEdit
 from .image_preview import ImagePreviewWidget
 from .image_upload import ImageUploadWidget
+from .switch import SwitchWidget, SwitchWithLabel
 
 __all__ = [
     'SmartTextEdit',
     'ImagePreviewWidget', 
-    'ImageUploadWidget'
+    'ImageUploadWidget',
+    'SwitchWidget',
+    'SwitchWithLabel'
 ] 

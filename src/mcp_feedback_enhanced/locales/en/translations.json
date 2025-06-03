@@ -87,12 +87,10 @@
     "title": "Application Settings",
     "language": {
       "title": "Language Settings",
-      "selector": "🌐 Language Selection",
-      "description": "Choose your preferred interface language. Language changes take effect immediately."
+      "selector": "🌐 Language Selection"
     },
     "layout": {
       "title": "Interface Layout",
-      "description": "Choose the display method for AI summary and feedback input areas",
       "separateMode": "Separate Mode",
       "separateModeDescription": "AI summary and feedback are in separate tabs",
       "combinedVertical": "Combined Mode (Vertical Layout)",
@@ -102,12 +100,10 @@
     },
     "window": {
       "title": "Window Positioning",
-      "alwaysCenter": "Always show window at primary screen center",
-      "alwaysCenterDescription": "Recommended for multi-monitor setups or when experiencing window positioning issues"
+      "alwaysCenter": "Always show window at primary screen center"
     },
     "reset": {
       "title": "Reset Settings",
-      "description": "Clear all saved settings and restore to default state",
       "button": "Reset Settings",
       "confirmTitle": "Confirm Reset Settings",
       "confirmMessage": "Are you sure you want to reset all settings? This will clear all saved preferences and restore to default state.",

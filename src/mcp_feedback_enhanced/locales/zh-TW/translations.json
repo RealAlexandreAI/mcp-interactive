@@ -83,12 +83,10 @@
     "title": "應用設置",
     "language": {
       "title": "語言設置",
-      "selector": "🌐 語言選擇",
-      "description": "選擇您偏好的界面語言。語言變更會立即生效。"
+      "selector": "🌐 語言選擇"
     },
     "layout": {
       "title": "界面佈局",
-      "description": "選擇 AI 摘要和回饋輸入區域的顯示方式",
       "separateMode": "分離模式",
       "separateModeDescription": "AI 摘要和回饋分別在不同頁籤",
       "combinedVertical": "合併模式（垂直布局）",
@@ -98,12 +96,10 @@
     },
     "window": {
       "title": "視窗定位",
-      "alwaysCenter": "總是在主螢幕中心顯示視窗",
-      "alwaysCenterDescription": "建議在多螢幕環境或遇到視窗定位問題時開啟此選項"
+      "alwaysCenter": "總是在主螢幕中心顯示視窗"
     },
     "reset": {
       "title": "重置設定",
-      "description": "清除所有已保存的設定，恢復到預設狀態",
       "button": "重置設定",
       "confirmTitle": "確認重置設定",
       "confirmMessage": "確定要重置所有設定嗎？這將清除所有已保存的偏好設定並恢復到預設狀態。",

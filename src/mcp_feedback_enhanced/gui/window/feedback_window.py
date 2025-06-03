@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QTabWidget, QPushButton, QMessageBox, QScrollArea, QSizePolicy
 )
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 
 from .config_manager import ConfigManager
@@ -43,6 +43,12 @@ class FeedbackWindow(QMainWindow):
         self.combined_mode = self.config_manager.get_layout_mode()
         self.layout_orientation = self.config_manager.get_layout_orientation()
         
+        # 設置窗口狀態保存的防抖計時器
+        self._save_timer = QTimer()
+        self._save_timer.setSingleShot(True)
+        self._save_timer.timeout.connect(self._delayed_save_window_position)
+        self._save_delay = 500  # 500ms 延遲，避免過於頻繁的保存
+        
         # 設置UI
         self._setup_ui()
         self._setup_shortcuts()
@@ -53,7 +59,7 @@ class FeedbackWindow(QMainWindow):
     def _setup_ui(self) -> None:
         """設置用戶介面"""
         self.setWindowTitle(t('app.title'))
-        self.setMinimumSize(1000, 800)
+        self.setMinimumSize(400, 300)  # 大幅降低最小窗口大小限制，允許用戶自由調整
         self.resize(1200, 900)
         
         # 智能視窗定位
@@ -93,7 +99,7 @@ class FeedbackWindow(QMainWindow):
         scroll_area.setWidgetResizable(True)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        scroll_area.setMinimumHeight(500)
+        scroll_area.setMinimumHeight(150)  # 降低滾動區域最小高度，支持小窗口
         scroll_area.setStyleSheet("""
             QScrollArea {
                 border: 1px solid #464647;
@@ -148,7 +154,7 @@ class FeedbackWindow(QMainWindow):
         """)
         
         self.tab_widget = QTabWidget()
-        self.tab_widget.setMinimumHeight(500)
+        self.tab_widget.setMinimumHeight(150)  # 降低分頁組件最小高度
         # 設置分頁組件的大小策略，確保能觸發滾動
         self.tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
@@ -470,10 +476,11 @@ class FeedbackWindow(QMainWindow):
         always_center = self.config_manager.get_always_center_window()
         
         if always_center:
-            # 強制在主螢幕中心顯示
+            # 總是中心顯示模式：使用保存的大小（如果有的話），然後置中
+            self._restore_window_size_only()
             self._move_to_primary_screen_center()
         else:
-            # 先嘗試恢復上次位置
+            # 智能定位模式：先嘗試恢復上次完整的位置和大小
             if self._restore_last_position():
                 # 檢查恢復的位置是否可見
                 if not self._is_window_visible():
@@ -506,8 +513,20 @@ class FeedbackWindow(QMainWindow):
             self.move(window_geometry.topLeft())
             debug_log("視窗已移到主螢幕中心")
     
+    def _restore_window_size_only(self) -> bool:
+        """只恢復視窗大小（不恢復位置）"""
+        try:
+            geometry = self.config_manager.get_window_geometry()
+            if geometry and 'width' in geometry and 'height' in geometry:
+                self.resize(geometry['width'], geometry['height'])
+                debug_log(f"已恢復視窗大小: {geometry['width']}x{geometry['height']}")
+                return True
+        except Exception as e:
+            debug_log(f"恢復視窗大小失敗: {e}")
+        return False
+    
     def _restore_last_position(self) -> bool:
-        """嘗試恢復上次保存的視窗位置"""
+        """嘗試恢復上次保存的視窗位置和大小"""
         try:
             geometry = self.config_manager.get_window_geometry()
             if geometry and 'x' in geometry and 'y' in geometry and 'width' in geometry and 'height' in geometry:
@@ -520,24 +539,61 @@ class FeedbackWindow(QMainWindow):
         return False
     
     def _save_window_position(self) -> None:
-        """保存當前視窗位置"""
+        """保存當前視窗位置和大小"""
         try:
-            geometry = {
-                'x': self.x(),
-                'y': self.y(),
+            always_center = self.config_manager.get_always_center_window()
+            
+            # 獲取當前幾何信息
+            current_geometry = {
                 'width': self.width(),
                 'height': self.height()
             }
-            self.config_manager.set_window_geometry(geometry)
-            debug_log(f"已保存視窗位置: ({geometry['x']}, {geometry['y']}) 大小: {geometry['width']}x{geometry['height']}")
+            
+            if not always_center:
+                # 智能定位模式：同時保存位置
+                current_geometry['x'] = self.x()
+                current_geometry['y'] = self.y()
+                debug_log(f"已保存視窗位置: ({current_geometry['x']}, {current_geometry['y']}) 大小: {current_geometry['width']}x{current_geometry['height']}")
+            else:
+                # 總是中心顯示模式：只保存大小，不保存位置
+                debug_log(f"已保存視窗大小: {current_geometry['width']}x{current_geometry['height']} (總是中心顯示模式)")
+            
+            # 獲取現有配置，只更新需要的部分
+            saved_geometry = self.config_manager.get_window_geometry() or {}
+            saved_geometry.update(current_geometry)
+            
+            self.config_manager.set_window_geometry(saved_geometry)
+            
         except Exception as e:
-            debug_log(f"保存視窗位置失敗: {e}")
+            debug_log(f"保存視窗狀態失敗: {e}")
+    
+    def resizeEvent(self, event) -> None:
+        """窗口大小變化事件"""
+        super().resizeEvent(event)
+        # 窗口大小變化時始終保存（無論是否設置為中心顯示）
+        if hasattr(self, 'config_manager'):
+            self._schedule_save_window_position()
+    
+    def moveEvent(self, event) -> None:
+        """窗口位置變化事件"""
+        super().moveEvent(event)
+        # 窗口位置變化只在智能定位模式下保存
+        if hasattr(self, 'config_manager') and not self.config_manager.get_always_center_window():
+            self._schedule_save_window_position()
+    
+    def _schedule_save_window_position(self) -> None:
+        """調度窗口位置保存（防抖機制）"""
+        if hasattr(self, '_save_timer'):
+            self._save_timer.start(self._save_delay)
+    
+    def _delayed_save_window_position(self) -> None:
+        """延遲保存窗口位置（防抖機制的實際執行）"""
+        self._save_window_position()
     
     def closeEvent(self, event) -> None:
         """窗口關閉事件"""
-        # 保存視窗位置（除非設置為總是中心顯示）
-        if not self.config_manager.get_always_center_window():
-            self._save_window_position()
+        # 最終保存視窗狀態（大小始終保存，位置根據設置決定）
+        self._save_window_position()
         
         # 清理分頁管理器
         self.tab_manager.cleanup()

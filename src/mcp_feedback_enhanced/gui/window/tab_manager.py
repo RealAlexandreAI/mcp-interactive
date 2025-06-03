@@ -163,9 +163,9 @@ class TabManager:
         
         if self.layout_orientation == 'horizontal':
             # 水平布局設置
-            self.summary_tab.setMinimumWidth(300)
+            self.summary_tab.setMinimumWidth(150)  # 降低最小寬度
             self.summary_tab.setMaximumWidth(800)
-            self.feedback_tab.setMinimumWidth(400)
+            self.feedback_tab.setMinimumWidth(200)  # 降低最小寬度
             self.feedback_tab.setMaximumWidth(1200)
             
             # 添加到主分割器
@@ -189,14 +189,14 @@ class TabManager:
             )
             
             # 設置最小高度
-            main_splitter.setMinimumHeight(600)
+            main_splitter.setMinimumHeight(200)  # 降低水平布局最小高度
             main_splitter.setMaximumHeight(2000)
             
         else:
             # 垂直布局設置
-            self.summary_tab.setMinimumHeight(150)
+            self.summary_tab.setMinimumHeight(80)   # 降低摘要最小高度
             self.summary_tab.setMaximumHeight(1000)
-            self.feedback_tab.setMinimumHeight(480)
+            self.feedback_tab.setMinimumHeight(120) # 降低回饋最小高度
             self.feedback_tab.setMaximumHeight(2000)
             
             # 添加到主分割器
@@ -220,7 +220,7 @@ class TabManager:
             )
             
             # 設置最小高度
-            main_splitter.setMinimumHeight(660)
+            main_splitter.setMinimumHeight(200)  # 降低垂直布局最小高度
             main_splitter.setMaximumHeight(3000)
         
         splitter_wrapper_layout.addWidget(main_splitter)
@@ -234,9 +234,9 @@ class TabManager:
         # 設置合併分頁的大小策略，確保能夠觸發父容器的滾動條
         self.combined_feedback_tab.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         if self.layout_orientation == 'vertical':
-            self.combined_feedback_tab.setMinimumHeight(700)  # 垂直布局設置最小高度
+            self.combined_feedback_tab.setMinimumHeight(200)  # 降低垂直布局最小高度
         else:
-            self.combined_feedback_tab.setMinimumWidth(800)   # 水平布局設置最小寬度
+            self.combined_feedback_tab.setMinimumWidth(400)   # 降低水平布局最小寬度
     
     def update_tab_texts(self) -> None:
         """更新分頁標籤文字"""

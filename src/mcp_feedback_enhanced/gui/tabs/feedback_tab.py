@@ -130,12 +130,12 @@ class FeedbackTab(QWidget):
         )
         
         # 設置分割器的最小尺寸和處理策略
-        feedback_splitter.setMinimumHeight(460)   # 進一步增加分割器最小高度
+        feedback_splitter.setMinimumHeight(200)   # 降低分割器最小高度，支持小窗口
         feedback_splitter.setMaximumHeight(2000)  # 允許更大的高度以觸發滾動
         
         # 確保子控件的最小尺寸（防止過度壓縮）
-        self.feedback_input.setMinimumHeight(120)
-        image_upload_widget.setMinimumHeight(200)  # 確保圖片區域的最小高度
+        self.feedback_input.setMinimumHeight(80)   # 降低文字輸入最小高度
+        image_upload_widget.setMinimumHeight(100)  # 降低圖片區域最小高度
         
         splitter_wrapper_layout.addWidget(feedback_splitter)
         
@@ -143,7 +143,7 @@ class FeedbackTab(QWidget):
         
         # 設置分頁的大小策略，確保能夠觸發父容器的滾動條
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        self.setMinimumHeight(500)  # 設置最小高度
+        self.setMinimumHeight(200)  # 降低回饋分頁最小高度  # 設置最小高度
     
     def get_feedback_text(self) -> str:
         """獲取回饋文字"""

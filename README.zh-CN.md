@@ -170,6 +170,12 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # 测试 Web UI (自�
 
 ## 🆕 版本亮点
 
+### v2.2.0 (布局与设置界面优化)
+- ✨ **界面布局增强**：GUI 与 Web UI 的合并模式新增摘要与反馈的左右布局（水平分割）选项，提供更灵活的查看方式 (实现 [Issue #1](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/1))。
+- 🎨 **设置界面改进**：优化了 GUI 与 Web UI 的设置页面，提升布局清晰度与用户操作体验。
+- ⌨️ **快捷键完善 (GUI)**：提交反馈快捷键 (Ctrl+Enter / Cmd+Enter) 现已完整支持数字键盘(九宫格)的 Enter 键。
+- 🐞 **问题修复 (Web UI)**：解决了在文本输入区使用 Ctrl+V 粘贴图片时，可能导致图片重复粘贴的问题。
+
 ### v2.1.1（窗口定位优化）
 - 🖥️ **智能窗口定位**：新增「总是在主屏幕中心显示窗口」设置选项
 - 🌐 **多屏幕支持**：完美解决 T 字型屏幕排列等复杂多屏幕环境的窗口定位问题

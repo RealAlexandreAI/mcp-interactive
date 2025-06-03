@@ -170,12 +170,17 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto co
 
 ## 🆕 Version Highlights
 
+### v2.2.0 (Layout & Settings UI Enhancements)
+- ✨ **Enhanced Interface Layout**: Added a left-right layout (horizontal split) option for summary and feedback in the combined mode for both GUI and Web UI, offering more flexible viewing (fulfills [Issue #1](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/1)).
+- 🎨 **Improved Settings Interface**: Optimized the settings page for both GUI and Web UI, enhancing layout clarity and user experience.
+- ⌨️ **GUI Shortcut Enhancement**: The submit feedback shortcut (Ctrl+Enter / Cmd+Enter) now fully supports the Enter key on the numeric keypad (numpad).
+- 🐞 **Web UI Bug Fix**: Resolved an issue where pasting images using Ctrl+V in the text input area could lead to duplicate image pasting.
+
 ### v2.1.1 (Window Positioning Optimization)
 - 🖥️ **Smart Window Positioning**: Added "Always show window at primary screen center" setting option
 - 🌐 **Multi-Monitor Support**: Perfect solution for complex multi-monitor setups like T-shaped screen arrangements
 - 💾 **Position Memory**: Auto-save and restore window position with intelligent visibility detection
 - ⚙️ **User Choice**: Provides smart positioning (default) and forced center display modes
-
 
 ### v2.1.0 (Latest Refactored Version)
 - 🎨 **Complete Refactoring**: GUI and Web UI adopt modular architecture

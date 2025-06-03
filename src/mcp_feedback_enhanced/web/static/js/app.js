@@ -90,6 +90,7 @@ class FeedbackApp {
         this.images = []; // 初始化圖片陣列
         this.isConnected = false; // 初始化連接狀態
         this.websocket = null; // 初始化 WebSocket
+        this.isHandlingPaste = false; // 防止重複處理貼上事件的標記
         
         // 立即檢查 DOM 狀態並初始化
         if (document.readyState === 'loading') {
@@ -461,8 +462,17 @@ class FeedbackApp {
     }
 
     handlePasteEvent(e) {
+        if (this.isHandlingPaste) {
+            console.log('Paste event already being handled, skipping subsequent call.');
+            return;
+        }
+        this.isHandlingPaste = true;
+
         const clipboardData = e.clipboardData || window.clipboardData;
-        if (!clipboardData) return;
+        if (!clipboardData) {
+            this.isHandlingPaste = false; 
+            return;
+        }
 
         const items = clipboardData.items;
         let hasImages = false;
@@ -472,12 +482,13 @@ class FeedbackApp {
             
             if (item.type.indexOf('image') !== -1) {
                 hasImages = true;
-                e.preventDefault(); // 防止文字也被貼上
+                e.preventDefault(); 
                 
                 const file = item.getAsFile();
                 if (file) {
                     console.log('從剪貼簿貼上圖片:', file.name, file.type);
                     this.addImage(file);
+                    break; 
                 }
             }
         }
@@ -485,6 +496,10 @@ class FeedbackApp {
         if (hasImages) {
             console.log('已處理剪貼簿圖片');
         }
+
+        setTimeout(() => {
+            this.isHandlingPaste = false;
+        }, 50);
     }
 
     setLayoutMode(mode) {

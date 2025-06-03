@@ -210,6 +210,9 @@ A: 检查文件大小（≤1MB）和格式（PNG/JPG/GIF/BMP/WebP）。
 **Q: Web UI 无法启动**  
 A: 设置 `FORCE_WEB=true` 或检查防火墙设定。
 
+**Q: Gemini Pro 2.5 无法解析图片**  
+A: 已知问题，Gemini Pro 2.5 可能无法正确解析上传的图片内容。实测 Claude-4-Sonnet 可以正常解析图片。建议使用 Claude 模型获得更好的图片理解能力。
+
 ## 🙏 致谢
 
 ### 🌟 支持原作者

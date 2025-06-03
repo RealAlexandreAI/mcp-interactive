@@ -210,6 +210,9 @@ A: Check file size (≤1MB) and format (PNG/JPG/GIF/BMP/WebP).
 **Q: Web UI won't start**  
 A: Set `FORCE_WEB=true` or check firewall settings.
 
+**Q: Gemini Pro 2.5 cannot parse images**  
+A: Known issue. Gemini Pro 2.5 may not correctly parse uploaded image content. Testing shows Claude-4-Sonnet can properly analyze images. Recommend using Claude models for better image understanding capabilities.
+
 ## 🙏 Acknowledgments
 
 ### 🌟 Support Original Author

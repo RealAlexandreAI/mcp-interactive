@@ -168,51 +168,14 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto co
 - **Qt GUI Test**: Quick launch and test of local graphical interface
 - **Web UI Test**: Start Web server and keep running for complete Web functionality testing
 
-## 🆕 Version Highlights
+## 🆕 Version History
 
-### v2.2.1 (Window Optimization & Unified Settings Interface)
-- 🖥️ **Window Size Constraint Removal**: Removed GUI main window minimum size limit from 1000×800 to 400×300, allowing users to freely adjust window size for different use cases (fixes [Issue #10](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/10) part one).
-- 💾 **Real-time Window State Saving**: Implemented real-time saving mechanism for window size and position changes, with debounce delay to avoid excessive I/O operations.
-- ⚙️ **Unified Settings Interface Optimization**: Improved GUI settings page configuration saving logic to avoid setting conflicts, ensuring correct window positioning and size settings.
-- 🎯 **Smart Window Size Saving**: In "Always center display" mode, correctly saves window size (but not position); in "Smart positioning" mode, saves complete window state.
+📋 **Complete Version History:** [RELEASE_NOTES/CHANGELOG.en.md](RELEASE_NOTES/CHANGELOG.en.md)
 
-### v2.2.0 (Layout & Settings UI Enhancements)
-- ✨ **Enhanced Interface Layout**: Added a left-right layout (horizontal split) option for summary and feedback in the combined mode for both GUI and Web UI, offering more flexible viewing (fulfills [Issue #1](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/1)).
-- 🎨 **Improved Settings Interface**: Optimized the settings page for both GUI and Web UI, enhancing layout clarity and user experience.
-- ⌨️ **GUI Shortcut Enhancement**: The submit feedback shortcut (Ctrl+Enter / Cmd+Enter) now fully supports the Enter key on the numeric keypad (numpad).
-- 🐞 **Web UI Bug Fix**: Resolved an issue where pasting images using Ctrl+V in the text input area could lead to duplicate image pasting.
-
-### v2.1.1 (Window Positioning Optimization)
-- 🖥️ **Smart Window Positioning**: Added "Always show window at primary screen center" setting option
-- 🌐 **Multi-Monitor Support**: Perfect solution for complex multi-monitor setups like T-shaped screen arrangements
-- 💾 **Position Memory**: Auto-save and restore window position with intelligent visibility detection
-- ⚙️ **User Choice**: Provides smart positioning (default) and forced center display modes
-
-### v2.1.0 (Latest Refactored Version)
-- 🎨 **Complete Refactoring**: GUI and Web UI adopt modular architecture
-- 📁 **Centralized Management**: Reorganized folder structure, improved maintainability
-- 🖥️ **Interface Optimization**: Modern design and improved user experience
-- 🍎 **macOS Interface Optimization**: Specialized improvements for macOS user experience
-- ⚙️ **Feature Enhancement**: New settings options and auto-close page functionality
-- 🌐 **Language Switching**: Fixed Web UI content update issues when switching languages
-- ℹ️ **About Page**: Added about page with version info, project links, and acknowledgments
-
-### v2.0.14
-- ⌨️ Enhanced Shortcuts: Ctrl+Enter supports numpad
-- 🖼️ Smart Image Pasting: Ctrl+V directly pastes clipboard images
-
-### v2.0.9
-- 🌏 Multi-language architecture refactor with dynamic loading
-- 📁 Modularized language file organization
-
-### v2.0.3
-- 🛡️ Complete fix for Chinese character encoding issues
-- 🔧 Resolved JSON parsing errors
-
-### v2.0.0
-- ✅ Added Web UI support for remote environments
-- ✅ Auto environment detection and interface selection
-- ✅ WebSocket real-time communication
+### Latest Version Highlights (v2.2.2)
+- 🔄 **Timeout Auto-cleanup**: Fixed GUI/Web UI not automatically closing after MCP session timeout
+- 🛡️ **Resource Management Optimization**: Improved timeout handling mechanism to ensure proper cleanup of all UI resources  
+- 🎯 **QTimer Integration**: Introduced precise QTimer timeout control mechanism in GUI
 
 ## 🐛 Common Issues
 

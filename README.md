@@ -118,6 +118,7 @@ For best results, add these rules to your AI assistant:
 2. When receiving user feedback, if feedback content is not empty, must call MCP mcp-feedback-enhanced again and adjust behavior based on feedback.
 3. Only when user explicitly indicates "end" or "no more interaction needed" can you stop calling MCP mcp-feedback-enhanced, then the process is complete.
 4. Unless receiving end command, all steps must repeatedly call MCP mcp-feedback-enhanced.
+5. Before completing the task, use the MCP mcp-feedback-enhanced to ask the user for feedback.
 ```
 
 ## ⚙️ Advanced Settings

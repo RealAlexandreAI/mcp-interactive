@@ -107,6 +107,74 @@ def setup_routes(manager: 'WebUIManager'):
         finally:
             session.websocket = None
 
+    @manager.app.post("/api/save-settings")
+    async def save_settings(request: Request):
+        """保存設定到檔案"""
+        try:
+            data = await request.json()
+            
+            # 構建設定檔案路徑
+            settings_file = Path.cwd() / ".mcp_feedback_settings.json"
+            
+            # 保存設定到檔案
+            with open(settings_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            debug_log(f"設定已保存到: {settings_file}")
+            
+            return JSONResponse(content={"status": "success", "message": "設定已保存"})
+            
+        except Exception as e:
+            debug_log(f"保存設定失敗: {e}")
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": f"保存失敗: {str(e)}"}
+            )
+
+    @manager.app.get("/api/load-settings")
+    async def load_settings():
+        """從檔案載入設定"""
+        try:
+            settings_file = Path.cwd() / ".mcp_feedback_settings.json"
+            
+            if settings_file.exists():
+                with open(settings_file, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    
+                debug_log(f"設定已從檔案載入: {settings_file}")
+                return JSONResponse(content=settings)
+            else:
+                debug_log("設定檔案不存在，返回空設定")
+                return JSONResponse(content={})
+                
+        except Exception as e:
+            debug_log(f"載入設定失敗: {e}")
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": f"載入失敗: {str(e)}"}
+            )
+
+    @manager.app.post("/api/clear-settings")
+    async def clear_settings():
+        """清除設定檔案"""
+        try:
+            settings_file = Path.cwd() / ".mcp_feedback_settings.json"
+            
+            if settings_file.exists():
+                settings_file.unlink()
+                debug_log(f"設定檔案已刪除: {settings_file}")
+            else:
+                debug_log("設定檔案不存在，無需刪除")
+            
+            return JSONResponse(content={"status": "success", "message": "設定已清除"})
+            
+        except Exception as e:
+            debug_log(f"清除設定失敗: {e}")
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": f"清除失敗: {str(e)}"}
+            )
+
 
 async def handle_websocket_message(manager: 'WebUIManager', session, data: dict):
     """處理 WebSocket 消息"""

@@ -5,16 +5,101 @@
  * 處理 WebSocket 通信、分頁切換、圖片上傳、命令執行等功能
  */
 
+class PersistentSettings {
+    constructor() {
+        this.settingsFile = '.mcp_feedback_settings.json';
+        this.storageKey = 'mcp_feedback_settings';
+    }
+
+    async saveSettings(settings) {
+        try {
+            // 嘗試保存到伺服器端
+            const response = await fetch('/api/save-settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settings)
+            });
+
+            if (response.ok) {
+                console.log('設定已保存到檔案');
+            } else {
+                throw new Error('伺服器端保存失敗');
+            }
+        } catch (error) {
+            console.warn('無法保存到檔案，使用 localStorage:', error);
+            // 備用方案：保存到 localStorage
+            this.saveToLocalStorage(settings);
+        }
+    }
+
+    async loadSettings() {
+        try {
+            // 嘗試從伺服器端載入
+            const response = await fetch('/api/load-settings');
+            if (response.ok) {
+                const settings = await response.json();
+                console.log('從檔案載入設定');
+                return settings;
+            } else {
+                throw new Error('伺服器端載入失敗');
+            }
+        } catch (error) {
+            console.warn('無法從檔案載入，使用 localStorage:', error);
+            // 備用方案：從 localStorage 載入
+            return this.loadFromLocalStorage();
+        }
+    }
+
+    saveToLocalStorage(settings) {
+        localStorage.setItem(this.storageKey, JSON.stringify(settings));
+    }
+
+    loadFromLocalStorage() {
+        const saved = localStorage.getItem(this.storageKey);
+        return saved ? JSON.parse(saved) : {};
+    }
+
+    async clearSettings() {
+        try {
+            // 清除伺服器端設定
+            await fetch('/api/clear-settings', { method: 'POST' });
+        } catch (error) {
+            console.warn('無法清除伺服器端設定:', error);
+        }
+        
+        // 清除 localStorage
+        localStorage.removeItem(this.storageKey);
+        
+        // 也清除個別設定項目（向後兼容）
+        localStorage.removeItem('layoutMode');
+        localStorage.removeItem('autoClose');
+        localStorage.removeItem('activeTab');
+        localStorage.removeItem('language');
+    }
+}
+
 class FeedbackApp {
     constructor(sessionId) {
         this.sessionId = sessionId;
-        this.websocket = null;
-        this.images = [];
-        this.isConnected = false;
-        this.combinedMode = false;
-        this.autoClose = true; // 預設開啟
+        this.layoutMode = 'separate'; // 預設為分離模式
+        this.autoClose = true; // 預設啟用自動關閉
+        this.currentTab = 'feedback'; // 預設當前分頁
+        this.persistentSettings = new PersistentSettings();
+        this.images = []; // 初始化圖片陣列
+        this.isConnected = false; // 初始化連接狀態
+        this.websocket = null; // 初始化 WebSocket
         
-        this.init();
+        // 立即檢查 DOM 狀態並初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.init();
+            });
+        } else {
+            // DOM 已經載入完成，立即初始化
+            this.init();
+        }
     }
 
     async init() {
@@ -41,8 +126,8 @@ class FeedbackApp {
         // 設置鍵盤快捷鍵
         this.setupKeyboardShortcuts();
         
-        // 載入設定
-        this.loadSettings();
+        // 載入設定（使用 await）
+        await this.loadSettings();
         
         // 初始化命令終端
         this.initCommandTerminal();
@@ -162,41 +247,10 @@ class FeedbackApp {
     }
 
     showSuccessMessage() {
-        // 創建成功訊息提示
-        const message = document.createElement('div');
-        message.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--success-color);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 6px;
-            font-weight: 500;
-            z-index: 10000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.3s ease-out;
-        `;
-        message.textContent = '✅ 回饋提交成功！';
-        
-        // 添加動畫樣式
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        document.body.appendChild(message);
-        
-        // 3秒後移除訊息
-        setTimeout(() => {
-            if (message.parentNode) {
-                message.remove();
-            }
-        }, 3000);
+        const successMessage = window.i18nManager ? 
+            window.i18nManager.t('feedback.success', '✅ 回饋提交成功！') :
+            '✅ 回饋提交成功！';
+        this.showMessage(successMessage, 'success');
     }
 
     updateConnectionStatus(connected) {
@@ -245,8 +299,46 @@ class FeedbackApp {
             });
         }
 
+        // 設置貼上監聽器
+        this.setupPasteListener();
+        
         // 設定切換
         this.setupSettingsListeners();
+
+        // 設定重置按鈕（如果存在）
+        const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+        if (resetSettingsBtn) {
+            resetSettingsBtn.addEventListener('click', () => this.resetSettings());
+        }
+    }
+
+    setupSettingsListeners() {
+        // 設置佈局模式單選按鈕監聽器
+        const layoutModeRadios = document.querySelectorAll('input[name="layoutMode"]');
+        layoutModeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    this.setLayoutMode(e.target.value);
+                }
+            });
+        });
+
+        // 設置自動關閉開關監聽器
+        const autoCloseToggle = document.getElementById('autoCloseToggle');
+        if (autoCloseToggle) {
+            autoCloseToggle.addEventListener('click', () => {
+                this.toggleAutoClose();
+            });
+        }
+
+        // 設置語言選擇器
+        const languageOptions = document.querySelectorAll('.language-option');
+        languageOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const lang = option.getAttribute('data-lang');
+                this.setLanguage(lang);
+            });
+        });
     }
 
     setupTabs() {
@@ -395,31 +487,92 @@ class FeedbackApp {
         }
     }
 
-    setupSettingsListeners() {
-        // 合併模式開關
-        const combinedModeToggle = document.getElementById('combinedModeToggle');
-        if (combinedModeToggle) {
-            combinedModeToggle.addEventListener('click', () => {
-                this.toggleCombinedMode();
-            });
+    setLayoutMode(mode) {
+        if (this.layoutMode === mode) return;
+        
+        this.layoutMode = mode;
+        
+        // 保存設定到持久化存儲
+        this.saveSettings();
+        
+        // 只更新分頁可見性，不強制切換分頁
+        this.updateTabVisibility();
+        
+        // 數據同步
+        if (mode === 'combined-vertical' || mode === 'combined-horizontal') {
+            // 同步數據到合併模式
+            this.syncDataToCombinedMode();
+        } else {
+            // 切換到分離模式時，同步數據回原始分頁
+            this.syncDataFromCombinedMode();
+        }
+        
+        // 更新合併分頁的佈局樣式
+        this.updateCombinedModeLayout();
+        
+        console.log('佈局模式已切換至:', mode);
+    }
+
+    updateTabVisibility() {
+        const feedbackTab = document.querySelector('[data-tab="feedback"]');
+        const summaryTab = document.querySelector('[data-tab="summary"]');
+        const combinedTab = document.querySelector('[data-tab="combined"]');
+
+        if (this.layoutMode === 'separate') {
+            // 分離模式：顯示原本的分頁，隱藏合併分頁
+            if (feedbackTab) feedbackTab.classList.remove('hidden');
+            if (summaryTab) summaryTab.classList.remove('hidden');
+            if (combinedTab) {
+                combinedTab.classList.add('hidden');
+                // 只有在當前就在合併分頁時才切換到其他分頁
+                if (combinedTab.classList.contains('active')) {
+                    this.switchToFeedbackTab();
+                }
+            }
+        } else {
+            // 合併模式：隱藏原本的分頁，顯示合併分頁
+            if (feedbackTab) feedbackTab.classList.add('hidden');
+            if (summaryTab) summaryTab.classList.add('hidden');
+            if (combinedTab) {
+                combinedTab.classList.remove('hidden');
+                // 不要強制切換到合併分頁，讓用戶手動選擇
+            }
+        }
+    }
+
+    switchToFeedbackTab() {
+        // 切換到回饋分頁的輔助方法
+        const feedbackTab = document.querySelector('[data-tab="feedback"]');
+        if (feedbackTab) {
+            // 移除所有分頁按鈕的活躍狀態
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            // 移除所有分頁內容的活躍狀態
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 設定回饋分頁為活躍
+            feedbackTab.classList.add('active');
+            document.getElementById('tab-feedback').classList.add('active');
+            
+            console.log('已切換到回饋分頁');
+        }
+    }
+
+    updateCombinedModeLayout() {
+        const combinedTabContent = document.getElementById('tab-combined');
+        if (!combinedTabContent) {
+            console.warn('找不到合併分頁元素 #tab-combined');
+            return;
         }
 
-        // 自動關閉開關
-        const autoCloseToggle = document.getElementById('autoCloseToggle');
-        if (autoCloseToggle) {
-            autoCloseToggle.addEventListener('click', () => {
-                this.toggleAutoClose();
-            });
-        }
+        // 移除所有佈局類
+        combinedTabContent.classList.remove('combined-horizontal', 'combined-vertical');
 
-        // 語言選擇器
-        const languageOptions = document.querySelectorAll('.language-option');
-        languageOptions.forEach(option => {
-            option.addEventListener('click', () => {
-                const language = option.getAttribute('data-lang');
-                this.setLanguage(language);
-            });
-        });
+        // 根據當前模式添加對應的佈局類
+        if (this.layoutMode === 'combined-horizontal') {
+            combinedTabContent.classList.add('combined-horizontal');
+        } else if (this.layoutMode === 'combined-vertical') {
+            combinedTabContent.classList.add('combined-vertical');
+        }
     }
 
     setLanguage(language) {
@@ -438,10 +591,11 @@ class FeedbackApp {
             
             // 語言切換後重新處理動態摘要內容
             setTimeout(() => {
-                console.log('語言切換到:', language, '- 重新處理動態內容');
                 this.processDynamicSummaryContent();
             }, 200); // 增加延遲時間確保翻譯加載完成
         }
+
+        console.log('語言已切換至:', language);
     }
 
     handleFileSelection(files) {
@@ -598,7 +752,7 @@ class FeedbackApp {
         let feedbackText;
 
         // 根據當前模式選擇正確的輸入框
-        if (this.combinedMode) {
+        if (this.layoutMode === 'combined-vertical' || this.layoutMode === 'combined-horizontal') {
             const combinedFeedbackInput = document.getElementById('combinedFeedbackText');
             feedbackText = combinedFeedbackInput?.value.trim() || '';
         } else {
@@ -650,67 +804,6 @@ class FeedbackApp {
         }
     }
 
-    toggleCombinedMode() {
-        this.combinedMode = !this.combinedMode;
-
-        const toggle = document.getElementById('combinedModeToggle');
-        if (toggle) {
-            toggle.classList.toggle('active', this.combinedMode);
-        }
-
-        // 顯示/隱藏分頁
-        const feedbackTab = document.querySelector('[data-tab="feedback"]');
-        const summaryTab = document.querySelector('[data-tab="summary"]');
-        const combinedTab = document.querySelector('[data-tab="combined"]');
-
-        if (this.combinedMode) {
-            // 啟用合併模式：隱藏原本的回饋和摘要分頁，顯示合併分頁
-            if (feedbackTab) feedbackTab.classList.add('hidden');
-            if (summaryTab) summaryTab.classList.add('hidden');
-            if (combinedTab) {
-                combinedTab.classList.remove('hidden');
-                // 如果合併分頁顯示，並且當前在回饋或摘要分頁，則將合併分頁設為活躍
-                const currentActiveTab = document.querySelector('.tab-button.active');
-                if (currentActiveTab && (currentActiveTab.getAttribute('data-tab') === 'feedback' || currentActiveTab.getAttribute('data-tab') === 'summary')) {
-                    combinedTab.classList.add('active');
-                    currentActiveTab.classList.remove('active');
-
-                    // 顯示對應的分頁內容
-                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                    document.getElementById('tab-combined').classList.add('active');
-                }
-            }
-
-            // 同步數據到合併模式
-            this.syncDataToCombinedMode();
-
-        } else {
-            // 停用合併模式：顯示原本的分頁，隱藏合併分頁
-            if (feedbackTab) feedbackTab.classList.remove('hidden');
-            if (summaryTab) summaryTab.classList.remove('hidden');
-            if (combinedTab) {
-                combinedTab.classList.add('hidden');
-                // 如果當前在合併分頁，則切換到回饋分頁
-                if (combinedTab.classList.contains('active')) {
-                    combinedTab.classList.remove('active');
-                    if (feedbackTab) {
-                        feedbackTab.classList.add('active');
-                        // 顯示對應的分頁內容
-                        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                        document.getElementById('tab-feedback').classList.add('active');
-                    }
-                }
-            }
-
-            // 同步數據回原始分頁
-            this.syncDataFromCombinedMode();
-        }
-
-        localStorage.setItem('combinedMode', this.combinedMode.toString());
-
-        console.log('合併模式已', this.combinedMode ? '啟用' : '停用');
-    }
-
     toggleAutoClose() {
         this.autoClose = !this.autoClose;
 
@@ -719,7 +812,8 @@ class FeedbackApp {
             toggle.classList.toggle('active', this.autoClose);
         }
 
-        localStorage.setItem('autoClose', this.autoClose.toString());
+        // 保存設定到持久化存儲
+        this.saveSettings();
 
         console.log('自動關閉頁面已', this.autoClose ? '啟用' : '停用');
     }
@@ -749,51 +843,107 @@ class FeedbackApp {
         }
     }
 
-    loadSettings() {
-        // 載入合併模式設定
-        const savedCombinedMode = localStorage.getItem('combinedMode');
-        if (savedCombinedMode === 'true') {
-            this.combinedMode = true;
-            const toggle = document.getElementById('combinedModeToggle');
-            if (toggle) {
-                toggle.classList.add('active');
+    syncLanguageSelector() {
+        // 同步語言選擇器的狀態
+        if (window.i18nManager) {
+            const currentLang = window.i18nManager.currentLanguage;
+            
+            // 更新現代化語言選擇器
+            const languageOptions = document.querySelectorAll('.language-option');
+            languageOptions.forEach(option => {
+                const lang = option.getAttribute('data-lang');
+                option.classList.toggle('active', lang === currentLang);
+            });
+        }
+    }
+
+    async loadSettings() {
+        try {
+            // 使用持久化設定系統載入設定
+            const settings = await this.persistentSettings.loadSettings();
+            
+            // 載入佈局模式設定
+            if (settings.layoutMode && ['separate', 'combined-vertical', 'combined-horizontal'].includes(settings.layoutMode)) {
+                this.layoutMode = settings.layoutMode;
+            } else {
+                // 嘗試從舊的 localStorage 載入（向後兼容）
+                const savedLayoutMode = localStorage.getItem('layoutMode');
+                if (savedLayoutMode && ['separate', 'combined-vertical', 'combined-horizontal'].includes(savedLayoutMode)) {
+                    this.layoutMode = savedLayoutMode;
+                } else {
+                    this.layoutMode = 'separate'; // 預設為分離模式
+                }
             }
 
-            // 應用合併模式設定
-            this.applyCombinedModeState();
-        }
+            // 更新佈局模式單選按鈕狀態
+            const layoutRadios = document.querySelectorAll('input[name="layoutMode"]');
+            layoutRadios.forEach((radio, index) => {
+                radio.checked = radio.value === this.layoutMode;
+            });
 
-        // 載入自動關閉設定
-        const savedAutoClose = localStorage.getItem('autoClose');
-        if (savedAutoClose !== null) {
-            this.autoClose = savedAutoClose === 'true';
-        } else {
-            // 如果沒有保存的設定，使用預設值（true）
+            // 載入自動關閉設定
+            if (settings.autoClose !== undefined) {
+                this.autoClose = settings.autoClose;
+            } else {
+                // 嘗試從舊的 localStorage 載入（向後兼容）
+                const savedAutoClose = localStorage.getItem('autoClose');
+                if (savedAutoClose !== null) {
+                    this.autoClose = savedAutoClose === 'true';
+                } else {
+                    this.autoClose = true; // 預設啟用
+                }
+            }
+            
+            // 更新自動關閉開關狀態
+            const autoCloseToggle = document.getElementById('autoCloseToggle');
+            if (autoCloseToggle) {
+                autoCloseToggle.classList.toggle('active', this.autoClose);
+            }
+
+            // 確保語言選擇器與當前語言同步
+            this.syncLanguageSelector();
+
+            // 應用佈局模式設定
+            this.applyCombinedModeState();
+
+            // 如果是合併模式，同步數據
+            if (this.layoutMode === 'combined-vertical' || this.layoutMode === 'combined-horizontal') {
+                this.syncDataToCombinedMode();
+            }
+
+            console.log('設定已載入:', {
+                layoutMode: this.layoutMode,
+                autoClose: this.autoClose,
+                currentLanguage: window.i18nManager?.currentLanguage,
+                source: settings.layoutMode ? 'persistent' : 'localStorage'
+            });
+            
+        } catch (error) {
+            console.warn('載入設定時發生錯誤:', error);
+            // 使用預設設定
+            this.layoutMode = 'separate';
             this.autoClose = true;
-        }
-        
-        // 更新自動關閉開關狀態
-        const autoCloseToggle = document.getElementById('autoCloseToggle');
-        if (autoCloseToggle) {
-            autoCloseToggle.classList.toggle('active', this.autoClose);
+            
+            // 仍然需要更新 UI 狀態
+            const layoutRadios = document.querySelectorAll('input[name="layoutMode"]');
+            layoutRadios.forEach((radio, index) => {
+                radio.checked = radio.value === this.layoutMode;
+            });
+            
+            const autoCloseToggle = document.getElementById('autoCloseToggle');
+            if (autoCloseToggle) {
+                autoCloseToggle.classList.toggle('active', this.autoClose);
+            }
         }
     }
 
     applyCombinedModeState() {
-        const feedbackTab = document.querySelector('[data-tab="feedback"]');
-        const summaryTab = document.querySelector('[data-tab="summary"]');
-        const combinedTab = document.querySelector('[data-tab="combined"]');
-
-        if (this.combinedMode) {
-            // 隱藏原本的回饋和摘要分頁，顯示合併分頁
-            if (feedbackTab) feedbackTab.classList.add('hidden');
-            if (summaryTab) summaryTab.classList.add('hidden');
-            if (combinedTab) combinedTab.classList.remove('hidden');
-        } else {
-            // 顯示原本的分頁，隱藏合併分頁
-            if (feedbackTab) feedbackTab.classList.remove('hidden');
-            if (summaryTab) summaryTab.classList.remove('hidden');
-            if (combinedTab) combinedTab.classList.add('hidden');
+        // 更新分頁可見性
+        this.updateTabVisibility();
+        
+        // 更新合併分頁的佈局樣式
+        if (this.layoutMode !== 'separate') {
+            this.updateCombinedModeLayout();
         }
     }
 
@@ -817,6 +967,136 @@ Supported commands: ls, dir, pwd, cat, type, etc.
 
 $ `;
         this.appendCommandOutput(welcomeMessage);
+    }
+
+    async resetSettings() {
+        // 確認重置
+        const confirmMessage = window.i18nManager ? 
+            window.i18nManager.t('settings.resetConfirm', '確定要重置所有設定嗎？這將清除所有已保存的偏好設定。') :
+            '確定要重置所有設定嗎？這將清除所有已保存的偏好設定。';
+            
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            // 使用持久化設定系統清除設定
+            await this.persistentSettings.clearSettings();
+            
+            // 重置本地變數
+            this.layoutMode = 'separate';
+            this.autoClose = true;
+
+            // 更新佈局模式單選按鈕狀態
+            const layoutRadios = document.querySelectorAll('input[name="layoutMode"]');
+            layoutRadios.forEach((radio, index) => {
+                radio.checked = radio.value === this.layoutMode;
+            });
+
+            // 更新自動關閉開關狀態
+            const autoCloseToggle = document.getElementById('autoCloseToggle');
+            if (autoCloseToggle) {
+                autoCloseToggle.classList.toggle('active', this.autoClose);
+            }
+
+            // 確保語言選擇器與當前語言同步
+            this.syncLanguageSelector();
+
+            // 應用佈局模式設定
+            this.applyCombinedModeState();
+
+            // 切換到回饋分頁
+            this.switchToFeedbackTab();
+
+            // 顯示成功訊息
+            const successMessage = window.i18nManager ? 
+                window.i18nManager.t('settings.resetSuccess', '設定已重置為預設值') :
+                '設定已重置為預設值';
+            
+            this.showMessage(successMessage, 'success');
+
+            console.log('設定已重置');
+            
+        } catch (error) {
+            console.error('重置設定時發生錯誤:', error);
+            
+            // 顯示錯誤訊息
+            const errorMessage = window.i18nManager ? 
+                window.i18nManager.t('settings.resetError', '重置設定時發生錯誤') :
+                '重置設定時發生錯誤';
+                
+            this.showMessage(errorMessage, 'error');
+        }
+    }
+
+    showMessage(text, type = 'info') {
+        // 確保動畫樣式已添加
+        if (!document.getElementById('slideInAnimation')) {
+            const style = document.createElement('style');
+            style.id = 'slideInAnimation';
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // 創建訊息提示
+        const message = document.createElement('div');
+        const colors = {
+            success: 'var(--success-color)',
+            error: 'var(--error-color)',
+            warning: 'var(--warning-color)',
+            info: 'var(--info-color)'
+        };
+        
+        message.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${colors[type] || colors.info};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+        `;
+        message.textContent = text;
+        
+        document.body.appendChild(message);
+        
+        // 3秒後移除訊息
+        setTimeout(() => {
+            if (message.parentNode) {
+                message.remove();
+            }
+        }, 3000);
+    }
+
+    async saveSettings() {
+        try {
+            const settings = {
+                layoutMode: this.layoutMode,
+                autoClose: this.autoClose,
+                language: window.i18nManager?.currentLanguage || 'zh-TW',
+                activeTab: localStorage.getItem('activeTab'),
+                lastSaved: new Date().toISOString()
+            };
+            
+            await this.persistentSettings.saveSettings(settings);
+            
+            // 同時保存到 localStorage 作為備用（向後兼容）
+            localStorage.setItem('layoutMode', this.layoutMode);
+            localStorage.setItem('autoClose', this.autoClose.toString());
+            
+            console.log('設定已保存:', settings);
+        } catch (error) {
+            console.warn('保存設定時發生錯誤:', error);
+        }
     }
 }
 

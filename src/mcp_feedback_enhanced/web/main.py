@@ -37,7 +37,8 @@ class WebUIManager:
     
     def __init__(self, host: str = "127.0.0.1", port: int = None):
         self.host = host
-        self.port = port or find_free_port()
+        # 優先使用固定端口 8765，確保 localStorage 的一致性
+        self.port = port or find_free_port(preferred_port=8765)
         self.app = FastAPI(title="Interactive Feedback MCP")
         self.sessions: Dict[str, WebFeedbackSession] = {}
         self.server_thread = None
@@ -59,11 +60,8 @@ class WebUIManager:
         web_static_path = Path(__file__).parent / "static"
         if web_static_path.exists():
             self.app.mount("/static", StaticFiles(directory=str(web_static_path)), name="static")
-        
-        # 備用：原有的靜態文件
-        fallback_static_path = Path(__file__).parent.parent / "static"
-        if fallback_static_path.exists():
-            self.app.mount("/fallback_static", StaticFiles(directory=str(fallback_static_path)), name="fallback_static")
+        else:
+            raise RuntimeError(f"Static files directory not found: {web_static_path}")
 
     def _setup_templates(self):
         """設置模板引擎"""
@@ -72,9 +70,7 @@ class WebUIManager:
         if web_templates_path.exists():
             self.templates = Jinja2Templates(directory=str(web_templates_path))
         else:
-            # 備用：原有的模板
-            fallback_templates_path = Path(__file__).parent.parent / "templates"
-            self.templates = Jinja2Templates(directory=str(fallback_templates_path))
+            raise RuntimeError(f"Templates directory not found: {web_templates_path}")
 
     def create_session(self, project_directory: str, summary: str) -> str:
         """創建新的回饋會話"""

@@ -37,13 +37,14 @@ class WebFeedbackSession:
         self.feedback_completed = threading.Event()
         self.process: Optional[subprocess.Popen] = None
         self.command_logs = []
+        self._cleanup_done = False  # 防止重複清理
         
         # 確保臨時目錄存在
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
     async def wait_for_feedback(self, timeout: int = 600) -> dict:
         """
-        等待用戶回饋，包含圖片
+        等待用戶回饋，包含圖片，支援超時自動清理
         
         Args:
             timeout: 超時時間（秒）
@@ -51,21 +52,40 @@ class WebFeedbackSession:
         Returns:
             dict: 回饋結果
         """
-        loop = asyncio.get_event_loop()
-        
-        def wait_in_thread():
-            return self.feedback_completed.wait(timeout)
-        
-        completed = await loop.run_in_executor(None, wait_in_thread)
-        
-        if completed:
-            return {
-                "logs": "\n".join(self.command_logs),
-                "interactive_feedback": self.feedback_result or "",
-                "images": self.images
-            }
-        else:
-            raise TimeoutError("等待用戶回饋超時")
+        try:
+            # 使用比 MCP 超時稍短的時間（提前處理，避免邊界競爭）
+            # 對於短超時（<30秒），提前1秒；對於長超時，提前5秒
+            if timeout <= 30:
+                actual_timeout = max(timeout - 1, 5)  # 短超時提前1秒，最少5秒
+            else:
+                actual_timeout = timeout - 5  # 長超時提前5秒
+            debug_log(f"會話 {self.session_id} 開始等待回饋，超時時間: {actual_timeout} 秒（原始: {timeout} 秒）")
+            
+            loop = asyncio.get_event_loop()
+            
+            def wait_in_thread():
+                return self.feedback_completed.wait(actual_timeout)
+            
+            completed = await loop.run_in_executor(None, wait_in_thread)
+            
+            if completed:
+                debug_log(f"會話 {self.session_id} 收到用戶回饋")
+                return {
+                    "logs": "\n".join(self.command_logs),
+                    "interactive_feedback": self.feedback_result or "",
+                    "images": self.images
+                }
+            else:
+                # 超時了，立即清理資源
+                debug_log(f"會話 {self.session_id} 在 {actual_timeout} 秒後超時，開始清理資源...")
+                await self._cleanup_resources_on_timeout()
+                raise TimeoutError(f"等待用戶回饋超時（{actual_timeout}秒），介面已自動關閉")
+                
+        except Exception as e:
+            # 任何異常都要確保清理資源
+            debug_log(f"會話 {self.session_id} 發生異常: {e}")
+            await self._cleanup_resources_on_timeout()
+            raise
 
     async def submit_feedback(self, feedback: str, images: List[dict]):
         """
@@ -224,8 +244,66 @@ class WebFeedbackSession:
                 except:
                     pass
 
+    async def _cleanup_resources_on_timeout(self):
+        """超時時清理所有資源"""
+        if self._cleanup_done:
+            return  # 避免重複清理
+        
+        self._cleanup_done = True
+        debug_log(f"開始清理會話 {self.session_id} 的資源...")
+        
+        try:
+            # 1. 關閉 WebSocket 連接
+            if self.websocket:
+                try:
+                    # 先通知前端超時
+                    await self.websocket.send_json({
+                        "type": "session_timeout",
+                        "message": "會話已超時，介面將自動關閉"
+                    })
+                    await asyncio.sleep(0.1)  # 給前端一點時間處理消息
+                    await self.websocket.close()
+                    debug_log(f"會話 {self.session_id} WebSocket 已關閉")
+                except Exception as e:
+                    debug_log(f"關閉 WebSocket 時發生錯誤: {e}")
+                finally:
+                    self.websocket = None
+            
+            # 2. 終止正在運行的命令進程
+            if self.process:
+                try:
+                    self.process.terminate()
+                    try:
+                        self.process.wait(timeout=3)
+                        debug_log(f"會話 {self.session_id} 命令進程已正常終止")
+                    except subprocess.TimeoutExpired:
+                        self.process.kill()
+                        debug_log(f"會話 {self.session_id} 命令進程已強制終止")
+                except Exception as e:
+                    debug_log(f"終止命令進程時發生錯誤: {e}")
+                finally:
+                    self.process = None
+            
+            # 3. 設置完成事件（防止其他地方還在等待）
+            self.feedback_completed.set()
+            
+            # 4. 清理臨時數據
+            self.command_logs.clear()
+            self.images.clear()
+            
+            debug_log(f"會話 {self.session_id} 資源清理完成")
+            
+        except Exception as e:
+            debug_log(f"清理會話 {self.session_id} 資源時發生錯誤: {e}")
+
     def cleanup(self):
-        """清理會話資源"""
+        """同步清理會話資源（保持向後兼容）"""
+        if self._cleanup_done:
+            return
+            
+        self._cleanup_done = True
+        debug_log(f"同步清理會話 {self.session_id} 資源...")
+        
         if self.process:
             try:
                 self.process.terminate()
@@ -236,3 +314,6 @@ class WebFeedbackSession:
                 except:
                     pass
             self.process = None 
+            
+        # 設置完成事件
+        self.feedback_completed.set() 

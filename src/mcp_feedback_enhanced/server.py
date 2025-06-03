@@ -356,45 +356,37 @@ def process_images(images_data: List[dict]) -> List[MCPImage]:
     return mcp_images
 
 
-def launch_gui(project_dir: str, summary: str) -> dict:
+async def launch_gui_with_timeout(project_dir: str, summary: str, timeout: int) -> dict:
     """
-    啟動 Qt GUI 收集回饋
-    
-    Args:
-        project_dir: 專案目錄路徑
-        summary: AI 工作摘要
-        
-    Returns:
-        dict: 收集到的回饋資料
+    啟動 GUI 模式並處理超時
     """
-    debug_log("啟動 Qt GUI 介面")
+    debug_log(f"啟動 GUI 模式（超時：{timeout}秒）")
     
     try:
-        from .gui import feedback_ui
-        result = feedback_ui(project_dir, summary)
+        from .gui import feedback_ui_with_timeout
         
-        if result is None:
-            # 用戶取消
+        # 直接調用帶超時的 GUI 函數
+        result = feedback_ui_with_timeout(project_dir, summary, timeout)
+        
+        if result:
             return {
-                "command_logs": "",
-                "interactive_feedback": "用戶取消了回饋。",
+                "logs": f"GUI 模式回饋收集完成",
+                "interactive_feedback": result.get("interactive_feedback", ""),
+                "images": result.get("images", [])
+            }
+        else:
+            return {
+                "logs": "用戶取消了回饋收集",
+                "interactive_feedback": "",
                 "images": []
             }
-        
-        # 轉換鍵名以保持向後兼容
-        return {
-            "command_logs": result.get("command_logs", ""),
-            "interactive_feedback": result.get("interactive_feedback", ""),
-            "images": result.get("images", [])
-        }
-        
-    except ImportError as e:
-        debug_log(f"無法導入 GUI 模組: {e}")
-        return {
-            "command_logs": "",
-            "interactive_feedback": f"Qt GUI 模組導入失敗: {str(e)}",
-            "images": []
-        }
+            
+    except TimeoutError as e:
+        # 超時異常 - 這是預期的行為
+        raise e
+    except Exception as e:
+        debug_log(f"GUI 啟動失败: {e}")
+        raise Exception(f"GUI 啟動失败: {e}")
 
 
 # ===== MCP 工具定義 =====
@@ -462,7 +454,7 @@ async def interactive_feedback(
         if use_web_ui:
             result = await launch_web_ui_with_timeout(project_directory, summary, timeout)
         else:
-            result = launch_gui(project_directory, summary)
+            result = await launch_gui_with_timeout(project_directory, summary, timeout)
         
         # 處理取消情況
         if not result:
@@ -517,13 +509,20 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
         # 使用新的 web 模組
         from .web import launch_web_feedback_ui
         
-        # 直接運行 Web UI 會話
-        return await launch_web_feedback_ui(project_dir, summary)
+        # 傳遞 timeout 參數給 Web UI
+        return await launch_web_feedback_ui(project_dir, summary, timeout)
     except ImportError as e:
         debug_log(f"無法導入 Web UI 模組: {e}")
         return {
             "command_logs": "",
             "interactive_feedback": f"Web UI 模組導入失敗: {str(e)}",
+            "images": []
+        }
+    except TimeoutError as e:
+        debug_log(f"Web UI 超時: {e}")
+        return {
+            "command_logs": "",
+            "interactive_feedback": f"回饋收集超時（{timeout}秒），介面已自動關閉。",
             "images": []
         }
     except Exception as e:

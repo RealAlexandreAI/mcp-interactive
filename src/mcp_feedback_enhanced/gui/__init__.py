@@ -20,6 +20,6 @@
 重構: 模塊化設計
 """
 
-from .main import feedback_ui
+from .main import feedback_ui, feedback_ui_with_timeout
 
-__all__ = ['feedback_ui'] 
+__all__ = ['feedback_ui', 'feedback_ui_with_timeout'] 

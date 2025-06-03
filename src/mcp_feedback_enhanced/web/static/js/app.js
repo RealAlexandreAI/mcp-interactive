@@ -242,6 +242,10 @@ class FeedbackApp {
                 // 顯示成功訊息
                 this.showSuccessMessage();
                 break;
+            case 'session_timeout':
+                console.log('會話超時:', data.message);
+                this.handleSessionTimeout(data.message);
+                break;
             default:
                 console.log('未知的 WebSocket 消息:', data);
         }
@@ -252,6 +256,54 @@ class FeedbackApp {
             window.i18nManager.t('feedback.success', '✅ 回饋提交成功！') :
             '✅ 回饋提交成功！';
         this.showMessage(successMessage, 'success');
+    }
+
+    handleSessionTimeout(message) {
+        console.log('處理會話超時:', message);
+        
+        // 顯示超時訊息
+        const timeoutMessage = message || (window.i18nManager ? 
+            window.i18nManager.t('session.timeout', '⏰ 會話已超時，介面將自動關閉') :
+            '⏰ 會話已超時，介面將自動關閉');
+        
+        this.showMessage(timeoutMessage, 'warning');
+        
+        // 禁用所有互動元素
+        this.disableAllInputs();
+        
+        // 3秒後自動關閉頁面
+        setTimeout(() => {
+            try {
+                window.close();
+            } catch (e) {
+                // 如果無法關閉視窗（可能因為安全限制），重新載入頁面
+                console.log('無法關閉視窗，重新載入頁面');
+                window.location.reload();
+            }
+        }, 3000);
+    }
+
+    disableAllInputs() {
+        // 禁用所有輸入元素
+        const inputs = document.querySelectorAll('input, textarea, button');
+        inputs.forEach(input => {
+            input.disabled = true;
+            input.style.opacity = '0.5';
+        });
+        
+        // 特別處理提交和取消按鈕
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        
+        if (submitBtn) {
+            submitBtn.textContent = '⏰ 已超時';
+            submitBtn.disabled = true;
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.textContent = '關閉中...';
+            cancelBtn.disabled = true;
+        }
     }
 
     updateConnectionStatus(connected) {

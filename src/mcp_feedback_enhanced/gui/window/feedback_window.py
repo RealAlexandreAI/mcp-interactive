@@ -447,17 +447,16 @@ class FeedbackWindow(QMainWindow):
         self.close()
     
     def _cancel_feedback(self) -> None:
-        """取消回饋"""
-        reply = QMessageBox.question(
-            self, t('app.confirmCancel'), 
-            t('app.confirmCancelMessage'),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-        
-        if reply == QMessageBox.Yes:
-            self.result = None
-            self.close()
+        """取消回饋收集"""
+        debug_log("取消回饋收集")
+        self.result = ""
+        self.close()
+    
+    def force_close(self) -> None:
+        """強制關閉視窗（用於超時處理）"""
+        debug_log("強制關閉視窗（超時）")
+        self.result = ""
+        self.close()
     
     def _refresh_ui_texts(self) -> None:
         """刷新界面文字"""

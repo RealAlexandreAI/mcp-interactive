@@ -174,13 +174,14 @@ def get_web_ui_manager() -> WebUIManager:
     return _web_ui_manager
 
 
-async def launch_web_feedback_ui(project_directory: str, summary: str) -> dict:
+async def launch_web_feedback_ui(project_directory: str, summary: str, timeout: int = 600) -> dict:
     """
     啟動 Web 回饋介面並等待用戶回饋
     
     Args:
         project_directory: 專案目錄路徑
         summary: AI 工作摘要
+        timeout: 超時時間（秒）
         
     Returns:
         dict: 回饋結果，包含 logs、interactive_feedback 和 images
@@ -203,12 +204,19 @@ async def launch_web_feedback_ui(project_directory: str, summary: str) -> dict:
     manager.open_browser(feedback_url)
     
     try:
-        # 等待用戶回饋
-        result = await session.wait_for_feedback()
+        # 等待用戶回饋，傳遞 timeout 參數
+        result = await session.wait_for_feedback(timeout)
         debug_log(f"收到用戶回饋，會話: {session_id}")
         return result
+    except TimeoutError:
+        debug_log(f"會話 {session_id} 超時")
+        # 資源已在 wait_for_feedback 中清理，這裡只需要記錄和重新拋出
+        raise
+    except Exception as e:
+        debug_log(f"會話 {session_id} 發生錯誤: {e}")
+        raise
     finally:
-        # 清理會話
+        # 清理會話（無論成功還是失敗）
         manager.remove_session(session_id)
 
 

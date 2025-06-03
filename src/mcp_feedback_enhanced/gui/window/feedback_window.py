@@ -34,6 +34,12 @@ class FeedbackWindow(QMainWindow):
         
         # 初始化組件
         self.config_manager = ConfigManager()
+        
+        # 載入保存的語言設定
+        saved_language = self.config_manager.get_language()
+        if saved_language:
+            self.i18n.set_language(saved_language)
+        
         self.combined_mode = self.config_manager.get_layout_mode()
         self.layout_orientation = self.config_manager.get_layout_orientation()
         
@@ -347,6 +353,71 @@ class FeedbackWindow(QMainWindow):
         """處理從文字框智能貼上圖片的功能"""
         if self.tab_manager.feedback_tab:
             self.tab_manager.feedback_tab.handle_image_paste_from_textarea()
+    
+    def _on_reset_settings_requested(self) -> None:
+        """處理重置設定請求"""
+        try:
+            # 重置配置管理器的所有設定
+            self.config_manager.reset_settings()
+            
+            # 重置應用程式狀態
+            self.combined_mode = False  # 重置為分離模式
+            self.layout_orientation = 'vertical'  # 重置為垂直布局
+            
+            # 重新設置語言為預設
+            self.i18n.set_language('zh-TW')
+            
+            # 保存當前內容
+            current_data = self.tab_manager.get_feedback_data()
+            
+            # 重新創建分頁
+            self.tab_manager.set_layout_mode(self.combined_mode)
+            self.tab_manager.set_layout_orientation(self.layout_orientation)
+            self.tab_manager.create_tabs()
+            
+            # 恢復內容
+            self.tab_manager.restore_content(
+                current_data["interactive_feedback"],
+                current_data["command_logs"],
+                current_data["images"]
+            )
+            
+            # 重新連接信號
+            self.tab_manager.connect_signals(self)
+            
+            # 重新載入設定分頁的狀態
+            if self.tab_manager.settings_tab:
+                self.tab_manager.settings_tab.reload_settings_from_config()
+            
+            # 刷新UI文字
+            self._refresh_ui_texts()
+            
+            # 重新應用視窗定位（使用重置後的設定）
+            self._apply_window_positioning()
+            
+            # 切換到設定分頁顯示重置結果
+            settings_tab_index = 3  # 分離模式下設定分頁是第4個（索引3）
+            if settings_tab_index < self.tab_widget.count():
+                self.tab_widget.setCurrentIndex(settings_tab_index)
+            
+            # 顯示成功訊息
+            QMessageBox.information(
+                self, 
+                t('settings.reset.successTitle'),
+                t('settings.reset.successMessage'),
+                QMessageBox.Ok
+            )
+            
+            debug_log("設定重置成功")
+            
+        except Exception as e:
+            debug_log(f"重置設定失敗: {e}")
+            QMessageBox.critical(
+                self, 
+                t('errors.title'),
+                t('settings.reset.error', error=str(e)),
+                QMessageBox.Ok
+            )
     
     def _submit_feedback(self) -> None:
         """提交回饋"""

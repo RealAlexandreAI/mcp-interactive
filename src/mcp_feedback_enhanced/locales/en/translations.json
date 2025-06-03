@@ -92,6 +92,7 @@
     },
     "layout": {
       "title": "Interface Layout",
+      "description": "Choose the display method for AI summary and feedback input areas",
       "separateMode": "Separate Mode",
       "separateModeDescription": "AI summary and feedback are in separate tabs",
       "combinedVertical": "Combined Mode (Vertical Layout)",
@@ -103,6 +104,17 @@
       "title": "Window Positioning",
       "alwaysCenter": "Always show window at primary screen center",
       "alwaysCenterDescription": "Recommended for multi-monitor setups or when experiencing window positioning issues"
+    },
+    "reset": {
+      "title": "Reset Settings",
+      "description": "Clear all saved settings and restore to default state",
+      "button": "Reset Settings",
+      "confirmTitle": "Confirm Reset Settings",
+      "confirmMessage": "Are you sure you want to reset all settings? This will clear all saved preferences and restore to default state.",
+      "successTitle": "Reset Successful",
+      "successMessage": "All settings have been successfully reset to default values.",
+      "errorTitle": "Reset Failed",
+      "errorMessage": "Error occurred while resetting settings: {error}"
     }
   },
   "buttons": {

@@ -120,4 +120,21 @@ class ConfigManager:
     def set_always_center_window(self, always_center: bool) -> None:
         """設置總是在主螢幕中心顯示視窗"""
         self.set('always_center_window', always_center)
-        debug_log(f"視窗定位設置: {'總是中心顯示' if always_center else '智能定位'}") 
+        debug_log(f"視窗定位設置: {'總是中心顯示' if always_center else '智能定位'}")
+    
+    def reset_settings(self) -> None:
+        """重置所有設定到預設值"""
+        try:
+            # 清空配置緩存
+            self._config_cache = {}
+            
+            # 刪除配置文件
+            if self._config_file.exists():
+                self._config_file.unlink()
+                debug_log("配置文件已刪除")
+            
+            debug_log("所有設定已重置到預設值")
+            
+        except Exception as e:
+            debug_log(f"重置設定失敗: {e}")
+            raise 

@@ -312,10 +312,13 @@ class TabManager:
         """連接信號"""
         # 連接設置分頁的信號
         if self.settings_tab:
-            if hasattr(parent, 'language_changed'):
-                self.settings_tab.language_changed.connect(parent.language_changed)
+            # 語言變更信號直接連接到父窗口的刷新方法
+            if hasattr(parent, '_refresh_ui_texts'):
+                self.settings_tab.language_changed.connect(parent._refresh_ui_texts)
             if hasattr(parent, '_on_layout_change_requested'):
                 self.settings_tab.layout_change_requested.connect(parent._on_layout_change_requested)
+            if hasattr(parent, '_on_reset_settings_requested'):
+                self.settings_tab.reset_requested.connect(parent._on_reset_settings_requested)
         
         # 連接回饋分頁的圖片貼上信號
         if self.feedback_tab:

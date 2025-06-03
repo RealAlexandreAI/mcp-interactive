@@ -170,6 +170,13 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto co
 
 ## 🆕 Version Highlights
 
+### v2.1.1 (Window Positioning Optimization)
+- 🖥️ **Smart Window Positioning**: Added "Always show window at primary screen center" setting option
+- 🌐 **Multi-Monitor Support**: Perfect solution for complex multi-monitor setups like T-shaped screen arrangements
+- 💾 **Position Memory**: Auto-save and restore window position with intelligent visibility detection
+- ⚙️ **User Choice**: Provides smart positioning (default) and forced center display modes
+
+
 ### v2.1.0 (Latest Refactored Version)
 - 🎨 **Complete Refactoring**: GUI and Web UI adopt modular architecture
 - 📁 **Centralized Management**: Reorganized folder structure, improved maintainability
@@ -212,6 +219,9 @@ A: Set `FORCE_WEB=true` or check firewall settings.
 
 **Q: Gemini Pro 2.5 cannot parse images**  
 A: Known issue. Gemini Pro 2.5 may not correctly parse uploaded image content. Testing shows Claude-4-Sonnet can properly analyze images. Recommend using Claude models for better image understanding capabilities.
+
+**Q: Multi-screen window positioning issues**  
+A: Fixed in v2.1.1. Go to "⚙️ Settings" tab, check "Always show window at primary screen center" to resolve window positioning issues. Especially useful for T-shaped screen arrangements and other complex multi-monitor configurations.
 
 ## 🙏 Acknowledgments
 

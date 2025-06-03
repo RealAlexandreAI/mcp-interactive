@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Interactive Feedback MCP - Web UI 測試模組
+MCP Feedback Enhanced - Web UI 測試模組
 ========================================
 
-用於測試 Interactive Feedback MCP 的 Web UI 功能。
+用於測試 MCP Feedback Enhanced 的 Web UI 功能。
 包含完整的 Web UI 功能測試。
 
 功能測試：
@@ -61,7 +61,7 @@ def find_free_port():
 def test_web_ui(keep_running=False):
     """Test the Web UI functionality"""
     
-    debug_log("🧪 測試 Interactive Feedback MCP Web UI")
+    debug_log("🧪 測試 MCP Feedback Enhanced Web UI")
     debug_log("=" * 50)
     
     # Test import
@@ -308,7 +308,7 @@ def interactive_demo(session_info):
     debug_log("✅ Web UI 測試完成")
 
 if __name__ == "__main__":
-    debug_log("Interactive Feedback MCP - Web UI 測試")
+    debug_log("MCP Feedback Enhanced - Web UI 測試")
     debug_log("=" * 60)
     
     # Test environment detection
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     
     debug_log("\n" + "=" * 60)
     if env_test and params_test and env_web_test and mcp_test and web_test:
-        debug_log("🎊 所有測試完成！準備使用 Interactive Feedback MCP")
+        debug_log("🎊 所有測試完成！準備使用 MCP Feedback Enhanced")
         debug_log("\n📖 使用方法:")
         debug_log("  1. 在 Cursor/Cline 中配置此 MCP 服務器")
         debug_log("  2. AI 助手會自動調用 interactive_feedback 工具")

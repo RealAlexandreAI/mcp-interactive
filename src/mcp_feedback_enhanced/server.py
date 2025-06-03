@@ -4,7 +4,7 @@
 MCP 伺服器主程式
 ================
 
-Interactive Feedback MCP 的核心伺服器程式，提供用戶互動回饋功能。
+MCP Feedback Enhanced 的核心伺服器程式，提供用戶互動回饋功能。
 支援智能環境檢測，自動選擇 Qt GUI 或 Web UI 介面。
 
 主要功能：

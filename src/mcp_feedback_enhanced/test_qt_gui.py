@@ -4,7 +4,7 @@
 Qt GUI 測試模組
 ===============
 
-用於測試 Interactive Feedback MCP 的 Qt GUI 功能。
+用於測試 MCP Feedback Enhanced 的 Qt GUI 功能。
 包含完整的 GUI 功能測試。
 
 功能測試：
@@ -79,7 +79,7 @@ def test_qt_gui():
     return True
 
 if __name__ == "__main__":
-    debug_log("🧪 Interactive Feedback MCP - Qt GUI 測試")
+    debug_log("🧪 MCP Feedback Enhanced - Qt GUI 測試")
     debug_log("=" * 50)
     
     # 檢查環境

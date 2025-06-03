@@ -18,7 +18,7 @@ import os
 def main():
     """主程式入口點"""
     parser = argparse.ArgumentParser(
-        description="Interactive Feedback MCP Enhanced - 互動式回饋收集 MCP 伺服器"
+        description="MCP Feedback Enhanced Enhanced - 互動式回饋收集 MCP 伺服器"
     )
     
     subparsers = parser.add_subparsers(dest='command', help='可用命令')
@@ -114,7 +114,7 @@ def run_tests(args):
 def show_version():
     """顯示版本資訊"""
     from . import __version__, __author__
-    print(f"Interactive Feedback MCP Enhanced v{__version__}")
+    print(f"MCP Feedback Enhanced Enhanced v{__version__}")
     print(f"作者: {__author__}")
     print("GitHub: https://github.com/Minidoracat/mcp-feedback-enhanced")
 

@@ -39,7 +39,7 @@ class WebUIManager:
         self.host = host
         # 優先使用固定端口 8765，確保 localStorage 的一致性
         self.port = port or find_free_port(preferred_port=8765)
-        self.app = FastAPI(title="Interactive Feedback MCP")
+        self.app = FastAPI(title="MCP Feedback Enhanced")
         self.sessions: Dict[str, WebFeedbackSession] = {}
         self.server_thread = None
         self.server_process = None

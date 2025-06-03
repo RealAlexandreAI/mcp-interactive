@@ -30,7 +30,7 @@ def setup_routes(manager: 'WebUIManager'):
         """首頁"""
         return manager.templates.TemplateResponse("index.html", {
             "request": request,
-            "title": "Interactive Feedback MCP"
+            "title": "MCP Feedback Enhanced"
         })
 
     @manager.app.get("/session/{session_id}", response_class=HTMLResponse)

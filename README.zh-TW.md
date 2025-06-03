@@ -1,4 +1,4 @@
-# Interactive Feedback MCP（互動回饋 MCP）
+# MCP Feedback Enhanced（互動回饋 MCP）
 
 **🌐 語言切換 / Language:** [English](README.md) | **繁體中文** | [简体中文](README.zh-CN.md)
 

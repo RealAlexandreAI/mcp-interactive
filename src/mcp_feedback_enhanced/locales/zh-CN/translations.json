@@ -71,6 +71,11 @@
       "combinedModeDescription": "将 AI 摘要和反馈放在同一页面，便于对照阅读",
       "separateMode": "分离模式",
       "separateModeDescription": "AI 摘要和反馈分别在不同页签"
+    },
+    "window": {
+      "title": "窗口定位",
+      "alwaysCenter": "总是在主屏幕中心显示窗口",
+      "alwaysCenterDescription": "建议在多屏幕环境或遇到窗口定位问题时开启此选项"
     }
   },
   "buttons": {

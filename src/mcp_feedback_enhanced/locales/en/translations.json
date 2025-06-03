@@ -91,6 +91,11 @@
       "combinedModeDescription": "Display AI summary and feedback on the same page for easy comparison",
       "separateMode": "Separate Mode",
       "separateModeDescription": "AI summary and feedback are in separate tabs"
+    },
+    "window": {
+      "title": "Window Positioning",
+      "alwaysCenter": "Always show window at primary screen center",
+      "alwaysCenterDescription": "Recommended for multi-monitor setups or when experiencing window positioning issues"
     }
   },
   "buttons": {

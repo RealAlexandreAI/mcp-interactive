@@ -60,7 +60,7 @@ class TabManager:
         self.tab_widget.addTab(self.command_tab, t('tabs.command'))
         
         # 設置分頁
-        self.settings_tab = SettingsTab(self.combined_mode)
+        self.settings_tab = SettingsTab(self.combined_mode, self.config_manager)
         self.tab_widget.addTab(self.settings_tab, t('tabs.language'))
         
         # 關於分頁

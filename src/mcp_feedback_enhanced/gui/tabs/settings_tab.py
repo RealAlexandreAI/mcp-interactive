@@ -9,7 +9,8 @@
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QGroupBox, QComboBox, QRadioButton, QButtonGroup, QMessageBox
+    QGroupBox, QComboBox, QRadioButton, QButtonGroup, QMessageBox,
+    QCheckBox
 )
 from PySide6.QtCore import Signal
 
@@ -21,9 +22,10 @@ class SettingsTab(QWidget):
     language_changed = Signal()
     layout_mode_change_requested = Signal(bool)  # 佈局模式變更請求信號
     
-    def __init__(self, combined_mode: bool, parent=None):
+    def __init__(self, combined_mode: bool, config_manager, parent=None):
         super().__init__(parent)
         self.combined_mode = combined_mode
+        self.config_manager = config_manager
         self.i18n = get_i18n_manager()
         self._setup_ui()
     
@@ -136,6 +138,27 @@ class SettingsTab(QWidget):
         self.layout_button_group.buttonToggled.connect(self._on_layout_mode_changed)
         
         layout.addWidget(self.layout_group)
+        
+        # === 視窗定位設置區域 ===
+        self.window_group = QGroupBox(t('settings.window.title'))
+        self.window_group.setObjectName('window_group')
+        window_layout = QVBoxLayout(self.window_group)
+        window_layout.setSpacing(12)
+        window_layout.setContentsMargins(16, 16, 16, 16)
+        
+        # 總是在主螢幕中心顯示視窗選項
+        self.always_center_checkbox = QCheckBox(t('settings.window.alwaysCenter'))
+        self.always_center_checkbox.setChecked(self.config_manager.get_always_center_window())
+        self.always_center_checkbox.setStyleSheet("font-size: 14px; font-weight: bold; color: #e0e0e0;")
+        self.always_center_checkbox.stateChanged.connect(self._on_always_center_changed)
+        window_layout.addWidget(self.always_center_checkbox)
+        
+        self.center_desc_label = QLabel(t('settings.window.alwaysCenterDescription'))
+        self.center_desc_label.setStyleSheet("color: #9e9e9e; font-size: 12px; margin-left: 20px; margin-bottom: 8px;")
+        self.center_desc_label.setWordWrap(True)
+        window_layout.addWidget(self.center_desc_label)
+        
+        layout.addWidget(self.window_group)
         layout.addStretch()
     
     def _populate_language_selector(self) -> None:
@@ -200,11 +223,17 @@ class SettingsTab(QWidget):
                 else:
                     self.separate_mode_radio.setChecked(True)
     
+    def _on_always_center_changed(self, state: int) -> None:
+        """處理視窗定位設置變更"""
+        always_center = state == 2  # Qt.Checked = 2
+        self.config_manager.set_always_center_window(always_center)
+    
     def update_texts(self) -> None:
         """更新界面文字（用於語言切換）"""
         # 更新GroupBox標題
         self.language_group.setTitle(t('settings.language.title'))
         self.layout_group.setTitle(t('settings.layout.title'))
+        self.window_group.setTitle(t('settings.window.title'))
         
         # 更新標籤文字
         self.language_label.setText(t('settings.language.selector'))
@@ -218,8 +247,15 @@ class SettingsTab(QWidget):
         self.separate_desc_label.setText(t('settings.layout.separateModeDescription'))
         self.combined_desc_label.setText(t('settings.layout.combinedModeDescription'))
         
+        # 更新視窗設置文字
+        self.always_center_checkbox.setText(t('settings.window.alwaysCenter'))
+        self.center_desc_label.setText(t('settings.window.alwaysCenterDescription'))
+        
         # 重新填充語言選擇器
         self._populate_language_selector()
+        
+        # 重新設置勾選狀態，確保設置被正確保持
+        self.always_center_checkbox.setChecked(self.config_manager.get_always_center_window())
     
     def set_layout_mode(self, combined_mode: bool) -> None:
         """設置佈局模式"""

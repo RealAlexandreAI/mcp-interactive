@@ -100,4 +100,13 @@ class ConfigManager:
     def set_window_geometry(self, geometry: dict) -> None:
         """設置窗口幾何信息"""
         self.set('window_geometry', geometry)
-        debug_log(f"保存窗口幾何信息: {geometry}") 
+        debug_log(f"保存窗口幾何信息: {geometry}")
+    
+    def get_always_center_window(self) -> bool:
+        """獲取總是在主螢幕中心顯示視窗的設置"""
+        return self.get('always_center_window', False)
+    
+    def set_always_center_window(self, always_center: bool) -> None:
+        """設置總是在主螢幕中心顯示視窗"""
+        self.set('always_center_window', always_center)
+        debug_log(f"視窗定位設置: {'總是中心顯示' if always_center else '智能定位'}") 

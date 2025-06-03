@@ -49,6 +49,9 @@ class FeedbackWindow(QMainWindow):
         self.setMinimumSize(1000, 800)
         self.resize(1200, 900)
         
+        # 智能視窗定位
+        self._apply_window_positioning()
+        
         # 中央元件
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -359,8 +362,80 @@ class FeedbackWindow(QMainWindow):
         # 更新分頁文字
         self.tab_manager.update_tab_texts()
     
+    def _apply_window_positioning(self) -> None:
+        """根據用戶設置應用視窗定位策略"""
+        always_center = self.config_manager.get_always_center_window()
+        
+        if always_center:
+            # 強制在主螢幕中心顯示
+            self._move_to_primary_screen_center()
+        else:
+            # 先嘗試恢復上次位置
+            if self._restore_last_position():
+                # 檢查恢復的位置是否可見
+                if not self._is_window_visible():
+                    self._move_to_primary_screen_center()
+            else:
+                # 沒有保存的位置，移到中心
+                self._move_to_primary_screen_center()
+    
+    def _is_window_visible(self) -> bool:
+        """檢查視窗是否在任何螢幕的可見範圍內"""
+        from PySide6.QtWidgets import QApplication
+        
+        window_rect = self.frameGeometry()
+        
+        for screen in QApplication.screens():
+            if screen.availableGeometry().intersects(window_rect):
+                return True
+        return False
+    
+    def _move_to_primary_screen_center(self) -> None:
+        """將視窗移到主螢幕中心"""
+        from PySide6.QtWidgets import QApplication
+        
+        screen = QApplication.primaryScreen()
+        if screen:
+            screen_geometry = screen.availableGeometry()
+            window_geometry = self.frameGeometry()
+            center_point = screen_geometry.center()
+            window_geometry.moveCenter(center_point)
+            self.move(window_geometry.topLeft())
+            debug_log("視窗已移到主螢幕中心")
+    
+    def _restore_last_position(self) -> bool:
+        """嘗試恢復上次保存的視窗位置"""
+        try:
+            geometry = self.config_manager.get_window_geometry()
+            if geometry and 'x' in geometry and 'y' in geometry and 'width' in geometry and 'height' in geometry:
+                self.move(geometry['x'], geometry['y'])
+                self.resize(geometry['width'], geometry['height'])
+                debug_log(f"已恢復視窗位置: ({geometry['x']}, {geometry['y']}) 大小: {geometry['width']}x{geometry['height']}")
+                return True
+        except Exception as e:
+            debug_log(f"恢復視窗位置失敗: {e}")
+        return False
+    
+    def _save_window_position(self) -> None:
+        """保存當前視窗位置"""
+        try:
+            geometry = {
+                'x': self.x(),
+                'y': self.y(),
+                'width': self.width(),
+                'height': self.height()
+            }
+            self.config_manager.set_window_geometry(geometry)
+            debug_log(f"已保存視窗位置: ({geometry['x']}, {geometry['y']}) 大小: {geometry['width']}x{geometry['height']}")
+        except Exception as e:
+            debug_log(f"保存視窗位置失敗: {e}")
+    
     def closeEvent(self, event) -> None:
         """窗口關閉事件"""
+        # 保存視窗位置（除非設置為總是中心顯示）
+        if not self.config_manager.get_always_center_window():
+            self._save_window_position()
+        
         # 清理分頁管理器
         self.tab_manager.cleanup()
         event.accept()

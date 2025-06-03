@@ -462,9 +462,11 @@ class SettingsTab(QWidget):
         
         # 檢查是否真的有變更
         if new_combined_mode != self.combined_mode or new_orientation != self.layout_orientation:
-            # 先保存配置
-            self.config_manager.set_layout_mode(new_combined_mode)
-            self.config_manager.set_layout_orientation(new_orientation)
+            # 批量保存配置（避免多次寫入文件）
+            self.config_manager.update_partial_config({
+                'combined_mode': new_combined_mode,
+                'layout_orientation': new_orientation
+            })
             
             # 更新內部狀態
             self.combined_mode = new_combined_mode

@@ -69,6 +69,17 @@ class ConfigManager:
         self.set('combined_mode', combined_mode)
         debug_log(f"佈局模式設置: {'合併模式' if combined_mode else '分離模式'}")
     
+    def get_layout_orientation(self) -> str:
+        """獲取佈局方向（vertical=垂直（上下），horizontal=水平（左右））"""
+        return self.get('layout_orientation', 'vertical')
+    
+    def set_layout_orientation(self, orientation: str) -> None:
+        """設置佈局方向"""
+        if orientation not in ['vertical', 'horizontal']:
+            orientation = 'vertical'
+        self.set('layout_orientation', orientation)
+        debug_log(f"佈局方向設置: {'垂直（上下）' if orientation == 'vertical' else '水平（左右）'}")
+    
     def get_language(self) -> str:
         """獲取語言設置"""
         return self.get('language', 'zh-TW')

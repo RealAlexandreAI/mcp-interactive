@@ -46,6 +46,11 @@
     "emptyMessage": "Please enter feedback content before submitting. You can describe your thoughts, suggestions, or areas that need modification.",
     "outputPlaceholder": "Command output will appear here..."
   },
+  "summary": {
+    "title": "AI Work Summary",
+    "description": "Below is the work content that AI has just completed for you. Please review and provide feedback.",
+    "testDescription": "Below is the message content replied by AI. Please review and provide feedback."
+  },
   "command": {
     "title": "Command Execution",
     "description": "You can execute commands to verify results or gather more information.",
@@ -87,10 +92,12 @@
     },
     "layout": {
       "title": "Interface Layout",
-      "combinedMode": "Combined Mode",
-      "combinedModeDescription": "Display AI summary and feedback on the same page for easy comparison",
       "separateMode": "Separate Mode",
-      "separateModeDescription": "AI summary and feedback are in separate tabs"
+      "separateModeDescription": "AI summary and feedback are in separate tabs",
+      "combinedVertical": "Combined Mode (Vertical Layout)",
+      "combinedVerticalDescription": "AI summary on top, feedback input below, both on the same page",
+      "combinedHorizontal": "Combined Mode (Horizontal Layout)",
+      "combinedHorizontalDescription": "AI summary on left, feedback input on right, expanding summary viewing area"
     },
     "window": {
       "title": "Window Positioning",

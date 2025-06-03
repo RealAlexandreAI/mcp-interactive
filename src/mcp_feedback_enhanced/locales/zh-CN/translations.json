@@ -31,6 +31,11 @@
     "emptyTitle": "反馈内容为空",
     "emptyMessage": "请先输入反馈内容再提交。您可以描述想法、建议或需要修改的地方。"
   },
+  "summary": {
+    "title": "AI 工作摘要",
+    "description": "以下是 AI 刚才为您完成的工作内容，请检视并提供反馈。",
+    "testDescription": "以下是 AI 回复的消息内容，请检视并提供反馈。"
+  },
   "command": {
     "title": "命令执行",
     "description": "您可以执行命令来验证结果或收集更多信息。",
@@ -67,10 +72,12 @@
     },
     "layout": {
       "title": "界面布局",
-      "combinedMode": "合并模式",
-      "combinedModeDescription": "将 AI 摘要和反馈放在同一页面，便于对照阅读",
       "separateMode": "分离模式",
-      "separateModeDescription": "AI 摘要和反馈分别在不同页签"
+      "separateModeDescription": "AI 摘要和反馈分别在不同页签",
+      "combinedVertical": "合并模式（垂直布局）",
+      "combinedVerticalDescription": "AI 摘要在上，反馈输入在下，摘要和反馈在同一页面",
+      "combinedHorizontal": "合并模式（水平布局）",
+      "combinedHorizontalDescription": "AI 摘要在左，反馈输入在右，增大摘要可视区域"
     },
     "window": {
       "title": "窗口定位",

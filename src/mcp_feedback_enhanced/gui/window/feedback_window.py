@@ -35,6 +35,7 @@ class FeedbackWindow(QMainWindow):
         # 初始化組件
         self.config_manager = ConfigManager()
         self.combined_mode = self.config_manager.get_layout_mode()
+        self.layout_orientation = self.config_manager.get_layout_orientation()
         
         # 設置UI
         self._setup_ui()
@@ -150,7 +151,8 @@ class FeedbackWindow(QMainWindow):
             self.tab_widget, 
             self.project_dir, 
             self.summary, 
-            self.combined_mode
+            self.combined_mode,
+            self.layout_orientation
         )
         
         # 創建分頁
@@ -286,18 +288,24 @@ class FeedbackWindow(QMainWindow):
             }
         """)
     
-    def _on_layout_mode_change_requested(self, combined_mode: bool) -> None:
-        """處理佈局模式變更請求"""
+    def _on_layout_change_requested(self, combined_mode: bool, orientation: str) -> None:
+        """處理佈局變更請求（模式和方向同時變更）"""
         try:
             # 保存當前內容
             current_data = self.tab_manager.get_feedback_data()
             
+            # 記住當前分頁索引
+            current_tab_index = self.tab_widget.currentIndex()
+            
             # 保存新設置
             self.combined_mode = combined_mode
+            self.layout_orientation = orientation
             self.config_manager.set_layout_mode(combined_mode)
+            self.config_manager.set_layout_orientation(orientation)
             
             # 重新創建分頁
             self.tab_manager.set_layout_mode(combined_mode)
+            self.tab_manager.set_layout_orientation(orientation)
             self.tab_manager.create_tabs()
             
             # 恢復內容
@@ -313,10 +321,26 @@ class FeedbackWindow(QMainWindow):
             # 刷新UI文字
             self._refresh_ui_texts()
             
-            debug_log(f"佈局模式已切換到: {'合併模式' if combined_mode else '分離模式'}")
+            # 恢復到設定頁面（通常是倒數第二個分頁）
+            if self.combined_mode:
+                # 合併模式：回饋、命令、設置、關於
+                settings_tab_index = 2
+            else:
+                # 分離模式：回饋、摘要、命令、設置、關於
+                settings_tab_index = 3
+            
+            # 確保索引在有效範圍內
+            if settings_tab_index < self.tab_widget.count():
+                self.tab_widget.setCurrentIndex(settings_tab_index)
+            
+            mode_text = "合併模式" if combined_mode else "分離模式"
+            orientation_text = "（水平布局）" if orientation == "horizontal" else "（垂直布局）"
+            if combined_mode:
+                mode_text += orientation_text
+            debug_log(f"佈局已切換到: {mode_text}")
             
         except Exception as e:
-            debug_log(f"佈局模式切換失敗: {e}")
+            debug_log(f"佈局變更失敗: {e}")
             QMessageBox.warning(self, t('errors.title'), t('errors.interfaceReloadError', error=str(e)))
     
     def _handle_image_paste_from_textarea(self) -> None:

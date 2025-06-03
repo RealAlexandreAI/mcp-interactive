@@ -88,10 +88,12 @@
     },
     "layout": {
       "title": "界面佈局",
-      "combinedMode": "合併模式",
-      "combinedModeDescription": "將 AI 摘要和回饋放在同一頁面，便於對照閱讀",
-      "separateMode": "分離模式", 
-      "separateModeDescription": "AI 摘要和回饋分別在不同頁籤"
+      "separateMode": "分離模式",
+      "separateModeDescription": "AI 摘要和回饋分別在不同頁籤",
+      "combinedVertical": "合併模式（垂直布局）",
+      "combinedVerticalDescription": "AI 摘要在上，回饋輸入在下，摘要和回饋在同一頁面",
+      "combinedHorizontal": "合併模式（水平布局）",
+      "combinedHorizontalDescription": "AI 摘要在左，回饋輸入在右，增大摘要可視區域"
     },
     "window": {
       "title": "視窗定位",

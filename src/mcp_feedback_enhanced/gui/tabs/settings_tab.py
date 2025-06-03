@@ -20,14 +20,18 @@ from ...i18n import t, get_i18n_manager
 class SettingsTab(QWidget):
     """設置分頁組件"""
     language_changed = Signal()
-    layout_mode_change_requested = Signal(bool)  # 佈局模式變更請求信號
+    layout_change_requested = Signal(bool, str)  # 佈局變更請求信號 (combined_mode, orientation)
     
     def __init__(self, combined_mode: bool, config_manager, parent=None):
         super().__init__(parent)
         self.combined_mode = combined_mode
         self.config_manager = config_manager
+        self.layout_orientation = self.config_manager.get_layout_orientation()
         self.i18n = get_i18n_manager()
         self._setup_ui()
+        
+        # 在UI設置完成後，確保正確設置初始狀態
+        self._set_initial_layout_state()
     
     def _setup_ui(self) -> None:
         """設置用戶介面"""
@@ -107,7 +111,7 @@ class SettingsTab(QWidget):
         layout_layout.setSpacing(12)
         layout_layout.setContentsMargins(16, 16, 16, 16)
         
-        # 佈局模式選擇
+        # 佈局模式選擇 - 使用三個獨立的單選按鈕
         self.layout_button_group = QButtonGroup()
         
         # 分離模式
@@ -118,24 +122,36 @@ class SettingsTab(QWidget):
         layout_layout.addWidget(self.separate_mode_radio)
         
         self.separate_desc_label = QLabel(t('settings.layout.separateModeDescription'))
-        self.separate_desc_label.setStyleSheet("color: #9e9e9e; font-size: 12px; margin-left: 20px; margin-bottom: 8px;")
+        self.separate_desc_label.setStyleSheet("color: #9e9e9e; font-size: 12px; margin-left: 20px; margin-bottom: 12px;")
         self.separate_desc_label.setWordWrap(True)
         layout_layout.addWidget(self.separate_desc_label)
         
-        # 合併模式
-        self.combined_mode_radio = QRadioButton(t('settings.layout.combinedMode'))
-        self.combined_mode_radio.setChecked(self.combined_mode)
-        self.combined_mode_radio.setStyleSheet("font-size: 14px; font-weight: bold; color: #e0e0e0;")
-        self.layout_button_group.addButton(self.combined_mode_radio, 1)
-        layout_layout.addWidget(self.combined_mode_radio)
+        # 合併模式（垂直布局）
+        self.combined_vertical_radio = QRadioButton(t('settings.layout.combinedVertical'))
+        self.combined_vertical_radio.setChecked(self.combined_mode and self.layout_orientation == 'vertical')
+        self.combined_vertical_radio.setStyleSheet("font-size: 14px; font-weight: bold; color: #e0e0e0;")
+        self.layout_button_group.addButton(self.combined_vertical_radio, 1)
+        layout_layout.addWidget(self.combined_vertical_radio)
         
-        self.combined_desc_label = QLabel(t('settings.layout.combinedModeDescription'))
-        self.combined_desc_label.setStyleSheet("color: #9e9e9e; font-size: 12px; margin-left: 20px; margin-bottom: 8px;")
-        self.combined_desc_label.setWordWrap(True)
-        layout_layout.addWidget(self.combined_desc_label)
+        self.combined_vertical_desc_label = QLabel(t('settings.layout.combinedVerticalDescription'))
+        self.combined_vertical_desc_label.setStyleSheet("color: #9e9e9e; font-size: 12px; margin-left: 20px; margin-bottom: 12px;")
+        self.combined_vertical_desc_label.setWordWrap(True)
+        layout_layout.addWidget(self.combined_vertical_desc_label)
         
-        # 連接佈局模式變更信號
-        self.layout_button_group.buttonToggled.connect(self._on_layout_mode_changed)
+        # 合併模式（水平布局）
+        self.combined_horizontal_radio = QRadioButton(t('settings.layout.combinedHorizontal'))
+        self.combined_horizontal_radio.setChecked(self.combined_mode and self.layout_orientation == 'horizontal')
+        self.combined_horizontal_radio.setStyleSheet("font-size: 14px; font-weight: bold; color: #e0e0e0;")
+        self.layout_button_group.addButton(self.combined_horizontal_radio, 2)
+        layout_layout.addWidget(self.combined_horizontal_radio)
+        
+        self.combined_horizontal_desc_label = QLabel(t('settings.layout.combinedHorizontalDescription'))
+        self.combined_horizontal_desc_label.setStyleSheet("color: #9e9e9e; font-size: 12px; margin-left: 20px; margin-bottom: 12px;")
+        self.combined_horizontal_desc_label.setWordWrap(True)
+        layout_layout.addWidget(self.combined_horizontal_desc_label)
+        
+        # 連接佈局變更信號
+        self.layout_button_group.buttonToggled.connect(self._on_layout_changed)
         
         layout.addWidget(self.layout_group)
         
@@ -194,15 +210,16 @@ class SettingsTab(QWidget):
             # 發送語言變更信號
             self.language_changed.emit()
     
-    def _on_layout_mode_changed(self, button, checked: bool) -> None:
-        """處理佈局模式變更"""
+    def _on_layout_changed(self, button, checked: bool) -> None:
+        """處理佈局變更"""
         if not checked:  # 只處理選中的按鈕
             return
             
-        # 確定新的模式
-        new_combined_mode = button == self.combined_mode_radio
+        # 確定新的模式和方向
+        new_combined_mode = button == self.combined_vertical_radio or button == self.combined_horizontal_radio
+        new_orientation = 'vertical' if button == self.combined_vertical_radio else 'horizontal'
         
-        if new_combined_mode != self.combined_mode:
+        if new_combined_mode != self.combined_mode or new_orientation != self.layout_orientation:
             # 提示用戶需要重新創建界面
             reply = QMessageBox.question(
                 self, 
@@ -213,13 +230,17 @@ class SettingsTab(QWidget):
             )
             
             if reply == QMessageBox.Yes:
-                # 用戶確認變更，發送佈局模式變更請求
+                # 用戶確認變更，發送佈局變更請求
                 self.combined_mode = new_combined_mode
-                self.layout_mode_change_requested.emit(self.combined_mode)
+                self.layout_orientation = new_orientation
+                self.layout_change_requested.emit(self.combined_mode, self.layout_orientation)
             else:
                 # 用戶選擇不重新載入，恢復原來的選項
                 if self.combined_mode:
-                    self.combined_mode_radio.setChecked(True)
+                    if self.layout_orientation == 'vertical':
+                        self.combined_vertical_radio.setChecked(True)
+                    else:
+                        self.combined_horizontal_radio.setChecked(True)
                 else:
                     self.separate_mode_radio.setChecked(True)
     
@@ -241,11 +262,13 @@ class SettingsTab(QWidget):
         
         # 更新佈局設置文字
         self.separate_mode_radio.setText(t('settings.layout.separateMode'))
-        self.combined_mode_radio.setText(t('settings.layout.combinedMode'))
+        self.combined_vertical_radio.setText(t('settings.layout.combinedVertical'))
+        self.combined_horizontal_radio.setText(t('settings.layout.combinedHorizontal'))
         
         # 更新佈局描述文字
         self.separate_desc_label.setText(t('settings.layout.separateModeDescription'))
-        self.combined_desc_label.setText(t('settings.layout.combinedModeDescription'))
+        self.combined_vertical_desc_label.setText(t('settings.layout.combinedVerticalDescription'))
+        self.combined_horizontal_desc_label.setText(t('settings.layout.combinedHorizontalDescription'))
         
         # 更新視窗設置文字
         self.always_center_checkbox.setText(t('settings.window.alwaysCenter'))
@@ -260,7 +283,60 @@ class SettingsTab(QWidget):
     def set_layout_mode(self, combined_mode: bool) -> None:
         """設置佈局模式"""
         self.combined_mode = combined_mode
+        # 暫時斷開信號連接，避免觸發變更事件
+        try:
+            self.layout_button_group.buttonToggled.disconnect()
+        except RuntimeError:
+            pass
+        
+        # 根據當前模式和方向設置正確的選項
         if combined_mode:
-            self.combined_mode_radio.setChecked(True)
+            if self.layout_orientation == 'vertical':
+                self.combined_vertical_radio.setChecked(True)
+            else:  # horizontal
+                self.combined_horizontal_radio.setChecked(True)
         else:
-            self.separate_mode_radio.setChecked(True) 
+            self.separate_mode_radio.setChecked(True)
+        
+        # 重新連接信號
+        self.layout_button_group.buttonToggled.connect(self._on_layout_changed)
+    
+    def set_layout_orientation(self, orientation: str) -> None:
+        """設置佈局方向"""
+        self.layout_orientation = orientation
+        
+        # 暫時斷開信號連接，避免觸發變更事件
+        try:
+            self.layout_button_group.buttonToggled.disconnect()
+        except RuntimeError:
+            pass
+        
+        # 如果是合併模式，根據方向設置正確的選項
+        if self.combined_mode:
+            if orientation == 'vertical':
+                self.combined_vertical_radio.setChecked(True)
+            else:  # horizontal
+                self.combined_horizontal_radio.setChecked(True)
+        
+        # 重新連接信號
+        self.layout_button_group.buttonToggled.connect(self._on_layout_changed)
+    
+    def _set_initial_layout_state(self) -> None:
+        """設置初始佈局狀態"""
+        # 暫時斷開信號連接，避免觸發變更事件
+        try:
+            self.layout_button_group.buttonToggled.disconnect()
+        except RuntimeError:
+            pass
+        
+        # 根據當前配置設置正確的選項
+        if self.combined_mode:
+            if self.layout_orientation == 'vertical':
+                self.combined_vertical_radio.setChecked(True)
+            else:  # horizontal
+                self.combined_horizontal_radio.setChecked(True)
+        else:
+            self.separate_mode_radio.setChecked(True)
+        
+        # 重新連接信號
+        self.layout_button_group.buttonToggled.connect(self._on_layout_changed) 

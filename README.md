@@ -170,6 +170,12 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto co
 
 ## 🆕 Version Highlights
 
+### v2.2.1 (Window Optimization & Unified Settings Interface)
+- 🖥️ **Window Size Constraint Removal**: Removed GUI main window minimum size limit from 1000×800 to 400×300, allowing users to freely adjust window size for different use cases (fixes [Issue #10](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/10) part one).
+- 💾 **Real-time Window State Saving**: Implemented real-time saving mechanism for window size and position changes, with debounce delay to avoid excessive I/O operations.
+- ⚙️ **Unified Settings Interface Optimization**: Improved GUI settings page configuration saving logic to avoid setting conflicts, ensuring correct window positioning and size settings.
+- 🎯 **Smart Window Size Saving**: In "Always center display" mode, correctly saves window size (but not position); in "Smart positioning" mode, saves complete window state.
+
 ### v2.2.0 (Layout & Settings UI Enhancements)
 - ✨ **Enhanced Interface Layout**: Added a left-right layout (horizontal split) option for summary and feedback in the combined mode for both GUI and Web UI, offering more flexible viewing (fulfills [Issue #1](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/1)).
 - 🎨 **Improved Settings Interface**: Optimized the settings page for both GUI and Web UI, enhancing layout clarity and user experience.

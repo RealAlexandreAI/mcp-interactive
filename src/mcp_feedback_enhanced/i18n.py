@@ -35,7 +35,7 @@ class I18nManager:
         self._supported_languages = ['zh-TW', 'en', 'zh-CN']
         self._fallback_language = 'en'
         self._config_file = self._get_config_file_path()
-        self._locales_dir = Path(__file__).parent / "locales"
+        self._locales_dir = Path(__file__).parent / "gui" / "locales"
         
         # 載入翻譯
         self._load_all_translations()

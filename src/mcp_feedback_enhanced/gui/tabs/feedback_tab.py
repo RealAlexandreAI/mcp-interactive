@@ -17,7 +17,6 @@ from ..window.config_manager import ConfigManager
 
 class FeedbackTab(QWidget):
     """回饋分頁組件"""
-    image_paste_requested = Signal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -80,6 +79,17 @@ class FeedbackTab(QWidget):
             }
         """)
         
+        # 創建圖片上傳區域（需要先創建以便連接信號）
+        image_upload_widget = QWidget()
+        image_upload_widget.setMinimumHeight(200)  # 進一步增加最小高度
+        image_upload_widget.setMaximumHeight(320)  # 增加最大高度
+        image_upload_layout = QVBoxLayout(image_upload_widget)
+        image_upload_layout.setSpacing(8)
+        image_upload_layout.setContentsMargins(0, 8, 0, 0)  # 與回饋輸入區域保持一致的邊距
+        
+        self.image_upload = ImageUploadWidget(config_manager=self.config_manager)
+        image_upload_layout.addWidget(self.image_upload, 1)
+        
         # 回饋輸入區域
         self.feedback_input = SmartTextEdit()
         placeholder_text = t('feedback.placeholder').replace("Ctrl+Enter", "Ctrl+Enter/Cmd+Enter").replace("Ctrl+V", "Ctrl+V/Cmd+V")
@@ -96,18 +106,8 @@ class FeedbackTab(QWidget):
                 line-height: 1.4;
             }
         """)
-        self.feedback_input.image_paste_requested.connect(self.image_paste_requested)
-        
-        # 圖片上傳區域（確保固定高度和滾動支持）
-        image_upload_widget = QWidget()
-        image_upload_widget.setMinimumHeight(200)  # 進一步增加最小高度
-        image_upload_widget.setMaximumHeight(320)  # 增加最大高度
-        image_upload_layout = QVBoxLayout(image_upload_widget)
-        image_upload_layout.setSpacing(8)
-        image_upload_layout.setContentsMargins(0, 8, 0, 0)  # 與回饋輸入區域保持一致的邊距
-        
-        self.image_upload = ImageUploadWidget(config_manager=self.config_manager)
-        image_upload_layout.addWidget(self.image_upload, 1)
+        # 直接連接文字輸入框的圖片貼上信號到圖片上傳組件
+        self.feedback_input.image_paste_requested.connect(self.image_upload.paste_from_clipboard)
         
         # 添加到分割器
         feedback_splitter.addWidget(self.feedback_input)
@@ -161,10 +161,6 @@ class FeedbackTab(QWidget):
         
         if hasattr(self, 'image_upload'):
             self.image_upload.update_texts()
-    
-    def handle_image_paste_from_textarea(self) -> None:
-        """處理從文字框智能貼上圖片的功能"""
-        self.image_upload.paste_from_clipboard()
 
     def _save_feedback_splitter_position(self, splitter: QSplitter) -> None:
         """保存分割器的位置"""

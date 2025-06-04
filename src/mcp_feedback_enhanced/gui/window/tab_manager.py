@@ -330,10 +330,7 @@ class TabManager:
             if hasattr(parent, '_on_timeout_settings_changed'):
                 self.settings_tab.timeout_settings_changed.connect(parent._on_timeout_settings_changed)
         
-        # 連接回饋分頁的圖片貼上信號
-        if self.feedback_tab:
-            if hasattr(parent, '_handle_image_paste_from_textarea'):
-                self.feedback_tab.image_paste_requested.connect(parent._handle_image_paste_from_textarea)
+        # 圖片貼上信號已在 FeedbackTab 內部直接處理，不需要外部連接
     
     def cleanup(self) -> None:
         """清理資源"""

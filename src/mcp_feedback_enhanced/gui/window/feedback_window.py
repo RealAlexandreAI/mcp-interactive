@@ -434,10 +434,7 @@ class FeedbackWindow(QMainWindow):
             debug_log(f"佈局變更失敗: {e}")
             QMessageBox.warning(self, t('errors.title'), t('errors.interfaceReloadError', error=str(e)))
     
-    def _handle_image_paste_from_textarea(self) -> None:
-        """處理從文字框智能貼上圖片的功能"""
-        if self.tab_manager.feedback_tab:
-            self.tab_manager.feedback_tab.handle_image_paste_from_textarea()
+
     
     def _on_reset_settings_requested(self) -> None:
         """處理重置設定請求"""

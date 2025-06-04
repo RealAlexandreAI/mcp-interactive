@@ -36,6 +36,7 @@ class ImageUploadWidget(QWidget):
         super().__init__(parent)
         self.images: Dict[str, Dict[str, str]] = {}
         self.config_manager = config_manager
+        self._last_paste_time = 0  # 添加最後貼上時間記錄
         self._setup_ui()
         self.setAcceptDrops(True)
         # 啟動時清理舊的臨時文件
@@ -335,6 +336,14 @@ class ImageUploadWidget(QWidget):
             
     def paste_from_clipboard(self) -> None:
         """從剪貼板粘貼圖片"""
+        # 防重複保護：檢查是否在短時間內重複調用
+        current_time = time.time() * 1000  # 轉換為毫秒
+        if current_time - self._last_paste_time < 100:  # 100毫秒內的重複調用忽略
+            debug_log(f"忽略重複的剪貼板粘貼請求（間隔: {current_time - self._last_paste_time:.1f}ms）")
+            return
+        
+        self._last_paste_time = current_time
+        
         clipboard = QApplication.clipboard()
         mimeData = clipboard.mimeData()
         

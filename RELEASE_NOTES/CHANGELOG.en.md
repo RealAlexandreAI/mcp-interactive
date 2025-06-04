@@ -3,36 +3,36 @@
 This document records all version updates for **MCP Feedback Enhanced**.
 
 ---
-# Release v2.2.2 - Timeout Auto-cleanup Fix
 
-## 🌟 Highlights
-This version fixes a critical resource management issue where GUI/Web UI interfaces were not properly closed when MCP sessions ended due to timeout, causing the interfaces to remain open and unresponsive.
+## [v2.2.3] - Timeout Control & Image Settings Enhancement (2025-01-XX)
 
-## 🐛 Bug Fixes
-- 🔄 **Timeout Auto-cleanup**: Fixed GUI/Web UI not automatically closing after MCP session timeout (default 600 seconds)
-- 🛡️ **Resource Management Optimization**: Improved timeout handling mechanism to ensure proper cleanup and closure of all UI resources on timeout
-- ⚡ **Enhanced Timeout Detection**: Strengthened timeout detection logic to correctly handle timeout events in various scenarios
-- 🔧 **Interface Response Improvement**: Enhanced Web UI frontend handling of session timeout events
+### 🌟 Highlights
+This version introduces user-controllable timeout settings and flexible image upload configuration options, while improving UV Cache management tools to enhance the overall user experience.
 
-## 🚀 Technical Improvements
-- 📦 **Web Session Management**: Refactored WebFeedbackSession timeout handling logic
-- 🎯 **QTimer Integration**: Introduced precise QTimer timeout control mechanism in GUI
-- 🌐 **Frontend Communication Optimization**: Improved timeout message communication between Web UI frontend and backend
-- 🧹 **Resource Cleanup Mechanism**: Added _cleanup_resources_on_timeout method to ensure thorough cleanup
+### ✨ New Features
+- ⏰ **User Timeout Control**: Added customizable timeout settings with flexible range from 30 seconds to 2 hours
+- ⏱️ **Countdown Timer**: Real-time countdown timer display at the top of the interface for visual time reminders
+- 🖼️ **Image Size Limits**: Added image upload size limit settings (unlimited/1MB/3MB/5MB)
+- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models like Gemini
+- 🧹 **UV Cache Management Tool**: Added `cleanup_cache.py` script to help manage and clean UV cache space
 
-## 📦 Installation & Update
-```bash
-# Quick test latest version
-uvx mcp-feedback-enhanced@latest test --gui
+### 🚀 Improvements
+- 📚 **Documentation Structure Optimization**: Reorganized documentation directory structure, moved images to `docs/{language}/images/` paths
+- 📖 **Cache Management Guide**: Added detailed UV Cache management guide with automated cleanup solutions
+- 🎯 **Smart Compatibility Hints**: Automatically display Base64 compatibility mode suggestions when image upload fails
+- 🔄 **Settings Sync Mechanism**: Improved image settings synchronization between different interface modes
 
-# Update to specific version
-uvx mcp-feedback-enhanced@v2.2.2 test
-```
+### 🐛 Bug Fixes
+- 🛡️ **Timeout Handling Optimization**: Improved coordination between user-defined timeout and MCP system timeout
+- 🖥️ **Interface Auto-close**: Fixed interface auto-close and resource cleanup logic after timeout
+- 📱 **Responsive Layout**: Optimized timeout control component display on small screen devices
 
-## 🔗 Related Links
-- Full Documentation: [README.md](../../README.md)
-- Issue Reporting: [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
-- Fixed Issue: #5 (GUI/Web UI timeout cleanup) 
+### 🔧 Technical Improvements
+- 🎛️ **Timeout Control Architecture**: Implemented separated design for frontend countdown timer and backend timeout handling
+- 📊 **Image Processing Optimization**: Improved image upload size checking and format validation mechanisms
+- 🗂️ **Settings Persistence**: Enhanced settings saving mechanism to ensure correct saving and loading of user preferences
+- 🧰 **Tool Script Enhancement**: Added cross-platform cache cleanup tool with support for force cleanup and preview modes
+
 ---
 
 ## [v2.2.2] - Timeout Auto-cleanup Fix (2024-12-XX)

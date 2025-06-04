@@ -171,5 +171,24 @@
         "contactDescription": "For technical support, issue reports, or feature suggestions, please contact us through Discord community or GitHub Issues.",
         "thanks": "Thanks & Contributions",
         "thanksText": "Thanks to the original author Fábio Ferreira (@fabiomlferreira) for creating the original interactive-feedback-mcp project.\n\nThis enhanced version is developed and maintained by Minidoracat, greatly expanding the project functionality with GUI interface, image support, multi-language capabilities, and many other improvements.\n\nSpecial thanks to sanshao85's mcp-feedback-collector project for UI design inspiration.\n\nOpen source collaboration makes technology better!"
+    },
+    "images": {
+        "settings": {
+            "title": "Image Settings",
+            "sizeLimit": "Image Size Limit",
+            "sizeLimitOptions": {
+                "unlimited": "Unlimited",
+                "1mb": "1MB",
+                "3mb": "3MB",
+                "5mb": "5MB"
+            },
+            "base64Detail": "Base64 Compatibility Mode",
+            "base64DetailHelp": "When enabled, includes full Base64 image data in text, improving compatibility with certain AI models",
+            "base64Warning": "⚠️ Increases transmission size",
+            "compatibilityHint": "💡 Images not recognized correctly?",
+            "enableBase64Hint": "Try enabling Base64 compatibility mode"
+        },
+        "sizeLimitExceeded": "Image {filename} size is {size}, exceeds {limit} limit!",
+        "sizeLimitExceededAdvice": "Consider compressing the image with editing software before uploading, or adjust the image size limit settings."
     }
 }

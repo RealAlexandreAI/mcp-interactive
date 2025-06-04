@@ -146,19 +146,38 @@ class ConfigManager:
         self.update_partial_config({'always_center_window': always_center})
         debug_log(f"視窗定位設置: {'總是中心顯示' if always_center else '智能定位'}")
     
+    def get_image_size_limit(self) -> int:
+        """獲取圖片大小限制（bytes），0 表示無限制"""
+        return self.get('image_size_limit', 0)
+
+    def set_image_size_limit(self, size_bytes: int) -> None:
+        """設置圖片大小限制（bytes），0 表示無限制"""
+        self.update_partial_config({'image_size_limit': size_bytes})
+        size_mb = size_bytes / (1024 * 1024) if size_bytes > 0 else 0
+        debug_log(f"圖片大小限制設置: {'無限制' if size_bytes == 0 else f'{size_mb:.1f}MB'}")
+
+    def get_enable_base64_detail(self) -> bool:
+        """獲取是否啟用 Base64 詳細模式"""
+        return self.get('enable_base64_detail', False)
+
+    def set_enable_base64_detail(self, enabled: bool) -> None:
+        """設置是否啟用 Base64 詳細模式"""
+        self.update_partial_config({'enable_base64_detail': enabled})
+        debug_log(f"Base64 詳細模式設置: {'啟用' if enabled else '停用'}")
+
     def reset_settings(self) -> None:
         """重置所有設定到預設值"""
         try:
             # 清空配置緩存
             self._config_cache = {}
-            
+
             # 刪除配置文件
             if self._config_file.exists():
                 self._config_file.unlink()
                 debug_log("配置文件已刪除")
-            
+
             debug_log("所有設定已重置到預設值")
-            
+
         except Exception as e:
             debug_log(f"重置設定失敗: {e}")
-            raise 
+            raise

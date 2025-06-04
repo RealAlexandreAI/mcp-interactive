@@ -106,7 +106,7 @@ class FeedbackTab(QWidget):
         image_upload_layout.setSpacing(8)
         image_upload_layout.setContentsMargins(0, 8, 0, 0)  # 與回饋輸入區域保持一致的邊距
         
-        self.image_upload = ImageUploadWidget()
+        self.image_upload = ImageUploadWidget(config_manager=self.config_manager)
         image_upload_layout.addWidget(self.image_upload, 1)
         
         # 添加到分割器

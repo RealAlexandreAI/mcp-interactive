@@ -94,8 +94,8 @@ class ImageUploadWidget(QWidget):
         settings_layout.setContentsMargins(8, 8, 8, 8)
 
         # 圖片大小限制設定
-        size_label = QLabel(t('images.settings.sizeLimit') + ":")
-        size_label.setStyleSheet("color: #cccccc; font-size: 9px;")
+        self.size_label = QLabel(t('images.settings.sizeLimit') + ":")
+        self.size_label.setStyleSheet("color: #cccccc; font-size: 11px;")
 
         self.size_limit_combo = QComboBox()
         self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.unlimited'), 0)
@@ -119,14 +119,14 @@ class ImageUploadWidget(QWidget):
         self.base64_checkbox.setToolTip(t('images.settings.base64DetailHelp'))
 
         # Base64 警告標籤
-        base64_warning = QLabel(t('images.settings.base64Warning'))
-        base64_warning.setStyleSheet("color: #ff9800; font-size: 8px;")
+        self.base64_warning = QLabel(t('images.settings.base64Warning'))
+        self.base64_warning.setStyleSheet("color: #ff9800; font-size: 10px;")
 
         # 添加到佈局
-        settings_layout.addWidget(size_label)
+        settings_layout.addWidget(self.size_label)
         settings_layout.addWidget(self.size_limit_combo)
         settings_layout.addWidget(self.base64_checkbox)
-        settings_layout.addWidget(base64_warning)
+        settings_layout.addWidget(self.base64_warning)
         settings_layout.addStretch()
 
         layout.addWidget(settings_group)
@@ -688,6 +688,13 @@ class ImageUploadWidget(QWidget):
         # 更新標題
         if hasattr(self, 'title'):
             self.title.setText(t('images.title'))
+
+        # 更新設定區域標籤
+        if hasattr(self, 'size_label'):
+            self.size_label.setText(t('images.settings.sizeLimit') + ":")
+        
+        if hasattr(self, 'base64_warning'):
+            self.base64_warning.setText(t('images.settings.base64Warning'))
 
         # 更新設定區域文字
         if hasattr(self, 'size_limit_combo'):

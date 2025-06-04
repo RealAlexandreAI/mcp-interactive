@@ -12,7 +12,7 @@ This version introduces user-controllable timeout settings and flexible image up
 - ⏰ **User Timeout Control**: Added customizable timeout settings with flexible range from 30 seconds to 2 hours
 - ⏱️ **Countdown Timer**: Real-time countdown timer display at the top of the interface for visual time reminders
 - 🖼️ **Image Size Limits**: Added image upload size limit settings (unlimited/1MB/3MB/5MB)
-- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models like Gemini
+- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models 
 - 🧹 **UV Cache Management Tool**: Added `cleanup_cache.py` script to help manage and clean UV cache space
 
 ## 🚀 Improvements
@@ -57,7 +57,7 @@ This version introduces user-controllable timeout settings and flexible image up
 - ⏰ **User Timeout Control**: Added customizable timeout settings with flexible range from 30 seconds to 2 hours
 - ⏱️ **Countdown Timer**: Real-time countdown timer display at the top of the interface for visual time reminders
 - 🖼️ **Image Size Limits**: Added image upload size limit settings (unlimited/1MB/3MB/5MB)
-- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models like Gemini
+- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models 
 - 🧹 **UV Cache Management Tool**: Added `cleanup_cache.py` script to help manage and clean UV cache space
 
 ### 🚀 Improvements

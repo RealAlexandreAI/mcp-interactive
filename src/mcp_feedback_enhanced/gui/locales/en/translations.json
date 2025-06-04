@@ -87,7 +87,7 @@
         "5mb": "5MB"
       },
       "base64Detail": "Base64 Compatibility Mode",
-      "base64DetailHelp": "When enabled, includes complete Base64 image data in text to improve compatibility with AI models like Gemini",
+      "base64DetailHelp": "When enabled, includes complete Base64 image data in text to improve compatibility with AI models ",
       "base64Warning": "⚠️ Increases transmission size",
       "compatibilityHint": "💡 Images not recognized correctly?",
       "enableBase64Hint": "Try enabling Base64 compatibility mode"

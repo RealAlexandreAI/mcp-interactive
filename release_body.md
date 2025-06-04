@@ -10,7 +10,7 @@ This version introduces user-controllable timeout settings and flexible image up
 - ⏰ **User Timeout Control**: Added customizable timeout settings with flexible range from 30 seconds to 2 hours
 - ⏱️ **Countdown Timer**: Real-time countdown timer display at the top of the interface for visual time reminders
 - 🖼️ **Image Size Limits**: Added image upload size limit settings (unlimited/1MB/3MB/5MB)
-- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models like Gemini
+- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models 
 - 🧹 **UV Cache Management Tool**: Added `cleanup_cache.py` script to help manage and clean UV cache space
 
 ## 🚀 Improvements
@@ -56,7 +56,7 @@ uvx mcp-feedback-enhanced@v2.2.3 test
 - ⏰ **用戶超時控制**: 新增可自訂的超時設定功能，支援 30 秒至 2 小時的彈性設定
 - ⏱️ **倒數計時器**: 介面頂部顯示即時倒數計時器，提供視覺化的時間提醒
 - 🖼️ **圖片大小限制**: 新增圖片上傳大小限制設定（無限制/1MB/3MB/5MB）
-- 🔧 **Base64 相容模式**: 新增 Base64 詳細模式，提升與 Gemini 等 AI 模型的圖片識別相容性
+- 🔧 **Base64 相容模式**: 新增 Base64 詳細模式，提升部分 AI 模型的圖片識別相容性
 - 🧹 **UV Cache 管理工具**: 新增 `cleanup_cache.py` 腳本，協助管理和清理 UV cache 空間
 
 ## 🚀 改進功能
@@ -102,7 +102,7 @@ uvx mcp-feedback-enhanced@v2.2.3 test
 - ⏰ **用户超时控制**: 新增可自定义的超时设置功能，支持 30 秒至 2 小时的弹性设置
 - ⏱️ **倒数计时器**: 界面顶部显示实时倒数计时器，提供可视化的时间提醒
 - 🖼️ **图片大小限制**: 新增图片上传大小限制设置（无限制/1MB/3MB/5MB）
-- 🔧 **Base64 兼容模式**: 新增 Base64 详细模式，提升与 Gemini 等 AI 模型的图片识别兼容性
+- 🔧 **Base64 兼容模式**: 新增 Base64 详细模式，提升部分 AI 模型的图片识别兼容性
 - 🧹 **UV Cache 管理工具**: 新增 `cleanup_cache.py` 脚本，协助管理和清理 UV cache 空间
 
 ## 🚀 改进功能

@@ -153,6 +153,22 @@
         "timeoutDescription": "由于长时间无响应，会话已超时。界面将在 3 秒后自动关闭。",
         "closing": "正在关闭..."
     },
+    "timeout": {
+        "enable": "自动关闭",
+        "enableTooltip": "启用后将在指定时间后自动关闭界面",
+        "duration": {
+            "label": "超时时间",
+            "description": "设置自动关闭的时间（30秒 - 2小时）"
+        },
+        "seconds": "秒",
+        "remaining": "剩余时间",
+        "expired": "⏰ 时间已到，界面将自动关闭",
+        "autoCloseMessage": "界面将在 {seconds} 秒后自动关闭",
+        "settings": {
+            "title": "超时设置",
+            "description": "启用后，界面将在指定时间后自动关闭。倒数计时器会显示在顶部区域。"
+        }
+    },
     "dynamic": {
         "aiSummary": "测试 Web UI 功能\n\n🎯 **功能测试项目：**\n- Web UI 服务器启动和运行\n- WebSocket 实时通讯\n- 反馈提交功能\n- 图片上传和预览\n- 命令执行功能\n- 智能 Ctrl+V 图片粘贴\n- 多语言界面功能\n\n📋 **测试步骤：**\n1. 测试图片上传（拖拽、选择文件、剪贴板）\n2. 在文本框内按 Ctrl+V 测试智能粘贴\n3. 尝试切换语言（繁中/简中/英文）\n4. 测试命令执行功能\n5. 提交反馈和图片\n\n请测试这些功能并提供反馈！",
         "terminalWelcome": "欢迎使用交互反馈终端\n========================================\n项目目录: {sessionId}\n输入命令后按 Enter 或点击执行按钮\n支持的命令: ls, dir, pwd, cat, type 等\n\n$ "

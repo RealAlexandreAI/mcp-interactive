@@ -96,6 +96,22 @@
     "sizeLimitExceeded": "圖片 {filename} 大小為 {size}，超過 {limit} 限制！",
     "sizeLimitExceededAdvice": "建議使用圖片編輯軟體壓縮後再上傳，或調整圖片大小限制設定。"
   },
+  "timeout": {
+    "enable": "自動關閉",
+    "enableTooltip": "啟用後將在指定時間後自動關閉介面",
+    "duration": {
+      "label": "超時時間",
+      "description": "設置自動關閉的時間（30秒 - 2小時）"
+    },
+    "seconds": "秒",
+    "remaining": "剩餘時間",
+    "expired": "時間已到",
+    "autoCloseMessage": "介面將在 {seconds} 秒後自動關閉",
+    "settings": {
+      "title": "超時設置",
+      "description": "啟用後，介面將在指定時間後自動關閉。倒數計時器會顯示在頂部區域。"
+    }
+  },
   "settings": {
     "title": "應用設置",
     "language": {

@@ -152,6 +152,10 @@ class ConfigManager:
 
     def set_image_size_limit(self, size_bytes: int) -> None:
         """設置圖片大小限制（bytes），0 表示無限制"""
+        # 處理 None 值
+        if size_bytes is None:
+            size_bytes = 0
+
         self.update_partial_config({'image_size_limit': size_bytes})
         size_mb = size_bytes / (1024 * 1024) if size_bytes > 0 else 0
         debug_log(f"圖片大小限制設置: {'無限制' if size_bytes == 0 else f'{size_mb:.1f}MB'}")
@@ -164,6 +168,36 @@ class ConfigManager:
         """設置是否啟用 Base64 詳細模式"""
         self.update_partial_config({'enable_base64_detail': enabled})
         debug_log(f"Base64 詳細模式設置: {'啟用' if enabled else '停用'}")
+
+    def get_timeout_enabled(self) -> bool:
+        """獲取是否啟用超時自動關閉"""
+        return self.get('timeout_enabled', False)
+
+    def set_timeout_enabled(self, enabled: bool) -> None:
+        """設置是否啟用超時自動關閉"""
+        self.update_partial_config({'timeout_enabled': enabled})
+        debug_log(f"超時自動關閉設置: {'啟用' if enabled else '停用'}")
+
+    def get_timeout_duration(self) -> int:
+        """獲取超時時間（秒）"""
+        return self.get('timeout_duration', 600)  # 預設10分鐘
+
+    def set_timeout_duration(self, seconds: int) -> None:
+        """設置超時時間（秒）"""
+        self.update_partial_config({'timeout_duration': seconds})
+        debug_log(f"超時時間設置: {seconds} 秒")
+
+    def get_timeout_settings(self) -> tuple[bool, int]:
+        """獲取超時設置（啟用狀態, 超時時間）"""
+        return self.get_timeout_enabled(), self.get_timeout_duration()
+
+    def set_timeout_settings(self, enabled: bool, seconds: int) -> None:
+        """設置超時設置"""
+        self.update_partial_config({
+            'timeout_enabled': enabled,
+            'timeout_duration': seconds
+        })
+        debug_log(f"超時設置: {'啟用' if enabled else '停用'}, {seconds} 秒")
 
     def reset_settings(self) -> None:
         """重置所有設定到預設值"""

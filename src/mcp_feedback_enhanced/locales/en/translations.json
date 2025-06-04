@@ -130,6 +130,22 @@
       "errorMessage": "Error occurred while resetting settings: {error}"
     }
   },
+  "timeout": {
+    "enable": "Auto Close",
+    "enableTooltip": "When enabled, the interface will automatically close after the specified time",
+    "duration": {
+      "label": "Timeout Duration",
+      "description": "Set the auto-close time (30 seconds - 2 hours)"
+    },
+    "seconds": "seconds",
+    "remaining": "Time Remaining",
+    "expired": "Time Expired",
+    "autoCloseMessage": "Interface will automatically close in {seconds} seconds",
+    "settings": {
+      "title": "Timeout Settings",
+      "description": "When enabled, the interface will automatically close after the specified time. The countdown timer will be displayed in the header area."
+    }
+  },
   "buttons": {
     "submit": "Submit Feedback",
     "cancel": "Cancel",

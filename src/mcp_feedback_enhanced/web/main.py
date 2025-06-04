@@ -218,6 +218,10 @@ async def launch_web_feedback_ui(project_directory: str, summary: str, timeout: 
     finally:
         # 清理會話（無論成功還是失敗）
         manager.remove_session(session_id)
+        # 如果沒有其他活躍會話，停止服務器
+        if len(manager.sessions) == 0:
+            debug_log("沒有活躍會話，停止 Web UI 服務器")
+            stop_web_ui()
 
 
 def stop_web_ui():
@@ -236,21 +240,22 @@ if __name__ == "__main__":
             project_dir = os.getcwd()
             summary = "這是一個測試摘要，用於驗證 Web UI 功能。"
             
-            print(f"啟動 Web UI 測試...")
-            print(f"專案目錄: {project_dir}")
-            print("等待用戶回饋...")
-            
+            from ..debug import debug_log
+            debug_log(f"啟動 Web UI 測試...")
+            debug_log(f"專案目錄: {project_dir}")
+            debug_log("等待用戶回饋...")
+
             result = await launch_web_feedback_ui(project_dir, summary)
-            
-            print("收到回饋結果:")
-            print(f"命令日誌: {result.get('logs', '')}")
-            print(f"互動回饋: {result.get('interactive_feedback', '')}")
-            print(f"圖片數量: {len(result.get('images', []))}")
-            
+
+            debug_log("收到回饋結果:")
+            debug_log(f"命令日誌: {result.get('logs', '')}")
+            debug_log(f"互動回饋: {result.get('interactive_feedback', '')}")
+            debug_log(f"圖片數量: {len(result.get('images', []))}")
+
         except KeyboardInterrupt:
-            print("\n用戶取消操作")
+            debug_log("\n用戶取消操作")
         except Exception as e:
-            print(f"錯誤: {e}")
+            debug_log(f"錯誤: {e}")
         finally:
             stop_web_ui()
 

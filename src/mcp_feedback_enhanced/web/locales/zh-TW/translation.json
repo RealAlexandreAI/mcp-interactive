@@ -153,6 +153,22 @@
         "timeoutDescription": "由於長時間無回應，會話已超時。介面將在 3 秒後自動關閉。",
         "closing": "正在關閉..."
     },
+    "timeout": {
+        "enable": "自動關閉",
+        "enableTooltip": "啟用後將在指定時間後自動關閉介面",
+        "duration": {
+            "label": "超時時間",
+            "description": "設置自動關閉的時間（30秒 - 2小時）"
+        },
+        "seconds": "秒",
+        "remaining": "剩餘時間",
+        "expired": "⏰ 時間已到，介面將自動關閉",
+        "autoCloseMessage": "介面將在 {seconds} 秒後自動關閉",
+        "settings": {
+            "title": "超時設置",
+            "description": "啟用後，介面將在指定時間後自動關閉。倒數計時器會顯示在頂部區域。"
+        }
+    },
     "dynamic": {
         "aiSummary": "測試 Web UI 功能\n\n🎯 **功能測試項目：**\n- Web UI 服務器啟動和運行\n- WebSocket 即時通訊\n- 回饋提交功能\n- 圖片上傳和預覽\n- 命令執行功能\n- 智能 Ctrl+V 圖片貼上\n- 多語言介面功能\n\n📋 **測試步驟：**\n1. 測試圖片上傳（拖拽、選擇檔案、剪貼簿）\n2. 在文字框內按 Ctrl+V 測試智能貼上\n3. 嘗試切換語言（繁中/簡中/英文）\n4. 測試命令執行功能\n5. 提交回饋和圖片\n\n請測試這些功能並提供回饋！",
         "terminalWelcome": "歡迎使用互動回饋終端\n========================================\n專案目錄: {sessionId}\n輸入命令後按 Enter 或點擊執行按鈕\n支援的命令: ls, dir, pwd, cat, type 等\n\n$ "

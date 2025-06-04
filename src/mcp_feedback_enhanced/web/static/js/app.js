@@ -95,6 +95,13 @@ class FeedbackApp {
         // 圖片設定
         this.imageSizeLimit = 0; // 0 表示無限制
         this.enableBase64Detail = false;
+
+        // 超時設定
+        this.timeoutEnabled = false;
+        this.timeoutDuration = 600; // 預設 10 分鐘
+        this.timeoutTimer = null;
+        this.countdownTimer = null;
+        this.remainingSeconds = 0;
         
         // 立即檢查 DOM 狀態並初始化
         if (document.readyState === 'loading') {
@@ -133,13 +140,19 @@ class FeedbackApp {
         
         // 載入設定（使用 await）
         await this.loadSettings();
-        
+
         // 初始化命令終端
         this.initCommandTerminal();
-        
+
         // 確保合併模式狀態正確
         this.applyCombinedModeState();
-        
+
+        // 初始化超時控制
+        this.setupTimeoutControl();
+
+        // 如果啟用了超時，自動開始倒數計時（在設置載入後）
+        this.startTimeoutIfEnabled();
+
         console.log('FeedbackApp 初始化完成');
     }
 
@@ -1122,6 +1135,22 @@ class FeedbackApp {
                 this.enableBase64Detail = false; // 預設關閉
             }
 
+            // 載入超時設定
+            if (settings.timeoutEnabled !== undefined) {
+                this.timeoutEnabled = settings.timeoutEnabled;
+            } else {
+                this.timeoutEnabled = false; // 預設關閉
+            }
+
+            if (settings.timeoutDuration !== undefined) {
+                this.timeoutDuration = settings.timeoutDuration;
+            } else {
+                this.timeoutDuration = 600; // 預設 10 分鐘
+            }
+
+            // 更新超時 UI
+            this.updateTimeoutUI();
+
             // 同步圖片設定到 UI
             this.syncImageSettings();
 
@@ -1213,6 +1242,8 @@ $ `;
             this.autoClose = true;
             this.imageSizeLimit = 0;
             this.enableBase64Detail = false;
+            this.timeoutEnabled = false;
+            this.timeoutDuration = 600;
 
             // 更新佈局模式單選按鈕狀態
             const layoutRadios = document.querySelectorAll('input[name="layoutMode"]');
@@ -1228,6 +1259,10 @@ $ `;
 
             // 同步圖片設定到 UI
             this.syncImageSettings();
+
+            // 更新超時 UI
+            this.updateTimeoutUI();
+            this.stopTimeout();
 
             // 確保語言選擇器與當前語言同步
             this.syncLanguageSelector();
@@ -1307,6 +1342,210 @@ $ `;
         }, 3000);
     }
 
+    setupTimeoutControl() {
+        // 設置超時開關監聽器
+        const timeoutToggle = document.getElementById('timeoutToggle');
+        if (timeoutToggle) {
+            timeoutToggle.addEventListener('click', () => {
+                this.toggleTimeout();
+            });
+        }
+
+        // 設置超時時間輸入監聽器
+        const timeoutDuration = document.getElementById('timeoutDuration');
+        if (timeoutDuration) {
+            timeoutDuration.addEventListener('change', (e) => {
+                this.setTimeoutDuration(parseInt(e.target.value));
+            });
+        }
+
+        // 更新界面狀態
+        this.updateTimeoutUI();
+    }
+
+    startTimeoutIfEnabled() {
+        // 如果啟用了超時，自動開始倒數計時
+        if (this.timeoutEnabled) {
+            this.startTimeout();
+            console.log('頁面載入時自動開始倒數計時');
+        }
+    }
+
+    toggleTimeout() {
+        this.timeoutEnabled = !this.timeoutEnabled;
+        this.updateTimeoutUI();
+        this.saveSettings();
+
+        if (this.timeoutEnabled) {
+            this.startTimeout();
+        } else {
+            this.stopTimeout();
+        }
+
+        console.log('超時功能已', this.timeoutEnabled ? '啟用' : '停用');
+    }
+
+    setTimeoutDuration(seconds) {
+        if (seconds >= 30 && seconds <= 7200) {
+            this.timeoutDuration = seconds;
+            this.saveSettings();
+
+            // 如果正在倒數，重新開始
+            if (this.timeoutEnabled && this.timeoutTimer) {
+                this.startTimeout();
+            }
+
+            console.log('超時時間設置為', seconds, '秒');
+        }
+    }
+
+    updateTimeoutUI() {
+        const timeoutToggle = document.getElementById('timeoutToggle');
+        const timeoutDuration = document.getElementById('timeoutDuration');
+        const countdownDisplay = document.getElementById('countdownDisplay');
+
+        if (timeoutToggle) {
+            timeoutToggle.classList.toggle('active', this.timeoutEnabled);
+        }
+
+        if (timeoutDuration) {
+            timeoutDuration.value = this.timeoutDuration;
+        }
+
+        if (countdownDisplay) {
+            countdownDisplay.style.display = this.timeoutEnabled ? 'flex' : 'none';
+        }
+    }
+
+    startTimeout() {
+        this.stopTimeout(); // 先停止現有的計時器
+
+        this.remainingSeconds = this.timeoutDuration;
+
+        // 開始主要的超時計時器
+        this.timeoutTimer = setTimeout(() => {
+            this.handleTimeout();
+        }, this.timeoutDuration * 1000);
+
+        // 開始倒數顯示計時器
+        this.countdownTimer = setInterval(() => {
+            this.updateCountdownDisplay();
+        }, 1000);
+
+        this.updateCountdownDisplay();
+        console.log('開始倒數計時：', this.timeoutDuration, '秒');
+    }
+
+    stopTimeout() {
+        if (this.timeoutTimer) {
+            clearTimeout(this.timeoutTimer);
+            this.timeoutTimer = null;
+        }
+
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = null;
+        }
+
+        const countdownTimer = document.getElementById('countdownTimer');
+        if (countdownTimer) {
+            countdownTimer.textContent = '--:--';
+            countdownTimer.className = 'countdown-timer';
+        }
+
+        console.log('倒數計時已停止');
+    }
+
+    updateCountdownDisplay() {
+        this.remainingSeconds--;
+
+        const countdownTimer = document.getElementById('countdownTimer');
+        if (countdownTimer) {
+            if (this.remainingSeconds <= 0) {
+                countdownTimer.textContent = '00:00';
+                countdownTimer.className = 'countdown-timer danger';
+            } else {
+                const minutes = Math.floor(this.remainingSeconds / 60);
+                const seconds = this.remainingSeconds % 60;
+                const timeText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                countdownTimer.textContent = timeText;
+
+                // 根據剩餘時間調整樣式
+                if (this.remainingSeconds <= 60) {
+                    countdownTimer.className = 'countdown-timer danger';
+                } else if (this.remainingSeconds <= 300) {
+                    countdownTimer.className = 'countdown-timer warning';
+                } else {
+                    countdownTimer.className = 'countdown-timer';
+                }
+            }
+        }
+
+        if (this.remainingSeconds <= 0) {
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = null;
+        }
+    }
+
+    handleTimeout() {
+        console.log('用戶設置的超時時間已到，自動關閉介面');
+
+        // 通知後端用戶超時
+        this.notifyUserTimeout();
+
+        // 顯示超時訊息
+        const timeoutMessage = window.i18nManager ?
+            window.i18nManager.t('timeout.expired', '⏰ 時間已到，介面將自動關閉') :
+            '⏰ 時間已到，介面將自動關閉';
+
+        this.showMessage(timeoutMessage, 'warning');
+
+        // 禁用所有互動元素
+        this.disableAllInputs();
+
+        // 3秒後自動關閉頁面
+        setTimeout(() => {
+            try {
+                window.close();
+            } catch (e) {
+                console.log('無法關閉視窗，重新載入頁面');
+                window.location.reload();
+            }
+        }, 3000);
+    }
+
+    notifyUserTimeout() {
+        // 通過 WebSocket 通知後端用戶設置的超時已到
+        if (this.websocket && this.isConnected) {
+            try {
+                this.websocket.send(JSON.stringify({
+                    type: 'user_timeout',
+                    message: '用戶設置的超時時間已到'
+                }));
+                console.log('已通知後端用戶超時');
+            } catch (error) {
+                console.log('通知後端超時失敗:', error);
+            }
+        }
+    }
+
+    disableAllInputs() {
+        // 禁用所有輸入元素
+        const inputs = document.querySelectorAll('input, textarea, button, select');
+        inputs.forEach(input => {
+            input.disabled = true;
+        });
+
+        // 禁用超時控制
+        const timeoutToggle = document.getElementById('timeoutToggle');
+        if (timeoutToggle) {
+            timeoutToggle.style.pointerEvents = 'none';
+            timeoutToggle.style.opacity = '0.5';
+        }
+
+        console.log('所有輸入元素已禁用');
+    }
+
     async saveSettings() {
         try {
             const settings = {
@@ -1314,6 +1553,8 @@ $ `;
                 autoClose: this.autoClose,
                 imageSizeLimit: this.imageSizeLimit,
                 enableBase64Detail: this.enableBase64Detail,
+                timeoutEnabled: this.timeoutEnabled,
+                timeoutDuration: this.timeoutDuration,
                 language: window.i18nManager?.currentLanguage || 'zh-TW',
                 activeTab: localStorage.getItem('activeTab'),
                 lastSaved: new Date().toISOString()

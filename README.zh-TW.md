@@ -46,16 +46,16 @@
 
 ### Qt GUI 介面（重構版）
 <div align="center">
-  <img src="docs/images/zh-TW/gui1.png" width="400" alt="Qt GUI 主介面" />
-  <img src="docs/images/zh-TW/gui2.png" width="400" alt="Qt GUI 設定介面" />
+  <img src="docs/zh-TW/images/gui1.png" width="400" alt="Qt GUI 主介面" />
+  <img src="docs/zh-TW/images/gui2.png" width="400" alt="Qt GUI 設定介面" />
 </div>
 
 *Qt GUI 介面 - 模組化重構，支援本地環境*
 
 ### Web UI 介面（重構版）
 <div align="center">
-  <img src="docs/images/zh-TW/web1.png" width="400" alt="Web UI 主介面" />
-  <img src="docs/images/zh-TW/web2.png" width="400" alt="Web UI 設定介面" />
+  <img src="docs/zh-TW/images/web1.png" width="400" alt="Web UI 主介面" />
+  <img src="docs/zh-TW/images/web2.png" width="400" alt="Web UI 設定介面" />
 </div>
 
 *Web UI 介面 - 全新架構，適合 SSH Remote 環境*
@@ -192,8 +192,28 @@ A: 已在 v2.1.1 修復。進入「⚙️ 設定」分頁，勾選「總是在�
 **Q: 圖片上傳失敗**  
 A: 檢查檔案大小（≤1MB）和格式（PNG/JPG/GIF/BMP/WebP）。
 
-**Q: Web UI 無法啟動**  
+**Q: Web UI 無法啟動**
 A: 設置 `FORCE_WEB=true` 或檢查防火牆設定。
+
+**Q: UV Cache 佔用過多磁碟空間**
+A: 由於頻繁使用 `uvx` 命令，cache 可能會累積到數十 GB。建議定期清理：
+```bash
+# 查看 cache 大小和詳細資訊
+python scripts/cleanup_cache.py --size
+
+# 預覽清理內容（不實際清理）
+python scripts/cleanup_cache.py --dry-run
+
+# 執行標準清理
+python scripts/cleanup_cache.py --clean
+
+# 強制清理（會嘗試關閉相關程序，解決 Windows 檔案佔用問題）
+python scripts/cleanup_cache.py --force
+
+# 或直接使用 uv 命令
+uv cache clean
+```
+詳細說明請參考：[Cache 管理指南](docs/zh-TW/cache-management.md)
 
 **Q: AI 模型無法解析圖片**  
 A: 各種 AI 模型（包括 Gemini Pro 2.5、Claude 等）在圖片解析上可能存在不穩定性，表現為有時能正確識別、有時無法解析上傳的圖片內容。這是 AI 視覺理解技術的已知限制。建議：

@@ -46,16 +46,16 @@ This is an [MCP server](https://modelcontextprotocol.io/) that implements **huma
 
 ### Qt GUI Interface (Refactored Version)
 <div align="center">
-  <img src="docs/images/en/gui1.png" width="400" alt="Qt GUI Main Interface" />
-  <img src="docs/images/en/gui2.png" width="400" alt="Qt GUI Settings Interface" />
+  <img src="docs/en/images/gui1.png" width="400" alt="Qt GUI Main Interface" />
+  <img src="docs/en/images/gui2.png" width="400" alt="Qt GUI Settings Interface" />
 </div>
 
 *Qt GUI Interface - Modular refactoring, supporting local environments*
 
 ### Web UI Interface (Refactored Version)
 <div align="center">
-  <img src="docs/images/en/web1.png" width="400" alt="Web UI Main Interface" />
-  <img src="docs/images/en/web2.png" width="400" alt="Web UI Settings Interface" />
+  <img src="docs/en/images/web1.png" width="400" alt="Web UI Main Interface" />
+  <img src="docs/en/images/web2.png" width="400" alt="Web UI Settings Interface" />
 </div>
 
 *Web UI Interface - Brand new architecture, suitable for SSH Remote environments*
@@ -189,8 +189,28 @@ A: Fixed in v2.0.3. Update to latest version: `uvx mcp-feedback-enhanced@latest`
 **Q: Image upload fails**  
 A: Check file size (≤1MB) and format (PNG/JPG/GIF/BMP/WebP).
 
-**Q: Web UI won't start**  
+**Q: Web UI won't start**
 A: Set `FORCE_WEB=true` or check firewall settings.
+
+**Q: UV Cache taking up too much disk space**
+A: Due to frequent use of `uvx` commands, cache may accumulate to tens of GB. Regular cleanup is recommended:
+```bash
+# Check cache size and detailed information
+python scripts/cleanup_cache.py --size
+
+# Preview cleanup content (without actually cleaning)
+python scripts/cleanup_cache.py --dry-run
+
+# Execute standard cleanup
+python scripts/cleanup_cache.py --clean
+
+# Force cleanup (attempts to close related processes, solves Windows file lock issues)
+python scripts/cleanup_cache.py --force
+
+# Or use uv command directly
+uv cache clean
+```
+For detailed instructions, see: [Cache Management Guide](docs/en/cache-management.md)
 
 **Q: Gemini Pro 2.5 cannot parse images**  
 A: Known issue. Gemini Pro 2.5 may not correctly parse uploaded image content. Testing shows Claude-4-Sonnet can properly analyze images. Recommend using Claude models for better image understanding capabilities.

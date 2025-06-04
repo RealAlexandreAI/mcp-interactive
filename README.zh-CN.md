@@ -46,16 +46,16 @@
 
 ### Qt GUI 界面（重构版）
 <div align="center">
-  <img src="docs/images/zh-TW/gui1.png" width="400" alt="Qt GUI 主界面" />
-  <img src="docs/images/zh-TW/gui2.png" width="400" alt="Qt GUI 设置界面" />
+  <img src="docs/zh-CN/images/gui1.png" width="400" alt="Qt GUI 主界面" />
+  <img src="docs/zh-CN/images/gui2.png" width="400" alt="Qt GUI 设置界面" />
 </div>
 
 *Qt GUI 界面 - 模块化重构，支持本地环境*
 
 ### Web UI 界面（重构版）
 <div align="center">
-  <img src="docs/images/zh-TW/web1.png" width="400" alt="Web UI 主界面" />
-  <img src="docs/images/zh-TW/web2.png" width="400" alt="Web UI 设置界面" />
+  <img src="docs/zh-CN/images/web1.png" width="400" alt="Web UI 主界面" />
+  <img src="docs/zh-CN/images/web2.png" width="400" alt="Web UI 设置界面" />
 </div>
 
 *Web UI 界面 - 全新架构，适合 SSH Remote 环境*
@@ -189,8 +189,28 @@ A: 已在 v2.0.3 修复。更新到最新版本：`uvx mcp-feedback-enhanced@lat
 **Q: 图片上传失败**  
 A: 检查文件大小（≤1MB）和格式（PNG/JPG/GIF/BMP/WebP）。
 
-**Q: Web UI 无法启动**  
+**Q: Web UI 无法启动**
 A: 设置 `FORCE_WEB=true` 或检查防火墙设定。
+
+**Q: UV Cache 占用过多磁盘空间**
+A: 由于频繁使用 `uvx` 命令，cache 可能会累积到数十 GB。建议定期清理：
+```bash
+# 查看 cache 大小和详细信息
+python scripts/cleanup_cache.py --size
+
+# 预览清理内容（不实际清理）
+python scripts/cleanup_cache.py --dry-run
+
+# 执行标准清理
+python scripts/cleanup_cache.py --clean
+
+# 强制清理（会尝试关闭相关程序，解决 Windows 文件占用问题）
+python scripts/cleanup_cache.py --force
+
+# 或直接使用 uv 命令
+uv cache clean
+```
+详细说明请参考：[Cache 管理指南](docs/zh-CN/cache-management.md)
 
 **Q: Gemini Pro 2.5 无法解析图片**  
 A: 已知问题，Gemini Pro 2.5 可能无法正确解析上传的图片内容。实测 Claude-4-Sonnet 可以正常解析图片。建议使用 Claude 模型获得更好的图片理解能力。

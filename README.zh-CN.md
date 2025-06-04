@@ -8,9 +8,9 @@
 
 ## 🎯 核心概念
 
-这是一个 [MCP 服务器](https://modelcontextprotocol.io/)，在 AI 辅助开发工具中实现**人在回路（human-in-the-loop）**的工作流程。通过引导 AI 与用户确认而非进行推测性操作，可将多达 25 次工具调用合并为单次反馈导向请求，大幅节省平台成本。
+这是一个 [MCP 服务器](https://modelcontextprotocol.io/)，建立**反馈导向的开发工作流程**，完美适配本地与 **SSH 远程开发环境**。通过引导 AI 与用户确认而非进行推测性操作，可将多次工具调用合并为单次反馈导向请求，大幅节省平台成本并提升开发效率。
 
-**支持平台：** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com)
+**支持平台：** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
 ### 🔄 工作流程
 1. **AI 调用** → `mcp-feedback-enhanced`

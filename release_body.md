@@ -1,22 +1,34 @@
 ## 🌐 Multi-Language Release Notes
 
 ### 🇺🇸 English
-# Release v2.2.2 - Timeout Auto-cleanup Fix
+# Release v2.2.3 - Timeout Control & Image Settings Enhancement
 
 ## 🌟 Highlights
-This version fixes a critical resource management issue where GUI/Web UI interfaces were not properly closed when MCP sessions ended due to timeout, causing the interfaces to remain open and unresponsive.
+This version introduces user-controllable timeout settings and flexible image upload configuration options, while improving UV Cache management tools to enhance the overall user experience.
+
+## ✨ New Features
+- ⏰ **User Timeout Control**: Added customizable timeout settings with flexible range from 30 seconds to 2 hours
+- ⏱️ **Countdown Timer**: Real-time countdown timer display at the top of the interface for visual time reminders
+- 🖼️ **Image Size Limits**: Added image upload size limit settings (unlimited/1MB/3MB/5MB)
+- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models like Gemini
+- 🧹 **UV Cache Management Tool**: Added `cleanup_cache.py` script to help manage and clean UV cache space
+
+## 🚀 Improvements
+- 📚 **Documentation Structure Optimization**: Reorganized documentation directory structure, moved images to `docs/{language}/images/` paths
+- 📖 **Cache Management Guide**: Added detailed UV Cache management guide with automated cleanup solutions
+- 🎯 **Smart Compatibility Hints**: Automatically display Base64 compatibility mode suggestions when image upload fails
+- 🔄 **Settings Sync Mechanism**: Improved image settings synchronization between different interface modes
 
 ## 🐛 Bug Fixes
-- 🔄 **Timeout Auto-cleanup**: Fixed GUI/Web UI not automatically closing after MCP session timeout (default 600 seconds)
-- 🛡️ **Resource Management Optimization**: Improved timeout handling mechanism to ensure proper cleanup and closure of all UI resources on timeout
-- ⚡ **Enhanced Timeout Detection**: Strengthened timeout detection logic to correctly handle timeout events in various scenarios
-- 🔧 **Interface Response Improvement**: Enhanced Web UI frontend handling of session timeout events
+- 🛡️ **Timeout Handling Optimization**: Improved coordination between user-defined timeout and MCP system timeout
+- 🖥️ **Interface Auto-close**: Fixed interface auto-close and resource cleanup logic after timeout
+- 📱 **Responsive Layout**: Optimized timeout control component display on small screen devices
 
-## 🚀 Technical Improvements
-- 📦 **Web Session Management**: Refactored WebFeedbackSession timeout handling logic
-- 🎯 **QTimer Integration**: Introduced precise QTimer timeout control mechanism in GUI
-- 🌐 **Frontend Communication Optimization**: Improved timeout message communication between Web UI frontend and backend
-- 🧹 **Resource Cleanup Mechanism**: Added _cleanup_resources_on_timeout method to ensure thorough cleanup
+## 🔧 Technical Improvements
+- 🎛️ **Timeout Control Architecture**: Implemented separated design for frontend countdown timer and backend timeout handling
+- 📊 **Image Processing Optimization**: Improved image upload size checking and format validation mechanisms
+- 🗂️ **Settings Persistence**: Enhanced settings saving mechanism to ensure correct saving and loading of user preferences
+- 🧰 **Tool Script Enhancement**: Added cross-platform cache cleanup tool with support for force cleanup and preview modes
 
 ## 📦 Installation & Update
 ```bash
@@ -24,32 +36,45 @@ This version fixes a critical resource management issue where GUI/Web UI interfa
 uvx mcp-feedback-enhanced@latest test --gui
 
 # Update to specific version
-uvx mcp-feedback-enhanced@v2.2.2 test
+uvx mcp-feedback-enhanced@v2.2.3 test
 ```
 
 ## 🔗 Related Links
 - Full Documentation: [README.md](../../README.md)
 - Issue Reporting: [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
-- Fixed Issue: #5 (GUI/Web UI timeout cleanup) 
+- Related PRs: #22 (Timeout Control Feature), #19 (Image Settings Feature)
+
 ---
 
 ### 🇹🇼 繁體中文
-# Release v2.2.2 - 超時自動清理修復
+# Release v2.2.3 - 超時控制與圖片設定增強
 
 ## 🌟 亮點
-本版本修復了一個重要的資源管理問題：當 MCP session 因超時結束時，GUI/Web UI 介面沒有正確關閉，導致介面持續顯示而無法正常關閉。
+本版本新增了用戶可控制的超時設定功能，以及靈活的圖片上傳設定選項，同時完善了 UV Cache 管理工具，提升整體使用體驗。
+
+## ✨ 新功能
+- ⏰ **用戶超時控制**: 新增可自訂的超時設定功能，支援 30 秒至 2 小時的彈性設定
+- ⏱️ **倒數計時器**: 介面頂部顯示即時倒數計時器，提供視覺化的時間提醒
+- 🖼️ **圖片大小限制**: 新增圖片上傳大小限制設定（無限制/1MB/3MB/5MB）
+- 🔧 **Base64 相容模式**: 新增 Base64 詳細模式，提升與 Gemini 等 AI 模型的圖片識別相容性
+- 🧹 **UV Cache 管理工具**: 新增 `cleanup_cache.py` 腳本，協助管理和清理 UV cache 空間
+
+## 🚀 改進功能
+- 📚 **文檔結構優化**: 重新整理文檔目錄結構，將圖片移至 `docs/{語言}/images/` 路徑
+- 📖 **Cache 管理指南**: 新增詳細的 UV Cache 管理指南，包含自動化清理方案
+- 🎯 **智能相容性提示**: 當圖片上傳失敗時自動顯示 Base64 相容模式建議
+- 🔄 **設定同步機制**: 改進圖片設定在不同介面模式間的同步機制
 
 ## 🐛 問題修復
-- 🔄 **超時自動清理**: 修復 GUI/Web UI 在 MCP session timeout (預設 600 秒) 後沒有自動關閉的問題
-- 🛡️ **資源管理優化**: 改進超時處理機制，確保在超時時正確清理和關閉所有 UI 資源
-- ⚡ **超時檢測增強**: 加強超時檢測邏輯，確保在各種情況下都能正確處理超時事件
-- 🔧 **介面回應改進**: 改善 Web UI 前端對 session timeout 事件的處理回應
+- 🛡️ **超時處理優化**: 改進用戶自訂超時與 MCP 系統超時的協調機制
+- 🖥️ **介面自動關閉**: 修復超時後介面自動關閉和資源清理邏輯
+- 📱 **響應式佈局**: 優化超時控制元件在小螢幕設備上的顯示效果
 
-## 🚀 技術改進
-- 📦 **Web Session 管理**: 重構 WebFeedbackSession 的超時處理邏輯
-- 🎯 **QTimer 整合**: 在 GUI 中引入精確的 QTimer 超時控制機制
-- 🌐 **前端通訊優化**: 改進 Web UI 前端與後端的超時訊息傳遞
-- 🧹 **資源清理機制**: 新增 _cleanup_resources_on_timeout 方法確保徹底清理
+## 🔧 技術改進
+- 🎛️ **超時控制架構**: 實現前端倒數計時器與後端超時處理的分離設計
+- 📊 **圖片處理優化**: 改進圖片上傳的大小檢查和格式驗證機制
+- 🗂️ **設定持久化**: 增強設定保存機制，確保用戶偏好的正確保存和載入
+- 🧰 **工具腳本增強**: 新增跨平台的 cache 清理工具，支援強制清理和預覽模式
 
 ## 📦 安裝與更新
 ```bash
@@ -57,32 +82,45 @@ uvx mcp-feedback-enhanced@v2.2.2 test
 uvx mcp-feedback-enhanced@latest test --gui
 
 # 更新到特定版本
-uvx mcp-feedback-enhanced@v2.2.2 test
+uvx mcp-feedback-enhanced@v2.2.3 test
 ```
 
 ## 🔗 相關連結
 - 完整文檔: [README.zh-TW.md](../../README.zh-TW.md)
 - 問題回報: [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
-- 解決問題: #5 (GUI/Web UI timeout cleanup) 
+- 相關 PR: #22 (超時控制功能), #19 (圖片設定功能)
+
 ---
 
 ### 🇨🇳 简体中文
-# Release v2.2.2 - 超时自动清理修复
+# Release v2.2.3 - 超时控制与图片设置增强
 
 ## 🌟 亮点
-本版本修复了一个重要的资源管理问题：当 MCP session 因超时结束时，GUI/Web UI 界面没有正确关闭，导致界面持续显示而无法正常关闭。
+本版本新增了用户可控制的超时设置功能，以及灵活的图片上传设置选项，同时完善了 UV Cache 管理工具，提升整体使用体验。
+
+## ✨ 新功能
+- ⏰ **用户超时控制**: 新增可自定义的超时设置功能，支持 30 秒至 2 小时的弹性设置
+- ⏱️ **倒数计时器**: 界面顶部显示实时倒数计时器，提供可视化的时间提醒
+- 🖼️ **图片大小限制**: 新增图片上传大小限制设置（无限制/1MB/3MB/5MB）
+- 🔧 **Base64 兼容模式**: 新增 Base64 详细模式，提升与 Gemini 等 AI 模型的图片识别兼容性
+- 🧹 **UV Cache 管理工具**: 新增 `cleanup_cache.py` 脚本，协助管理和清理 UV cache 空间
+
+## 🚀 改进功能
+- 📚 **文档结构优化**: 重新整理文档目录结构，将图片移至 `docs/{语言}/images/` 路径
+- 📖 **Cache 管理指南**: 新增详细的 UV Cache 管理指南，包含自动化清理方案
+- 🎯 **智能兼容性提示**: 当图片上传失败时自动显示 Base64 兼容模式建议
+- 🔄 **设置同步机制**: 改进图片设置在不同界面模式间的同步机制
 
 ## 🐛 问题修复
-- 🔄 **超时自动清理**: 修复 GUI/Web UI 在 MCP session timeout (默认 600 秒) 后没有自动关闭的问题
-- 🛡️ **资源管理优化**: 改进超时处理机制，确保在超时时正确清理和关闭所有 UI 资源
-- ⚡ **超时检测增强**: 加强超时检测逻辑，确保在各种情况下都能正确处理超时事件
-- 🔧 **界面响应改进**: 改善 Web UI 前端对 session timeout 事件的处理响应
+- 🛡️ **超时处理优化**: 改进用户自定义超时与 MCP 系统超时的协调机制
+- 🖥️ **界面自动关闭**: 修复超时后界面自动关闭和资源清理逻辑
+- 📱 **响应式布局**: 优化超时控制组件在小屏幕设备上的显示效果
 
-## 🚀 技术改进
-- 📦 **Web Session 管理**: 重构 WebFeedbackSession 的超时处理逻辑
-- 🎯 **QTimer 整合**: 在 GUI 中引入精确的 QTimer 超时控制机制
-- 🌐 **前端通信优化**: 改进 Web UI 前端与后端的超时消息传递
-- 🧹 **资源清理机制**: 新增 _cleanup_resources_on_timeout 方法确保彻底清理
+## 🔧 技术改进
+- 🎛️ **超时控制架构**: 实现前端倒数计时器与后端超时处理的分离设计
+- 📊 **图片处理优化**: 改进图片上传的大小检查和格式验证机制
+- 🗂️ **设置持久化**: 增强设置保存机制，确保用户偏好的正确保存和载入
+- 🧰 **工具脚本增强**: 新增跨平台的 cache 清理工具，支持强制清理和预览模式
 
 ## 📦 安装与更新
 ```bash
@@ -90,13 +128,14 @@ uvx mcp-feedback-enhanced@v2.2.2 test
 uvx mcp-feedback-enhanced@latest test --gui
 
 # 更新到特定版本
-uvx mcp-feedback-enhanced@v2.2.2 test
+uvx mcp-feedback-enhanced@v2.2.3 test
 ```
 
 ## 🔗 相关链接
 - 完整文档: [README.zh-CN.md](../../README.zh-CN.md)
 - 问题报告: [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
-- 解决问题: #5 (GUI/Web UI timeout cleanup) 
+- 相关 PR: #22 (超时控制功能), #19 (图片设置功能)
+
 ---
 
 ## 📦 Installation & Update
@@ -106,7 +145,7 @@ uvx mcp-feedback-enhanced@v2.2.2 test
 uvx mcp-feedback-enhanced@latest test
 
 # Update to this specific version
-uvx mcp-feedback-enhanced@v2.2.2 test
+uvx mcp-feedback-enhanced@v2.2.3 test
 ```
 
 ## 🔗 Links

@@ -1,6 +1,6 @@
 [project]
 name = "mcp-feedback-enhanced"
-version = "2.2.2"
+version = "2.2.3"
 description = "Enhanced MCP server for interactive user feedback and command execution in AI-assisted development, featuring dual UI support (Qt GUI and Web UI) with intelligent environment detection."
 readme = "README.md"
 requires-python = ">=3.11"

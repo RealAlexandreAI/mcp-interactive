@@ -519,8 +519,8 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
     
     try:
         # 使用新的 web 模組
-        from .web import launch_web_feedback_ui
-        
+        from .web import launch_web_feedback_ui, stop_web_ui
+
         # 傳遞 timeout 參數給 Web UI
         return await launch_web_feedback_ui(project_dir, summary, timeout)
     except ImportError as e:
@@ -532,6 +532,14 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
         }
     except TimeoutError as e:
         debug_log(f"Web UI 超時: {e}")
+        # 超時時確保停止 Web 服務器
+        try:
+            from .web import stop_web_ui
+            stop_web_ui()
+            debug_log("Web UI 服務器已因超時而停止")
+        except Exception as stop_error:
+            debug_log(f"停止 Web UI 服務器時發生錯誤: {stop_error}")
+
         return {
             "command_logs": "",
             "interactive_feedback": f"回饋收集超時（{timeout}秒），介面已自動關閉。",
@@ -540,6 +548,14 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
     except Exception as e:
         error_msg = f"Web UI 錯誤: {e}"
         debug_log(f"❌ {error_msg}")
+        # 發生錯誤時也要停止 Web 服務器
+        try:
+            from .web import stop_web_ui
+            stop_web_ui()
+            debug_log("Web UI 服務器已因錯誤而停止")
+        except Exception as stop_error:
+            debug_log(f"停止 Web UI 服務器時發生錯誤: {stop_error}")
+
         return {
             "command_logs": "",
             "interactive_feedback": f"錯誤: {str(e)}",

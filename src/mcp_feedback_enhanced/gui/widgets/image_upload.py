@@ -132,10 +132,12 @@ class ImageUploadWidget(QWidget):
 
     def _on_size_limit_changed(self, index: int) -> None:
         """圖片大小限制變更處理"""
-        if self.config_manager:
+        if self.config_manager and index >= 0:
             size_bytes = self.size_limit_combo.itemData(index)
-            self.config_manager.set_image_size_limit(size_bytes)
-            debug_log(f"圖片大小限制已更新: {size_bytes} bytes")
+            # 處理 None 值
+            if size_bytes is not None:
+                self.config_manager.set_image_size_limit(size_bytes)
+                debug_log(f"圖片大小限制已更新: {size_bytes} bytes")
 
     def _on_base64_detail_changed(self, state: int) -> None:
         """Base64 詳細模式變更處理"""
@@ -683,6 +685,9 @@ class ImageUploadWidget(QWidget):
             # 保存當前選擇
             current_data = self.size_limit_combo.currentData()
 
+            # 暫時斷開信號連接以避免觸發變更事件
+            self.size_limit_combo.blockSignals(True)
+
             # 清除並重新添加選項
             self.size_limit_combo.clear()
             self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.unlimited'), 0)
@@ -695,6 +700,9 @@ class ImageUploadWidget(QWidget):
                 if self.size_limit_combo.itemData(i) == current_data:
                     self.size_limit_combo.setCurrentIndex(i)
                     break
+
+            # 重新連接信號
+            self.size_limit_combo.blockSignals(False)
 
         if hasattr(self, 'base64_checkbox'):
             self.base64_checkbox.setText(t('images.settings.base64Detail'))

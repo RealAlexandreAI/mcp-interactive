@@ -110,6 +110,22 @@
       "errorMessage": "重置设置时发生错误：{error}"
     }
   },
+  "timeout": {
+    "enable": "自动关闭",
+    "enableTooltip": "启用后将在指定时间后自动关闭界面",
+    "duration": {
+      "label": "超时时间",
+      "description": "设置自动关闭的时间（30秒 - 2小时）"
+    },
+    "seconds": "秒",
+    "remaining": "剩余时间",
+    "expired": "时间已到",
+    "autoCloseMessage": "界面将在 {seconds} 秒后自动关闭",
+    "settings": {
+      "title": "超时设置",
+      "description": "启用后，界面将在指定时间后自动关闭。倒数计时器会显示在顶部区域。"
+    }
+  },
   "buttons": {
     "submit": "提交反馈",
     "cancel": "取消",

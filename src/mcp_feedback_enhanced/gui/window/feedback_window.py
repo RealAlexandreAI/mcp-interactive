@@ -24,13 +24,15 @@ from ...debug import gui_debug_log as debug_log
 class FeedbackWindow(QMainWindow):
     """回饋收集主窗口（重構版）"""
     language_changed = Signal()
-    
-    def __init__(self, project_dir: str, summary: str):
+    timeout_occurred = Signal()  # 超時發生信號
+
+    def __init__(self, project_dir: str, summary: str, timeout_seconds: int = None):
         super().__init__()
         self.project_dir = project_dir
         self.summary = summary
         self.result = None
         self.i18n = get_i18n_manager()
+        self.mcp_timeout_seconds = timeout_seconds  # MCP 傳入的超時時間
         
         # 初始化組件
         self.config_manager = ConfigManager()
@@ -55,6 +57,9 @@ class FeedbackWindow(QMainWindow):
         self._connect_signals()
         
         debug_log("主窗口初始化完成")
+
+        # 如果啟用了超時，自動開始倒數計時
+        self.start_timeout_if_enabled()
     
     def _setup_ui(self) -> None:
         """設置用戶介面"""
@@ -88,9 +93,72 @@ class FeedbackWindow(QMainWindow):
     
     def _create_project_header(self, layout: QVBoxLayout) -> None:
         """創建專案目錄頭部信息"""
+        # 創建水平布局來放置專案目錄和倒數計時器
+        header_layout = QHBoxLayout()
+
         self.project_label = QLabel(f"{t('app.projectDirectory')}: {self.project_dir}")
         self.project_label.setStyleSheet("color: #9e9e9e; font-size: 12px; padding: 4px 0;")
-        layout.addWidget(self.project_label)
+        header_layout.addWidget(self.project_label)
+
+        # 添加彈性空間
+        header_layout.addStretch()
+
+        # 添加倒數計時器顯示（僅顯示部分）
+        self._create_countdown_display(header_layout)
+
+        # 將水平布局添加到主布局
+        header_widget = QWidget()
+        header_widget.setLayout(header_layout)
+        layout.addWidget(header_widget)
+
+    def _create_countdown_display(self, layout: QHBoxLayout) -> None:
+        """創建倒數計時器顯示組件（僅顯示）"""
+        # 倒數計時器標籤
+        self.countdown_label = QLabel(t('timeout.remaining'))
+        self.countdown_label.setStyleSheet("color: #cccccc; font-size: 12px;")
+        self.countdown_label.setVisible(False)  # 預設隱藏
+        layout.addWidget(self.countdown_label)
+
+        # 倒數計時器顯示
+        self.countdown_display = QLabel("--:--")
+        self.countdown_display.setStyleSheet("""
+            color: #ffa500;
+            font-size: 14px;
+            font-weight: bold;
+            font-family: 'Consolas', 'Monaco', monospace;
+            min-width: 50px;
+            margin-left: 8px;
+        """)
+        self.countdown_display.setVisible(False)  # 預設隱藏
+        layout.addWidget(self.countdown_display)
+
+        # 初始化超時控制邏輯
+        self._init_timeout_logic()
+
+    def _init_timeout_logic(self) -> None:
+        """初始化超時控制邏輯"""
+        # 載入保存的超時設置
+        timeout_enabled, timeout_duration = self.config_manager.get_timeout_settings()
+
+        # 如果有 MCP 超時參數，且用戶設置的時間大於 MCP 時間，則使用 MCP 時間
+        if self.mcp_timeout_seconds is not None:
+            if timeout_duration > self.mcp_timeout_seconds:
+                timeout_duration = self.mcp_timeout_seconds
+                debug_log(f"用戶設置的超時時間 ({timeout_duration}s) 大於 MCP 超時時間 ({self.mcp_timeout_seconds}s)，使用 MCP 時間")
+
+        # 保存超時設置
+        self.timeout_enabled = timeout_enabled
+        self.timeout_duration = timeout_duration
+        self.remaining_seconds = 0
+
+        # 創建計時器
+        self.countdown_timer = QTimer()
+        self.countdown_timer.timeout.connect(self._update_countdown)
+
+        # 更新顯示狀態
+        self._update_countdown_visibility()
+
+
     
     def _create_tab_area(self, layout: QVBoxLayout) -> None:
         """創建分頁區域"""
@@ -169,7 +237,10 @@ class FeedbackWindow(QMainWindow):
         
         # 創建分頁
         self.tab_manager.create_tabs()
-        
+
+        # 連接分頁信號
+        self.tab_manager.connect_signals(self)
+
         # 將分頁組件放入滾動區域
         scroll_area.setWidget(self.tab_widget)
         
@@ -457,16 +528,139 @@ class FeedbackWindow(QMainWindow):
         debug_log("強制關閉視窗（超時）")
         self.result = ""
         self.close()
+
+    def _on_timeout_occurred(self) -> None:
+        """處理超時事件"""
+        debug_log("用戶設置的超時時間已到，自動關閉視窗")
+        self._timeout_occurred = True
+        self.timeout_occurred.emit()
+        self.force_close()
+
+    def start_timeout_if_enabled(self) -> None:
+        """如果啟用了超時，自動開始倒數計時"""
+        if hasattr(self, 'tab_manager') and self.tab_manager:
+            timeout_widget = self.tab_manager.get_timeout_widget()
+            if timeout_widget:
+                enabled, _ = timeout_widget.get_timeout_settings()
+                if enabled:
+                    timeout_widget.start_countdown()
+                    debug_log("窗口顯示時自動開始倒數計時")
+
+    def _on_timeout_settings_changed(self, enabled: bool, seconds: int) -> None:
+        """處理超時設置變更（從設置頁籤觸發）"""
+        # 檢查是否超過 MCP 超時限制
+        if self.mcp_timeout_seconds is not None and seconds > self.mcp_timeout_seconds:
+            debug_log(f"用戶設置的超時時間 ({seconds}s) 超過 MCP 限制 ({self.mcp_timeout_seconds}s)，調整為 MCP 時間")
+            seconds = self.mcp_timeout_seconds
+
+        # 更新內部狀態
+        self.timeout_enabled = enabled
+        self.timeout_duration = seconds
+
+        # 保存設置
+        self.config_manager.set_timeout_settings(enabled, seconds)
+        debug_log(f"超時設置已更新: {'啟用' if enabled else '停用'}, {seconds} 秒")
+
+        # 更新倒數計時器顯示
+        self._update_countdown_visibility()
+
+        # 重新開始倒數計時
+        if enabled:
+            self.start_countdown()
+        else:
+            self.stop_countdown()
+
+    def start_timeout_if_enabled(self) -> None:
+        """如果啟用了超時，開始倒數計時"""
+        if self.timeout_enabled:
+            self.start_countdown()
+            debug_log("超時倒數計時已開始")
+
+    def stop_timeout(self) -> None:
+        """停止超時倒數計時"""
+        self.stop_countdown()
+        debug_log("超時倒數計時已停止")
+
+    def start_countdown(self) -> None:
+        """開始倒數計時"""
+        if not self.timeout_enabled:
+            return
+
+        self.remaining_seconds = self.timeout_duration
+        self.countdown_timer.start(1000)  # 每秒更新
+        self._update_countdown_display()
+        debug_log(f"開始倒數計時：{self.timeout_duration} 秒")
+
+    def stop_countdown(self) -> None:
+        """停止倒數計時"""
+        self.countdown_timer.stop()
+        self.countdown_display.setText("--:--")
+        debug_log("倒數計時已停止")
+
+    def _update_countdown(self) -> None:
+        """更新倒數計時"""
+        self.remaining_seconds -= 1
+        self._update_countdown_display()
+
+        if self.remaining_seconds <= 0:
+            self.countdown_timer.stop()
+            self._on_timeout_occurred()
+            debug_log("倒數計時結束，觸發超時事件")
+
+    def _update_countdown_display(self) -> None:
+        """更新倒數顯示"""
+        if self.remaining_seconds <= 0:
+            self.countdown_display.setText("00:00")
+            self.countdown_display.setStyleSheet("""
+                color: #ff4444;
+                font-size: 14px;
+                font-weight: bold;
+                font-family: 'Consolas', 'Monaco', monospace;
+                min-width: 50px;
+                margin-left: 8px;
+            """)
+        else:
+            minutes = self.remaining_seconds // 60
+            seconds = self.remaining_seconds % 60
+            time_text = f"{minutes:02d}:{seconds:02d}"
+            self.countdown_display.setText(time_text)
+
+            # 根據剩餘時間調整顏色
+            if self.remaining_seconds <= 60:  # 最後1分鐘
+                color = "#ff4444"  # 紅色
+            elif self.remaining_seconds <= 300:  # 最後5分鐘
+                color = "#ffaa00"  # 橙色
+            else:
+                color = "#ffa500"  # 黃色
+
+            self.countdown_display.setStyleSheet(f"""
+                color: {color};
+                font-size: 14px;
+                font-weight: bold;
+                font-family: 'Consolas', 'Monaco', monospace;
+                min-width: 50px;
+                margin-left: 8px;
+            """)
+
+    def _update_countdown_visibility(self) -> None:
+        """更新倒數計時器可見性"""
+        # 倒數計時器只在啟用超時時顯示
+        self.countdown_label.setVisible(self.timeout_enabled)
+        self.countdown_display.setVisible(self.timeout_enabled)
     
     def _refresh_ui_texts(self) -> None:
         """刷新界面文字"""
         self.setWindowTitle(t('app.title'))
         self.project_label.setText(f"{t('app.projectDirectory')}: {self.project_dir}")
-        
+
         # 更新按鈕文字
         self.submit_button.setText(t('buttons.submit'))
         self.cancel_button.setText(t('buttons.cancel'))
-        
+
+        # 更新倒數計時器文字
+        if hasattr(self, 'countdown_label'):
+            self.countdown_label.setText(t('timeout.remaining'))
+
         # 更新分頁文字
         self.tab_manager.update_tab_texts()
     

@@ -198,6 +198,27 @@ async def handle_websocket_message(manager: 'WebUIManager', session, data: dict)
         command = data.get("command", "")
         if command.strip():
             await session.run_command(command)
-        
+
+    elif message_type == "user_timeout":
+        # 用戶設置的超時已到
+        debug_log(f"收到用戶超時通知: {session.session_id}")
+        # 清理會話資源
+        await session._cleanup_resources_on_timeout()
+        # 如果沒有其他活躍會話，停止服務器
+        if len(manager.sessions) <= 1:  # 當前會話即將被移除
+            debug_log("用戶超時，沒有其他活躍會話，準備停止服務器")
+            # 延遲停止服務器，給前端時間關閉
+            import asyncio
+            asyncio.create_task(_delayed_server_stop(manager))
+
     else:
-        debug_log(f"未知的消息類型: {message_type}") 
+        debug_log(f"未知的消息類型: {message_type}")
+
+
+async def _delayed_server_stop(manager: 'WebUIManager'):
+    """延遲停止服務器"""
+    import asyncio
+    await asyncio.sleep(5)  # 等待 5 秒讓前端有時間關閉
+    from ..main import stop_web_ui
+    stop_web_ui()
+    debug_log("Web UI 服務器已因用戶超時而停止")

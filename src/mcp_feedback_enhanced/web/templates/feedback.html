@@ -67,6 +67,12 @@
             padding: 0 20px;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
         .title {
             font-size: 24px;
             font-weight: bold;
@@ -77,6 +83,111 @@
         .project-info {
             color: var(--text-secondary);
             font-size: 14px;
+        }
+
+        /* 倒數計時器顯示樣式 */
+        .countdown-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 8px;
+        }
+
+        .countdown-label {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        .countdown-timer {
+            color: var(--warning-color);
+            font-size: 13px;
+            font-weight: bold;
+            font-family: 'Consolas', 'Monaco', monospace;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .countdown-timer.warning {
+            color: var(--warning-color);
+        }
+
+        .countdown-timer.danger {
+            color: var(--error-color);
+        }
+
+        /* 超時設置輸入組件樣式 */
+        .timeout-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timeout-input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 12px;
+            color: var(--text-primary);
+            font-size: 13px;
+            width: 100px;
+            text-align: center;
+        }
+
+        .timeout-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .timeout-unit {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* 切換開關樣式 */
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #666666;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-color);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(26px);
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 768px) {
+            .timeout-controls {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .timeout-separator {
+                display: none;
+            }
         }
 
         .language-selector {
@@ -921,7 +1032,14 @@
         <!-- 頭部 -->
         <header class="header">
             <div class="header-content">
-                <h1 class="title" data-i18n="app.title">MCP Feedback Enhanced</h1>
+                <div class="header-left">
+                    <h1 class="title" data-i18n="app.title">MCP Feedback Enhanced</h1>
+                    <!-- 倒數計時器顯示 -->
+                    <div id="countdownDisplay" class="countdown-display" style="display: none;">
+                        <span class="countdown-label" data-i18n="timeout.remaining">剩餘時間</span>
+                        <span id="countdownTimer" class="countdown-timer">--:--</span>
+                    </div>
+                </div>
                 <div class="project-info">
                     <span data-i18n="app.projectDirectory">專案目錄</span>: {{ project_directory }}
                 </div>
@@ -1211,6 +1329,38 @@
                     </div>
                 </div>
 
+                <!-- 超時設定卡片 -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title" data-i18n="timeout.settings.title">⏰ 超時設置</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="timeout.enable">自動關閉</div>
+                                <div class="setting-description" data-i18n="timeout.settings.description">
+                                    啟用後，介面將在指定時間後自動關閉。倒數計時器會顯示在頂部區域。
+                                </div>
+                            </div>
+                            <div id="timeoutToggle" class="toggle-switch">
+                                <div class="toggle-knob"></div>
+                            </div>
+                        </div>
+                        <div class="setting-item" style="border-bottom: none;">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="timeout.duration.label">超時時間</div>
+                                <div class="setting-description" data-i18n="timeout.duration.description">
+                                    設置自動關閉的時間（30秒 - 2小時）
+                                </div>
+                            </div>
+                            <div class="timeout-input-group">
+                                <input type="number" id="timeoutDuration" class="timeout-input" min="30" max="7200" value="600">
+                                <span class="timeout-unit" data-i18n="timeout.seconds">秒</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 語言設定卡片 -->
                 <div class="settings-card">
                     <div class="settings-card-header">
@@ -1363,9 +1513,25 @@
     <script src="/static/js/i18n.js"></script>
     <script src="/static/js/app.js"></script>
     <script>
-        // 初始化全域應用程式實例
-        const sessionId = '{{ session_id }}';
-        window.feedbackApp = new FeedbackApp(sessionId);
+        // 等待 I18nManager 初始化完成後再初始化 FeedbackApp
+        async function initializeApp() {
+            const sessionId = '{{ session_id }}';
+
+            // 確保 I18nManager 已經初始化
+            if (window.i18nManager) {
+                await window.i18nManager.init();
+            }
+
+            // 初始化 FeedbackApp
+            window.feedbackApp = new FeedbackApp(sessionId);
+        }
+
+        // 頁面載入完成後初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
     </script>
 </body>
 </html> 

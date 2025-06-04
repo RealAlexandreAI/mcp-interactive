@@ -8,11 +8,12 @@
 """
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QComboBox, QRadioButton, QButtonGroup, QMessageBox,
-    QCheckBox, QPushButton, QFrame
+    QCheckBox, QPushButton, QFrame, QSpinBox
 )
 from ..widgets import SwitchWithLabel
+from ..widgets.styled_spinbox import StyledSpinBox
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QFont
 
@@ -25,6 +26,7 @@ class SettingsTab(QWidget):
     language_changed = Signal()
     layout_change_requested = Signal(bool, str)  # 佈局變更請求信號 (combined_mode, orientation)
     reset_requested = Signal()  # 重置設定請求信號
+    timeout_settings_changed = Signal(bool, int)  # 超時設置變更信號 (enabled, duration)
     
     def __init__(self, combined_mode: bool, config_manager, parent=None):
         super().__init__(parent)
@@ -86,7 +88,13 @@ class SettingsTab(QWidget):
         
         # 添加分隔線
         self._add_separator(content_layout)
-        
+
+        # === 超時設置 ===
+        self._create_timeout_section(content_layout)
+
+        # 添加分隔線
+        self._add_separator(content_layout)
+
         # === 重置設定 ===
         self._create_reset_section(content_layout)
         
@@ -306,7 +314,63 @@ class SettingsTab(QWidget):
         options_layout.addWidget(self.always_center_switch)
         
         layout.addLayout(options_layout)
-    
+
+    def _create_timeout_section(self, layout: QVBoxLayout) -> None:
+        """創建超時設置區域"""
+        header = self._create_section_header(t('timeout.settings.title'), "⏰")
+        layout.addWidget(header)
+        # 保存引用以便更新
+        self.ui_elements['timeout_header'] = header
+
+        # 選項容器
+        options_layout = QVBoxLayout()
+        options_layout.setSpacing(12)
+
+        # 啟用超時自動關閉開關
+        self.timeout_enabled_switch = SwitchWithLabel(t('timeout.enable'))
+        self.timeout_enabled_switch.setChecked(self.config_manager.get_timeout_enabled())
+        self.timeout_enabled_switch.toggled.connect(self._on_timeout_enabled_changed)
+        options_layout.addWidget(self.timeout_enabled_switch)
+
+        # 超時時間設置
+        timeout_duration_layout = QHBoxLayout()
+        timeout_duration_layout.setContentsMargins(0, 8, 0, 0)
+
+        # 標籤
+        timeout_duration_label = QLabel(t('timeout.duration.label'))
+        timeout_duration_label.setStyleSheet("""
+            QLabel {
+                font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+                color: #ffffff;
+                font-size: 13px;
+            }
+        """)
+        timeout_duration_layout.addWidget(timeout_duration_label)
+        # 保存引用以便更新
+        self.ui_elements['timeout_duration_label'] = timeout_duration_label
+
+        # 彈性空間
+        timeout_duration_layout.addStretch()
+
+        # 時間輸入框
+        self.timeout_duration_spinbox = StyledSpinBox()
+        self.timeout_duration_spinbox.setRange(30, 7200)  # 30秒到2小時
+        self.timeout_duration_spinbox.setValue(self.config_manager.get_timeout_duration())
+        self.timeout_duration_spinbox.setSuffix(" " + t('timeout.seconds'))
+        # StyledSpinBox 已經有內建樣式，不需要額外設置
+        self.timeout_duration_spinbox.valueChanged.connect(self._on_timeout_duration_changed)
+        timeout_duration_layout.addWidget(self.timeout_duration_spinbox)
+
+        options_layout.addLayout(timeout_duration_layout)
+
+        # 說明文字
+        description = self._create_description(t('timeout.settings.description'))
+        options_layout.addWidget(description)
+        # 保存引用以便更新
+        self.ui_elements['timeout_description'] = description
+
+        layout.addLayout(options_layout)
+
     def _create_reset_section(self, layout: QVBoxLayout) -> None:
         """創建重置設定區域"""
         header = self._create_section_header(t('settings.reset.title'), "🔄")
@@ -421,7 +485,27 @@ class SettingsTab(QWidget):
         # 立即保存設定
         self.config_manager.set_always_center_window(checked)
         debug_log(f"視窗定位設置已保存: {checked}")  # 調試輸出
-    
+
+    def _on_timeout_enabled_changed(self, enabled: bool) -> None:
+        """超時啟用狀態變更事件處理"""
+        # 立即保存設定
+        self.config_manager.set_timeout_enabled(enabled)
+        debug_log(f"超時啟用設置已保存: {enabled}")
+
+        # 發出信號通知主窗口
+        duration = self.timeout_duration_spinbox.value()
+        self.timeout_settings_changed.emit(enabled, duration)
+
+    def _on_timeout_duration_changed(self, duration: int) -> None:
+        """超時時間變更事件處理"""
+        # 立即保存設定
+        self.config_manager.set_timeout_duration(duration)
+        debug_log(f"超時時間設置已保存: {duration}")
+
+        # 發出信號通知主窗口
+        enabled = self.timeout_enabled_switch.isChecked()
+        self.timeout_settings_changed.emit(enabled, duration)
+
     def _on_reset_settings(self) -> None:
         """重置設定事件處理"""
         reply = QMessageBox.question(
@@ -446,9 +530,10 @@ class SettingsTab(QWidget):
             self.ui_elements['window_header'].setText(f"🖥️  {t('settings.window.title')}")
         if 'reset_header' in self.ui_elements:
             self.ui_elements['reset_header'].setText(f"🔄  {t('settings.reset.title')}")
-        
+        if 'timeout_header' in self.ui_elements:
+            self.ui_elements['timeout_header'].setText(f"⏰  {t('timeout.settings.title')}")
 
-        
+
         # 更新提示文字
         if 'separate_hint' in self.ui_elements:
             self.ui_elements['separate_hint'].setText(f"    {t('settings.layout.separateModeDescription')}")
@@ -456,7 +541,9 @@ class SettingsTab(QWidget):
             self.ui_elements['vertical_hint'].setText(f"    {t('settings.layout.combinedVerticalDescription')}")
         if 'horizontal_hint' in self.ui_elements:
             self.ui_elements['horizontal_hint'].setText(f"    {t('settings.layout.combinedHorizontalDescription')}")
-        
+        if 'timeout_description' in self.ui_elements:
+            self.ui_elements['timeout_description'].setText(t('timeout.settings.description'))
+
         # 更新按鈕文字
         if hasattr(self, 'reset_button'):
             self.reset_button.setText(t('settings.reset.button'))
@@ -464,6 +551,14 @@ class SettingsTab(QWidget):
         # 更新切換開關文字
         if hasattr(self, 'always_center_switch'):
             self.always_center_switch.setText(t('settings.window.alwaysCenter'))
+        if hasattr(self, 'timeout_enabled_switch'):
+            self.timeout_enabled_switch.setText(t('timeout.enable'))
+
+        # 更新超時相關標籤和控件
+        if 'timeout_duration_label' in self.ui_elements:
+            self.ui_elements['timeout_duration_label'].setText(t('timeout.duration.label'))
+        if hasattr(self, 'timeout_duration_spinbox'):
+            self.timeout_duration_spinbox.setSuffix(" " + t('timeout.seconds'))
         
         # 更新單選按鈕文字
         if hasattr(self, 'separate_mode_radio'):
@@ -491,6 +586,16 @@ class SettingsTab(QWidget):
             always_center = self.config_manager.get_always_center_window()
             self.always_center_switch.setChecked(always_center)
             debug_log(f"重新載入視窗定位設置: {always_center}")  # 調試輸出
+
+        # 重新載入超時設定
+        if hasattr(self, 'timeout_enabled_switch'):
+            timeout_enabled = self.config_manager.get_timeout_enabled()
+            self.timeout_enabled_switch.setChecked(timeout_enabled)
+            debug_log(f"重新載入超時啟用設置: {timeout_enabled}")
+        if hasattr(self, 'timeout_duration_spinbox'):
+            timeout_duration = self.config_manager.get_timeout_duration()
+            self.timeout_duration_spinbox.setValue(timeout_duration)
+            debug_log(f"重新載入超時時間設置: {timeout_duration}")  # 調試輸出
     
     def set_layout_mode(self, combined_mode: bool) -> None:
         """設置佈局模式"""

@@ -86,10 +86,30 @@ class I18nManager {
         };
     }
 
-    // 支援巢狀鍵值的翻譯函數
-    t(key, defaultValue = '') {
+    // 支援巢狀鍵值的翻譯函數，支援參數替換
+    t(key, params = {}) {
         const langData = this.translations[this.currentLanguage] || {};
-        return this.getNestedValue(langData, key) || defaultValue || key;
+        let translation = this.getNestedValue(langData, key);
+
+        // 如果沒有找到翻譯，返回預設值或鍵名
+        if (!translation) {
+            return typeof params === 'string' ? params : key;
+        }
+
+        // 如果 params 是字串，當作預設值處理（向後相容）
+        if (typeof params === 'string') {
+            return translation;
+        }
+
+        // 參數替換：將 {key} 替換為對應的值
+        if (typeof params === 'object' && params !== null) {
+            Object.keys(params).forEach(paramKey => {
+                const placeholder = `{${paramKey}}`;
+                translation = translation.replace(new RegExp(placeholder, 'g'), params[paramKey]);
+            });
+        }
+
+        return translation;
     }
 
     getNestedValue(obj, path) {

@@ -112,18 +112,20 @@ def setup_routes(manager: 'WebUIManager'):
         """保存設定到檔案"""
         try:
             data = await request.json()
-            
-            # 構建設定檔案路徑
-            settings_file = Path.cwd() / ".mcp_feedback_settings.json"
-            
+
+            # 使用與 GUI 版本相同的設定檔案路徑
+            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
+            config_dir.mkdir(parents=True, exist_ok=True)
+            settings_file = config_dir / "ui_settings.json"
+
             # 保存設定到檔案
             with open(settings_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
-            
+
             debug_log(f"設定已保存到: {settings_file}")
-            
+
             return JSONResponse(content={"status": "success", "message": "設定已保存"})
-            
+
         except Exception as e:
             debug_log(f"保存設定失敗: {e}")
             return JSONResponse(
@@ -135,18 +137,20 @@ def setup_routes(manager: 'WebUIManager'):
     async def load_settings():
         """從檔案載入設定"""
         try:
-            settings_file = Path.cwd() / ".mcp_feedback_settings.json"
-            
+            # 使用與 GUI 版本相同的設定檔案路徑
+            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
+            settings_file = config_dir / "ui_settings.json"
+
             if settings_file.exists():
                 with open(settings_file, 'r', encoding='utf-8') as f:
                     settings = json.load(f)
-                    
+
                 debug_log(f"設定已從檔案載入: {settings_file}")
                 return JSONResponse(content=settings)
             else:
                 debug_log("設定檔案不存在，返回空設定")
                 return JSONResponse(content={})
-                
+
         except Exception as e:
             debug_log(f"載入設定失敗: {e}")
             return JSONResponse(
@@ -158,16 +162,18 @@ def setup_routes(manager: 'WebUIManager'):
     async def clear_settings():
         """清除設定檔案"""
         try:
-            settings_file = Path.cwd() / ".mcp_feedback_settings.json"
-            
+            # 使用與 GUI 版本相同的設定檔案路徑
+            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
+            settings_file = config_dir / "ui_settings.json"
+
             if settings_file.exists():
                 settings_file.unlink()
                 debug_log(f"設定檔案已刪除: {settings_file}")
             else:
                 debug_log("設定檔案不存在，無需刪除")
-            
+
             return JSONResponse(content={"status": "success", "message": "設定已清除"})
-            
+
         except Exception as e:
             debug_log(f"清除設定失敗: {e}")
             return JSONResponse(
@@ -184,7 +190,8 @@ async def handle_websocket_message(manager: 'WebUIManager', session, data: dict)
         # 提交回饋
         feedback = data.get("feedback", "")
         images = data.get("images", [])
-        await session.submit_feedback(feedback, images)
+        settings = data.get("settings", {})
+        await session.submit_feedback(feedback, images, settings)
         
     elif message_type == "run_command":
         # 執行命令

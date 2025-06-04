@@ -76,7 +76,24 @@
     "paste_failed": "Paste failed, no image in clipboard",
     "paste_no_image": "No image in clipboard to paste",
     "paste_image_from_textarea": "Image intelligently pasted from text area to image area",
-    "images_clear": "Clear all images"
+    "images_clear": "Clear all images",
+    "settings": {
+      "title": "Image Settings",
+      "sizeLimit": "Image Size Limit",
+      "sizeLimitOptions": {
+        "unlimited": "Unlimited",
+        "1mb": "1MB",
+        "3mb": "3MB",
+        "5mb": "5MB"
+      },
+      "base64Detail": "Base64 Compatibility Mode",
+      "base64DetailHelp": "When enabled, includes complete Base64 image data in text to improve compatibility with AI models like Gemini",
+      "base64Warning": "⚠️ Increases transmission size",
+      "compatibilityHint": "💡 Images not recognized correctly?",
+      "enableBase64Hint": "Try enabling Base64 compatibility mode"
+    },
+    "sizeLimitExceeded": "Image {filename} size is {size}, exceeds {limit} limit!",
+    "sizeLimitExceededAdvice": "Please compress the image using image editing software, or adjust the image size limit setting."
   },
   "language": {
     "settings": "Language Settings",

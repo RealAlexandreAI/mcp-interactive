@@ -14,8 +14,9 @@ from typing import Dict, List
 from pathlib import Path
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
-    QScrollArea, QGridLayout, QFileDialog, QMessageBox, QApplication
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QScrollArea, QGridLayout, QFileDialog, QMessageBox, QApplication,
+    QComboBox, QCheckBox, QGroupBox, QFrame
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QDragEnterEvent, QDropEvent
@@ -30,10 +31,11 @@ from .image_preview import ImagePreviewWidget
 class ImageUploadWidget(QWidget):
     """圖片上傳元件"""
     images_changed = Signal()
-    
-    def __init__(self, parent=None):
+
+    def __init__(self, parent=None, config_manager=None):
         super().__init__(parent)
         self.images: Dict[str, Dict[str, str]] = {}
+        self.config_manager = config_manager
         self._setup_ui()
         self.setAcceptDrops(True)
         # 啟動時清理舊的臨時文件
@@ -44,21 +46,104 @@ class ImageUploadWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setSpacing(6)
         layout.setContentsMargins(0, 8, 0, 8)  # 調整邊距使其與其他區域一致
-        
+
         # 標題
         self.title = QLabel(t('images.title'))
         self.title.setFont(QFont("", 10, QFont.Bold))
         self.title.setStyleSheet("color: #007acc; margin: 1px 0;")
         layout.addWidget(self.title)
-        
+
+        # 圖片設定區域
+        self._create_settings_area(layout)
+
         # 狀態標籤
         self.status_label = QLabel(t('images.status', count=0))
         self.status_label.setStyleSheet("color: #9e9e9e; font-size: 10px; margin: 5px 0;")
         layout.addWidget(self.status_label)
-        
+
         # 統一的圖片區域（整合按鈕、拖拽、預覽）
         self._create_unified_image_area(layout)
-    
+
+    def _create_settings_area(self, layout: QVBoxLayout) -> None:
+        """創建圖片設定區域"""
+        if not self.config_manager:
+            return  # 如果沒有 config_manager，跳過設定區域
+
+        # 設定群組框
+        settings_group = QGroupBox(t('images.settings.title'))
+        settings_group.setStyleSheet("""
+            QGroupBox {
+                font-weight: bold;
+                font-size: 9px;
+                color: #9e9e9e;
+                border: 1px solid #464647;
+                border-radius: 4px;
+                margin-top: 6px;
+                padding-top: 4px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 8px;
+                padding: 0 4px 0 4px;
+            }
+        """)
+
+        settings_layout = QHBoxLayout(settings_group)
+        settings_layout.setSpacing(12)
+        settings_layout.setContentsMargins(8, 8, 8, 8)
+
+        # 圖片大小限制設定
+        size_label = QLabel(t('images.settings.sizeLimit') + ":")
+        size_label.setStyleSheet("color: #cccccc; font-size: 9px;")
+
+        self.size_limit_combo = QComboBox()
+        self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.unlimited'), 0)
+        self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.1mb'), 1024*1024)
+        self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.3mb'), 3*1024*1024)
+        self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.5mb'), 5*1024*1024)
+
+        # 載入當前設定
+        current_limit = self.config_manager.get_image_size_limit()
+        for i in range(self.size_limit_combo.count()):
+            if self.size_limit_combo.itemData(i) == current_limit:
+                self.size_limit_combo.setCurrentIndex(i)
+                break
+
+        self.size_limit_combo.currentIndexChanged.connect(self._on_size_limit_changed)
+
+        # Base64 詳細模式設定
+        self.base64_checkbox = QCheckBox(t('images.settings.base64Detail'))
+        self.base64_checkbox.setChecked(self.config_manager.get_enable_base64_detail())
+        self.base64_checkbox.stateChanged.connect(self._on_base64_detail_changed)
+        self.base64_checkbox.setToolTip(t('images.settings.base64DetailHelp'))
+
+        # Base64 警告標籤
+        base64_warning = QLabel(t('images.settings.base64Warning'))
+        base64_warning.setStyleSheet("color: #ff9800; font-size: 8px;")
+
+        # 添加到佈局
+        settings_layout.addWidget(size_label)
+        settings_layout.addWidget(self.size_limit_combo)
+        settings_layout.addWidget(self.base64_checkbox)
+        settings_layout.addWidget(base64_warning)
+        settings_layout.addStretch()
+
+        layout.addWidget(settings_group)
+
+    def _on_size_limit_changed(self, index: int) -> None:
+        """圖片大小限制變更處理"""
+        if self.config_manager:
+            size_bytes = self.size_limit_combo.itemData(index)
+            self.config_manager.set_image_size_limit(size_bytes)
+            debug_log(f"圖片大小限制已更新: {size_bytes} bytes")
+
+    def _on_base64_detail_changed(self, state: int) -> None:
+        """Base64 詳細模式變更處理"""
+        if self.config_manager:
+            enabled = state == Qt.Checked
+            self.config_manager.set_enable_base64_detail(enabled)
+            debug_log(f"Base64 詳細模式已更新: {enabled}")
+
     def _create_unified_image_area(self, layout: QVBoxLayout) -> None:
         """創建統一的圖片區域"""
         # 創建滾動區域
@@ -327,12 +412,26 @@ class ImageUploadWidget(QWidget):
                 
                 file_size = os.path.getsize(file_path)
                 debug_log(f"文件大小: {file_size} bytes")
-                
-                # 更嚴格的大小限制（1MB）
-                if file_size > 1 * 1024 * 1024:
+
+                # 動態圖片大小限制檢查
+                size_limit = self.config_manager.get_image_size_limit() if self.config_manager else 1024*1024
+                if size_limit > 0 and file_size > size_limit:
+                    # 格式化限制大小顯示
+                    if size_limit >= 1024*1024:
+                        limit_str = f"{size_limit/(1024*1024):.0f}MB"
+                    else:
+                        limit_str = f"{size_limit/1024:.0f}KB"
+
+                    # 格式化文件大小顯示
+                    if file_size >= 1024*1024:
+                        size_str = f"{file_size/(1024*1024):.1f}MB"
+                    else:
+                        size_str = f"{file_size/1024:.1f}KB"
+
                     QMessageBox.warning(
-                        self, t('errors.warning'), 
-                        t('errors.fileSizeExceeded', filename=os.path.basename(file_path), size=f"{file_size/1024/1024:.1f}")
+                        self, t('errors.warning'),
+                        t('images.sizeLimitExceeded', filename=os.path.basename(file_path), size=size_str, limit=limit_str) +
+                        "\n\n" + t('images.sizeLimitExceededAdvice')
                     )
                     continue
                 
@@ -349,11 +448,25 @@ class ImageUploadWidget(QWidget):
                         debug_log(f"讀取的數據為空！")
                         continue
                     
-                    # 再次檢查內存中的數據大小
-                    if len(raw_data) > 1 * 1024 * 1024:
+                    # 再次檢查內存中的數據大小（使用配置的限制）
+                    size_limit = self.config_manager.get_image_size_limit() if self.config_manager else 1024*1024
+                    if size_limit > 0 and len(raw_data) > size_limit:
+                        # 格式化限制大小顯示
+                        if size_limit >= 1024*1024:
+                            limit_str = f"{size_limit/(1024*1024):.0f}MB"
+                        else:
+                            limit_str = f"{size_limit/1024:.0f}KB"
+
+                        # 格式化文件大小顯示
+                        if len(raw_data) >= 1024*1024:
+                            size_str = f"{len(raw_data)/(1024*1024):.1f}MB"
+                        else:
+                            size_str = f"{len(raw_data)/1024:.1f}KB"
+
                         QMessageBox.warning(
-                            self, t('errors.warning'), 
-                            t('errors.dataSizeExceeded', filename=os.path.basename(file_path))
+                            self, t('errors.warning'),
+                            t('images.sizeLimitExceeded', filename=os.path.basename(file_path), size=size_str, limit=limit_str) +
+                            "\n\n" + t('images.sizeLimitExceededAdvice')
                         )
                         continue
                 
@@ -506,7 +619,7 @@ class ImageUploadWidget(QWidget):
                             font-size: 11px;
                         }
                     """)
-        return
+                    return
         event.ignore()
     
     def dragLeaveEvent(self, event) -> None:
@@ -564,7 +677,29 @@ class ImageUploadWidget(QWidget):
         # 更新標題
         if hasattr(self, 'title'):
             self.title.setText(t('images.title'))
-        
+
+        # 更新設定區域文字
+        if hasattr(self, 'size_limit_combo'):
+            # 保存當前選擇
+            current_data = self.size_limit_combo.currentData()
+
+            # 清除並重新添加選項
+            self.size_limit_combo.clear()
+            self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.unlimited'), 0)
+            self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.1mb'), 1024*1024)
+            self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.3mb'), 3*1024*1024)
+            self.size_limit_combo.addItem(t('images.settings.sizeLimitOptions.5mb'), 5*1024*1024)
+
+            # 恢復選擇
+            for i in range(self.size_limit_combo.count()):
+                if self.size_limit_combo.itemData(i) == current_data:
+                    self.size_limit_combo.setCurrentIndex(i)
+                    break
+
+        if hasattr(self, 'base64_checkbox'):
+            self.base64_checkbox.setText(t('images.settings.base64Detail'))
+            self.base64_checkbox.setToolTip(t('images.settings.base64DetailHelp'))
+
         # 更新按鈕文字
         if hasattr(self, 'file_button'):
             self.file_button.setText(t('buttons.selectFiles'))
@@ -572,10 +707,10 @@ class ImageUploadWidget(QWidget):
             self.paste_button.setText(t('buttons.pasteClipboard'))
         if hasattr(self, 'clear_button'):
             self.clear_button.setText(t('buttons.clearAll'))
-        
+
         # 更新拖拽區域文字
         if hasattr(self, 'drop_hint_label'):
             self.drop_hint_label.setText(t('images.dragHint'))
-        
+
         # 更新狀態文字
-        self._update_status() 
+        self._update_status()

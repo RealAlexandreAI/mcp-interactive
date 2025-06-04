@@ -798,6 +798,122 @@
             gap: 16px;
             flex: 1;
         }
+
+        /* 圖片設定樣式 */
+        .image-settings-details {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            margin-bottom: 8px;
+        }
+
+        .image-settings-summary {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 13px;
+            user-select: none;
+            transition: color 0.3s ease;
+        }
+
+        .image-settings-summary:hover {
+            color: var(--text-primary);
+        }
+
+        .image-settings-content {
+            padding: 12px;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+
+        .image-setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+
+        .image-setting-row:last-of-type {
+            margin-bottom: 8px;
+        }
+
+        .image-setting-label {
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .image-setting-select {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            min-width: 80px;
+        }
+
+        .image-setting-checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .image-setting-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-color);
+        }
+
+        .image-setting-help {
+            color: var(--warning-color);
+            font-size: 11px;
+            margin-left: auto;
+        }
+
+        .image-setting-help-text {
+            color: var(--text-secondary);
+            font-size: 11px;
+            line-height: 1.4;
+            margin-top: 4px;
+            padding: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* 相容性提示樣式 */
+        .compatibility-hint {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid var(--info-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--info-color);
+        }
+
+        .compatibility-hint-btn {
+            background: var(--info-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .compatibility-hint-btn:hover {
+            background: #1976d2;
+        }
     </style>
 </head>
 <body>
@@ -859,8 +975,44 @@
                     ></textarea>
                 </div>
 
+                <!-- 圖片設定區域 -->
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <details class="image-settings-details">
+                        <summary class="image-settings-summary" data-i18n="images.settings.title">⚙️ 圖片設定</summary>
+                        <div class="image-settings-content">
+                            <div class="image-setting-row">
+                                <label class="image-setting-label" data-i18n="images.settings.sizeLimit">圖片大小限制：</label>
+                                <select id="imageSizeLimit" class="image-setting-select">
+                                    <option value="0" data-i18n="images.settings.sizeLimitOptions.unlimited">無限制</option>
+                                    <option value="1048576" data-i18n="images.settings.sizeLimitOptions.1mb">1MB</option>
+                                    <option value="3145728" data-i18n="images.settings.sizeLimitOptions.3mb">3MB</option>
+                                    <option value="5242880" data-i18n="images.settings.sizeLimitOptions.5mb">5MB</option>
+                                </select>
+                            </div>
+                            <div class="image-setting-row">
+                                <label class="image-setting-checkbox-container">
+                                    <input type="checkbox" id="enableBase64Detail" class="image-setting-checkbox">
+                                    <span class="image-setting-checkmark"></span>
+                                    <span class="image-setting-label" data-i18n="images.settings.base64Detail">Base64 相容模式</span>
+                                </label>
+                                <small class="image-setting-help" data-i18n="images.settings.base64Warning">⚠️ 會增加傳輸量</small>
+                            </div>
+                            <div class="image-setting-help-text" data-i18n="images.settings.base64DetailHelp">
+                                啟用後會在文字中包含完整的 Base64 圖片資料，提升與 Gemini 等 AI 模型的相容性
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
                 <div class="input-group">
                     <label class="input-label" data-i18n="feedback.imageLabel">圖片附件（可選）</label>
+                    <!-- 相容性提示區域 -->
+                    <div id="compatibilityHint" class="compatibility-hint" style="display: none;">
+                        <span data-i18n="images.settings.compatibilityHint">💡 圖片無法正確識別？</span>
+                        <button type="button" id="enableBase64Hint" class="compatibility-hint-btn" data-i18n="images.settings.enableBase64Hint">
+                            嘗試啟用 Base64 相容模式
+                        </button>
+                    </div>
                     <div id="imageUploadArea" class="image-upload-area">
                         <div id="imageUploadText" data-i18n="feedback.imageUploadText">
                             📎 點擊選擇圖片或拖放圖片到此處<br>
@@ -951,8 +1103,44 @@
                             ></textarea>
                         </div>
 
+                        <!-- 圖片設定區域 -->
+                        <div class="input-group" style="margin-bottom: 12px;">
+                            <details class="image-settings-details">
+                                <summary class="image-settings-summary" data-i18n="images.settings.title">⚙️ 圖片設定</summary>
+                                <div class="image-settings-content">
+                                    <div class="image-setting-row">
+                                        <label class="image-setting-label" data-i18n="images.settings.sizeLimit">圖片大小限制：</label>
+                                        <select id="combinedImageSizeLimit" class="image-setting-select">
+                                            <option value="0" data-i18n="images.settings.sizeLimitOptions.unlimited">無限制</option>
+                                            <option value="1048576" data-i18n="images.settings.sizeLimitOptions.1mb">1MB</option>
+                                            <option value="3145728" data-i18n="images.settings.sizeLimitOptions.3mb">3MB</option>
+                                            <option value="5242880" data-i18n="images.settings.sizeLimitOptions.5mb">5MB</option>
+                                        </select>
+                                    </div>
+                                    <div class="image-setting-row">
+                                        <label class="image-setting-checkbox-container">
+                                            <input type="checkbox" id="combinedEnableBase64Detail" class="image-setting-checkbox">
+                                            <span class="image-setting-checkmark"></span>
+                                            <span class="image-setting-label" data-i18n="images.settings.base64Detail">Base64 相容模式</span>
+                                        </label>
+                                        <small class="image-setting-help" data-i18n="images.settings.base64Warning">⚠️ 會增加傳輸量</small>
+                                    </div>
+                                    <div class="image-setting-help-text" data-i18n="images.settings.base64DetailHelp">
+                                        啟用後會在文字中包含完整的 Base64 圖片資料，提升與 Gemini 等 AI 模型的相容性
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+
                         <div class="input-group">
                             <label class="input-label" data-i18n="feedback.imageLabel">圖片附件（可選）</label>
+                            <!-- 相容性提示區域 -->
+                            <div id="combinedCompatibilityHint" class="compatibility-hint" style="display: none;">
+                                <span data-i18n="images.settings.compatibilityHint">💡 圖片無法正確識別？</span>
+                                <button type="button" id="combinedEnableBase64Hint" class="compatibility-hint-btn" data-i18n="images.settings.enableBase64Hint">
+                                    嘗試啟用 Base64 相容模式
+                                </button>
+                            </div>
                             <div id="combinedImageUploadArea" class="image-upload-area" style="min-height: 100px;">
                                 <div id="combinedImageUploadText" data-i18n="feedback.imageUploadText">
                                     📎 點擊選擇圖片或拖放圖片到此處<br>

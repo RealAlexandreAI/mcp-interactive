@@ -128,7 +128,6 @@ For best results, add these rules to your AI assistant:
 |----------|---------|--------|---------|
 | `FORCE_WEB` | Force use Web UI | `true`/`false` | `false` |
 | `MCP_DEBUG` | Debug mode | `true`/`false` | `false` |
-| `INCLUDE_BASE64_DETAIL` | Full Base64 for images | `true`/`false` | `false` |
 
 ### Testing Options
 ```bash

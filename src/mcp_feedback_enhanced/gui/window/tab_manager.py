@@ -271,18 +271,26 @@ class TabManager:
         result = {
             "interactive_feedback": "",
             "command_logs": "",
-            "images": []
+            "images": [],
+            "settings": {}
         }
-        
+
         # 獲取回饋文字和圖片
         if self.feedback_tab:
             result["interactive_feedback"] = self.feedback_tab.get_feedback_text()
             result["images"] = self.feedback_tab.get_images_data()
-        
+
         # 獲取命令日誌
         if self.command_tab:
             result["command_logs"] = self.command_tab.get_command_logs()
-        
+
+        # 獲取圖片設定
+        if self.config_manager:
+            result["settings"] = {
+                "image_size_limit": self.config_manager.get_image_size_limit(),
+                "enable_base64_detail": self.config_manager.get_enable_base64_detail()
+            }
+
         return result
     
     def restore_content(self, feedback_text: str, command_logs: str, images_data: list) -> None:

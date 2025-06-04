@@ -34,6 +34,7 @@ class WebFeedbackSession:
         self.websocket: Optional[WebSocket] = None
         self.feedback_result: Optional[str] = None
         self.images: List[dict] = []
+        self.settings: dict = {}  # 圖片設定
         self.feedback_completed = threading.Event()
         self.process: Optional[subprocess.Popen] = None
         self.command_logs = []
@@ -73,7 +74,8 @@ class WebFeedbackSession:
                 return {
                     "logs": "\n".join(self.command_logs),
                     "interactive_feedback": self.feedback_result or "",
-                    "images": self.images
+                    "images": self.images,
+                    "settings": self.settings
                 }
             else:
                 # 超時了，立即清理資源
@@ -87,18 +89,21 @@ class WebFeedbackSession:
             await self._cleanup_resources_on_timeout()
             raise
 
-    async def submit_feedback(self, feedback: str, images: List[dict]):
+    async def submit_feedback(self, feedback: str, images: List[dict], settings: dict = None):
         """
         提交回饋和圖片
-        
+
         Args:
             feedback: 文字回饋
             images: 圖片列表
+            settings: 圖片設定（可選）
         """
         self.feedback_result = feedback
+        # 先設置設定，再處理圖片（因為處理圖片時需要用到設定）
+        self.settings = settings or {}
         self.images = self._process_images(images)
         self.feedback_completed.set()
-        
+
         if self.websocket:
             try:
                 await self.websocket.close()
@@ -108,23 +113,26 @@ class WebFeedbackSession:
     def _process_images(self, images: List[dict]) -> List[dict]:
         """
         處理圖片數據，轉換為統一格式
-        
+
         Args:
             images: 原始圖片數據列表
-            
+
         Returns:
             List[dict]: 處理後的圖片數據
         """
         processed_images = []
-        
+
+        # 從設定中獲取圖片大小限制，如果沒有設定則使用預設值
+        size_limit = self.settings.get('image_size_limit', MAX_IMAGE_SIZE)
+
         for img in images:
             try:
                 if not all(key in img for key in ["name", "data", "size"]):
                     continue
-                
-                # 檢查文件大小
-                if img["size"] > MAX_IMAGE_SIZE:
-                    debug_log(f"圖片 {img['name']} 超過大小限制，跳過")
+
+                # 檢查文件大小（只有當限制大於0時才檢查）
+                if size_limit > 0 and img["size"] > size_limit:
+                    debug_log(f"圖片 {img['name']} 超過大小限制 ({size_limit} bytes)，跳過")
                     continue
                 
                 # 解碼 base64 數據

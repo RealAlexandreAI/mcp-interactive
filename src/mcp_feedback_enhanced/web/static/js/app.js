@@ -7,7 +7,7 @@
 
 class PersistentSettings {
     constructor() {
-        this.settingsFile = '.mcp_feedback_settings.json';
+        this.settingsFile = 'ui_settings.json';
         this.storageKey = 'mcp_feedback_settings';
     }
 
@@ -91,6 +91,10 @@ class FeedbackApp {
         this.isConnected = false; // 初始化連接狀態
         this.websocket = null; // 初始化 WebSocket
         this.isHandlingPaste = false; // 防止重複處理貼上事件的標記
+
+        // 圖片設定
+        this.imageSizeLimit = 0; // 0 表示無限制
+        this.enableBase64Detail = false;
         
         // 立即檢查 DOM 狀態並初始化
         if (document.readyState === 'loading') {
@@ -363,6 +367,9 @@ class FeedbackApp {
         if (resetSettingsBtn) {
             resetSettingsBtn.addEventListener('click', () => this.resetSettings());
         }
+
+        // 圖片設定監聽器
+        this.setupImageSettingsListeners();
     }
 
     setupSettingsListeners() {
@@ -392,6 +399,118 @@ class FeedbackApp {
                 this.setLanguage(lang);
             });
         });
+    }
+
+    setupImageSettingsListeners() {
+        // 圖片大小限制設定 - 原始分頁
+        const imageSizeLimit = document.getElementById('imageSizeLimit');
+        if (imageSizeLimit) {
+            imageSizeLimit.addEventListener('change', (e) => {
+                this.imageSizeLimit = parseInt(e.target.value);
+                this.saveSettings();
+                this.syncImageSettings();
+            });
+        }
+
+        // Base64 詳細模式設定 - 原始分頁
+        const enableBase64Detail = document.getElementById('enableBase64Detail');
+        if (enableBase64Detail) {
+            enableBase64Detail.addEventListener('change', (e) => {
+                this.enableBase64Detail = e.target.checked;
+                this.saveSettings();
+                this.syncImageSettings();
+            });
+        }
+
+        // 圖片大小限制設定 - 合併模式
+        const combinedImageSizeLimit = document.getElementById('combinedImageSizeLimit');
+        if (combinedImageSizeLimit) {
+            combinedImageSizeLimit.addEventListener('change', (e) => {
+                this.imageSizeLimit = parseInt(e.target.value);
+                this.saveSettings();
+                this.syncImageSettings();
+            });
+        }
+
+        // Base64 詳細模式設定 - 合併模式
+        const combinedEnableBase64Detail = document.getElementById('combinedEnableBase64Detail');
+        if (combinedEnableBase64Detail) {
+            combinedEnableBase64Detail.addEventListener('change', (e) => {
+                this.enableBase64Detail = e.target.checked;
+                this.saveSettings();
+                this.syncImageSettings();
+            });
+        }
+
+        // 相容性提示按鈕 - 原始分頁
+        const enableBase64Hint = document.getElementById('enableBase64Hint');
+        if (enableBase64Hint) {
+            enableBase64Hint.addEventListener('click', () => {
+                this.enableBase64Detail = true;
+                this.saveSettings();
+                this.syncImageSettings();
+                this.hideCompatibilityHint();
+            });
+        }
+
+        // 相容性提示按鈕 - 合併模式
+        const combinedEnableBase64Hint = document.getElementById('combinedEnableBase64Hint');
+        if (combinedEnableBase64Hint) {
+            combinedEnableBase64Hint.addEventListener('click', () => {
+                this.enableBase64Detail = true;
+                this.saveSettings();
+                this.syncImageSettings();
+                this.hideCompatibilityHint();
+            });
+        }
+    }
+
+    syncImageSettings() {
+        // 同步圖片大小限制設定
+        const imageSizeLimit = document.getElementById('imageSizeLimit');
+        const combinedImageSizeLimit = document.getElementById('combinedImageSizeLimit');
+
+        if (imageSizeLimit) {
+            imageSizeLimit.value = this.imageSizeLimit;
+        }
+        if (combinedImageSizeLimit) {
+            combinedImageSizeLimit.value = this.imageSizeLimit;
+        }
+
+        // 同步 Base64 詳細模式設定
+        const enableBase64Detail = document.getElementById('enableBase64Detail');
+        const combinedEnableBase64Detail = document.getElementById('combinedEnableBase64Detail');
+
+        if (enableBase64Detail) {
+            enableBase64Detail.checked = this.enableBase64Detail;
+        }
+        if (combinedEnableBase64Detail) {
+            combinedEnableBase64Detail.checked = this.enableBase64Detail;
+        }
+    }
+
+    showCompatibilityHint() {
+        const compatibilityHint = document.getElementById('compatibilityHint');
+        const combinedCompatibilityHint = document.getElementById('combinedCompatibilityHint');
+
+        if (compatibilityHint) {
+            compatibilityHint.style.display = 'flex';
+        }
+        if (combinedCompatibilityHint) {
+            combinedCompatibilityHint.style.display = 'flex';
+        }
+    }
+
+    hideCompatibilityHint() {
+        const compatibilityHint = document.getElementById('compatibilityHint');
+        const combinedCompatibilityHint = document.getElementById('combinedCompatibilityHint');
+
+        if (compatibilityHint) {
+            compatibilityHint.style.display = 'none';
+        }
+        if (combinedCompatibilityHint) {
+            combinedCompatibilityHint.style.display = 'none';
+        }
     }
 
     setupTabs() {
@@ -674,8 +793,27 @@ class FeedbackApp {
     }
 
     addImage(file) {
-        if (file.size > 1024 * 1024) { // 1MB
-            alert('圖片大小不能超過 1MB');
+        // 檢查圖片大小限制
+        if (this.imageSizeLimit > 0 && file.size > this.imageSizeLimit) {
+            const limitMB = this.imageSizeLimit / (1024 * 1024);
+            const fileMB = file.size / (1024 * 1024);
+
+            const message = window.i18nManager ?
+                window.i18nManager.t('images.sizeLimitExceeded', {
+                    filename: file.name,
+                    size: fileMB.toFixed(1) + 'MB',
+                    limit: limitMB.toFixed(0) + 'MB'
+                }) :
+                `圖片 ${file.name} 大小為 ${fileMB.toFixed(1)}MB，超過 ${limitMB.toFixed(0)}MB 限制！`;
+
+            const advice = window.i18nManager ?
+                window.i18nManager.t('images.sizeLimitExceededAdvice') :
+                '建議使用圖片編輯軟體壓縮後再上傳，或調整圖片大小限制設定。';
+
+            alert(message + '\n\n' + advice);
+
+            // 顯示相容性提示（如果圖片上傳失敗）
+            this.showCompatibilityHint();
             return;
         }
 
@@ -847,11 +985,15 @@ class FeedbackApp {
             type: img.type
         }));
 
-        // 發送回饋
+        // 發送回饋（包含圖片設定）
         this.websocket.send(JSON.stringify({
             type: 'submit_feedback',
             feedback: feedback,
-            images: imageData
+            images: imageData,
+            settings: {
+                image_size_limit: this.imageSizeLimit,
+                enable_base64_detail: this.enableBase64Detail
+            }
         }));
 
         console.log('回饋已提交');
@@ -960,12 +1102,28 @@ class FeedbackApp {
                     this.autoClose = true; // 預設啟用
                 }
             }
-            
+
             // 更新自動關閉開關狀態
             const autoCloseToggle = document.getElementById('autoCloseToggle');
             if (autoCloseToggle) {
                 autoCloseToggle.classList.toggle('active', this.autoClose);
             }
+
+            // 載入圖片設定
+            if (settings.imageSizeLimit !== undefined) {
+                this.imageSizeLimit = settings.imageSizeLimit;
+            } else {
+                this.imageSizeLimit = 0; // 預設無限制
+            }
+
+            if (settings.enableBase64Detail !== undefined) {
+                this.enableBase64Detail = settings.enableBase64Detail;
+            } else {
+                this.enableBase64Detail = false; // 預設關閉
+            }
+
+            // 同步圖片設定到 UI
+            this.syncImageSettings();
 
             // 確保語言選擇器與當前語言同步
             this.syncLanguageSelector();
@@ -1053,6 +1211,8 @@ $ `;
             // 重置本地變數
             this.layoutMode = 'separate';
             this.autoClose = true;
+            this.imageSizeLimit = 0;
+            this.enableBase64Detail = false;
 
             // 更新佈局模式單選按鈕狀態
             const layoutRadios = document.querySelectorAll('input[name="layoutMode"]');
@@ -1065,6 +1225,9 @@ $ `;
             if (autoCloseToggle) {
                 autoCloseToggle.classList.toggle('active', this.autoClose);
             }
+
+            // 同步圖片設定到 UI
+            this.syncImageSettings();
 
             // 確保語言選擇器與當前語言同步
             this.syncLanguageSelector();
@@ -1149,17 +1312,21 @@ $ `;
             const settings = {
                 layoutMode: this.layoutMode,
                 autoClose: this.autoClose,
+                imageSizeLimit: this.imageSizeLimit,
+                enableBase64Detail: this.enableBase64Detail,
                 language: window.i18nManager?.currentLanguage || 'zh-TW',
                 activeTab: localStorage.getItem('activeTab'),
                 lastSaved: new Date().toISOString()
             };
-            
+
             await this.persistentSettings.saveSettings(settings);
-            
+
             // 同時保存到 localStorage 作為備用（向後兼容）
             localStorage.setItem('layoutMode', this.layoutMode);
             localStorage.setItem('autoClose', this.autoClose.toString());
-            
+            localStorage.setItem('imageSizeLimit', this.imageSizeLimit.toString());
+            localStorage.setItem('enableBase64Detail', this.enableBase64Detail.toString());
+
             console.log('設定已保存:', settings);
         } catch (error) {
             console.warn('保存設定時發生錯誤:', error);

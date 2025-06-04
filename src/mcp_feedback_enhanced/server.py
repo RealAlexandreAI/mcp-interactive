@@ -281,10 +281,22 @@ def create_feedback_text(feedback_data: dict) -> str:
                         # 如果 AI 助手不支援 MCP 圖片，可以提供完整 base64
                         debug_log(f"圖片 {i} Base64 已準備，長度: {len(img_base64)}")
                         
-                        # 可選：根據環境變數決定是否包含完整 base64
-                        include_full_base64 = os.getenv("INCLUDE_BASE64_DETAIL", "").lower() in ("true", "1", "yes", "on")
+                        # 檢查是否啟用 Base64 詳細模式（從 UI 設定中獲取）
+                        include_full_base64 = feedback_data.get("settings", {}).get("enable_base64_detail", False)
+
                         if include_full_base64:
-                            img_info += f"\n     完整 Base64: data:image/png;base64,{img_base64}"
+                            # 根據檔案名推斷 MIME 類型
+                            file_name = img.get("name", "image.png")
+                            if file_name.lower().endswith(('.jpg', '.jpeg')):
+                                mime_type = 'image/jpeg'
+                            elif file_name.lower().endswith('.gif'):
+                                mime_type = 'image/gif'
+                            elif file_name.lower().endswith('.webp'):
+                                mime_type = 'image/webp'
+                            else:
+                                mime_type = 'image/png'
+
+                            img_info += f"\n     完整 Base64: data:{mime_type};base64,{img_base64}"
                         
                 except Exception as e:
                     debug_log(f"圖片 {i} Base64 處理失敗: {e}")

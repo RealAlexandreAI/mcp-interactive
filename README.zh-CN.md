@@ -128,7 +128,6 @@ uvx mcp-feedback-enhanced@latest test
 |------|------|-----|------|
 | `FORCE_WEB` | 强制使用 Web UI | `true`/`false` | `false` |
 | `MCP_DEBUG` | 调试模式 | `true`/`false` | `false` |
-| `INCLUDE_BASE64_DETAIL` | 图片完整 Base64 | `true`/`false` | `false` |
 
 ### 测试选项
 ```bash

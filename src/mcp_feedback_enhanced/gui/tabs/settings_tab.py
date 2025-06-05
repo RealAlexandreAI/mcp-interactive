@@ -191,11 +191,10 @@ class SettingsTab(QWidget):
                 height: 12px;
             }
             QComboBox QAbstractItemView {
-                background-color: #3a3a3a;
-                border: 1px solid #555555;
                 selection-background-color: #0078d4;
                 color: #ffffff;
                 font-size: 12px;
+                min-width: 120px;
             }
         """)
         

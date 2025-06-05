@@ -8,7 +8,7 @@
 
 ## 🎯 核心概念
 
-这是一个 [MCP 服务器](https://modelcontextprotocol.io/)，建立**反馈导向的开发工作流程**，完美适配本地与 **SSH 远程开发环境**。通过引导 AI 与用户确认而非进行推测性操作，可将多次工具调用合并为单次反馈导向请求，大幅节省平台成本并提升开发效率。
+这是一个 [MCP 服务器](https://modelcontextprotocol.io/)，建立**反馈导向的开发工作流程**，完美适配本地、**SSH 远程开发环境**与 **WSL (Windows Subsystem for Linux) 环境**。通过引导 AI 与用户确认而非进行推测性操作，可将多次工具调用合并为单次反馈导向请求，大幅节省平台成本并提升开发效率。
 
 **支持平台：** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
@@ -23,8 +23,8 @@
 
 ### 🖥️ 双界面系统
 - **Qt GUI**：本地环境原生体验，模块化重构设计
-- **Web UI**：远程 SSH 环境现代化界面，全新架构
-- **智能切换**：自动检测环境并选择最适界面
+- **Web UI**：远程 SSH 环境与 WSL 环境现代化界面，全新架构
+- **智能切换**：自动检测环境（本地/远程/WSL）并选择最适界面
 
 ### 🎨 全新界面设计（v2.1.0）
 - **模块化架构**：GUI 和 Web UI 均采用模块化设计
@@ -41,6 +41,12 @@
 - **三语支持**：简体中文、英文、繁体中文
 - **智能检测**：根据系统语言自动选择
 - **即时切换**：界面内可直接切换语言
+
+### ✨ WSL 环境支持（v2.2.5 新功能）
+- **自动检测**：智能识别 WSL (Windows Subsystem for Linux) 环境
+- **浏览器整合**：WSL 环境下自动启动 Windows 浏览器
+- **多种启动方式**：支持 `cmd.exe`、`powershell.exe`、`wslview` 等多种浏览器启动方法
+- **无缝体验**：WSL 用户可直接使用 Web UI，无需额外配置
 
 ## 🖥️ 界面预览
 
@@ -172,10 +178,11 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # 测试 Web UI (自�
 
 📋 **完整版本更新记录：** [RELEASE_NOTES/CHANGELOG.zh-CN.md](RELEASE_NOTES/CHANGELOG.zh-CN.md)
 
-### 最新版本亮点（v2.2.2）
-- 🔄 **超时自动清理**: 修复 GUI/Web UI 在 MCP session timeout 后没有自动关闭的问题
-- 🛡️ **资源管理优化**: 改进超时处理机制，确保正确清理所有 UI 资源  
-- 🎯 **QTimer 整合**: 在 GUI 中引入精确的 QTimer 超时控制机制
+### 最新版本亮点（v2.2.5）
+- ✨ **WSL 环境支持**: 新增 WSL (Windows Subsystem for Linux) 环境的完整支持
+- 🌐 **智能浏览器启动**: WSL 环境下自动调用 Windows 浏览器，支持多种启动方式
+- 🎯 **环境检测优化**: 改进远程环境检测逻辑，WSL 不再被误判为远程环境
+- 🧪 **测试体验提升**: 测试模式下自动尝试启动浏览器，提供更好的测试体验
 
 ## 🐛 常见问题
 
@@ -214,8 +221,18 @@ uv cache clean
 **Q: Gemini Pro 2.5 无法解析图片**  
 A: 已知问题，Gemini Pro 2.5 可能无法正确解析上传的图片内容。实测 Claude-4-Sonnet 可以正常解析图片。建议使用 Claude 模型获得更好的图片理解能力。
 
-**Q: 多屏幕视窗定位问题**  
+**Q: 多屏幕视窗定位问题**
 A: 已在 v2.1.1 修复。进入「⚙️ 设置」标签页，勾选「总是在主屏幕中心显示窗口」即可解决窗口定位问题。特别适用于 T 字型屏幕排列等复杂多屏幕配置。
+
+**Q: WSL 环境下无法启动浏览器**
+A: v2.2.5 已新增 WSL 环境支持。如果仍有问题：
+1. 确认 WSL 版本（建议使用 WSL 2）
+2. 检查 Windows 浏览器是否正常安装
+3. 尝试手动测试：在 WSL 中执行 `cmd.exe /c start https://www.google.com`
+4. 如果安装了 `wslu` 套件，也可尝试 `wslview` 命令
+
+**Q: WSL 环境被误判为远程环境**
+A: v2.2.5 已修复此问题。WSL 环境现在会被正确识别并使用 Web UI 配合 Windows 浏览器启动，而不会被误判为远程环境。
 
 ## 🙏 致谢
 

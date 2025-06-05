@@ -8,7 +8,7 @@
 
 ## 🎯 Core Concept
 
-This is an [MCP server](https://modelcontextprotocol.io/) that establishes **feedback-oriented development workflows**, perfectly adapting to both local and **SSH remote development environments**. By guiding AI to confirm with users rather than making speculative operations, it can consolidate multiple tool calls into a single feedback-oriented request, dramatically reducing platform costs and improving development efficiency.
+This is an [MCP server](https://modelcontextprotocol.io/) that establishes **feedback-oriented development workflows**, perfectly adapting to local, **SSH remote development environments**, and **WSL (Windows Subsystem for Linux) environments**. By guiding AI to confirm with users rather than making speculative operations, it can consolidate multiple tool calls into a single feedback-oriented request, dramatically reducing platform costs and improving development efficiency.
 
 **Supported Platforms:** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
@@ -23,8 +23,8 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 
 ### 🖥️ Dual Interface System
 - **Qt GUI**: Native experience for local environments, modular refactored design
-- **Web UI**: Modern interface for remote SSH environments, brand new architecture
-- **Smart Switching**: Auto-detect environment and choose optimal interface
+- **Web UI**: Modern interface for remote SSH and WSL environments, brand new architecture
+- **Smart Switching**: Auto-detect environment (local/remote/WSL) and choose optimal interface
 
 ### 🎨 Brand New Interface Design (v2.1.0)
 - **Modular Architecture**: Both GUI and Web UI adopt modular design
@@ -41,6 +41,12 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 - **Three Languages**: English, Traditional Chinese, Simplified Chinese
 - **Smart Detection**: Auto-select based on system language
 - **Live Switching**: Change language directly within interface
+
+### ✨ WSL Environment Support (v2.2.5 New Feature)
+- **Auto Detection**: Intelligently identifies WSL (Windows Subsystem for Linux) environments
+- **Browser Integration**: Automatically launches Windows browser in WSL environments
+- **Multiple Launch Methods**: Supports `cmd.exe`, `powershell.exe`, `wslview` and other browser launch methods
+- **Seamless Experience**: WSL users can directly use Web UI without additional configuration
 
 ## 🖥️ Interface Preview
 
@@ -172,10 +178,11 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto co
 
 📋 **Complete Version History:** [RELEASE_NOTES/CHANGELOG.en.md](RELEASE_NOTES/CHANGELOG.en.md)
 
-### Latest Version Highlights (v2.2.2)
-- 🔄 **Timeout Auto-cleanup**: Fixed GUI/Web UI not automatically closing after MCP session timeout
-- 🛡️ **Resource Management Optimization**: Improved timeout handling mechanism to ensure proper cleanup of all UI resources  
-- 🎯 **QTimer Integration**: Introduced precise QTimer timeout control mechanism in GUI
+### Latest Version Highlights (v2.2.5)
+- ✨ **WSL Environment Support**: Added comprehensive support for WSL (Windows Subsystem for Linux) environments
+- 🌐 **Smart Browser Launching**: Automatically invokes Windows browser in WSL environments with multiple launch methods
+- 🎯 **Environment Detection Optimization**: Improved remote environment detection logic, WSL no longer misidentified as remote environment
+- 🧪 **Testing Experience Improvement**: Test mode automatically attempts browser launching for better testing experience
 
 ## 🐛 Common Issues
 
@@ -214,8 +221,18 @@ For detailed instructions, see: [Cache Management Guide](docs/en/cache-managemen
 **Q: Gemini Pro 2.5 cannot parse images**  
 A: Known issue. Gemini Pro 2.5 may not correctly parse uploaded image content. Testing shows Claude-4-Sonnet can properly analyze images. Recommend using Claude models for better image understanding capabilities.
 
-**Q: Multi-screen window positioning issues**  
+**Q: Multi-screen window positioning issues**
 A: Fixed in v2.1.1. Go to "⚙️ Settings" tab, check "Always show window at primary screen center" to resolve window positioning issues. Especially useful for T-shaped screen arrangements and other complex multi-monitor configurations.
+
+**Q: Cannot launch browser in WSL environment**
+A: v2.2.5 has added WSL environment support. If issues persist:
+1. Confirm WSL version (WSL 2 recommended)
+2. Check if Windows browser is properly installed
+3. Try manual test: run `cmd.exe /c start https://www.google.com` in WSL
+4. If `wslu` package is installed, you can also try the `wslview` command
+
+**Q: WSL environment misidentified as remote environment**
+A: v2.2.5 has fixed this issue. WSL environments are now correctly identified and use Web UI with Windows browser launching, instead of being misidentified as remote environments.
 
 ## 🙏 Acknowledgments
 

@@ -8,7 +8,7 @@
 
 ## 🎯 核心概念
 
-這是一個 [MCP 伺服器](https://modelcontextprotocol.io/)，建立**回饋導向的開發工作流程**，完美適配本地與 **SSH 遠端開發環境**。透過引導 AI 與用戶確認而非進行推測性操作，可將多次工具調用合併為單次回饋導向請求，大幅節省平台成本並提升開發效率。
+這是一個 [MCP 伺服器](https://modelcontextprotocol.io/)，建立**回饋導向的開發工作流程**，完美適配本地、**SSH 遠端開發環境**與 **WSL (Windows Subsystem for Linux) 環境**。透過引導 AI 與用戶確認而非進行推測性操作，可將多次工具調用合併為單次回饋導向請求，大幅節省平台成本並提升開發效率。
 
 **支援平台：** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
@@ -23,8 +23,8 @@
 
 ### 🖥️ 雙介面系統
 - **Qt GUI**：本地環境原生體驗，模組化重構設計
-- **Web UI**：遠端 SSH 環境現代化界面，全新架構
-- **智能切換**：自動檢測環境並選擇最適介面
+- **Web UI**：遠端 SSH 環境與 WSL 環境現代化界面，全新架構
+- **智能切換**：自動檢測環境（本地/遠端/WSL）並選擇最適介面
 
 ### 🎨 全新界面設計（v2.1.0）
 - **模組化架構**：GUI 和 Web UI 均採用模組化設計
@@ -41,6 +41,12 @@
 - **三語支援**：繁體中文、英文、簡體中文
 - **智能偵測**：根據系統語言自動選擇
 - **即時切換**：介面內可直接切換語言
+
+### ✨ WSL 環境支援（v2.2.5 新功能）
+- **自動檢測**：智能識別 WSL (Windows Subsystem for Linux) 環境
+- **瀏覽器整合**：WSL 環境下自動啟動 Windows 瀏覽器
+- **多種啟動方式**：支援 `cmd.exe`、`powershell.exe`、`wslview` 等多種瀏覽器啟動方法
+- **無縫體驗**：WSL 用戶可直接使用 Web UI，無需額外配置
 
 ## 🖥️ 介面預覽
 
@@ -172,10 +178,11 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # 測試 Web UI (自�
 
 📋 **完整版本更新記錄：** [RELEASE_NOTES/CHANGELOG.zh-TW.md](RELEASE_NOTES/CHANGELOG.zh-TW.md)
 
-### 最新版本亮點（v2.2.2）
-- 🔄 **超時自動清理**: 修復 GUI/Web UI 在 MCP session timeout 後沒有自動關閉的問題
-- 🛡️ **資源管理優化**: 改進超時處理機制，確保正確清理所有 UI 資源  
-- 🎯 **QTimer 整合**: 在 GUI 中引入精確的 QTimer 超時控制機制
+### 最新版本亮點（v2.2.5）
+- ✨ **WSL 環境支援**: 新增 WSL (Windows Subsystem for Linux) 環境的完整支援
+- 🌐 **智能瀏覽器啟動**: WSL 環境下自動調用 Windows 瀏覽器，支援多種啟動方式
+- 🎯 **環境檢測優化**: 改進遠端環境檢測邏輯，WSL 不再被誤判為遠端環境
+- 🧪 **測試體驗提升**: 測試模式下自動嘗試啟動瀏覽器，提供更好的測試體驗
 
 ## 🐛 常見問題
 
@@ -214,7 +221,7 @@ uv cache clean
 ```
 詳細說明請參考：[Cache 管理指南](docs/zh-TW/cache-management.md)
 
-**Q: AI 模型無法解析圖片**  
+**Q: AI 模型無法解析圖片**
 A: 各種 AI 模型（包括 Gemini Pro 2.5、Claude 等）在圖片解析上可能存在不穩定性，表現為有時能正確識別、有時無法解析上傳的圖片內容。這是 AI 視覺理解技術的已知限制。建議：
 1. 確保圖片品質良好（高對比度、清晰文字）
 2. 多嘗試幾次上傳，通常重試可以成功

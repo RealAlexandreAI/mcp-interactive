@@ -2,8 +2,8 @@
 
 **🌐 語言切換 / Language:** [English](README.md) | **繁體中文** | [简体中文](README.zh-CN.md)
 
-**原作者：** [Fábio Ferreira](https://x.com/fabiomlferreira) | [原始專案](https://github.com/noopstudios/interactive-feedback-mcp) ⭐  
-**分支版本：** [Minidoracat](https://github.com/Minidoracat)  
+**原作者：** [Fábio Ferreira](https://x.com/fabiomlferreira) | [原始專案](https://github.com/noopstudios/interactive-feedback-mcp) ⭐
+**分支版本：** [Minidoracat](https://github.com/Minidoracat)
 **UI 設計參考：** [sanshao85/mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)
 
 ## 🎯 核心概念
@@ -67,8 +67,8 @@
 *Web UI 介面 - 全新架構，適合 SSH Remote 環境*
 
 **快捷鍵支援**
-- `Ctrl+Enter`：提交回饋（主鍵盤與數字鍵盤皆支援）
-- `Ctrl+V`：直接粘貼剪貼板圖片
+- `Ctrl+Enter`（Windows/Linux）/ `Cmd+Enter`（macOS）：提交回饋（主鍵盤與數字鍵盤皆支援）
+- `Ctrl+V`（Windows/Linux）/ `Cmd+V`（macOS）：直接粘貼剪貼板圖片
 
 ## 🚀 快速開始
 
@@ -186,16 +186,16 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # 測試 Web UI (自�
 
 ## 🐛 常見問題
 
-**Q: 出現 "Unexpected token 'D'" 錯誤**  
+**Q: 出現 "Unexpected token 'D'" 錯誤**
 A: 調試輸出干擾。設置 `MCP_DEBUG=false` 或移除該環境變數。
 
-**Q: 中文字符亂碼**  
+**Q: 中文字符亂碼**
 A: 已在 v2.0.3 修復。更新到最新版本：`uvx mcp-feedback-enhanced@latest`
 
-**Q: 多螢幕環境下視窗消失或定位錯誤**  
+**Q: 多螢幕環境下視窗消失或定位錯誤**
 A: 已在 v2.1.1 修復。進入「⚙️ 設定」分頁，勾選「總是在主螢幕中心顯示視窗」即可解決。特別適用於 T 字型螢幕排列等複雜多螢幕配置。
 
-**Q: 圖片上傳失敗**  
+**Q: 圖片上傳失敗**
 A: 檢查檔案大小（≤1MB）和格式（PNG/JPG/GIF/BMP/WebP）。
 
 **Q: Web UI 無法啟動**
@@ -230,7 +230,7 @@ A: 各種 AI 模型（包括 Gemini Pro 2.5、Claude 等）在圖片解析上可
 ## 🙏 致謝
 
 ### 🌟 支持原作者
-**Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)  
+**Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)
 **原始專案：** [noopstudios/interactive-feedback-mcp](https://github.com/noopstudios/interactive-feedback-mcp)
 
 如果您覺得有用，請：

@@ -2,8 +2,8 @@
 
 **🌐 Language / 語言切換:** **English** | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
-**Original Author:** [Fábio Ferreira](https://x.com/fabiomlferreira) | [Original Project](https://github.com/noopstudios/interactive-feedback-mcp) ⭐  
-**Enhanced Fork:** [Minidoracat](https://github.com/Minidoracat)  
+**Original Author:** [Fábio Ferreira](https://x.com/fabiomlferreira) | [Original Project](https://github.com/noopstudios/interactive-feedback-mcp) ⭐
+**Enhanced Fork:** [Minidoracat](https://github.com/Minidoracat)
 **UI Design Reference:** [sanshao85/mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)
 
 ## 🎯 Core Concept
@@ -67,8 +67,8 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 *Web UI Interface - Brand new architecture, suitable for SSH Remote environments*
 
 **Keyboard Shortcuts**
-- `Ctrl+Enter`: Submit feedback (supports both main keyboard and numpad)
-- `Ctrl+V`: Directly paste clipboard images
+- `Ctrl+Enter` (Windows/Linux) / `Cmd+Enter` (macOS): Submit feedback (supports both main keyboard and numpad)
+- `Ctrl+V` (Windows/Linux) / `Cmd+V` (macOS): Directly paste clipboard images
 
 ## 🚀 Quick Start
 
@@ -186,13 +186,13 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto co
 
 ## 🐛 Common Issues
 
-**Q: Getting "Unexpected token 'D'" error**  
+**Q: Getting "Unexpected token 'D'" error**
 A: Debug output interference. Set `MCP_DEBUG=false` or remove the environment variable.
 
-**Q: Chinese character garbled text**  
+**Q: Chinese character garbled text**
 A: Fixed in v2.0.3. Update to latest version: `uvx mcp-feedback-enhanced@latest`
 
-**Q: Image upload fails**  
+**Q: Image upload fails**
 A: Check file size (≤1MB) and format (PNG/JPG/GIF/BMP/WebP).
 
 **Q: Web UI won't start**
@@ -218,7 +218,7 @@ uv cache clean
 ```
 For detailed instructions, see: [Cache Management Guide](docs/en/cache-management.md)
 
-**Q: Gemini Pro 2.5 cannot parse images**  
+**Q: Gemini Pro 2.5 cannot parse images**
 A: Known issue. Gemini Pro 2.5 may not correctly parse uploaded image content. Testing shows Claude-4-Sonnet can properly analyze images. Recommend using Claude models for better image understanding capabilities.
 
 **Q: Multi-screen window positioning issues**
@@ -237,7 +237,7 @@ A: v2.2.5 has fixed this issue. WSL environments are now correctly identified an
 ## 🙏 Acknowledgments
 
 ### 🌟 Support Original Author
-**Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)  
+**Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)
 **Original Project:** [noopstudios/interactive-feedback-mcp](https://github.com/noopstudios/interactive-feedback-mcp)
 
 If you find this useful, please:

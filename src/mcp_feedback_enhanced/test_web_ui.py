@@ -40,6 +40,7 @@ from .i18n import t
 try:
     # 使用新的 web 模組
     from .web import WebUIManager, launch_web_feedback_ui, get_web_ui_manager
+    from .web.utils.browser import smart_browser_open, is_wsl_environment
     WEB_UI_AVAILABLE = True
     debug_log("✅ 使用新的 web 模組")
 except ImportError as e:
@@ -143,6 +144,21 @@ def test_web_ui(keep_running=False):
         }
         debug_log(f"✅ 測試會話創建成功 (ID: {session_id[:8]}...)")
         debug_log(f"🔗 測試 URL: {session_info['url']}")
+
+        # 測試瀏覽器啟動功能
+        try:
+            debug_log("🌐 測試瀏覽器啟動功能...")
+            if is_wsl_environment():
+                debug_log("✅ 檢測到 WSL 環境，使用 WSL 專用瀏覽器啟動")
+            else:
+                debug_log("ℹ️  非 WSL 環境，使用標準瀏覽器啟動")
+
+            smart_browser_open(session_info['url'])
+            debug_log(f"✅ 瀏覽器啟動成功: {session_info['url']}")
+        except Exception as browser_error:
+            debug_log(f"⚠️  瀏覽器啟動失敗: {browser_error}")
+            debug_log("💡 這可能是正常的，請手動在瀏覽器中開啟上述 URL")
+
     except Exception as e:
         debug_log(f"❌ 會話創建失敗: {e}")
         return False, None

@@ -2,8 +2,8 @@
 
 **🌐 语言切换 / Language:** [English](README.md) | [繁體中文](README.zh-TW.md) | **简体中文**
 
-**原作者：** [Fábio Ferreira](https://x.com/fabiomlferreira) | [原始项目](https://github.com/noopstudios/interactive-feedback-mcp) ⭐  
-**分支版本：** [Minidoracat](https://github.com/Minidoracat)  
+**原作者：** [Fábio Ferreira](https://x.com/fabiomlferreira) | [原始项目](https://github.com/noopstudios/interactive-feedback-mcp) ⭐
+**分支版本：** [Minidoracat](https://github.com/Minidoracat)
 **UI 设计参考：** [sanshao85/mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)
 
 ## 🎯 核心概念
@@ -67,8 +67,8 @@
 *Web UI 界面 - 全新架构，适合 SSH Remote 环境*
 
 **快捷键支持**
-- `Ctrl+Enter`：提交反馈（主键盘与数字键盘皆支持）
-- `Ctrl+V`：直接粘贴剪贴板图片
+- `Ctrl+Enter`（Windows/Linux）/ `Cmd+Enter`（macOS）：提交反馈（主键盘与数字键盘皆支持）
+- `Ctrl+V`（Windows/Linux）/ `Cmd+V`（macOS）：直接粘贴剪贴板图片
 
 ## 🚀 快速开始
 
@@ -186,17 +186,17 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # 测试 Web UI (自�
 
 ## 🐛 常见问题
 
-**Q: 出现 "Unexpected token 'D'" 错误**  
+**Q: 出现 "Unexpected token 'D'" 错误**
 A: 调试输出干扰。设置 `MCP_DEBUG=false` 或移除该环境变量。
 
-**Q: 中文字符乱码**  
+**Q: 中文字符乱码**
 A: 已在 v2.0.3 修复。更新到最新版本：`uvx mcp-feedback-enhanced@latest`
 
-**Q: 图片上传失败**  
+**Q: 图片上传失败**
 A: 检查文件大小（≤1MB）和格式（PNG/JPG/GIF/BMP/WebP）。
 
 **Q: Web UI 无法启动**
-A: 设置 `FORCE_WEB=true` 或检查防火墙设定。
+A: 设置 `FORCE_WEB=true` 或检查火墙设定。
 
 **Q: UV Cache 占用过多磁盘空间**
 A: 由于频繁使用 `uvx` 命令，cache 可能会累积到数十 GB。建议定期清理：
@@ -218,7 +218,7 @@ uv cache clean
 ```
 详细说明请参考：[Cache 管理指南](docs/zh-CN/cache-management.md)
 
-**Q: Gemini Pro 2.5 无法解析图片**  
+**Q: Gemini Pro 2.5 无法解析图片**
 A: 已知问题，Gemini Pro 2.5 可能无法正确解析上传的图片内容。实测 Claude-4-Sonnet 可以正常解析图片。建议使用 Claude 模型获得更好的图片理解能力。
 
 **Q: 多屏幕视窗定位问题**
@@ -237,7 +237,7 @@ A: v2.2.5 已修复此问题。WSL 环境现在会被正确识别并使用 Web U
 ## 🙏 致谢
 
 ### 🌟 支持原作者
-**Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)  
+**Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)
 **原始项目：** [noopstudios/interactive-feedback-mcp](https://github.com/noopstudios/interactive-feedback-mcp)
 
 如果您觉得有用，请：

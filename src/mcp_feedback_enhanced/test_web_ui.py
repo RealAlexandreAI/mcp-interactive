@@ -162,23 +162,27 @@ def test_environment_detection():
     """Test environment detection logic"""
     debug_log("🔍 測試環境檢測功能")
     debug_log("-" * 30)
-    
+
     try:
-        from .server import is_remote_environment, can_use_gui
-        
+        from .server import is_remote_environment, is_wsl_environment, can_use_gui
+
+        wsl_detected = is_wsl_environment()
         remote_detected = is_remote_environment()
         gui_available = can_use_gui()
-        
+
+        debug_log(f"WSL 環境檢測: {'是' if wsl_detected else '否'}")
         debug_log(f"遠端環境檢測: {'是' if remote_detected else '否'}")
         debug_log(f"GUI 可用性: {'是' if gui_available else '否'}")
-        
-        if remote_detected:
+
+        if wsl_detected:
+            debug_log("✅ 檢測到 WSL 環境，將使用 Web UI 並支援 Windows 瀏覽器啟動")
+        elif remote_detected:
             debug_log("✅ 將使用 Web UI (適合遠端開發環境)")
         else:
             debug_log("✅ 將使用 Qt GUI (本地環境)")
-            
+
         return True
-        
+
     except Exception as e:
         debug_log(f"❌ 環境檢測失敗: {e}")
         return False
@@ -245,27 +249,30 @@ def test_environment_web_ui_mode():
     """Test environment-based Web UI mode"""
     debug_log("\n🌐 測試環境變數控制 Web UI 模式")
     debug_log("-" * 30)
-    
+
     try:
-        from .server import interactive_feedback, is_remote_environment, can_use_gui
+        from .server import interactive_feedback, is_remote_environment, is_wsl_environment, can_use_gui
         import os
-        
+
         # 顯示當前環境狀態
+        is_wsl = is_wsl_environment()
         is_remote = is_remote_environment()
         gui_available = can_use_gui()
         force_web_env = os.getenv("FORCE_WEB", "").lower()
-        
-        debug_log(f"當前環境 - 遠端: {is_remote}, GUI 可用: {gui_available}")
+
+        debug_log(f"當前環境 - WSL: {is_wsl}, 遠端: {is_remote}, GUI 可用: {gui_available}")
         debug_log(f"FORCE_WEB 環境變數: {force_web_env or '未設定'}")
-        
+
         if force_web_env in ("true", "1", "yes", "on"):
             debug_log("✅ FORCE_WEB 已啟用，將強制使用 Web UI")
+        elif is_wsl:
+            debug_log("✅ WSL 環境，將使用 Web UI 並支援 Windows 瀏覽器啟動")
         elif not is_remote and gui_available:
             debug_log("ℹ️  本地 GUI 環境，將使用 Qt GUI")
             debug_log("💡 可設定 FORCE_WEB=true 強制使用 Web UI 進行測試")
         else:
             debug_log("ℹ️  將自動使用 Web UI（遠端環境或 GUI 不可用）")
-            
+
         return True
         
     except Exception as e:

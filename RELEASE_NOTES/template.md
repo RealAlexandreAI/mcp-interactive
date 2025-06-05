@@ -19,19 +19,6 @@
 - 🔀 **重大變更**: 任何重大變更（僅限主要版本）
 - 📝 **文檔更新**: 文檔更新
 
-## 📦 安裝與更新
-```bash
-# 快速測試最新版本
-uvx mcp-feedback-enhanced@latest test
-
-# 更新到特定版本  
-uvx mcp-feedback-enhanced@vX.Y.Z test
-```
-
-## 🔗 相關連結
-- 完整更新日誌: [CHANGELOG.md](../../CHANGELOG.md)
-- 專案文檔: [README.md](../../README.md)
-- 解決的問題: #issue1, #issue2
-
 ---
-**說明**: 此模板應該適應每種語言（en.md, zh-TW.md, zh-CN.md） 
+**說明**: 此模板應該適應每種語言（CHANGELOG.en.md, CHANGELOG.zh-TW.md, CHANGELOG.zh-CN.md）
+**注意**: 版本發佈文件不包含安裝與相關連結部分，這些內容已移至各語言的完整 CHANGELOG 文件中

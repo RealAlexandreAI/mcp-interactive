@@ -2,177 +2,96 @@
 
 This document records all version updates for **MCP Feedback Enhanced**.
 
+## [v2.2.5] - WSL Environment Support & Cross-Platform Enhancement
+
+### ✨ New Features
+- 🐧 **WSL Environment Detection**: Automatically identifies WSL environments and provides specialized support logic
+- 🌐 **Smart Browser Launching**: Automatically invokes Windows browser in WSL environments with multiple launch methods
+- 🔧 **Cross-Platform Testing Enhancement**: Test functionality integrates WSL detection for improved test coverage
+
+### 🚀 Improvements
+- 🎯 **Environment Detection Optimization**: Improved remote environment detection logic, WSL no longer misidentified as remote environment
+- 📊 **System Information Enhancement**: System information tool now displays WSL environment status
+- 🧪 **Testing Experience Improvement**: Test mode automatically attempts browser launching for better testing experience
+
 ---
-# Release v2.2.4 - GUI Experience Optimization & Bug Fixes
 
-## 🌟 Highlights
-This version focuses on GUI user experience optimization, fixing image copy-paste duplication issues, reorganizing localization file structure, and improving interface text readability.
+## [v2.2.4] - GUI Experience Optimization & Bug Fixes
 
-## 🐛 Bug Fixes
+### 🐛 Bug Fixes
 - 🖼️ **Image Duplicate Paste Fix**: Fixed the issue where Ctrl+V image pasting in GUI would create duplicate images
 - 🌐 **Localization Switch Fix**: Fixed image settings area text not translating correctly when switching languages
 - 📝 **Font Readability Improvement**: Adjusted font sizes in image settings area for better readability
 
-## 📦 Installation & Update
-```bash
-# Quick test latest version
-uvx mcp-feedback-enhanced@latest test --gui
-
-# Update to specific version
-uvx mcp-feedback-enhanced@v2.2.4 test
-```
-
-## 🔗 Related Links
-- Full Documentation: [README.md](../../README.md)
-- Issue Reports: [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
-- Project Homepage: [GitHub Repository](https://github.com/Minidoracat/mcp-feedback-enhanced) 
 ---
 
-
-## 🌟 Highlights
-This version introduces user-controllable timeout settings and flexible image upload configuration options, while improving UV Cache management tools to enhance the overall user experience.
-
-## ✨ New Features
-- ⏰ **User Timeout Control**: Added customizable timeout settings with flexible range from 30 seconds to 2 hours
-- ⏱️ **Countdown Timer**: Real-time countdown timer display at the top of the interface for visual time reminders
-- 🖼️ **Image Size Limits**: Added image upload size limit settings (unlimited/1MB/3MB/5MB)
-- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models 
-- 🧹 **UV Cache Management Tool**: Added `cleanup_cache.py` script to help manage and clean UV cache space
-
-## 🚀 Improvements
-- 📚 **Documentation Structure Optimization**: Reorganized documentation directory structure, moved images to `docs/{language}/images/` paths
-- 📖 **Cache Management Guide**: Added detailed UV Cache management guide with automated cleanup solutions
-- 🎯 **Smart Compatibility Hints**: Automatically display Base64 compatibility mode suggestions when image upload fails
-- 🔄 **Settings Sync Mechanism**: Improved image settings synchronization between different interface modes
-
-## 🐛 Bug Fixes
-- 🛡️ **Timeout Handling Optimization**: Improved coordination between user-defined timeout and MCP system timeout
-- 🖥️ **Interface Auto-close**: Fixed interface auto-close and resource cleanup logic after timeout
-- 📱 **Responsive Layout**: Optimized timeout control component display on small screen devices
-
-## 🔧 Technical Improvements
-- 🎛️ **Timeout Control Architecture**: Implemented separated design for frontend countdown timer and backend timeout handling
-- 📊 **Image Processing Optimization**: Improved image upload size checking and format validation mechanisms
-- 🗂️ **Settings Persistence**: Enhanced settings saving mechanism to ensure correct saving and loading of user preferences
-- 🧰 **Tool Script Enhancement**: Added cross-platform cache cleanup tool with support for force cleanup and preview modes
-
-## 📦 Installation & Update
-```bash
-# Quick test latest version
-uvx mcp-feedback-enhanced@latest test --gui
-
-# Update to specific version
-uvx mcp-feedback-enhanced@v2.2.3 test
-```
-
-## 🔗 Related Links
-- Full Documentation: [README.md](../../README.md)
-- Issue Reporting: [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
-- Related PRs: #22 (Timeout Control Feature), #19 (Image Settings Feature)
-
----
-
-## [v2.2.3] - Timeout Control & Image Settings Enhancement (2025-01-XX)
-
-### 🌟 Highlights
-This version introduces user-controllable timeout settings and flexible image upload configuration options, while improving UV Cache management tools to enhance the overall user experience.
+## [v2.2.3] - Timeout Control & Image Settings Enhancement
 
 ### ✨ New Features
 - ⏰ **User Timeout Control**: Added customizable timeout settings with flexible range from 30 seconds to 2 hours
 - ⏱️ **Countdown Timer**: Real-time countdown timer display at the top of the interface for visual time reminders
 - 🖼️ **Image Size Limits**: Added image upload size limit settings (unlimited/1MB/3MB/5MB)
-- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models 
+- 🔧 **Base64 Compatibility Mode**: Added Base64 detail mode to improve image recognition compatibility with AI models
 - 🧹 **UV Cache Management Tool**: Added `cleanup_cache.py` script to help manage and clean UV cache space
 
 ### 🚀 Improvements
 - 📚 **Documentation Structure Optimization**: Reorganized documentation directory structure, moved images to `docs/{language}/images/` paths
 - 📖 **Cache Management Guide**: Added detailed UV Cache management guide with automated cleanup solutions
 - 🎯 **Smart Compatibility Hints**: Automatically display Base64 compatibility mode suggestions when image upload fails
-- 🔄 **Settings Sync Mechanism**: Improved image settings synchronization between different interface modes
 
 ### 🐛 Bug Fixes
 - 🛡️ **Timeout Handling Optimization**: Improved coordination between user-defined timeout and MCP system timeout
 - 🖥️ **Interface Auto-close**: Fixed interface auto-close and resource cleanup logic after timeout
 - 📱 **Responsive Layout**: Optimized timeout control component display on small screen devices
 
-### 🔧 Technical Improvements
-- 🎛️ **Timeout Control Architecture**: Implemented separated design for frontend countdown timer and backend timeout handling
-- 📊 **Image Processing Optimization**: Improved image upload size checking and format validation mechanisms
-- 🗂️ **Settings Persistence**: Enhanced settings saving mechanism to ensure correct saving and loading of user preferences
-- 🧰 **Tool Script Enhancement**: Added cross-platform cache cleanup tool with support for force cleanup and preview modes
-
 ---
 
-## [v2.2.2] - Timeout Auto-cleanup Fix (2024-12-XX)
-
-### 🌟 Highlights
-This version fixes a critical resource management issue where GUI/Web UI interfaces were not properly closed when MCP sessions ended due to timeout, causing the interfaces to remain open and unresponsive.
+## [v2.2.2] - Timeout Auto-cleanup Fix
 
 ### 🐛 Bug Fixes
-- 🔄 **Timeout Auto-cleanup**: Fixed GUI/Web UI not automatically closing after MCP session timeout (default 600 seconds) (fixes #5)
+- 🔄 **Timeout Auto-cleanup**: Fixed GUI/Web UI not automatically closing after MCP session timeout (default 600 seconds)
 - 🛡️ **Resource Management Optimization**: Improved timeout handling mechanism to ensure proper cleanup and closure of all UI resources on timeout
 - ⚡ **Enhanced Timeout Detection**: Strengthened timeout detection logic to correctly handle timeout events in various scenarios
-- 🔧 **Interface Response Improvement**: Enhanced Web UI frontend handling of session timeout events
-
-### 🚀 Technical Improvements
-- 📦 **Web Session Management**: Refactored WebFeedbackSession timeout handling logic
-- 🎯 **QTimer Integration**: Introduced precise QTimer timeout control mechanism in GUI
-- 🌐 **Frontend Communication Optimization**: Improved timeout message communication between Web UI frontend and backend
-- 🧹 **Resource Cleanup Mechanism**: Added _cleanup_resources_on_timeout method to ensure thorough cleanup
 
 ---
 
-## [v2.2.1] - Window Optimization & Unified Settings Interface (2024-12-XX)
-
-### 🌟 Highlights
-This release primarily addresses GUI window size constraints, implements smart window state saving mechanisms, and optimizes the unified settings interface.
+## [v2.2.1] - Window Optimization & Unified Settings Interface
 
 ### 🚀 Improvements
-- 🖥️ **Window Size Constraint Removal**: Removed GUI main window minimum size limit from 1000×800 to 400×300, allowing users to freely adjust window size for different use cases
-- 💾 **Real-time Window State Saving**: Implemented real-time saving mechanism for window size and position changes, with debounce delay to avoid excessive I/O operations
-- ⚙️ **Unified Settings Interface Optimization**: Improved GUI settings page configuration saving logic to avoid setting conflicts, ensuring correct window positioning and size settings
-- 🎯 **Smart Window Size Saving**: In "Always center display" mode, correctly saves window size (but not position); in "Smart positioning" mode, saves complete window state
+- 🖥️ **Window Size Constraint Removal**: Removed GUI main window minimum size limit from 1000×800 to 400×300
+- 💾 **Real-time Window State Saving**: Implemented real-time saving mechanism for window size and position changes
+- ⚙️ **Unified Settings Interface Optimization**: Improved GUI settings page configuration saving logic to avoid setting conflicts
 
 ### 🐛 Bug Fixes
-- 🔧 **Window Size Constraint**: Fixed GUI window unable to resize to small dimensions issue (fixes #10 part one)
+- 🔧 **Window Size Constraint**: Fixed GUI window unable to resize to small dimensions issue
 - 🛡️ **Setting Conflicts**: Fixed potential configuration conflicts during settings save operations
 
 ---
 
-## [v2.2.0] - Layout & Settings UI Enhancements (2024-12-XX)
-
-### 🌟 Highlights
-This version adds horizontal layout options, optimizes the settings interface, and fixes shortcut keys and image pasting issues.
+## [v2.2.0] - Layout & Settings UI Enhancements
 
 ### ✨ New Features
-- 🎨 **Horizontal Layout Mode**: Added a left-right layout (horizontal split) option for summary and feedback in the combined mode for both GUI and Web UI, offering more flexible viewing (fulfills [Issue #1](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/1))
+- 🎨 **Horizontal Layout Mode**: GUI & Web UI combined mode adds left-right layout option for summary and feedback
 
 ### 🚀 Improvements
-- 🎨 **Improved Settings Interface**: Optimized the settings page for both GUI and Web UI, enhancing layout clarity and user experience
-- ⌨️ **GUI Shortcut Enhancement**: The submit feedback shortcut (Ctrl+Enter / Cmd+Enter) now fully supports the Enter key on the numeric keypad (numpad)
+- 🎨 **Improved Settings Interface**: Optimized the settings page for both GUI and Web UI
+- ⌨️ **GUI Shortcut Enhancement**: Submit feedback shortcut now fully supports numeric keypad Enter key
 
 ### 🐛 Bug Fixes
-- 🔧 **Image Duplication Fix (Web UI)**: Resolved an issue where pasting images using Ctrl+V in the text input area could lead to duplicate image pasting
+- 🔧 **Image Duplication Fix**: Resolved Web UI image pasting duplication issue
 
 ---
 
-## [v2.1.1] - Window Positioning Optimization (2024-11-XX)
-
-### 🌟 Highlights
-Perfect solution for window positioning issues in multi-monitor environments, especially T-shaped screen arrangements and other complex configurations.
+## [v2.1.1] - Window Positioning Optimization
 
 ### ✨ New Features
 - 🖥️ **Smart Window Positioning**: Added "Always show window at primary screen center" setting option
 - 🌐 **Multi-Monitor Support**: Perfect solution for complex multi-monitor setups like T-shaped screen arrangements
 - 💾 **Position Memory**: Auto-save and restore window position with intelligent visibility detection
-- ⚙️ **User Choice**: Provides smart positioning (default) and forced center display modes
 
 ---
 
-## [v2.1.0] - Complete Refactored Version (2024-11-XX)
-
-### 🌟 Highlights
-This is a major refactoring version where both GUI and Web UI adopt brand new modular architecture.
+## [v2.1.0] - Complete Refactored Version
 
 ### 🎨 Major Refactoring
 - 🏗️ **Complete Refactoring**: GUI and Web UI adopt modular architecture
@@ -184,20 +103,17 @@ This is a major refactoring version where both GUI and Web UI adopt brand new mo
 - ⚙️ **Feature Enhancement**: New settings options and auto-close page functionality
 - ℹ️ **About Page**: Added about page with version info, project links, and acknowledgments
 
-### 🐛 Bug Fixes
-- 🌐 **Language Switching**: Fixed Web UI content update issues when switching languages
-
 ---
 
-## [v2.0.14] - Shortcut & Image Feature Enhancement (2024-10-XX)
+## [v2.0.14] - Shortcut & Image Feature Enhancement
 
 ### 🚀 Improvements
-- ⌨️ **Enhanced Shortcuts**: Ctrl+Enter supports numpad
+- ⌨️ **Enhanced Shortcuts**: Ctrl+Enter supports numeric keypad
 - 🖼️ **Smart Image Pasting**: Ctrl+V directly pastes clipboard images
 
 ---
 
-## [v2.0.9] - Multi-language Architecture Refactor (2024-10-XX)
+## [v2.0.9] - Multi-language Architecture Refactor
 
 ### 🔄 Refactoring
 - 🌏 **Multi-language Architecture Refactor**: Support for dynamic loading
@@ -205,7 +121,7 @@ This is a major refactoring version where both GUI and Web UI adopt brand new mo
 
 ---
 
-## [v2.0.3] - Encoding Issues Fix (2024-10-XX)
+## [v2.0.3] - Encoding Issues Fix
 
 ### 🐛 Critical Fixes
 - 🛡️ **Complete Chinese Character Encoding Fix**: Resolved all Chinese display related issues
@@ -213,7 +129,7 @@ This is a major refactoring version where both GUI and Web UI adopt brand new mo
 
 ---
 
-## [v2.0.0] - Web UI Support (2024-09-XX)
+## [v2.0.0] - Web UI Support
 
 ### 🌟 Major Features
 - ✅ **Added Web UI Support**: Support for remote environments

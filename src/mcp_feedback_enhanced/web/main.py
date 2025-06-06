@@ -32,6 +32,7 @@ from .utils import find_free_port, get_browser_opener
 from .utils.port_manager import PortManager
 from .utils.compression_config import get_compression_manager
 from ..utils.error_handler import ErrorHandler, ErrorType
+from ..utils.memory_monitor import get_memory_monitor
 from ..debug import web_debug_log as debug_log
 from ..i18n import get_i18n_manager
 
@@ -70,6 +71,9 @@ class WebUIManager:
 
         # 設置壓縮和緩存中間件
         self._setup_compression_middleware()
+
+        # 設置內存監控
+        self._setup_memory_monitoring()
 
         # 重構：使用單一活躍會話而非會話字典
         self.current_session: Optional[WebFeedbackSession] = None
@@ -135,6 +139,33 @@ class WebUIManager:
             return response
 
         debug_log("壓縮和緩存中間件設置完成")
+
+    def _setup_memory_monitoring(self):
+        """設置內存監控"""
+        try:
+            self.memory_monitor = get_memory_monitor()
+
+            # 添加 Web 應用特定的警告回調
+            def web_memory_alert(alert):
+                debug_log(f"Web UI 內存警告 [{alert.level}]: {alert.message}")
+                # 可以在這裡添加更多 Web 特定的處理邏輯
+                # 例如：通過 WebSocket 通知前端、記錄到特定日誌等
+
+            self.memory_monitor.add_alert_callback(web_memory_alert)
+
+            # 確保內存監控已啟動（ResourceManager 可能已經啟動了）
+            if not self.memory_monitor.is_monitoring:
+                self.memory_monitor.start_monitoring()
+
+            debug_log("Web UI 內存監控設置完成")
+
+        except Exception as e:
+            error_id = ErrorHandler.log_error_with_context(
+                e,
+                context={"operation": "設置 Web UI 內存監控"},
+                error_type=ErrorType.SYSTEM
+            )
+            debug_log(f"設置 Web UI 內存監控失敗 [錯誤ID: {error_id}]: {e}")
 
     def _setup_static_files(self):
         """設置靜態文件服務"""

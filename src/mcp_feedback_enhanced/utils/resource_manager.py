@@ -82,9 +82,71 @@ class ResourceManager:
         
         # 啟動自動清理
         self._start_auto_cleanup()
-        
+
+        # 集成內存監控
+        self._setup_memory_monitoring()
+
         debug_log("ResourceManager 初始化完成")
-    
+
+    def _setup_memory_monitoring(self):
+        """設置內存監控集成"""
+        try:
+            # 延遲導入避免循環依賴
+            from .memory_monitor import get_memory_monitor
+
+            self.memory_monitor = get_memory_monitor()
+
+            # 註冊清理回調
+            self.memory_monitor.add_cleanup_callback(self._memory_triggered_cleanup)
+
+            # 啟動內存監控
+            if self.memory_monitor.start_monitoring():
+                debug_log("內存監控已集成到資源管理器")
+            else:
+                debug_log("內存監控啟動失敗")
+
+        except Exception as e:
+            error_id = ErrorHandler.log_error_with_context(
+                e,
+                context={"operation": "設置內存監控"},
+                error_type=ErrorType.SYSTEM
+            )
+            debug_log(f"設置內存監控失敗 [錯誤ID: {error_id}]: {e}")
+
+    def _memory_triggered_cleanup(self, force: bool = False):
+        """內存監控觸發的清理操作"""
+        debug_log(f"內存監控觸發清理操作 (force={force})")
+
+        try:
+            # 清理臨時文件
+            cleaned_files = self.cleanup_temp_files()
+
+            # 清理臨時目錄
+            cleaned_dirs = self.cleanup_temp_dirs()
+
+            # 清理文件句柄
+            cleaned_handles = self.cleanup_file_handles()
+
+            # 如果是強制清理，也清理進程
+            cleaned_processes = 0
+            if force:
+                cleaned_processes = self.cleanup_processes(force=True)
+
+            debug_log(f"內存觸發清理完成: 文件={cleaned_files}, 目錄={cleaned_dirs}, "
+                     f"句柄={cleaned_handles}, 進程={cleaned_processes}")
+
+            # 更新統計
+            self.stats["cleanup_runs"] += 1
+            self.stats["last_cleanup"] = time.time()
+
+        except Exception as e:
+            error_id = ErrorHandler.log_error_with_context(
+                e,
+                context={"operation": "內存觸發清理", "force": force},
+                error_type=ErrorType.SYSTEM
+            )
+            debug_log(f"內存觸發清理失敗 [錯誤ID: {error_id}]: {e}")
+
     def create_temp_file(
         self, 
         suffix: str = "", 
@@ -619,6 +681,22 @@ class ResourceManager:
             "cleanup_interval": self.cleanup_interval,
             "temp_file_max_age": self.temp_file_max_age
         })
+
+        # 添加內存監控統計
+        try:
+            if hasattr(self, 'memory_monitor') and self.memory_monitor:
+                memory_info = self.memory_monitor.get_current_memory_info()
+                memory_stats = self.memory_monitor.get_memory_stats()
+
+                current_stats.update({
+                    "memory_monitoring_enabled": self.memory_monitor.is_monitoring,
+                    "current_memory_usage": memory_info.get("system", {}).get("usage_percent", 0),
+                    "memory_status": memory_info.get("status", "unknown"),
+                    "memory_cleanup_triggers": memory_stats.cleanup_triggers,
+                    "memory_alerts_count": memory_stats.alerts_count
+                })
+        except Exception as e:
+            debug_log(f"獲取內存統計失敗: {e}")
 
         return current_stats
 

@@ -935,3 +935,329 @@ body {
         font-size: 12px;
     }
 }
+
+/* ===== 圖片上傳組件樣式 ===== */
+
+/* 圖片上傳區域基礎樣式 */
+.image-upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.image-upload-area:hover {
+    border-color: var(--accent-color);
+    background: rgba(0, 122, 204, 0.05);
+}
+
+/* 拖放狀態樣式 */
+.image-upload-area.dragover {
+    border-color: var(--accent-color) !important;
+    background: rgba(0, 122, 204, 0.1) !important;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 122, 204, 0.2);
+}
+
+/* 上傳提示文字 */
+.image-upload-area > div:first-child {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.image-upload-area > div:first-child small {
+    color: var(--text-secondary);
+    opacity: 0.8;
+    font-size: 12px;
+}
+
+/* 禁用狀態 */
+.image-upload-area.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+/* 圖片預覽容器 */
+.image-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: center;
+}
+
+.image-preview-container:empty {
+    display: none;
+}
+
+/* 圖片預覽項目 */
+.image-preview-item {
+    position: relative;
+    display: inline-block;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.image-preview-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.image-preview-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    display: block;
+}
+
+/* 圖片刪除按鈕 */
+.image-remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--error-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.image-remove-btn:hover {
+    background: #d32f2f;
+    transform: scale(1.1);
+}
+
+/* 圖片設定區域樣式 */
+.image-settings-details {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.image-settings-details:hover {
+    border-color: rgba(0, 122, 204, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.1);
+}
+
+.image-settings-summary {
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    border: none;
+    outline: none;
+    transition: all 0.3s ease;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    user-select: none;
+}
+
+.image-settings-summary:hover {
+    background: var(--surface-color);
+    color: var(--accent-color);
+}
+
+.image-settings-summary::-webkit-details-marker {
+    display: none;
+}
+
+/* 箭頭指示器 */
+.image-settings-summary::after {
+    content: '▼';
+    font-size: 10px;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    transform-origin: center;
+    display: inline-block;
+    margin-left: auto;
+}
+
+.image-settings-summary:hover::after {
+    color: var(--accent-color);
+}
+
+/* 展開狀態的箭頭 */
+.image-settings-details[open] .image-settings-summary::after {
+    transform: rotate(180deg);
+    color: var(--accent-color);
+}
+
+/* 展開狀態的 summary 樣式 */
+.image-settings-details[open] .image-settings-summary {
+    background: var(--surface-color);
+    color: var(--accent-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.image-settings-content {
+    padding: 12px;
+    background: var(--bg-tertiary);
+    animation: slideDown 0.3s ease-out;
+}
+
+/* 展開內容的滑入動畫 */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 圖片設定行 */
+.image-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 12px;
+}
+
+.image-setting-row:last-child {
+    margin-bottom: 0;
+}
+
+.image-setting-label {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* 圖片設定下拉選單 */
+.image-setting-select {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    min-width: 100px;
+    transition: border-color 0.3s ease;
+}
+
+.image-setting-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+/* 自定義複選框樣式 */
+.image-setting-checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.image-setting-checkbox {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 3px;
+    background: var(--bg-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.image-setting-checkbox:checked {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.image-setting-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.image-setting-checkbox:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* 圖片設定幫助文字 */
+.image-setting-help {
+    color: var(--text-secondary);
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+.image-setting-help-text {
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.4;
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(0, 122, 204, 0.05);
+    border-radius: 4px;
+    border-left: 3px solid var(--accent-color);
+}
+
+/* 相容性提示樣式 */
+.compatibility-hint {
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid var(--warning-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--warning-color);
+}
+
+.compatibility-hint-btn {
+    background: var(--warning-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-weight: 500;
+}
+
+.compatibility-hint-btn:hover {
+    background: #f57c00;
+}

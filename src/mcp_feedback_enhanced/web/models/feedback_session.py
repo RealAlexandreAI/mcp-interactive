@@ -11,12 +11,23 @@ import asyncio
 import base64
 import subprocess
 import threading
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from fastapi import WebSocket
 
 from ...debug import web_debug_log as debug_log
+
+
+class SessionStatus(Enum):
+    """會話狀態枚舉"""
+    WAITING = "waiting"          # 等待中
+    ACTIVE = "active"            # 活躍中
+    FEEDBACK_SUBMITTED = "feedback_submitted"  # 已提交反饋
+    COMPLETED = "completed"      # 已完成
+    TIMEOUT = "timeout"          # 超時
+    ERROR = "error"              # 錯誤
 
 # 常數定義
 MAX_IMAGE_SIZE = 1 * 1024 * 1024  # 1MB 圖片大小限制
@@ -39,9 +50,41 @@ class WebFeedbackSession:
         self.process: Optional[subprocess.Popen] = None
         self.command_logs = []
         self._cleanup_done = False  # 防止重複清理
-        
+
+        # 新增：會話狀態管理
+        self.status = SessionStatus.WAITING
+        self.status_message = "等待用戶回饋"
+        self.created_at = asyncio.get_event_loop().time()
+        self.last_activity = self.created_at
+
         # 確保臨時目錄存在
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+    def update_status(self, status: SessionStatus, message: str = None):
+        """更新會話狀態"""
+        self.status = status
+        if message:
+            self.status_message = message
+        self.last_activity = asyncio.get_event_loop().time()
+        debug_log(f"會話 {self.session_id} 狀態更新: {status.value} - {self.status_message}")
+
+    def get_status_info(self) -> dict:
+        """獲取會話狀態信息"""
+        return {
+            "status": self.status.value,
+            "message": self.status_message,
+            "feedback_completed": self.feedback_completed.is_set(),
+            "has_websocket": self.websocket is not None,
+            "created_at": self.created_at,
+            "last_activity": self.last_activity,
+            "project_directory": self.project_directory,
+            "summary": self.summary,
+            "session_id": self.session_id
+        }
+
+    def is_active(self) -> bool:
+        """檢查會話是否活躍"""
+        return self.status in [SessionStatus.WAITING, SessionStatus.ACTIVE, SessionStatus.FEEDBACK_SUBMITTED]
 
     async def wait_for_feedback(self, timeout: int = 600) -> dict:
         """
@@ -102,13 +145,24 @@ class WebFeedbackSession:
         # 先設置設定，再處理圖片（因為處理圖片時需要用到設定）
         self.settings = settings or {}
         self.images = self._process_images(images)
+
+        # 更新狀態為已提交反饋
+        self.update_status(SessionStatus.FEEDBACK_SUBMITTED, "已送出反饋，等待下次 MCP 調用")
+
         self.feedback_completed.set()
 
+        # 發送反饋已收到的消息給前端
         if self.websocket:
             try:
-                await self.websocket.close()
-            except:
-                pass
+                await self.websocket.send_json({
+                    "type": "feedback_received",
+                    "message": "反饋已成功提交",
+                    "status": self.status.value
+                })
+            except Exception as e:
+                debug_log(f"發送反饋確認失敗: {e}")
+
+        # 重構：不再自動關閉 WebSocket，保持連接以支援頁面持久性
     
     def _process_images(self, images: List[dict]) -> List[dict]:
         """
@@ -304,14 +358,14 @@ class WebFeedbackSession:
         except Exception as e:
             debug_log(f"清理會話 {self.session_id} 資源時發生錯誤: {e}")
 
-    def cleanup(self):
-        """同步清理會話資源（保持向後兼容）"""
+    def _cleanup_sync(self):
+        """同步清理會話資源（但保留 WebSocket 連接）"""
         if self._cleanup_done:
             return
-            
-        self._cleanup_done = True
-        debug_log(f"同步清理會話 {self.session_id} 資源...")
-        
+
+        debug_log(f"同步清理會話 {self.session_id} 資源（保留 WebSocket）...")
+
+        # 只清理進程，不清理 WebSocket 連接
         if self.process:
             try:
                 self.process.terminate()
@@ -321,7 +375,30 @@ class WebFeedbackSession:
                     self.process.kill()
                 except:
                     pass
-            self.process = None 
-            
+            self.process = None
+
+        # 清理臨時數據
+        self.command_logs.clear()
+        # 注意：不設置 _cleanup_done = True，因為還需要清理 WebSocket
+
+    def cleanup(self):
+        """同步清理會話資源（保持向後兼容）"""
+        if self._cleanup_done:
+            return
+
+        self._cleanup_done = True
+        debug_log(f"同步清理會話 {self.session_id} 資源...")
+
+        if self.process:
+            try:
+                self.process.terminate()
+                self.process.wait(timeout=5)
+            except:
+                try:
+                    self.process.kill()
+                except:
+                    pass
+            self.process = None
+
         # 設置完成事件
-        self.feedback_completed.set() 
+        self.feedback_completed.set()

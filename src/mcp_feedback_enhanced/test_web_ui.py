@@ -140,7 +140,7 @@ def test_web_ui(keep_running=False):
         session_info = {
             'manager': manager,
             'session_id': session_id,
-            'url': f"http://{manager.host}:{manager.port}/session/{session_id}"
+            'url': f"http://{manager.host}:{manager.port}"  # 使用根路徑
         }
         debug_log(f"✅ 測試會話創建成功 (ID: {session_id[:8]}...)")
         debug_log(f"🔗 測試 URL: {session_info['url']}")
@@ -299,16 +299,16 @@ def interactive_demo(session_info):
     """Run interactive demo with the Web UI"""
     debug_log(f"\n🌐 Web UI 互動測試模式")
     debug_log("=" * 50)
-    debug_log(f"服務器地址: http://{session_info['manager'].host}:{session_info['manager'].port}")
-    debug_log(f"測試會話: {session_info['url']}")
+    debug_log(f"服務器地址: {session_info['url']}")  # 簡化輸出，只顯示服務器地址
     debug_log("\n📖 操作指南:")
-    debug_log("  1. 在瀏覽器中開啟上面的測試 URL")
+    debug_log("  1. 在瀏覽器中開啟上面的服務器地址")
     debug_log("  2. 嘗試以下功能:")
     debug_log("     - 點擊 '顯示命令區塊' 按鈕")
     debug_log("     - 輸入命令如 'echo Hello World' 並執行")
     debug_log("     - 在回饋區域輸入文字")
     debug_log("     - 使用 Ctrl+Enter 提交回饋")
     debug_log("  3. 測試 WebSocket 即時通訊功能")
+    debug_log("  4. 測試頁面持久性（提交反饋後頁面不關閉）")
     debug_log("\n⌨️  控制選項:")
     debug_log("  - 按 Enter 繼續運行")
     debug_log("  - 輸入 'q' 或 'quit' 停止服務器")

@@ -220,6 +220,9 @@ class FeedbackApp {
             // 初始化圖片處理
             this.initImageHandling();
 
+            // 確保狀態指示器使用正確的翻譯（在國際化系統載入後）
+            this.updateStatusIndicators();
+
             // 設置頁面關閉時的清理
             window.addEventListener('beforeunload', () => {
                 if (this.tabManager) {
@@ -571,76 +574,87 @@ class FeedbackApp {
     }
 
     /**
-     * 更新狀態指示器
+     * 更新狀態指示器（新版本：只更新現有元素的狀態）
      */
     updateStatusIndicator() {
-        let statusElement = document.getElementById('feedbackStatusIndicator');
+        // 獲取狀態指示器元素
+        const feedbackStatusIndicator = document.getElementById('feedbackStatusIndicator');
+        const combinedStatusIndicator = document.getElementById('combinedFeedbackStatusIndicator');
 
-        // 如果狀態指示器不存在，創建一個
-        if (!statusElement) {
-            statusElement = document.createElement('div');
-            statusElement.id = 'feedbackStatusIndicator';
-            statusElement.className = 'feedback-status-indicator';
-
-            // 插入到回饋區域的頂部
-            const feedbackContainer = document.querySelector('.feedback-container') ||
-                                    document.querySelector('#tab-feedback') ||
-                                    document.body;
-            feedbackContainer.insertBefore(statusElement, feedbackContainer.firstChild);
-        }
-
-        // 更新狀態指示器內容
-        let statusHTML = '';
-        let statusClass = '';
+        // 根據當前狀態確定圖示、標題和訊息
+        let icon, title, message, status;
 
         switch (this.feedbackState) {
             case 'waiting_for_feedback':
-                const waitingTitle = window.i18nManager ? window.i18nManager.t('status.waiting.title') : '等待回饋';
-                const waitingMessage = window.i18nManager ? window.i18nManager.t('status.waiting.message') : '請提供您的回饋意見';
-                statusHTML = `
-                    <div class="status-icon">⏳</div>
-                    <div class="status-text">
-                        <strong>${waitingTitle}</strong>
-                        <span>${waitingMessage}</span>
-                    </div>
-                `;
-                statusClass = 'status-waiting';
+                icon = '⏳';
+                title = window.i18nManager ? window.i18nManager.t('status.waiting.title') : '等待回饋';
+                message = window.i18nManager ? window.i18nManager.t('status.waiting.message') : '請提供您的回饋意見';
+                status = 'waiting';
                 break;
 
             case 'processing':
-                const processingTitle = window.i18nManager ? window.i18nManager.t('status.processing.title') : '處理中';
-                const processingMessage = window.i18nManager ? window.i18nManager.t('status.processing.message') : '正在提交您的回饋...';
-                statusHTML = `
-                    <div class="status-icon">⚙️</div>
-                    <div class="status-text">
-                        <strong>${processingTitle}</strong>
-                        <span>${processingMessage}</span>
-                    </div>
-                `;
-                statusClass = 'status-processing';
+                icon = '⚙️';
+                title = window.i18nManager ? window.i18nManager.t('status.processing.title') : '處理中';
+                message = window.i18nManager ? window.i18nManager.t('status.processing.message') : '正在提交您的回饋...';
+                status = 'processing';
                 break;
 
             case 'feedback_submitted':
                 const timeStr = this.lastSubmissionTime ?
                     new Date(this.lastSubmissionTime).toLocaleTimeString() : '';
-                const submittedTitle = window.i18nManager ? window.i18nManager.t('status.submitted.title') : '回饋已提交';
-                const submittedMessage = window.i18nManager ? window.i18nManager.t('status.submitted.message') : '等待下次 MCP 調用';
-                statusHTML = `
-                    <div class="status-icon">✅</div>
-                    <div class="status-text">
-                        <strong>${submittedTitle}</strong>
-                        <span>${submittedMessage} ${timeStr ? `(${timeStr})` : ''}</span>
-                    </div>
-                `;
-                statusClass = 'status-submitted';
+                icon = '✅';
+                title = window.i18nManager ? window.i18nManager.t('status.submitted.title') : '回饋已提交';
+                message = window.i18nManager ? window.i18nManager.t('status.submitted.message') : '等待下次 MCP 調用';
+                if (timeStr) {
+                    message += ` (${timeStr})`;
+                }
+                status = 'submitted';
                 break;
+
+            default:
+                // 預設狀態
+                icon = '⏳';
+                title = '等待回饋';
+                message = '請提供您的回饋意見';
+                status = 'waiting';
         }
 
-        statusElement.innerHTML = statusHTML;
-        statusElement.className = `feedback-status-indicator ${statusClass}`;
+        // 更新分頁模式的狀態指示器
+        if (feedbackStatusIndicator) {
+            this.updateStatusIndicatorElement(feedbackStatusIndicator, status, icon, title, message);
+        }
 
-        // 同步到合併模式的狀態指示器
-        this.syncFeedbackStatusToCombined();
+        // 更新合併模式的狀態指示器
+        if (combinedStatusIndicator) {
+            this.updateStatusIndicatorElement(combinedStatusIndicator, status, icon, title, message);
+        }
+
+        console.log(`✅ 狀態指示器已更新: ${status} - ${title}`);
+    }
+
+    /**
+     * 更新單個狀態指示器元素
+     */
+    updateStatusIndicatorElement(element, status, icon, title, message) {
+        if (!element) return;
+
+        // 更新狀態類別
+        element.className = `feedback-status-indicator status-${status}`;
+        element.style.display = 'block';
+
+        // 更新標題（包含圖示）
+        const titleElement = element.querySelector('.status-title');
+        if (titleElement) {
+            titleElement.textContent = `${icon} ${title}`;
+        }
+
+        // 更新訊息
+        const messageElement = element.querySelector('.status-message');
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
+
+        console.log(`🔧 已更新狀態指示器: ${element.id} -> ${status}`);
     }
 
     setupWebSocket() {
@@ -805,7 +819,7 @@ class FeedbackApp {
         console.log('🔄 處理會話更新:', data.session_info);
 
         // 顯示更新通知
-        this.showSuccessMessage(data.message || '會話已更新，正在刷新內容...');
+        this.showSuccessMessage(data.message || '會話已更新，正在局部更新內容...');
 
         // 重置回饋狀態為等待新回饋
         this.setFeedbackState('waiting_for_feedback');
@@ -820,7 +834,7 @@ class FeedbackApp {
                 document.title = `MCP Feedback - ${projectName}`;
             }
 
-            // 刷新頁面內容以顯示新的 AI 工作摘要
+            // 使用局部更新替代整頁刷新
             this.refreshPageContent();
         }
 
@@ -828,25 +842,153 @@ class FeedbackApp {
     }
 
     async refreshPageContent() {
-        console.log('🔄 刷新頁面內容...');
+        console.log('🔄 局部更新頁面內容...');
 
         try {
-            // 保存當前標籤頁狀態到 localStorage（防止重新載入時丟失）
+            // 保存當前標籤頁狀態到 localStorage
             if (this.tabManager) {
                 this.tabManager.updateLastActivity();
             }
 
-            // 延遲一小段時間確保狀態保存完成
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // 重新載入頁面以獲取新的會話內容
-            window.location.reload();
+            // 使用局部更新替代整頁刷新
+            await this.updatePageContentPartially();
 
         } catch (error) {
-            console.error('刷新頁面內容失敗:', error);
+            console.error('局部更新頁面內容失敗:', error);
             // 備用方案：顯示提示讓用戶手動刷新
-            this.showMessage('請手動刷新頁面以查看新的 AI 工作摘要', 'info');
+            this.showMessage('更新內容失敗，請手動刷新頁面以查看新的 AI 工作摘要', 'warning');
         }
+    }
+
+    /**
+     * 局部更新頁面內容，避免整頁刷新
+     */
+    async updatePageContentPartially() {
+        console.log('🔄 開始局部更新頁面內容...');
+
+        try {
+            // 1. 獲取最新的會話資料
+            const response = await fetch('/api/current-session');
+            if (!response.ok) {
+                throw new Error(`API 請求失敗: ${response.status}`);
+            }
+
+            const sessionData = await response.json();
+            console.log('📥 獲取到最新會話資料:', sessionData);
+
+            // 2. 更新 AI 摘要內容
+            this.updateAISummaryContent(sessionData.summary);
+
+            // 3. 重置回饋表單
+            this.resetFeedbackForm();
+
+            // 4. 更新狀態指示器
+            this.updateStatusIndicators();
+
+            // 5. 更新頁面標題
+            if (sessionData.project_directory) {
+                const projectName = sessionData.project_directory.split(/[/\\]/).pop();
+                document.title = `MCP Feedback - ${projectName}`;
+            }
+
+            console.log('✅ 局部更新完成');
+
+        } catch (error) {
+            console.error('❌ 局部更新失敗:', error);
+            throw error; // 重新拋出錯誤，讓調用者處理
+        }
+    }
+
+    /**
+     * 更新 AI 摘要內容
+     */
+    updateAISummaryContent(summary) {
+        console.log('📝 更新 AI 摘要內容...');
+
+        // 更新分頁模式的摘要內容
+        const summaryContent = document.getElementById('summaryContent');
+        if (summaryContent) {
+            summaryContent.textContent = summary;
+            console.log('✅ 已更新分頁模式摘要內容');
+        }
+
+        // 更新合併模式的摘要內容
+        const combinedSummaryContent = document.getElementById('combinedSummaryContent');
+        if (combinedSummaryContent) {
+            combinedSummaryContent.textContent = summary;
+            console.log('✅ 已更新合併模式摘要內容');
+        }
+    }
+
+    /**
+     * 重置回饋表單
+     */
+    resetFeedbackForm() {
+        console.log('🔄 重置回饋表單...');
+
+        // 清空分頁模式的回饋輸入
+        const feedbackText = document.getElementById('feedbackText');
+        if (feedbackText) {
+            feedbackText.value = '';
+            feedbackText.disabled = false;
+            console.log('✅ 已重置分頁模式回饋輸入');
+        }
+
+        // 清空合併模式的回饋輸入
+        const combinedFeedbackText = document.getElementById('combinedFeedbackText');
+        if (combinedFeedbackText) {
+            combinedFeedbackText.value = '';
+            combinedFeedbackText.disabled = false;
+            console.log('✅ 已重置合併模式回饋輸入');
+        }
+
+        // 重置圖片上傳組件
+        this.images = [];
+        this.updateImagePreview();
+
+        // 重新啟用提交按鈕
+        const submitButtons = document.querySelectorAll('.submit-button, #submitButton, #combinedSubmitButton');
+        submitButtons.forEach(button => {
+            if (button) {
+                button.disabled = false;
+                button.textContent = button.getAttribute('data-original-text') || '提交回饋';
+            }
+        });
+
+        console.log('✅ 回饋表單重置完成');
+    }
+
+    /**
+     * 更新狀態指示器
+     */
+    updateStatusIndicators() {
+        console.log('🔄 更新狀態指示器...');
+
+        // 使用國際化系統獲取翻譯文字
+        const waitingTitle = window.i18nManager ? window.i18nManager.t('status.waiting.title') : 'Waiting for Feedback';
+        const waitingMessage = window.i18nManager ? window.i18nManager.t('status.waiting.message') : 'Please provide your feedback on the AI work results';
+
+        // 更新分頁模式的狀態指示器
+        const feedbackStatusIndicator = document.getElementById('feedbackStatusIndicator');
+        if (feedbackStatusIndicator) {
+            this.setStatusIndicator(feedbackStatusIndicator, 'waiting', '⏳', waitingTitle, waitingMessage);
+        }
+
+        // 更新合併模式的狀態指示器
+        const combinedFeedbackStatusIndicator = document.getElementById('combinedFeedbackStatusIndicator');
+        if (combinedFeedbackStatusIndicator) {
+            this.setStatusIndicator(combinedFeedbackStatusIndicator, 'waiting', '⏳', waitingTitle, waitingMessage);
+        }
+
+        console.log('✅ 狀態指示器更新完成');
+    }
+
+    /**
+     * 設置狀態指示器的內容（兼容舊版本調用）
+     */
+    setStatusIndicator(element, status, icon, title, message) {
+        // 直接調用新的更新方法
+        this.updateStatusIndicatorElement(element, status, icon, title, message);
     }
 
     handleStatusUpdate(statusInfo) {
@@ -1686,29 +1828,13 @@ class FeedbackApp {
     }
 
     syncFeedbackStatusToCombined() {
-        // 同步等待回饋狀態指示器到合併模式
-        const mainStatusIndicator = document.getElementById('feedbackStatusIndicator');
-        const combinedStatusIndicator = document.getElementById('combinedFeedbackStatusIndicator');
-
-        if (mainStatusIndicator && combinedStatusIndicator) {
-            // 複製狀態
-            combinedStatusIndicator.className = mainStatusIndicator.className;
-            combinedStatusIndicator.style.display = mainStatusIndicator.style.display;
-            combinedStatusIndicator.innerHTML = mainStatusIndicator.innerHTML;
-        }
+        // 新版本：直接調用 updateStatusIndicator() 來同步狀態
+        // 因為 updateStatusIndicator() 現在會同時更新兩個狀態指示器
+        console.log('🔄 同步狀態指示器到合併模式...');
+        // 不需要手動複製，updateStatusIndicator() 會處理所有狀態指示器
     }
 
-    showSuccessMessage() {
-        // 顯示成功提交的消息
-        const message = document.createElement('div');
-        message.className = 'success-message';
-        message.textContent = '回饋已成功提交！';
-        document.body.appendChild(message);
 
-        setTimeout(() => {
-            message.remove();
-        }, 3000);
-    }
 }
 
 // 注意：應用程式由模板中的 initializeApp() 函數初始化

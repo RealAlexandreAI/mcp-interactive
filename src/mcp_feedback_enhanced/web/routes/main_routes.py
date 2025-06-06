@@ -73,7 +73,8 @@ def setup_routes(manager: 'WebUIManager'):
             "title": "Interactive Feedback - 回饋收集",
             "version": __version__,
             "has_session": True,
-            "layout_mode": layout_mode
+            "layout_mode": layout_mode,
+            "i18n": manager.i18n
         })
 
     @manager.app.get("/api/translations")

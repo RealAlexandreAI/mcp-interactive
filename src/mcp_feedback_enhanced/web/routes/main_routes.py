@@ -140,6 +140,7 @@ def setup_routes(manager: 'WebUIManager'):
             )
 
         return JSONResponse(content={
+            "session_id": current_session.session_id,
             "project_directory": current_session.project_directory,
             "summary": current_session.summary,
             "feedback_completed": current_session.feedback_completed.is_set(),

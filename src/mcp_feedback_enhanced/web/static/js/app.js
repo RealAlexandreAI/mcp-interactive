@@ -968,11 +968,20 @@ class FeedbackApp {
                 this.updateConnectionStatus('connected', '已連接');
                 console.log('WebSocket 連接已建立');
 
+                // 重置重連計數器
+                this.reconnectAttempts = 0;
+
                 // 開始 WebSocket 心跳
                 this.startWebSocketHeartbeat();
 
                 // 連接成功後，請求會話狀態
                 this.requestSessionStatus();
+
+                // 如果之前處於處理狀態但連接斷開，重置為等待狀態
+                if (this.feedbackState === 'processing') {
+                    console.log('🔄 WebSocket 重連後重置處理狀態');
+                    this.setFeedbackState('waiting_for_feedback');
+                }
             };
 
             this.websocket.onmessage = (event) => {
@@ -1004,12 +1013,17 @@ class FeedbackApp {
                     this.updateConnectionStatus('disconnected', '已斷開');
 
                     // 只有在非正常關閉時才重連
-                    if (event.code !== 1000) {
-                        console.log('3秒後嘗試重連...');
+                    if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+                        this.reconnectAttempts++;
+                        const delay = Math.min(3000 * this.reconnectAttempts, 15000); // 最大延遲15秒
+                        console.log(`${delay/1000}秒後嘗試重連... (第${this.reconnectAttempts}次)`);
                         setTimeout(() => {
-                            console.log('🔄 開始重連 WebSocket...');
+                            console.log(`🔄 開始重連 WebSocket... (第${this.reconnectAttempts}次)`);
                             this.setupWebSocket();
-                        }, 3000);
+                        }, delay);
+                    } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                        console.log('❌ 達到最大重連次數，停止重連');
+                        this.showMessage('WebSocket 連接失敗，請刷新頁面重試', 'error');
                     }
                 }
             };
@@ -1089,7 +1103,7 @@ class FeedbackApp {
                 this.handleStatusUpdate(data.status_info);
                 break;
             case 'session_updated':
-                console.log('會話已更新:', data.session_info);
+                console.log('🔄 收到會話更新消息:', data.session_info);
                 this.handleSessionUpdated(data);
                 break;
             default:
@@ -1158,8 +1172,13 @@ class FeedbackApp {
             // 使用局部更新替代整頁刷新
             await this.updatePageContentPartially();
 
+            // 確保 UI 狀態正確更新
+            this.updateUIState();
+
+            console.log('✅ 頁面內容局部更新完成');
+
         } catch (error) {
-            console.error('局部更新頁面內容失敗:', error);
+            console.error('❌ 局部更新頁面內容失敗:', error);
             // 備用方案：顯示提示讓用戶手動刷新
             this.showMessage('更新內容失敗，請手動刷新頁面以查看新的 AI 工作摘要', 'warning');
         }

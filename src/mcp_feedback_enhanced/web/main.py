@@ -133,14 +133,25 @@ class WebUIManager:
         debug_log(f"創建新的活躍會話: {session_id}")
         debug_log(f"繼承 {len(session.active_tabs)} 個活躍標籤頁")
 
-        # 如果有舊的 WebSocket 連接，立即發送會話更新通知
+        # 處理會話更新通知
         if old_websocket:
+            # 有舊連接，立即發送會話更新通知
             self._old_websocket_for_update = old_websocket
             self._new_session_for_update = session
             debug_log("已保存舊 WebSocket 連接，準備發送會話更新通知")
+
+            # 立即發送會話更新通知
+            import asyncio
+            try:
+                # 在後台任務中發送通知
+                asyncio.create_task(self._send_immediate_session_update())
+            except Exception as e:
+                debug_log(f"創建會話更新任務失敗: {e}")
+                self._pending_session_update = True
         else:
-            # 標記需要發送會話更新通知（當新 WebSocket 連接建立時）
+            # 沒有舊連接，標記需要發送會話更新通知（當新 WebSocket 連接建立時）
             self._pending_session_update = True
+            debug_log("沒有舊 WebSocket 連接，設置待更新標記")
 
         return session_id
 
@@ -310,19 +321,27 @@ class WebUIManager:
     async def notify_session_update(self, session):
         """向活躍標籤頁發送會話更新通知"""
         try:
-            # 向所有活躍的 WebSocket 連接發送會話更新通知
-            await self.broadcast_to_active_tabs({
-                "type": "session_updated",
-                "message": "新會話已創建，正在更新頁面內容",
-                "session_info": {
-                    "project_directory": session.project_directory,
-                    "summary": session.summary,
-                    "session_id": session.session_id
-                }
-            })
-            debug_log("會話更新通知已發送到所有活躍標籤頁")
+            # 檢查是否有活躍的 WebSocket 連接
+            if session.websocket:
+                # 直接通過當前會話的 WebSocket 發送
+                await session.websocket.send_json({
+                    "type": "session_updated",
+                    "message": "新會話已創建，正在更新頁面內容",
+                    "session_info": {
+                        "project_directory": session.project_directory,
+                        "summary": session.summary,
+                        "session_id": session.session_id
+                    }
+                })
+                debug_log("會話更新通知已通過 WebSocket 發送")
+            else:
+                # 沒有活躍連接，設置待更新標記
+                self._pending_session_update = True
+                debug_log("沒有活躍 WebSocket 連接，設置待更新標記")
         except Exception as e:
             debug_log(f"發送會話更新通知失敗: {e}")
+            # 設置待更新標記作為備用方案
+            self._pending_session_update = True
 
     async def _send_immediate_session_update(self):
         """立即發送會話更新通知（使用舊的 WebSocket 連接）"""

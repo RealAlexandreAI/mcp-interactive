@@ -170,6 +170,7 @@ def setup_routes(manager: 'WebUIManager'):
 
             # 檢查是否有待發送的會話更新
             if getattr(manager, '_pending_session_update', False):
+                debug_log("檢測到待發送的會話更新，準備發送通知")
                 await websocket.send_json({
                     "type": "session_updated",
                     "message": "新會話已創建，正在更新頁面內容",
@@ -180,7 +181,14 @@ def setup_routes(manager: 'WebUIManager'):
                     }
                 })
                 manager._pending_session_update = False
-                debug_log("已發送會話更新通知到前端")
+                debug_log("✅ 已發送會話更新通知到前端")
+            else:
+                # 發送當前會話狀態
+                await websocket.send_json({
+                    "type": "status_update",
+                    "status_info": session.get_status_info()
+                })
+                debug_log("已發送當前會話狀態到前端")
 
         except Exception as e:
             debug_log(f"發送連接確認失敗: {e}")

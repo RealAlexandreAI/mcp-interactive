@@ -1319,6 +1319,24 @@ class FeedbackApp {
                 }
 
                 console.log('設定載入完成，應用設定...');
+
+                // 同步語言設定到 i18nManager（確保 ui_settings.json 優先於 localStorage）
+                if (settings.language && window.i18nManager) {
+                    const currentI18nLanguage = window.i18nManager.getCurrentLanguage();
+                    console.log(`檢查語言設定: ui_settings.json=${settings.language}, i18nManager=${currentI18nLanguage}`);
+                    if (settings.language !== currentI18nLanguage) {
+                        console.log(`🔄 同步語言設定: ${currentI18nLanguage} -> ${settings.language}`);
+                        window.i18nManager.setLanguage(settings.language);
+                        // 同步到 localStorage，確保一致性
+                        localStorage.setItem('language', settings.language);
+                        console.log(`✅ 語言同步完成: ${settings.language}`);
+                    } else {
+                        console.log(`✅ 語言設定已同步: ${settings.language}`);
+                    }
+                } else {
+                    console.log(`⚠️ 語言同步跳過: settings.language=${settings.language}, i18nManager=${!!window.i18nManager}`);
+                }
+
                 this.applySettings();
             } else {
                 console.log('沒有找到設定，使用預設值');
@@ -1378,6 +1396,15 @@ class FeedbackApp {
         const autoCloseToggle = document.getElementById('autoCloseToggle');
         if (autoCloseToggle) {
             autoCloseToggle.classList.toggle('active', this.autoClose);
+        }
+
+        // 應用語言設定
+        if (this.currentLanguage && window.i18nManager) {
+            const currentI18nLanguage = window.i18nManager.getCurrentLanguage();
+            if (this.currentLanguage !== currentI18nLanguage) {
+                console.log(`應用語言設定: ${currentI18nLanguage} -> ${this.currentLanguage}`);
+                window.i18nManager.setLanguage(this.currentLanguage);
+            }
         }
 
         // 應用圖片設定
@@ -1612,7 +1639,13 @@ class FeedbackApp {
             window.i18nManager.setLanguage(lang);
         }
 
+        // 同步到 localStorage，確保一致性
+        localStorage.setItem('language', lang);
+
+        // 保存到 ui_settings.json
         this.saveSettings();
+
+        console.log(`語言已切換到: ${lang}`);
     }
 
     handleCombinedMode() {

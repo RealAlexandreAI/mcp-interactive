@@ -18,17 +18,20 @@ class I18nManager {
         const savedLanguage = localStorage.getItem('language');
         if (savedLanguage) {
             this.currentLanguage = savedLanguage;
+            console.log(`i18nManager 從 localStorage 載入語言: ${savedLanguage}`);
+        } else {
+            console.log(`i18nManager 使用默認語言: ${this.currentLanguage}`);
         }
 
         // 載入翻譯數據
         await this.loadTranslations();
-        
+
         // 應用翻譯
         this.applyTranslations();
-        
+
         // 設置語言選擇器
         this.setupLanguageSelectors();
-        
+
         // 延遲一點再更新動態內容，確保應用程式已初始化
         setTimeout(() => {
             this.updateDynamicContent();
@@ -119,11 +122,12 @@ class I18nManager {
     }
 
     setLanguage(language) {
+        console.log(`🔄 i18nManager.setLanguage() 被調用: ${this.currentLanguage} -> ${language}`);
         if (this.translations[language]) {
             this.currentLanguage = language;
             localStorage.setItem('language', language);
             this.applyTranslations();
-            
+
             // 更新語言選擇器（只更新設定頁面的）
             const selector = document.getElementById('settingsLanguageSelect');
             if (selector) {
@@ -132,10 +136,10 @@ class I18nManager {
 
             // 更新 HTML lang 屬性
             document.documentElement.lang = language;
-            
-            console.log('語言已切換到:', language);
+
+            console.log(`✅ i18nManager 語言已切換到: ${language}`);
         } else {
-            console.warn('不支援的語言:', language);
+            console.warn(`❌ i18nManager 不支援的語言: ${language}`);
         }
     }
 

@@ -27,6 +27,7 @@ import sys
 import os
 import socket
 import threading
+import json
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -34,7 +35,7 @@ from typing import Dict, Any, Optional
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from .debug import debug_log
-from .i18n import t
+from .i18n import t, get_i18n_manager
 
 # 嘗試導入 Web UI 模組
 try:
@@ -42,10 +43,51 @@ try:
     from .web import WebUIManager, launch_web_feedback_ui, get_web_ui_manager
     from .web.utils.browser import smart_browser_open, is_wsl_environment
     WEB_UI_AVAILABLE = True
-    debug_log("✅ 使用新的 web 模組")
+    debug_log(t('test.messages.webModuleLoaded'))
 except ImportError as e:
-    debug_log(f"⚠️  無法導入 Web UI 模組: {e}")
+    debug_log(t('test.messages.webModuleLoadFailed', error=str(e)))
     WEB_UI_AVAILABLE = False
+
+def load_web_ui_language_setting():
+    """載入 Web UI 的語言設定並同步到 GUI 國際化系統"""
+    try:
+        # 讀取 ui_settings.json 配置文件
+        config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
+        settings_file = config_dir / "ui_settings.json"
+
+        if settings_file.exists():
+            with open(settings_file, 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+                language = settings.get('language')
+
+                if language:
+                    debug_log(t('test.messages.loadingLanguageFromSettings', language=language))
+
+                    # 獲取 GUI 國際化管理器並設定語言
+                    i18n_manager = get_i18n_manager()
+                    current_language = i18n_manager.get_current_language()
+
+                    if language != current_language:
+                        debug_log(t('test.messages.syncingLanguage', **{'from': current_language, 'to': language}))
+                        success = i18n_manager.set_language(language)
+                        if success:
+                            debug_log(t('test.messages.guiLanguageSynced', language=language))
+                        else:
+                            debug_log(t('test.messages.languageSetFailed', language=current_language))
+                    else:
+                        debug_log(t('test.messages.languageAlreadySynced', language=language))
+
+                    return language
+                else:
+                    debug_log(t('test.messages.noLanguageInSettings'))
+        else:
+            debug_log(t('test.messages.settingsFileNotExists'))
+
+    except Exception as e:
+        debug_log(t('test.messages.loadLanguageSettingsFailed', error=str(e)))
+
+    # 返回當前語言作為回退
+    return get_i18n_manager().get_current_language()
 
 def get_test_summary():
     """獲取測試摘要，使用國際化系統"""
@@ -61,46 +103,52 @@ def find_free_port():
 
 def test_web_ui(keep_running=False):
     """Test the Web UI functionality"""
-    
-    debug_log("🧪 測試 MCP Feedback Enhanced Web UI")
+
+    debug_log(t('test.messages.testingWebUi'))
     debug_log("=" * 50)
+
+    # 同步 Web UI 語言設定到 GUI 國際化系統
+    debug_log(t('test.messages.syncingLanguageSettings'))
+    current_language = load_web_ui_language_setting()
+    debug_log(t('test.messages.currentLanguage', language=current_language))
+    debug_log("-" * 30)
     
     # Test import
     try:
         # 使用新的 web 模組
         from .web import WebUIManager, launch_web_feedback_ui
-        debug_log("✅ Web UI 模組匯入成功")
+        debug_log(t('test.messages.webUiModuleImportSuccess'))
     except ImportError as e:
-        debug_log(f"❌ Web UI 模組匯入失敗: {e}")
+        debug_log(t('test.messages.webUiModuleImportFailed', error=str(e)))
         return False, None
     
     # Find free port
     try:
         free_port = find_free_port()
-        debug_log(f"🔍 找到可用端口: {free_port}")
+        debug_log(t('test.messages.foundAvailablePort', port=free_port))
     except Exception as e:
-        debug_log(f"❌ 尋找可用端口失敗: {e}")
+        debug_log(t('test.messages.findPortFailed', error=str(e)))
         return False, None
     
     # Test manager creation
     try:
         manager = WebUIManager(port=free_port)
-        debug_log("✅ WebUIManager 創建成功")
+        debug_log(t('test.messages.webUiManagerCreateSuccess'))
     except Exception as e:
-        debug_log(f"❌ WebUIManager 創建失敗: {e}")
+        debug_log(t('test.messages.webUiManagerCreateFailed', error=str(e)))
         return False, None
     
     # Test server start (with timeout)
     server_started = False
     try:
-        debug_log("🚀 啟動 Web 服務器...")
-        
+        debug_log(t('test.messages.startingWebServer'))
+
         def start_server():
             try:
                 manager.start_server()
                 return True
             except Exception as e:
-                debug_log(f"服務器啟動錯誤: {e}")
+                debug_log(t('test.messages.serverStartError', error=str(e)))
                 return False
         
         # Start server in thread
@@ -117,17 +165,17 @@ def test_web_ui(keep_running=False):
             result = s.connect_ex((manager.host, manager.port))
             if result == 0:
                 server_started = True
-                debug_log("✅ Web 服務器啟動成功")
-                debug_log(f"🌐 服務器運行在: http://{manager.host}:{manager.port}")
+                debug_log(t('test.messages.webServerStartSuccess'))
+                debug_log(t('test.messages.serverRunningAt', host=manager.host, port=manager.port))
             else:
-                debug_log(f"❌ 無法連接到服務器端口 {manager.port}")
-                
+                debug_log(t('test.messages.cannotConnectToPort', port=manager.port))
+
     except Exception as e:
-        debug_log(f"❌ Web 服務器啟動失敗: {e}")
+        debug_log(t('test.messages.webServerStartFailed', error=str(e)))
         return False, None
-    
+
     if not server_started:
-        debug_log("❌ 服務器未能正常啟動")
+        debug_log(t('test.messages.serverNotStarted'))
         return False, None
     
     # Test session creation
@@ -142,41 +190,41 @@ def test_web_ui(keep_running=False):
             'session_id': session_id,
             'url': f"http://{manager.host}:{manager.port}"  # 使用根路徑
         }
-        debug_log(f"✅ 測試會話創建成功 (ID: {session_id[:8]}...)")
-        debug_log(f"🔗 測試 URL: {session_info['url']}")
+        debug_log(t('test.messages.testSessionCreated', sessionId=session_id[:8]))
+        debug_log(t('test.messages.testUrl', url=session_info['url']))
 
         # 測試瀏覽器啟動功能
         try:
-            debug_log("🌐 測試瀏覽器啟動功能...")
+            debug_log(t('test.messages.testingBrowserLaunch'))
             if is_wsl_environment():
-                debug_log("✅ 檢測到 WSL 環境，使用 WSL 專用瀏覽器啟動")
+                debug_log(t('test.messages.wslEnvironmentDetected'))
             else:
-                debug_log("ℹ️  非 WSL 環境，使用標準瀏覽器啟動")
+                debug_log(t('test.messages.nonWslEnvironment'))
 
             smart_browser_open(session_info['url'])
-            debug_log(f"✅ 瀏覽器啟動成功: {session_info['url']}")
+            debug_log(t('test.messages.browserLaunchSuccess', url=session_info['url']))
         except Exception as browser_error:
-            debug_log(f"⚠️  瀏覽器啟動失敗: {browser_error}")
-            debug_log("💡 這可能是正常的，請手動在瀏覽器中開啟上述 URL")
+            debug_log(t('test.messages.browserLaunchFailed', error=str(browser_error)))
+            debug_log(t('test.messages.browserLaunchNote'))
 
     except Exception as e:
-        debug_log(f"❌ 會話創建失敗: {e}")
+        debug_log(t('test.messages.sessionCreationFailed', error=str(e)))
         return False, None
     
     debug_log("\n" + "=" * 50)
-    debug_log("🎉 所有測試通過！Web UI 準備就緒")
-    debug_log("📝 注意事項:")
-    debug_log("  - Web UI 會在 SSH remote 環境下自動啟用")
-    debug_log("  - 本地環境會繼續使用 Qt GUI")
-    debug_log("  - 支援即時命令執行和 WebSocket 通訊")
-    debug_log("  - 提供現代化的深色主題界面")
-    debug_log("  - 支援智能 Ctrl+V 圖片貼上功能")
+    debug_log(t('test.messages.allTestsPassed'))
+    debug_log(t('test.messages.notes'))
+    debug_log(t('test.messages.webUiAutoEnabled'))
+    debug_log(t('test.messages.localEnvironmentGui'))
+    debug_log(t('test.messages.realtimeCommandSupport'))
+    debug_log(t('test.messages.modernDarkTheme'))
+    debug_log(t('test.messages.smartCtrlVPaste'))
     
     return True, session_info
 
 def test_environment_detection():
     """Test environment detection logic"""
-    debug_log("🔍 測試環境檢測功能")
+    debug_log(t('test.messages.testingEnvironmentDetection'))
     debug_log("-" * 30)
 
     try:
@@ -186,84 +234,84 @@ def test_environment_detection():
         remote_detected = is_remote_environment()
         gui_available = can_use_gui()
 
-        debug_log(f"WSL 環境檢測: {'是' if wsl_detected else '否'}")
-        debug_log(f"遠端環境檢測: {'是' if remote_detected else '否'}")
-        debug_log(f"GUI 可用性: {'是' if gui_available else '否'}")
+        debug_log(t('test.messages.wslDetection', result=t('test.messages.yes') if wsl_detected else t('test.messages.no')))
+        debug_log(t('test.messages.remoteDetection', result=t('test.messages.yes') if remote_detected else t('test.messages.no')))
+        debug_log(t('test.messages.guiAvailability', result=t('test.messages.yes') if gui_available else t('test.messages.no')))
 
         if wsl_detected:
-            debug_log("✅ 檢測到 WSL 環境，將使用 Web UI 並支援 Windows 瀏覽器啟動")
+            debug_log(t('test.messages.wslEnvironmentWebUi'))
         elif remote_detected:
-            debug_log("✅ 將使用 Web UI (適合遠端開發環境)")
+            debug_log(t('test.messages.remoteEnvironmentWebUi'))
         else:
-            debug_log("✅ 將使用 Qt GUI (本地環境)")
+            debug_log(t('test.messages.localEnvironmentQtGui'))
 
         return True
 
     except Exception as e:
-        debug_log(f"❌ 環境檢測失敗: {e}")
+        debug_log(t('test.messages.environmentDetectionFailed', error=str(e)))
         return False
 
 def test_mcp_integration():
     """Test MCP server integration"""
-    debug_log("\n🔧 測試 MCP 整合功能")
+    debug_log(t('test.messages.testingMcpIntegration'))
     debug_log("-" * 30)
-    
+
     try:
         from .server import interactive_feedback
-        debug_log("✅ MCP 工具函數可用")
-        
+        debug_log(t('test.messages.mcpToolFunctionAvailable'))
+
         # Test timeout parameter
-        debug_log("✅ 支援 timeout 參數")
-        
+        debug_log(t('test.messages.timeoutParameterSupported'))
+
         # Test environment-based Web UI selection
-        debug_log("✅ 支援基於環境變數的 Web UI 選擇")
-        
+        debug_log(t('test.messages.environmentBasedWebUiSupported'))
+
         # Test would require actual MCP call, so just verify import
-        debug_log("✅ 準備接受來自 AI 助手的調用")
+        debug_log(t('test.messages.readyForAiAssistantCalls'))
         return True
-        
+
     except Exception as e:
-        debug_log(f"❌ MCP 整合測試失敗: {e}")
+        debug_log(t('test.messages.mcpIntegrationTestFailed', error=str(e)))
         return False
 
 def test_new_parameters():
     """Test timeout parameter and environment variable support"""
-    debug_log("\n🆕 測試參數功能")
+    debug_log(t('test.messages.testingParameterFunctionality'))
     debug_log("-" * 30)
-    
+
     try:
         from .server import interactive_feedback
-        
+
         # 測試參數是否存在
         import inspect
         sig = inspect.signature(interactive_feedback)
-        
+
         # 檢查 timeout 參數
         if 'timeout' in sig.parameters:
             timeout_param = sig.parameters['timeout']
-            debug_log(f"✅ timeout 參數存在，預設值: {timeout_param.default}")
+            debug_log(t('test.messages.timeoutParameterExists', default=timeout_param.default))
         else:
-            debug_log("❌ timeout 參數不存在")
+            debug_log(t('test.messages.timeoutParameterMissing'))
             return False
-        
+
         # 檢查環境變數支援
         import os
         current_force_web = os.getenv("FORCE_WEB")
         if current_force_web:
-            debug_log(f"✅ 檢測到 FORCE_WEB 環境變數: {current_force_web}")
+            debug_log(t('test.messages.forceWebDetected', value=current_force_web))
         else:
-            debug_log("ℹ️  FORCE_WEB 環境變數未設定（將使用預設邏輯）")
-        
-        debug_log("✅ 參數功能正常")
+            debug_log(t('test.messages.forceWebNotSet'))
+
+        debug_log(t('test.messages.parameterFunctionalityNormal'))
         return True
-        
+
     except Exception as e:
-        debug_log(f"❌ 參數測試失敗: {e}")
+        debug_log(t('test.messages.parameterTestFailed', error=str(e)))
         return False
 
 def test_environment_web_ui_mode():
     """Test environment-based Web UI mode"""
-    debug_log("\n🌐 測試環境變數控制 Web UI 模式")
+    debug_log(t('test.messages.testingEnvironmentWebUiMode'))
     debug_log("-" * 30)
 
     try:
@@ -276,62 +324,62 @@ def test_environment_web_ui_mode():
         gui_available = can_use_gui()
         force_web_env = os.getenv("FORCE_WEB", "").lower()
 
-        debug_log(f"當前環境 - WSL: {is_wsl}, 遠端: {is_remote}, GUI 可用: {gui_available}")
-        debug_log(f"FORCE_WEB 環境變數: {force_web_env or '未設定'}")
+        debug_log(t('test.messages.currentEnvironment', wsl=is_wsl, remote=is_remote, gui=gui_available))
+        debug_log(t('test.messages.forceWebVariable', value=force_web_env or t('test.messages.notSet')))
 
         if force_web_env in ("true", "1", "yes", "on"):
-            debug_log("✅ FORCE_WEB 已啟用，將強制使用 Web UI")
+            debug_log(t('test.messages.forceWebEnabled'))
         elif is_wsl:
-            debug_log("✅ WSL 環境，將使用 Web UI 並支援 Windows 瀏覽器啟動")
+            debug_log(t('test.messages.wslEnvironmentWebUiBrowser'))
         elif not is_remote and gui_available:
-            debug_log("ℹ️  本地 GUI 環境，將使用 Qt GUI")
-            debug_log("💡 可設定 FORCE_WEB=true 強制使用 Web UI 進行測試")
+            debug_log(t('test.messages.localGuiEnvironmentQtGui'))
+            debug_log(t('test.messages.forceWebTestHint'))
         else:
-            debug_log("ℹ️  將自動使用 Web UI（遠端環境或 GUI 不可用）")
+            debug_log(t('test.messages.autoWebUiRemoteOrNoGui'))
 
         return True
-        
+
     except Exception as e:
-        debug_log(f"❌ 環境變數測試失敗: {e}")
+        debug_log(t('test.messages.environmentVariableTestFailed', error=str(e)))
         return False
 
 def interactive_demo(session_info):
     """Run interactive demo with the Web UI"""
-    debug_log(f"\n🌐 Web UI 互動測試模式")
+    debug_log(t('test.messages.webUiInteractiveTestMode'))
     debug_log("=" * 50)
-    debug_log(f"服務器地址: {session_info['url']}")  # 簡化輸出，只顯示服務器地址
-    debug_log("\n📖 操作指南:")
-    debug_log("  1. 在瀏覽器中開啟上面的服務器地址")
-    debug_log("  2. 嘗試以下功能:")
-    debug_log("     - 點擊 '顯示命令區塊' 按鈕")
-    debug_log("     - 輸入命令如 'echo Hello World' 並執行")
-    debug_log("     - 在回饋區域輸入文字")
-    debug_log("     - 使用 Ctrl+Enter 提交回饋")
-    debug_log("  3. 測試 WebSocket 即時通訊功能")
-    debug_log("  4. 測試頁面持久性（提交反饋後頁面不關閉）")
-    debug_log("\n⌨️  控制選項:")
-    debug_log("  - 按 Enter 繼續運行")
-    debug_log("  - 輸入 'q' 或 'quit' 停止服務器")
+    debug_log(t('test.messages.serverAddress', url=session_info['url']))  # 簡化輸出，只顯示服務器地址
+    debug_log(t('test.messages.operationGuide'))
+    debug_log(t('test.messages.openServerInBrowser'))
+    debug_log(t('test.messages.tryFollowingFeatures'))
+    debug_log(t('test.messages.clickShowCommandBlock'))
+    debug_log(t('test.messages.inputCommandAndExecute'))
+    debug_log(t('test.messages.inputTextInFeedbackArea'))
+    debug_log(t('test.messages.useCtrlEnterSubmit'))
+    debug_log(t('test.messages.testWebSocketRealtime'))
+    debug_log(t('test.messages.testPagePersistence'))
+    debug_log(t('test.messages.controlOptions'))
+    debug_log(t('test.messages.pressEnterContinue'))
+    debug_log(t('test.messages.inputQuitToStop'))
     
     while True:
         try:
             user_input = input("\n>>> ").strip().lower()
             if user_input in ['q', 'quit', 'exit']:
-                debug_log("🛑 停止服務器...")
+                debug_log(t('test.messages.stoppingServer'))
                 break
             elif user_input == '':
-                debug_log(f"🔄 服務器持續運行在: {session_info['url']}")
-                debug_log("   瀏覽器應該仍可正常訪問")
+                debug_log(t('test.messages.serverContinuesRunning', url=session_info['url']))
+                debug_log(t('test.messages.browserShouldStillAccess'))
             else:
-                debug_log("❓ 未知命令。按 Enter 繼續運行，或輸入 'q' 退出")
+                debug_log(t('test.messages.unknownCommand'))
         except KeyboardInterrupt:
-            debug_log("\n🛑 收到中斷信號，停止服務器...")
+            debug_log(t('test.messages.interruptSignalReceived'))
             break
-    
-    debug_log("✅ Web UI 測試完成")
+
+    debug_log(t('test.messages.webUiTestComplete'))
 
 if __name__ == "__main__":
-    debug_log("MCP Feedback Enhanced - Web UI 測試")
+    debug_log(t('test.messages.webUiTest'))
     debug_log("=" * 60)
     
     # Test environment detection
@@ -351,25 +399,25 @@ if __name__ == "__main__":
     
     debug_log("\n" + "=" * 60)
     if env_test and params_test and env_web_test and mcp_test and web_test:
-        debug_log("🎊 所有測試完成！準備使用 MCP Feedback Enhanced")
-        debug_log("\n📖 使用方法:")
-        debug_log("  1. 在 Cursor/Cline 中配置此 MCP 服務器")
-        debug_log("  2. AI 助手會自動調用 interactive_feedback 工具")
-        debug_log("  3. 根據環境自動選擇 GUI 或 Web UI")
-        debug_log("  4. 提供回饋後繼續工作流程")
-        
-        debug_log("\n✨ Web UI 新功能:")
-        debug_log("  - 支援 SSH remote 開發環境")
-        debug_log("  - 現代化深色主題界面")
-        debug_log("  - WebSocket 即時通訊")
-        debug_log("  - 自動瀏覽器啟動")
-        debug_log("  - 命令執行和即時輸出")
-        
-        debug_log("\n✅ 測試完成 - 系統已準備就緒！")
+        debug_log(t('test.messages.allTestsComplete'))
+        debug_log(t('test.messages.usageInstructions'))
+        debug_log(t('test.messages.configureMcpServer'))
+        debug_log(t('test.messages.aiAssistantAutoCall'))
+        debug_log(t('test.messages.autoSelectGuiOrWebUi'))
+        debug_log(t('test.messages.provideFeedbackContinue'))
+
+        debug_log(t('test.messages.webUiNewFeatures'))
+        debug_log(t('test.messages.sshRemoteSupport'))
+        debug_log(t('test.messages.modernDarkThemeInterface'))
+        debug_log(t('test.messages.webSocketRealtime'))
+        debug_log(t('test.messages.autoBrowserLaunch'))
+        debug_log(t('test.messages.commandExecutionRealtime'))
+
+        debug_log(t('test.messages.testCompleteSystemReady'))
         if session_info:
-            debug_log(f"💡 您可以現在就在瀏覽器中測試: {session_info['url']}")
-            debug_log("   (服務器會繼續運行一小段時間)")
+            debug_log(t('test.messages.canTestInBrowserNow', url=session_info['url']))
+            debug_log(t('test.messages.serverWillContinueRunning'))
             time.sleep(10)  # Keep running for a short time for immediate testing
     else:
-        debug_log("❌ 部分測試失敗，請檢查錯誤信息")
-        sys.exit(1) 
+        debug_log(t('test.messages.someTestsFailed'))
+        sys.exit(1)

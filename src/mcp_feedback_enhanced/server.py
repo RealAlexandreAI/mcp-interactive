@@ -38,6 +38,12 @@ from .i18n import get_i18n_manager
 # 導入統一的調試功能
 from .debug import server_debug_log as debug_log
 
+# 導入錯誤處理框架
+from .utils.error_handler import ErrorHandler, ErrorType
+
+# 導入資源管理器
+from .utils.resource_manager import get_resource_manager, create_temp_file
+
 # ===== 編碼初始化 =====
 def init_encoding():
     """初始化編碼設置，確保正確處理中文字符"""
@@ -228,8 +234,8 @@ def save_feedback_to_file(feedback_data: dict, file_path: str = None) -> str:
         str: 儲存的文件路徑
     """
     if file_path is None:
-        temp_fd, file_path = tempfile.mkstemp(suffix='.json', prefix='feedback_')
-        os.close(temp_fd)
+        # 使用資源管理器創建臨時文件
+        file_path = create_temp_file(suffix='.json', prefix='feedback_')
     
     # 確保目錄存在
     directory = os.path.dirname(file_path)
@@ -401,9 +407,13 @@ def process_images(images_data: List[dict]) -> List[MCPImage]:
             debug_log(f"圖片 {i} ({file_name}) 處理成功，格式: {image_format}")
             
         except Exception as e:
-            debug_log(f"圖片 {i} 處理失敗: {e}")
-            import traceback
-            debug_log(f"詳細錯誤: {traceback.format_exc()}")
+            # 使用統一錯誤處理（不影響 JSON RPC）
+            error_id = ErrorHandler.log_error_with_context(
+                e,
+                context={"operation": "圖片處理", "image_index": i},
+                error_type=ErrorType.FILE_IO
+            )
+            debug_log(f"圖片 {i} 處理失敗 [錯誤ID: {error_id}]: {e}")
     
     debug_log(f"共處理 {len(mcp_images)} 張圖片")
     return mcp_images
@@ -539,9 +549,18 @@ async def interactive_feedback(
         return feedback_items
         
     except Exception as e:
-        error_msg = f"回饋收集錯誤: {str(e)}"
-        debug_log(f"錯誤: {error_msg}")
-        return [TextContent(type="text", text=error_msg)]
+        # 使用統一錯誤處理，但不影響 JSON RPC 響應
+        error_id = ErrorHandler.log_error_with_context(
+            e,
+            context={"operation": "回饋收集", "project_dir": project_dir},
+            error_type=ErrorType.SYSTEM
+        )
+
+        # 生成用戶友好的錯誤信息
+        user_error_msg = ErrorHandler.format_user_error(e, include_technical=False)
+        debug_log(f"回饋收集錯誤 [錯誤ID: {error_id}]: {str(e)}")
+
+        return [TextContent(type="text", text=user_error_msg)]
 
 
 async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: int) -> dict:
@@ -565,10 +584,18 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
         # 傳遞 timeout 參數給 Web UI
         return await launch_web_feedback_ui(project_dir, summary, timeout)
     except ImportError as e:
-        debug_log(f"無法導入 Web UI 模組: {e}")
+        # 使用統一錯誤處理
+        error_id = ErrorHandler.log_error_with_context(
+            e,
+            context={"operation": "Web UI 模組導入", "module": "web"},
+            error_type=ErrorType.DEPENDENCY
+        )
+        user_error_msg = ErrorHandler.format_user_error(e, ErrorType.DEPENDENCY, include_technical=False)
+        debug_log(f"Web UI 模組導入失敗 [錯誤ID: {error_id}]: {e}")
+
         return {
             "command_logs": "",
-            "interactive_feedback": f"Web UI 模組導入失敗: {str(e)}",
+            "interactive_feedback": user_error_msg,
             "images": []
         }
     except TimeoutError as e:
@@ -587,19 +614,31 @@ async def launch_web_ui_with_timeout(project_dir: str, summary: str, timeout: in
             "images": []
         }
     except Exception as e:
-        error_msg = f"Web UI 錯誤: {e}"
-        debug_log(f"❌ {error_msg}")
+        # 使用統一錯誤處理
+        error_id = ErrorHandler.log_error_with_context(
+            e,
+            context={"operation": "Web UI 啟動", "timeout": timeout},
+            error_type=ErrorType.SYSTEM
+        )
+        user_error_msg = ErrorHandler.format_user_error(e, include_technical=False)
+        debug_log(f"❌ Web UI 錯誤 [錯誤ID: {error_id}]: {e}")
+
         # 發生錯誤時也要停止 Web 服務器
         try:
             from .web import stop_web_ui
             stop_web_ui()
             debug_log("Web UI 服務器已因錯誤而停止")
         except Exception as stop_error:
+            ErrorHandler.log_error_with_context(
+                stop_error,
+                context={"operation": "Web UI 服務器停止"},
+                error_type=ErrorType.SYSTEM
+            )
             debug_log(f"停止 Web UI 服務器時發生錯誤: {stop_error}")
 
         return {
             "command_logs": "",
-            "interactive_feedback": f"錯誤: {str(e)}",
+            "interactive_feedback": user_error_msg,
             "images": []
         }
 

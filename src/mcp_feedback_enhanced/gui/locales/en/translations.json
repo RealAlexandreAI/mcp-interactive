@@ -192,7 +192,46 @@
     "confirmClearAll": "Are you sure you want to clear all {count} images?",
     "confirmClearTitle": "Confirm Clear",
     "fileSizeExceeded": "Image {filename} size is {size}MB, exceeding 1MB limit!\nRecommend using image editing software to compress before uploading.",
-    "dataSizeExceeded": "Image {filename} data size exceeds 1MB limit!"
+    "dataSizeExceeded": "Image {filename} data size exceeds 1MB limit!",
+    "types": {
+      "network": "Network connection issue",
+      "file_io": "File read/write issue",
+      "process": "Process execution issue",
+      "timeout": "Operation timeout",
+      "user_cancel": "User cancelled the operation",
+      "system": "System issue",
+      "permission": "Insufficient permissions",
+      "validation": "Data validation failed",
+      "dependency": "Dependency issue",
+      "config": "Configuration issue"
+    },
+    "solutions": {
+      "network": [
+        "Check network connection",
+        "Verify firewall settings",
+        "Try restarting the application"
+      ],
+      "file_io": [
+        "Check if file exists",
+        "Verify file permissions",
+        "Check available disk space"
+      ],
+      "process": [
+        "Check if process is running",
+        "Verify system resources",
+        "Try restarting related services"
+      ],
+      "timeout": [
+        "Increase timeout settings",
+        "Check network latency",
+        "Retry the operation later"
+      ],
+      "permission": [
+        "Run as administrator",
+        "Check file/directory permissions",
+        "Contact system administrator"
+      ]
+    }
   },
   "languageSelector": "🌐 Language",
   "languageNames": {

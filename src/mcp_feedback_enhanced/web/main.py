@@ -20,14 +20,18 @@ from pathlib import Path
 from typing import Dict, Optional
 import uuid
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.gzip import GZipMiddleware
 import uvicorn
 
 from .models import WebFeedbackSession, FeedbackResult
 from .routes import setup_routes
 from .utils import find_free_port, get_browser_opener
+from .utils.port_manager import PortManager
+from .utils.compression_config import get_compression_manager
+from ..utils.error_handler import ErrorHandler, ErrorType
 from ..debug import web_debug_log as debug_log
 from ..i18n import get_i18n_manager
 
@@ -56,9 +60,16 @@ class WebUIManager:
         else:
             debug_log(f"未設定 MCP_WEB_PORT 環境變數，使用預設端口 {preferred_port}")
 
-        # 優先使用指定端口，確保 localStorage 的一致性
-        self.port = port or find_free_port(preferred_port=preferred_port)
+        # 使用增強的端口管理，支持自動清理
+        self.port = port or PortManager.find_free_port_enhanced(
+            preferred_port=preferred_port,
+            auto_cleanup=True,
+            host=self.host
+        )
         self.app = FastAPI(title="MCP Feedback Enhanced")
+
+        # 設置壓縮和緩存中間件
+        self._setup_compression_middleware()
 
         # 重構：使用單一活躍會話而非會話字典
         self.current_session: Optional[WebFeedbackSession] = None
@@ -82,6 +93,48 @@ class WebUIManager:
         setup_routes(self)
 
         debug_log(f"WebUIManager 初始化完成，將在 {self.host}:{self.port} 啟動")
+
+    def _setup_compression_middleware(self):
+        """設置壓縮和緩存中間件"""
+        # 獲取壓縮管理器
+        compression_manager = get_compression_manager()
+        config = compression_manager.config
+
+        # 添加 Gzip 壓縮中間件
+        self.app.add_middleware(
+            GZipMiddleware,
+            minimum_size=config.minimum_size
+        )
+
+        # 添加緩存和壓縮統計中間件
+        @self.app.middleware("http")
+        async def compression_and_cache_middleware(request: Request, call_next):
+            """壓縮和緩存中間件"""
+            response = await call_next(request)
+
+            # 添加緩存頭
+            if not config.should_exclude_path(request.url.path):
+                cache_headers = config.get_cache_headers(request.url.path)
+                for key, value in cache_headers.items():
+                    response.headers[key] = value
+
+            # 更新壓縮統計（如果可能）
+            try:
+                content_length = int(response.headers.get('content-length', 0))
+                content_encoding = response.headers.get('content-encoding', '')
+                was_compressed = 'gzip' in content_encoding
+
+                if content_length > 0:
+                    # 估算原始大小（如果已壓縮，假設壓縮比為 30%）
+                    original_size = content_length if not was_compressed else int(content_length / 0.7)
+                    compression_manager.update_stats(original_size, content_length, was_compressed)
+            except (ValueError, TypeError):
+                # 忽略統計錯誤，不影響正常響應
+                pass
+
+            return response
+
+        debug_log("壓縮和緩存中間件設置完成")
 
     def _setup_static_files(self):
         """設置靜態文件服務"""
@@ -262,16 +315,44 @@ class WebUIManager:
                     if e.errno == 10048:  # Windows: 位址已在使用中
                         retry_count += 1
                         if retry_count < max_retries:
-                            debug_log(f"端口 {self.port} 被占用，嘗試下一個端口")
-                            self.port = find_free_port(self.port + 1)
+                            debug_log(f"端口 {self.port} 被占用，使用增強端口管理查找新端口")
+                            # 使用增強的端口管理查找新端口
+                            try:
+                                self.port = PortManager.find_free_port_enhanced(
+                                    preferred_port=self.port + 1,
+                                    auto_cleanup=False,  # 啟動時不自動清理，避免誤殺其他服務
+                                    host=self.host
+                                )
+                                debug_log(f"找到新的可用端口: {self.port}")
+                            except RuntimeError as port_error:
+                                # 使用統一錯誤處理
+                                error_id = ErrorHandler.log_error_with_context(
+                                    port_error,
+                                    context={"operation": "端口查找", "current_port": self.port},
+                                    error_type=ErrorType.NETWORK
+                                )
+                                debug_log(f"無法找到可用端口 [錯誤ID: {error_id}]: {port_error}")
+                                break
                         else:
                             debug_log("已達到最大重試次數，無法啟動伺服器")
                             break
                     else:
-                        debug_log(f"伺服器啟動錯誤: {e}")
+                        # 使用統一錯誤處理
+                        error_id = ErrorHandler.log_error_with_context(
+                            e,
+                            context={"operation": "伺服器啟動", "host": self.host, "port": self.port},
+                            error_type=ErrorType.NETWORK
+                        )
+                        debug_log(f"伺服器啟動錯誤 [錯誤ID: {error_id}]: {e}")
                         break
                 except Exception as e:
-                    debug_log(f"伺服器運行錯誤: {e}")
+                    # 使用統一錯誤處理
+                    error_id = ErrorHandler.log_error_with_context(
+                        e,
+                        context={"operation": "伺服器運行", "host": self.host, "port": self.port},
+                        error_type=ErrorType.SYSTEM
+                    )
+                    debug_log(f"伺服器運行錯誤 [錯誤ID: {error_id}]: {e}")
                     break
 
         # 在新線程中啟動伺服器

@@ -18,6 +18,7 @@ from typing import Dict, List, Optional
 from fastapi import WebSocket
 
 from ...debug import web_debug_log as debug_log
+from ...utils.resource_manager import get_resource_manager, register_process
 
 
 class SessionStatus(Enum):
@@ -59,6 +60,9 @@ class WebFeedbackSession:
 
         # 確保臨時目錄存在
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+        # 獲取資源管理器實例
+        self.resource_manager = get_resource_manager()
 
     def update_status(self, status: SessionStatus, message: str = None):
         """更新會話狀態"""
@@ -249,6 +253,13 @@ class WebFeedbackSession:
                 universal_newlines=True
             )
 
+            # 註冊進程到資源管理器
+            register_process(
+                self.process,
+                description=f"WebFeedbackSession-{self.session_id}-command",
+                auto_cleanup=True
+            )
+
             # 在背景線程中讀取輸出
             async def read_output():
                 loop = asyncio.get_event_loop()
@@ -281,7 +292,10 @@ class WebFeedbackSession:
                     # 等待進程完成
                     if self.process:
                         exit_code = self.process.wait()
-                        
+
+                        # 從資源管理器取消註冊進程
+                        self.resource_manager.unregister_process(self.process.pid)
+
                         # 發送命令完成信號
                         if self.websocket:
                             try:

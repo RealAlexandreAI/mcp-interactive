@@ -106,7 +106,8 @@ uvx mcp-feedback-enhanced@latest test
       "timeout": 600,
       "env": {
         "FORCE_WEB": "true",
-        "MCP_DEBUG": "false"
+        "MCP_DEBUG": "false",
+        "MCP_WEB_PORT": "8765"
       },
       "autoApprove": ["interactive_feedback"]
     }
@@ -134,6 +135,7 @@ uvx mcp-feedback-enhanced@latest test
 |------|------|-----|------|
 | `FORCE_WEB` | 强制使用 Web UI | `true`/`false` | `false` |
 | `MCP_DEBUG` | 调试模式 | `true`/`false` | `false` |
+| `MCP_WEB_PORT` | Web UI 端口 | `1024-65535` | `8765` |
 
 ### 测试选项
 ```bash

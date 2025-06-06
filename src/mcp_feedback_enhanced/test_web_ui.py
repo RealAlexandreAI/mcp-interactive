@@ -122,17 +122,37 @@ def test_web_ui(keep_running=False):
         debug_log(t('test.messages.webUiModuleImportFailed', error=str(e)))
         return False, None
     
-    # Find free port
+    # Check for environment variable port setting
+    env_port = os.getenv("MCP_WEB_PORT")
+    if env_port:
+        try:
+            custom_port = int(env_port)
+            if 1024 <= custom_port <= 65535:
+                debug_log(t('test.messages.foundAvailablePort', port=custom_port))
+                debug_log(f"使用環境變數 MCP_WEB_PORT 指定的端口: {custom_port}")
+                test_port = custom_port
+            else:
+                debug_log(f"MCP_WEB_PORT 值無效 ({custom_port})，必須在 1024-65535 範圍內")
+                # Find free port as fallback
+                test_port = find_free_port()
+                debug_log(t('test.messages.foundAvailablePort', port=test_port))
+        except ValueError:
+            debug_log(f"MCP_WEB_PORT 格式錯誤 ({env_port})，必須為數字")
+            # Find free port as fallback
+            test_port = find_free_port()
+            debug_log(t('test.messages.foundAvailablePort', port=test_port))
+    else:
+        # Find free port
+        try:
+            test_port = find_free_port()
+            debug_log(t('test.messages.foundAvailablePort', port=test_port))
+        except Exception as e:
+            debug_log(t('test.messages.findPortFailed', error=str(e)))
+            return False, None
+
+    # Test manager creation (不傳遞 port 參數，讓 WebUIManager 自己處理環境變數)
     try:
-        free_port = find_free_port()
-        debug_log(t('test.messages.foundAvailablePort', port=free_port))
-    except Exception as e:
-        debug_log(t('test.messages.findPortFailed', error=str(e)))
-        return False, None
-    
-    # Test manager creation
-    try:
-        manager = WebUIManager(port=free_port)
+        manager = WebUIManager()  # 讓 WebUIManager 自己處理端口邏輯
         debug_log(t('test.messages.webUiManagerCreateSuccess'))
     except Exception as e:
         debug_log(t('test.messages.webUiManagerCreateFailed', error=str(e)))

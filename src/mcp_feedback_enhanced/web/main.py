@@ -37,8 +37,27 @@ class WebUIManager:
 
     def __init__(self, host: str = "127.0.0.1", port: int = None):
         self.host = host
-        # 優先使用固定端口 8765，確保 localStorage 的一致性
-        self.port = port or find_free_port(preferred_port=8765)
+
+        # 確定偏好端口：環境變數 > 參數 > 預設值 8765
+        preferred_port = 8765
+
+        # 檢查環境變數 MCP_WEB_PORT
+        env_port = os.getenv("MCP_WEB_PORT")
+        if env_port:
+            try:
+                custom_port = int(env_port)
+                if 1024 <= custom_port <= 65535:
+                    preferred_port = custom_port
+                    debug_log(f"使用環境變數指定的端口: {preferred_port}")
+                else:
+                    debug_log(f"MCP_WEB_PORT 值無效 ({custom_port})，必須在 1024-65535 範圍內，使用預設端口 8765")
+            except ValueError:
+                debug_log(f"MCP_WEB_PORT 格式錯誤 ({env_port})，必須為數字，使用預設端口 8765")
+        else:
+            debug_log(f"未設定 MCP_WEB_PORT 環境變數，使用預設端口 {preferred_port}")
+
+        # 優先使用指定端口，確保 localStorage 的一致性
+        self.port = port or find_free_port(preferred_port=preferred_port)
         self.app = FastAPI(title="MCP Feedback Enhanced")
 
         # 重構：使用單一活躍會話而非會話字典

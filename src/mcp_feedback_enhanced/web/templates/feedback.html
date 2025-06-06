@@ -144,6 +144,55 @@
             flex: 1;
         }
 
+        /* 合併模式基礎樣式 */
+        .combined-section {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .combined-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .combined-summary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #combinedSummaryContent {
+            padding: 12px !important;
+            line-height: 1.6 !important;
+            font-family: inherit !important;
+            color: var(--text-primary) !important;
+            background: transparent !important;
+            border: none !important;
+            resize: none !important;
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+
+        #summaryContent {
+            padding: 12px !important;
+            line-height: 1.6 !important;
+            font-family: inherit !important;
+            color: var(--text-primary) !important;
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+
         /* 圖片設定樣式 */
         .image-settings-details {
             border: 1px solid var(--border-color);
@@ -409,7 +458,7 @@
                 </div>
                 
                 <div class="input-group">
-                    <div id="summaryContent" class="text-input" style="min-height: 300px; white-space: pre-wrap; cursor: text;" data-dynamic-content="aiSummary">
+                    <div id="summaryContent" class="text-input" style="min-height: 300px; white-space: pre-wrap !important; cursor: text; padding: 12px; line-height: 1.6; word-wrap: break-word; overflow-wrap: break-word;" data-dynamic-content="aiSummary">
                         {{ summary }}
                     </div>
                 </div>
@@ -460,9 +509,7 @@
                     <div class="combined-section">
                         <h3 class="combined-section-title" data-i18n="combined.summaryTitle">📋 AI 工作摘要</h3>
                         <div class="combined-summary">
-                            <div id="combinedSummaryContent" class="text-input" style="min-height: 200px; white-space: pre-wrap; cursor: text;" data-dynamic-content="aiSummary">
-                                {{ summary }}
-                            </div>
+                            <div id="combinedSummaryContent" class="text-input" style="min-height: 200px; white-space: pre-wrap !important; cursor: text; padding: 12px; line-height: 1.6; word-wrap: break-word; overflow-wrap: break-word;" data-dynamic-content="aiSummary">{{ summary }}</div>
                         </div>
                     </div>
 

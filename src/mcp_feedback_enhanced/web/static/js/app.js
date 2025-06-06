@@ -2282,6 +2282,9 @@ class FeedbackApp {
             }
 
             const sessionData = await response.json();
+            console.log(`🔍 自動檢測獲取到會話數據:`, sessionData);
+            console.log(`🔍 當前記錄的會話 ID: ${this.lastKnownSessionId}`);
+            console.log(`🔍 API 返回的會話 ID: ${sessionData.session_id}`);
 
             // 檢查會話 ID 是否變化
             if (sessionData.session_id && sessionData.session_id !== this.lastKnownSessionId) {
@@ -2303,6 +2306,7 @@ class FeedbackApp {
                     }
                 }, 2000);
             } else {
+                console.log(`🔍 會話 ID 未變化，跳過更新`);
                 this.updateAutoRefreshStatus('enabled');
             }
 

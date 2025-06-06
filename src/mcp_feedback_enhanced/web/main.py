@@ -17,7 +17,8 @@ import threading
 import time
 import webbrowser
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+from datetime import datetime
 import uuid
 
 from fastapi import FastAPI, Request, Response
@@ -26,7 +27,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.gzip import GZipMiddleware
 import uvicorn
 
-from .models import WebFeedbackSession, FeedbackResult
+from .models import WebFeedbackSession, FeedbackResult, CleanupReason, SessionStatus
 from .routes import setup_routes
 from .utils import find_free_port, get_browser_opener
 from .utils.port_manager import PortManager
@@ -84,6 +85,17 @@ class WebUIManager:
 
         # 會話更新通知標記
         self._pending_session_update = False
+
+        # 會話清理統計
+        self.cleanup_stats = {
+            "total_cleanups": 0,
+            "expired_cleanups": 0,
+            "memory_pressure_cleanups": 0,
+            "manual_cleanups": 0,
+            "last_cleanup_time": None,
+            "total_cleanup_duration": 0.0,
+            "sessions_cleaned": 0
+        }
 
         self.server_thread = None
         self.server_process = None
@@ -148,16 +160,46 @@ class WebUIManager:
             # 添加 Web 應用特定的警告回調
             def web_memory_alert(alert):
                 debug_log(f"Web UI 內存警告 [{alert.level}]: {alert.message}")
-                # 可以在這裡添加更多 Web 特定的處理邏輯
-                # 例如：通過 WebSocket 通知前端、記錄到特定日誌等
+
+                # 根據警告級別觸發不同的清理策略
+                if alert.level == "critical":
+                    # 危險級別：清理過期會話
+                    cleaned = self.cleanup_expired_sessions()
+                    debug_log(f"內存危險警告觸發，清理了 {cleaned} 個過期會話")
+                elif alert.level == "emergency":
+                    # 緊急級別：強制清理會話
+                    cleaned = self.cleanup_sessions_by_memory_pressure(force=True)
+                    debug_log(f"內存緊急警告觸發，強制清理了 {cleaned} 個會話")
 
             self.memory_monitor.add_alert_callback(web_memory_alert)
+
+            # 添加會話清理回調到內存監控
+            def session_cleanup_callback(force: bool = False):
+                """內存監控觸發的會話清理回調"""
+                try:
+                    if force:
+                        # 強制清理：包括內存壓力清理
+                        cleaned = self.cleanup_sessions_by_memory_pressure(force=True)
+                        debug_log(f"內存監控強制清理了 {cleaned} 個會話")
+                    else:
+                        # 常規清理：只清理過期會話
+                        cleaned = self.cleanup_expired_sessions()
+                        debug_log(f"內存監控清理了 {cleaned} 個過期會話")
+                except Exception as e:
+                    error_id = ErrorHandler.log_error_with_context(
+                        e,
+                        context={"operation": "內存監控會話清理", "force": force},
+                        error_type=ErrorType.SYSTEM
+                    )
+                    debug_log(f"內存監控會話清理失敗 [錯誤ID: {error_id}]: {e}")
+
+            self.memory_monitor.add_cleanup_callback(session_cleanup_callback)
 
             # 確保內存監控已啟動（ResourceManager 可能已經啟動了）
             if not self.memory_monitor.is_monitoring:
                 self.memory_monitor.start_monitoring()
 
-            debug_log("Web UI 內存監控設置完成")
+            debug_log("Web UI 內存監控設置完成，已集成會話清理回調")
 
         except Exception as e:
             error_id = ErrorHandler.log_error_with_context(
@@ -563,13 +605,176 @@ class WebUIManager:
         """獲取伺服器 URL"""
         return f"http://{self.host}:{self.port}"
 
+    def cleanup_expired_sessions(self) -> int:
+        """清理過期會話"""
+        cleanup_start_time = time.time()
+        expired_sessions = []
+
+        # 掃描過期會話
+        for session_id, session in self.sessions.items():
+            if session.is_expired():
+                expired_sessions.append(session_id)
+
+        # 批量清理過期會話
+        cleaned_count = 0
+        for session_id in expired_sessions:
+            try:
+                session = self.sessions.get(session_id)
+                if session:
+                    # 使用增強清理方法
+                    session._cleanup_sync_enhanced(CleanupReason.EXPIRED)
+                    del self.sessions[session_id]
+                    cleaned_count += 1
+
+                    # 如果清理的是當前活躍會話，清空當前會話
+                    if self.current_session and self.current_session.session_id == session_id:
+                        self.current_session = None
+                        debug_log("清空過期的當前活躍會話")
+
+            except Exception as e:
+                error_id = ErrorHandler.log_error_with_context(
+                    e,
+                    context={"session_id": session_id, "operation": "清理過期會話"},
+                    error_type=ErrorType.SYSTEM
+                )
+                debug_log(f"清理過期會話 {session_id} 失敗 [錯誤ID: {error_id}]: {e}")
+
+        # 更新統計
+        cleanup_duration = time.time() - cleanup_start_time
+        self.cleanup_stats.update({
+            "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
+            "expired_cleanups": self.cleanup_stats["expired_cleanups"] + 1,
+            "last_cleanup_time": datetime.now().isoformat(),
+            "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"] + cleanup_duration,
+            "sessions_cleaned": self.cleanup_stats["sessions_cleaned"] + cleaned_count
+        })
+
+        if cleaned_count > 0:
+            debug_log(f"清理了 {cleaned_count} 個過期會話，耗時: {cleanup_duration:.2f}秒")
+
+        return cleaned_count
+
+    def cleanup_sessions_by_memory_pressure(self, force: bool = False) -> int:
+        """根據內存壓力清理會話"""
+        cleanup_start_time = time.time()
+        sessions_to_clean = []
+
+        # 根據優先級選擇要清理的會話
+        # 優先級：已完成 > 已提交反饋 > 錯誤狀態 > 空閒時間最長
+        for session_id, session in self.sessions.items():
+            # 跳過當前活躍會話（除非強制清理）
+            if not force and self.current_session and session.session_id == self.current_session.session_id:
+                continue
+
+            # 優先清理已完成或錯誤狀態的會話
+            if session.status in [SessionStatus.COMPLETED, SessionStatus.ERROR, SessionStatus.TIMEOUT]:
+                sessions_to_clean.append((session_id, session, 1))  # 高優先級
+            elif session.status == SessionStatus.FEEDBACK_SUBMITTED:
+                # 已提交反饋但空閒時間較長的會話
+                if session.get_idle_time() > 300:  # 5分鐘空閒
+                    sessions_to_clean.append((session_id, session, 2))  # 中優先級
+            elif session.get_idle_time() > 600:  # 10分鐘空閒
+                sessions_to_clean.append((session_id, session, 3))  # 低優先級
+
+        # 按優先級排序
+        sessions_to_clean.sort(key=lambda x: x[2])
+
+        # 清理會話（限制數量避免過度清理）
+        max_cleanup = min(len(sessions_to_clean), 5 if not force else len(sessions_to_clean))
+        cleaned_count = 0
+
+        for i in range(max_cleanup):
+            session_id, session, priority = sessions_to_clean[i]
+            try:
+                # 使用增強清理方法
+                session._cleanup_sync_enhanced(CleanupReason.MEMORY_PRESSURE)
+                del self.sessions[session_id]
+                cleaned_count += 1
+
+                # 如果清理的是當前活躍會話，清空當前會話
+                if self.current_session and self.current_session.session_id == session_id:
+                    self.current_session = None
+                    debug_log("因內存壓力清空當前活躍會話")
+
+            except Exception as e:
+                error_id = ErrorHandler.log_error_with_context(
+                    e,
+                    context={"session_id": session_id, "operation": "內存壓力清理"},
+                    error_type=ErrorType.SYSTEM
+                )
+                debug_log(f"內存壓力清理會話 {session_id} 失敗 [錯誤ID: {error_id}]: {e}")
+
+        # 更新統計
+        cleanup_duration = time.time() - cleanup_start_time
+        self.cleanup_stats.update({
+            "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
+            "memory_pressure_cleanups": self.cleanup_stats["memory_pressure_cleanups"] + 1,
+            "last_cleanup_time": datetime.now().isoformat(),
+            "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"] + cleanup_duration,
+            "sessions_cleaned": self.cleanup_stats["sessions_cleaned"] + cleaned_count
+        })
+
+        if cleaned_count > 0:
+            debug_log(f"因內存壓力清理了 {cleaned_count} 個會話，耗時: {cleanup_duration:.2f}秒")
+
+        return cleaned_count
+
+    def get_session_cleanup_stats(self) -> dict:
+        """獲取會話清理統計"""
+        stats = self.cleanup_stats.copy()
+        stats.update({
+            "active_sessions": len(self.sessions),
+            "current_session_id": self.current_session.session_id if self.current_session else None,
+            "expired_sessions": sum(1 for s in self.sessions.values() if s.is_expired()),
+            "idle_sessions": sum(1 for s in self.sessions.values() if s.get_idle_time() > 300),
+            "memory_usage_mb": 0  # 將在下面計算
+        })
+
+        # 計算內存使用（如果可能）
+        try:
+            import psutil
+            process = psutil.Process()
+            stats["memory_usage_mb"] = round(process.memory_info().rss / (1024 * 1024), 2)
+        except:
+            pass
+
+        return stats
+
+    def _scan_expired_sessions(self) -> List[str]:
+        """掃描過期會話ID列表"""
+        expired_sessions = []
+        for session_id, session in self.sessions.items():
+            if session.is_expired():
+                expired_sessions.append(session_id)
+        return expired_sessions
+
     def stop(self):
         """停止 Web UI 服務"""
         # 清理所有會話
+        cleanup_start_time = time.time()
+        session_count = len(self.sessions)
+
         for session in list(self.sessions.values()):
-            session.cleanup()
+            try:
+                session._cleanup_sync_enhanced(CleanupReason.SHUTDOWN)
+            except Exception as e:
+                debug_log(f"停止服務時清理會話失敗: {e}")
+
         self.sessions.clear()
-        
+        self.current_session = None
+
+        # 更新統計
+        cleanup_duration = time.time() - cleanup_start_time
+        self.cleanup_stats.update({
+            "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
+            "manual_cleanups": self.cleanup_stats["manual_cleanups"] + 1,
+            "last_cleanup_time": datetime.now().isoformat(),
+            "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"] + cleanup_duration,
+            "sessions_cleaned": self.cleanup_stats["sessions_cleaned"] + session_count
+        })
+
+        debug_log(f"停止服務時清理了 {session_count} 個會話，耗時: {cleanup_duration:.2f}秒")
+
         # 停止伺服器（注意：uvicorn 的 graceful shutdown 需要額外處理）
         if self.server_thread and self.server_thread.is_alive():
             debug_log("正在停止 Web UI 服務")

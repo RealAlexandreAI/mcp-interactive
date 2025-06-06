@@ -1260,16 +1260,22 @@ class FeedbackApp {
             const sessionData = await response.json();
             console.log('📥 獲取到最新會話資料:', sessionData);
 
-            // 2. 更新 AI 摘要內容
+            // 2. 重置回饋狀態為等待新回饋（使用新的會話 ID）
+            if (sessionData.session_id) {
+                this.setFeedbackState('waiting_for_feedback', sessionData.session_id);
+                console.log('🔄 已重置回饋狀態為等待新回饋');
+            }
+
+            // 3. 更新 AI 摘要內容
             this.updateAISummaryContent(sessionData.summary);
 
-            // 3. 重置回饋表單
+            // 4. 重置回饋表單
             this.resetFeedbackForm();
 
-            // 4. 更新狀態指示器
+            // 5. 更新狀態指示器
             this.updateStatusIndicators();
 
-            // 5. 更新頁面標題
+            // 6. 更新頁面標題
             if (sessionData.project_directory) {
                 const projectName = sessionData.project_directory.split(/[/\\]/).pop();
                 document.title = `MCP Feedback - ${projectName}`;
@@ -2223,6 +2229,12 @@ class FeedbackApp {
         // 延遲更新狀態指示器，確保 i18n 已完全載入
         setTimeout(() => {
             this.updateAutoRefreshStatus();
+
+            // 如果自動刷新已啟用，啟動自動檢測
+            if (this.autoRefreshEnabled) {
+                console.log('🔄 自動刷新已啟用，啟動自動檢測...');
+                this.startAutoRefresh();
+            }
         }, 100);
 
         console.log('✅ 自動刷新功能初始化完成');
@@ -2282,9 +2294,6 @@ class FeedbackApp {
             }
 
             const sessionData = await response.json();
-            console.log(`🔍 自動檢測獲取到會話數據:`, sessionData);
-            console.log(`🔍 當前記錄的會話 ID: ${this.lastKnownSessionId}`);
-            console.log(`🔍 API 返回的會話 ID: ${sessionData.session_id}`);
 
             // 檢查會話 ID 是否變化
             if (sessionData.session_id && sessionData.session_id !== this.lastKnownSessionId) {
@@ -2306,7 +2315,6 @@ class FeedbackApp {
                     }
                 }, 2000);
             } else {
-                console.log(`🔍 會話 ID 未變化，跳過更新`);
                 this.updateAutoRefreshStatus('enabled');
             }
 

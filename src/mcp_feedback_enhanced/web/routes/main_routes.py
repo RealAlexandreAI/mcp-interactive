@@ -23,6 +23,27 @@ if TYPE_CHECKING:
     from ..main import WebUIManager
 
 
+def load_user_layout_settings() -> str:
+    """載入用戶的佈局模式設定"""
+    try:
+        # 使用與 GUI 版本相同的設定檔案路徑
+        config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
+        settings_file = config_dir / "ui_settings.json"
+
+        if settings_file.exists():
+            with open(settings_file, 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+                layout_mode = settings.get('layoutMode', 'separate')
+                debug_log(f"從設定檔案載入佈局模式: {layout_mode}")
+                return layout_mode
+        else:
+            debug_log("設定檔案不存在，使用預設佈局模式: separate")
+            return 'separate'
+    except Exception as e:
+        debug_log(f"載入佈局設定失敗: {e}，使用預設佈局模式: separate")
+        return 'separate'
+
+
 def setup_routes(manager: 'WebUIManager'):
     """設置路由"""
 
@@ -42,13 +63,17 @@ def setup_routes(manager: 'WebUIManager'):
             })
 
         # 有活躍會話時顯示回饋頁面
+        # 載入用戶的佈局模式設定
+        layout_mode = load_user_layout_settings()
+
         return manager.templates.TemplateResponse("feedback.html", {
             "request": request,
             "project_directory": current_session.project_directory,
             "summary": current_session.summary,
             "title": "Interactive Feedback - 回饋收集",
             "version": __version__,
-            "has_session": True
+            "has_session": True,
+            "layout_mode": layout_mode
         })
 
     @manager.app.get("/api/translations")

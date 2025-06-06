@@ -273,8 +273,20 @@ class FeedbackApp {
             });
         });
 
+        // 根據佈局模式確定初始頁籤
+        let initialTab = this.currentTab;
+        if (this.layoutMode.startsWith('combined')) {
+            // 合併模式時，確保初始頁籤是 combined
+            initialTab = 'combined';
+        } else {
+            // 分離模式時，如果當前頁籤是 combined，則切換到 feedback
+            if (this.currentTab === 'combined') {
+                initialTab = 'feedback';
+            }
+        }
+
         // 設置初始頁籤（不觸發保存，避免循環調用）
-        this.setInitialTab(this.currentTab);
+        this.setInitialTab(initialTab);
     }
 
     setInitialTab(tabName) {
@@ -1423,8 +1435,14 @@ class FeedbackApp {
             input.checked = input.value === this.layoutMode;
         });
 
-        // 應用佈局樣式
-        document.body.className = `layout-${this.layoutMode}`;
+        // 檢查當前 body class 是否已經正確，避免不必要的 DOM 操作
+        const expectedClassName = `layout-${this.layoutMode}`;
+        if (document.body.className !== expectedClassName) {
+            console.log(`應用佈局模式: ${this.layoutMode}`);
+            document.body.className = expectedClassName;
+        } else {
+            console.log(`佈局模式已正確: ${this.layoutMode}，跳過 DOM 更新`);
+        }
 
         // 控制頁籤顯示/隱藏
         this.updateTabVisibility();

@@ -178,6 +178,10 @@ class I18nManager {
         if (window.feedbackApp) {
             window.feedbackApp.updateUIState();
             window.feedbackApp.updateStatusIndicator();
+            // 更新自動檢測狀態文字
+            if (window.feedbackApp.updateAutoRefreshStatus) {
+                window.feedbackApp.updateAutoRefreshStatus();
+            }
         }
     }
 

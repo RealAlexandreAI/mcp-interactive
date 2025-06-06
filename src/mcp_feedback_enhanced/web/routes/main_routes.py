@@ -33,15 +33,15 @@ def load_user_layout_settings() -> str:
         if settings_file.exists():
             with open(settings_file, 'r', encoding='utf-8') as f:
                 settings = json.load(f)
-                layout_mode = settings.get('layoutMode', 'separate')
+                layout_mode = settings.get('layoutMode', 'combined-vertical')
                 debug_log(f"從設定檔案載入佈局模式: {layout_mode}")
                 return layout_mode
         else:
-            debug_log("設定檔案不存在，使用預設佈局模式: separate")
-            return 'separate'
+            debug_log("設定檔案不存在，使用預設佈局模式: combined-vertical")
+            return 'combined-vertical'
     except Exception as e:
-        debug_log(f"載入佈局設定失敗: {e}，使用預設佈局模式: separate")
-        return 'separate'
+        debug_log(f"載入佈局設定失敗: {e}，使用預設佈局模式: combined-vertical")
+        return 'combined-vertical'
 
 
 def setup_routes(manager: 'WebUIManager'):

@@ -185,10 +185,16 @@ class FeedbackApp {
 
         // 設定
         this.autoClose = false;
-        this.layoutMode = 'separate';
+        this.layoutMode = 'combined-vertical';
 
         // 語言設定
         this.currentLanguage = 'zh-TW';
+
+        // 自動刷新設定
+        this.autoRefreshEnabled = false;
+        this.autoRefreshInterval = 5; // 默認5秒
+        this.autoRefreshTimer = null;
+        this.lastKnownSessionId = null;
 
         this.init();
     }
@@ -223,6 +229,9 @@ class FeedbackApp {
             // 確保狀態指示器使用正確的翻譯（在國際化系統載入後）
             this.updateStatusIndicators();
 
+            // 初始化自動刷新功能
+            this.initAutoRefresh();
+
             // 設置頁面關閉時的清理
             window.addEventListener('beforeunload', () => {
                 if (this.tabManager) {
@@ -230,6 +239,9 @@ class FeedbackApp {
                 }
                 if (this.heartbeatInterval) {
                     clearInterval(this.heartbeatInterval);
+                }
+                if (this.autoRefreshTimer) {
+                    clearInterval(this.autoRefreshTimer);
                 }
             });
 
@@ -258,6 +270,12 @@ class FeedbackApp {
         this.commandInput = document.getElementById('commandInput');
         this.commandOutput = document.getElementById('commandOutput');
         this.runCommandBtn = document.getElementById('runCommandBtn');
+
+        // 自動刷新相關元素
+        this.autoRefreshCheckbox = document.getElementById('autoRefreshEnabled');
+        this.autoRefreshIntervalInput = document.getElementById('autoRefreshInterval');
+        this.refreshStatusIndicator = document.getElementById('refreshStatusIndicator');
+        this.refreshStatusText = document.getElementById('refreshStatusText');
 
         // 動態初始化圖片相關元素
         this.initImageElements();
@@ -1016,7 +1034,7 @@ class FeedbackApp {
                     if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
                         this.reconnectAttempts++;
                         const delay = Math.min(3000 * this.reconnectAttempts, 15000); // 最大延遲15秒
-                        console.log(`${delay/1000}秒後嘗試重連... (第${this.reconnectAttempts}次)`);
+                        console.log(`${delay / 1000}秒後嘗試重連... (第${this.reconnectAttempts}次)`);
                         setTimeout(() => {
                             console.log(`🔄 開始重連 WebSocket... (第${this.reconnectAttempts}次)`);
                             this.setupWebSocket();
@@ -1410,9 +1428,9 @@ class FeedbackApp {
             word-wrap: break-word;
         `;
         messageDiv.textContent = message;
-        
+
         document.body.appendChild(messageDiv);
-        
+
         // 3秒後自動移除
         setTimeout(() => {
             if (messageDiv.parentNode) {
@@ -1450,12 +1468,12 @@ class FeedbackApp {
 
     async loadFeedbackInterface(sessionInfo) {
         if (!this.mainContainer) return;
-        
+
         this.sessionInfo = sessionInfo;
-        
+
         // 載入完整的回饋界面
         this.mainContainer.innerHTML = await this.generateFeedbackHTML(sessionInfo);
-        
+
         // 重新設置事件監聽器
         this.setupFeedbackEventListeners();
     }
@@ -1801,6 +1819,8 @@ class FeedbackApp {
                 this.currentLanguage = settings.language || 'zh-TW';
                 this.imageSizeLimit = settings.imageSizeLimit || 0;
                 this.enableBase64Detail = settings.enableBase64Detail || false;
+                this.autoRefreshEnabled = settings.autoRefreshEnabled || false;
+                this.autoRefreshInterval = settings.autoRefreshInterval || 5;
 
                 // 處理 activeTab 設定
                 if (settings.activeTab) {
@@ -1846,6 +1866,8 @@ class FeedbackApp {
                 language: this.currentLanguage,
                 imageSizeLimit: this.imageSizeLimit,
                 enableBase64Detail: this.enableBase64Detail,
+                autoRefreshEnabled: this.autoRefreshEnabled,
+                autoRefreshInterval: this.autoRefreshInterval,
                 activeTab: this.currentTab
             };
 
@@ -1904,6 +1926,15 @@ class FeedbackApp {
         if (this.enableBase64DetailCheckbox) {
             this.enableBase64DetailCheckbox.checked = this.enableBase64Detail;
         }
+
+        // 應用自動刷新設定
+        if (this.autoRefreshCheckbox) {
+            this.autoRefreshCheckbox.checked = this.autoRefreshEnabled;
+        }
+
+        if (this.autoRefreshIntervalInput) {
+            this.autoRefreshIntervalInput.value = this.autoRefreshInterval;
+        }
     }
 
     applyLayoutMode() {
@@ -1927,18 +1958,11 @@ class FeedbackApp {
         // 同步合併佈局和分頁中的內容
         this.syncCombinedLayoutContent();
 
-        // 如果是合併模式，確保內容同步
-        if (this.layoutMode.startsWith('combined')) {
-            this.setupCombinedModeSync();
-            // 如果當前頁籤不是合併模式，則切換到合併模式頁籤
-            if (this.currentTab !== 'combined') {
-                this.currentTab = 'combined';
-            }
-        } else {
-            // 分離模式時，如果當前頁籤是合併模式，則切換到回饋頁籤
-            if (this.currentTab === 'combined') {
-                this.currentTab = 'feedback';
-            }
+        // 確保合併模式內容同步
+        this.setupCombinedModeSync();
+        // 如果當前頁籤不是合併模式，則切換到合併模式頁籤
+        if (this.currentTab !== 'combined') {
+            this.currentTab = 'combined';
         }
     }
 
@@ -1947,17 +1971,10 @@ class FeedbackApp {
         const feedbackTab = document.querySelector('.tab-button[data-tab="feedback"]');
         const summaryTab = document.querySelector('.tab-button[data-tab="summary"]');
 
-        if (this.layoutMode.startsWith('combined')) {
-            // 合併模式：顯示合併模式頁籤，隱藏回饋和AI摘要頁籤
-            if (combinedTab) combinedTab.style.display = 'inline-block';
-            if (feedbackTab) feedbackTab.style.display = 'none';
-            if (summaryTab) summaryTab.style.display = 'none';
-        } else {
-            // 分離模式：隱藏合併模式頁籤，顯示回饋和AI摘要頁籤
-            if (combinedTab) combinedTab.style.display = 'none';
-            if (feedbackTab) feedbackTab.style.display = 'inline-block';
-            if (summaryTab) summaryTab.style.display = 'inline-block';
-        }
+        // 只使用合併模式：顯示合併模式頁籤，隱藏回饋和AI摘要頁籤
+        if (combinedTab) combinedTab.style.display = 'inline-block';
+        if (feedbackTab) feedbackTab.style.display = 'none';
+        if (summaryTab) summaryTab.style.display = 'none';
     }
 
     syncCombinedLayoutContent() {
@@ -2012,27 +2029,6 @@ class FeedbackApp {
     }
 
     setupCombinedModeSync() {
-        // 設置文字輸入的雙向同步
-        const feedbackText = document.getElementById('feedbackText');
-        const combinedFeedbackText = document.getElementById('combinedFeedbackText');
-
-        if (feedbackText && combinedFeedbackText) {
-            // 移除舊的事件監聽器（如果存在）
-            feedbackText.removeEventListener('input', this.syncToCombinetText);
-            combinedFeedbackText.removeEventListener('input', this.syncToSeparateText);
-
-            // 添加新的事件監聽器
-            this.syncToCombinetText = (e) => {
-                combinedFeedbackText.value = e.target.value;
-            };
-            this.syncToSeparateText = (e) => {
-                feedbackText.value = e.target.value;
-            };
-
-            feedbackText.addEventListener('input', this.syncToCombinetText);
-            combinedFeedbackText.addEventListener('input', this.syncToSeparateText);
-        }
-
         // 設置圖片設定的同步
         this.setupImageSettingsSync();
 
@@ -2111,11 +2107,13 @@ class FeedbackApp {
 
     resetSettings() {
         localStorage.removeItem('mcp-feedback-settings');
-        this.layoutMode = 'separate';
+        this.layoutMode = 'combined-vertical';
         this.autoClose = false;
         this.currentLanguage = 'zh-TW';
         this.imageSizeLimit = 0;
         this.enableBase64Detail = false;
+        this.autoRefreshEnabled = false;
+        this.autoRefreshInterval = 5;
         this.applySettings();
         this.saveSettings();
     }
@@ -2167,6 +2165,197 @@ class FeedbackApp {
         // 因為 updateStatusIndicator() 現在會同時更新兩個狀態指示器
         console.log('🔄 同步狀態指示器到合併模式...');
         // 不需要手動複製，updateStatusIndicator() 會處理所有狀態指示器
+    }
+
+    /**
+     * 初始化自動刷新功能
+     */
+    initAutoRefresh() {
+        console.log('🔄 初始化自動刷新功能...');
+
+        // 檢查必要元素是否存在
+        if (!this.autoRefreshCheckbox || !this.autoRefreshIntervalInput) {
+            console.warn('⚠️ 自動刷新元素不存在，跳過初始化');
+            return;
+        }
+
+        // 設置開關事件監聽器
+        this.autoRefreshCheckbox.addEventListener('change', (e) => {
+            this.autoRefreshEnabled = e.target.checked;
+            this.handleAutoRefreshToggle();
+            this.saveSettings();
+        });
+
+        // 設置間隔輸入事件監聽器
+        this.autoRefreshIntervalInput.addEventListener('change', (e) => {
+            const newInterval = parseInt(e.target.value);
+            if (newInterval >= 5 && newInterval <= 300) {
+                this.autoRefreshInterval = newInterval;
+                this.saveSettings();
+
+                // 如果自動刷新已啟用，重新啟動定時器
+                if (this.autoRefreshEnabled) {
+                    this.stopAutoRefresh();
+                    this.startAutoRefresh();
+                }
+            }
+        });
+
+        // 從設定中恢復狀態
+        this.autoRefreshCheckbox.checked = this.autoRefreshEnabled;
+        this.autoRefreshIntervalInput.value = this.autoRefreshInterval;
+
+        // 延遲更新狀態指示器，確保 i18n 已完全載入
+        setTimeout(() => {
+            this.updateAutoRefreshStatus();
+        }, 100);
+
+        console.log('✅ 自動刷新功能初始化完成');
+    }
+
+    /**
+     * 處理自動刷新開關切換
+     */
+    handleAutoRefreshToggle() {
+        if (this.autoRefreshEnabled) {
+            this.startAutoRefresh();
+        } else {
+            this.stopAutoRefresh();
+        }
+        this.updateAutoRefreshStatus();
+    }
+
+    /**
+     * 啟動自動刷新
+     */
+    startAutoRefresh() {
+        if (this.autoRefreshTimer) {
+            clearInterval(this.autoRefreshTimer);
+        }
+
+        // 記錄當前會話 ID
+        this.lastKnownSessionId = this.currentSessionId;
+
+        this.autoRefreshTimer = setInterval(() => {
+            this.checkForSessionUpdate();
+        }, this.autoRefreshInterval * 1000);
+
+        console.log(`🔄 自動刷新已啟動，間隔: ${this.autoRefreshInterval}秒`);
+    }
+
+    /**
+     * 停止自動刷新
+     */
+    stopAutoRefresh() {
+        if (this.autoRefreshTimer) {
+            clearInterval(this.autoRefreshTimer);
+            this.autoRefreshTimer = null;
+        }
+        console.log('⏸️ 自動刷新已停止');
+    }
+
+    /**
+     * 檢查會話更新
+     */
+    async checkForSessionUpdate() {
+        try {
+            this.updateAutoRefreshStatus('checking');
+
+            const response = await fetch('/api/current-session');
+            if (!response.ok) {
+                throw new Error(`API 請求失敗: ${response.status}`);
+            }
+
+            const sessionData = await response.json();
+
+            // 檢查會話 ID 是否變化
+            if (sessionData.session_id && sessionData.session_id !== this.lastKnownSessionId) {
+                console.log(`🔄 檢測到新會話: ${this.lastKnownSessionId} -> ${sessionData.session_id}`);
+
+                // 更新記錄的會話 ID
+                this.lastKnownSessionId = sessionData.session_id;
+                this.currentSessionId = sessionData.session_id;
+
+                // 觸發局部刷新
+                await this.updatePageContentPartially();
+
+                this.updateAutoRefreshStatus('detected');
+
+                // 短暫顯示檢測成功狀態，然後恢復為檢測中
+                setTimeout(() => {
+                    if (this.autoRefreshEnabled) {
+                        this.updateAutoRefreshStatus('enabled');
+                    }
+                }, 2000);
+            } else {
+                this.updateAutoRefreshStatus('enabled');
+            }
+
+        } catch (error) {
+            console.error('❌ 自動刷新檢測失敗:', error);
+            this.updateAutoRefreshStatus('error');
+
+            // 短暫顯示錯誤狀態，然後恢復
+            setTimeout(() => {
+                if (this.autoRefreshEnabled) {
+                    this.updateAutoRefreshStatus('enabled');
+                }
+            }, 3000);
+        }
+    }
+
+    /**
+     * 更新自動刷新狀態指示器
+     */
+    updateAutoRefreshStatus(status = null) {
+        console.log(`🔧 updateAutoRefreshStatus 被調用，status: ${status}`);
+        console.log(`🔧 refreshStatusIndicator: ${this.refreshStatusIndicator ? 'found' : 'null'}`);
+        console.log(`🔧 refreshStatusText: ${this.refreshStatusText ? 'found' : 'null'}`);
+
+        if (!this.refreshStatusIndicator || !this.refreshStatusText) {
+            console.log(`⚠️ 自動檢測狀態元素未找到，跳過更新`);
+            return;
+        }
+
+        let indicator = '⏸️';
+        let textKey = 'autoRefresh.disabled';
+
+        if (status === null) {
+            status = this.autoRefreshEnabled ? 'enabled' : 'disabled';
+        }
+
+        switch (status) {
+            case 'enabled':
+                indicator = '🔄';
+                textKey = 'autoRefresh.enabled';
+                break;
+            case 'checking':
+                indicator = '🔍';
+                textKey = 'autoRefresh.checking';
+                break;
+            case 'detected':
+                indicator = '✅';
+                textKey = 'autoRefresh.detected';
+                break;
+            case 'error':
+                indicator = '❌';
+                textKey = 'autoRefresh.error';
+                break;
+            case 'disabled':
+            default:
+                indicator = '⏸️';
+                textKey = 'autoRefresh.disabled';
+                break;
+        }
+
+        this.refreshStatusIndicator.textContent = indicator;
+
+        // 使用多語系翻譯
+
+        const translatedText = window.i18nManager.t(textKey);
+        console.log(`🔄 自動檢測狀態翻譯: ${textKey} -> ${translatedText} (語言: ${window.i18nManager.currentLanguage})`);
+        this.refreshStatusText.textContent = translatedText;
+
     }
 
 

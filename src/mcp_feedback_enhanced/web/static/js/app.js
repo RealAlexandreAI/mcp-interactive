@@ -427,15 +427,28 @@ class FeedbackApp {
      * 設置圖片事件監聽器
      */
     setupImageEventListeners() {
+        console.log(`🖼️ 設置圖片事件監聽器 - imageInput: ${this.imageInput?.id}, imageUploadArea: ${this.imageUploadArea?.id}`);
+
         // 文件選擇事件
         this.imageChangeHandler = (e) => {
+            console.log(`📁 文件選擇事件觸發 - input: ${e.target.id}, files: ${e.target.files.length}`);
             this.handleFileSelect(e.target.files);
         };
         this.imageInput.addEventListener('change', this.imageChangeHandler);
 
-        // 點擊上傳區域
-        this.imageClickHandler = () => {
-            this.imageInput.click();
+        // 點擊上傳區域 - 使用更安全的方式確保只觸發對應的 input
+        this.imageClickHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // 確保我們觸發的是正確的 input 元素
+            const targetInput = this.imageInput;
+            if (targetInput) {
+                console.log(`🖱️ 點擊上傳區域 - 觸發 input: ${targetInput.id}`);
+                targetInput.click();
+            } else {
+                console.warn('⚠️ 沒有找到對應的 input 元素');
+            }
         };
         this.imageUploadArea.addEventListener('click', this.imageClickHandler);
 
@@ -469,8 +482,10 @@ class FeedbackApp {
         // 重新初始化圖片元素（確保使用最新的佈局模式）
         this.initImageElements();
 
+        console.log(`🔍 檢查圖片元素 - imageUploadArea: ${this.imageUploadArea?.id || 'null'}, imageInput: ${this.imageInput?.id || 'null'}`);
+
         if (!this.imageUploadArea || !this.imageInput) {
-            console.warn('⚠️ 圖片處理初始化失敗 - 缺少必要元素');
+            console.warn(`⚠️ 圖片處理初始化失敗 - imageUploadArea: ${!!this.imageUploadArea}, imageInput: ${!!this.imageInput}`);
             return;
         }
 
@@ -504,6 +519,7 @@ class FeedbackApp {
      * 移除舊的圖片事件監聽器
      */
     removeImageEventListeners() {
+        // 移除當前主要元素的事件監聽器
         if (this.imageInput && this.imageChangeHandler) {
             this.imageInput.removeEventListener('change', this.imageChangeHandler);
         }
@@ -521,6 +537,32 @@ class FeedbackApp {
                 this.imageUploadArea.removeEventListener('drop', this.imageDropHandler);
             }
         }
+
+        // 額外清理：移除所有可能的圖片上傳區域的 click 事件監聽器
+        const allImageUploadAreas = [
+            document.getElementById('feedbackImageUploadArea'),
+            document.getElementById('combinedImageUploadArea')
+        ].filter(area => area);
+
+        allImageUploadAreas.forEach(area => {
+            if (area && this.imageClickHandler) {
+                area.removeEventListener('click', this.imageClickHandler);
+                console.log(`🧹 已移除 ${area.id} 的 click 事件監聽器`);
+            }
+        });
+
+        // 清理所有可能的 input 元素的 change 事件監聽器
+        const allImageInputs = [
+            document.getElementById('feedbackImageInput'),
+            document.getElementById('combinedImageInput')
+        ].filter(input => input);
+
+        allImageInputs.forEach(input => {
+            if (input && this.imageChangeHandler) {
+                input.removeEventListener('change', this.imageChangeHandler);
+                console.log(`🧹 已移除 ${input.id} 的 change 事件監聽器`);
+            }
+        });
     }
 
     /**
@@ -2073,36 +2115,9 @@ class FeedbackApp {
 
     setupImageUploadSync() {
         // 設置合併模式的圖片上傳功能
-        const combinedImageInput = document.getElementById('combinedImageInput');
-        const combinedImageUploadArea = document.getElementById('combinedImageUploadArea');
-
-        if (combinedImageInput && combinedImageUploadArea) {
-            // 簡化的圖片上傳同步 - 只需要基本的事件監聽器
-            combinedImageInput.addEventListener('change', (e) => {
-                this.handleFileSelect(e.target.files);
-            });
-
-            combinedImageUploadArea.addEventListener('click', () => {
-                combinedImageInput.click();
-            });
-
-            // 拖放事件
-            combinedImageUploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                combinedImageUploadArea.classList.add('dragover');
-            });
-
-            combinedImageUploadArea.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                combinedImageUploadArea.classList.remove('dragover');
-            });
-
-            combinedImageUploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                combinedImageUploadArea.classList.remove('dragover');
-                this.handleFileSelect(e.dataTransfer.files);
-            });
-        }
+        // 注意：所有事件監聽器現在由 setupImageEventListeners() 統一處理
+        // 這個函數保留用於未來可能的同步邏輯，但不再設置重複的事件監聽器
+        console.log('🔄 setupImageUploadSync: 事件監聽器由 setupImageEventListeners() 統一處理');
     }
 
     resetSettings() {

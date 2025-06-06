@@ -169,6 +169,12 @@ class I18nManager {
     updateDynamicContent() {
         // 只更新終端歡迎信息，不要覆蓋 AI 摘要
         this.updateTerminalWelcome();
+
+        // 更新應用程式中的動態狀態文字
+        if (window.feedbackApp) {
+            window.feedbackApp.updateUIState();
+            window.feedbackApp.updateStatusIndicator();
+        }
     }
 
     updateTerminalWelcome() {

@@ -186,9 +186,6 @@ class FeedbackApp {
         // 設定
         this.autoClose = false;
         this.layoutMode = 'separate';
-        this.timeoutEnabled = false;
-        this.timeoutDuration = 600;
-        this.timeoutTimer = null;
 
         // 語言設定
         this.currentLanguage = 'zh-TW';
@@ -516,15 +513,15 @@ class FeedbackApp {
 
             switch (this.feedbackState) {
                 case 'waiting_for_feedback':
-                    this.submitBtn.textContent = '提交回饋';
+                    this.submitBtn.textContent = window.i18nManager ? window.i18nManager.t('buttons.submit') : '提交回饋';
                     this.submitBtn.className = 'btn btn-primary';
                     break;
                 case 'processing':
-                    this.submitBtn.textContent = '處理中...';
+                    this.submitBtn.textContent = window.i18nManager ? window.i18nManager.t('buttons.processing') : '處理中...';
                     this.submitBtn.className = 'btn btn-secondary';
                     break;
                 case 'feedback_submitted':
-                    this.submitBtn.textContent = '已提交';
+                    this.submitBtn.textContent = window.i18nManager ? window.i18nManager.t('buttons.submitted') : '已提交';
                     this.submitBtn.className = 'btn btn-success';
                     break;
             }
@@ -586,22 +583,26 @@ class FeedbackApp {
 
         switch (this.feedbackState) {
             case 'waiting_for_feedback':
+                const waitingTitle = window.i18nManager ? window.i18nManager.t('status.waiting.title') : '等待回饋';
+                const waitingMessage = window.i18nManager ? window.i18nManager.t('status.waiting.message') : '請提供您的回饋意見';
                 statusHTML = `
                     <div class="status-icon">⏳</div>
                     <div class="status-text">
-                        <strong>等待回饋</strong>
-                        <span>請提供您的回饋意見</span>
+                        <strong>${waitingTitle}</strong>
+                        <span>${waitingMessage}</span>
                     </div>
                 `;
                 statusClass = 'status-waiting';
                 break;
 
             case 'processing':
+                const processingTitle = window.i18nManager ? window.i18nManager.t('status.processing.title') : '處理中';
+                const processingMessage = window.i18nManager ? window.i18nManager.t('status.processing.message') : '正在提交您的回饋...';
                 statusHTML = `
                     <div class="status-icon">⚙️</div>
                     <div class="status-text">
-                        <strong>處理中</strong>
-                        <span>正在提交您的回饋...</span>
+                        <strong>${processingTitle}</strong>
+                        <span>${processingMessage}</span>
                     </div>
                 `;
                 statusClass = 'status-processing';
@@ -610,11 +611,13 @@ class FeedbackApp {
             case 'feedback_submitted':
                 const timeStr = this.lastSubmissionTime ?
                     new Date(this.lastSubmissionTime).toLocaleTimeString() : '';
+                const submittedTitle = window.i18nManager ? window.i18nManager.t('status.submitted.title') : '回饋已提交';
+                const submittedMessage = window.i18nManager ? window.i18nManager.t('status.submitted.message') : '等待下次 MCP 調用';
                 statusHTML = `
                     <div class="status-icon">✅</div>
                     <div class="status-text">
-                        <strong>回饋已提交</strong>
-                        <span>等待下次 MCP 調用 ${timeStr ? `(${timeStr})` : ''}</span>
+                        <strong>${submittedTitle}</strong>
+                        <span>${submittedMessage} ${timeStr ? `(${timeStr})` : ''}</span>
                     </div>
                 `;
                 statusClass = 'status-submitted';
@@ -851,7 +854,8 @@ class FeedbackApp {
             case 'feedback_submitted':
                 this.setFeedbackState('feedback_submitted', sessionId);
                 this.updateSummaryStatus('已送出反饋，等待下次 MCP 調用...');
-                this.updateConnectionStatus('connected', '已連接 - 反饋已提交');
+                const submittedConnectionText = window.i18nManager ? window.i18nManager.t('connection.submitted') : '已連接 - 反饋已提交';
+                this.updateConnectionStatus('connected', submittedConnectionText);
                 break;
 
             case 'active':
@@ -868,7 +872,8 @@ class FeedbackApp {
                 if (statusInfo.status === 'waiting') {
                     this.updateSummaryStatus('等待用戶回饋...');
                 }
-                this.updateConnectionStatus('connected', '已連接 - 等待回饋');
+                const waitingConnectionText = window.i18nManager ? window.i18nManager.t('connection.waiting') : '已連接 - 等待回饋';
+                this.updateConnectionStatus('connected', waitingConnectionText);
                 break;
 
             default:
@@ -880,7 +885,7 @@ class FeedbackApp {
         const submitBtn = document.getElementById('submitBtn');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = '✅ 已提交';
+            submitBtn.textContent = window.i18nManager ? window.i18nManager.t('buttons.submitted') : '✅ 已提交';
             submitBtn.style.background = 'var(--success-color)';
         }
     }
@@ -889,7 +894,7 @@ class FeedbackApp {
         const submitBtn = document.getElementById('submitBtn');
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = '📤 提交回饋';
+            submitBtn.textContent = window.i18nManager ? window.i18nManager.t('buttons.submit') : '📤 提交回饋';
             submitBtn.style.background = 'var(--accent-color)';
         }
     }
@@ -1212,7 +1217,7 @@ class FeedbackApp {
         // 重新啟用提交按鈕
         if (this.submitBtn) {
             this.submitBtn.disabled = false;
-            this.submitBtn.textContent = '提交回饋';
+            this.submitBtn.textContent = window.i18nManager ? window.i18nManager.t('buttons.submit') : '提交回饋';
         }
     }
 

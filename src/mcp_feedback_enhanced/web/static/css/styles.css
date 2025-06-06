@@ -327,4 +327,611 @@ pre code {
     color: var(--text-secondary);
     font-size: 0.9em;
     margin-top: 4px;
-} 
+}
+
+/* ===== Feedback.html 專用樣式 ===== */
+
+/* CSS 變數定義 */
+:root {
+    /* 深色主題顏色變數 */
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #2d2d30;
+    --bg-tertiary: #252526;
+    --surface-color: #333333;
+    --text-primary: #cccccc;
+    --text-secondary: #9e9e9e;
+    --accent-color: #007acc;
+    --accent-hover: #005a9e;
+    --border-color: #464647;
+    --success-color: #4caf50;
+    --warning-color: #ff9800;
+    --error-color: #f44336;
+    --info-color: #2196f3;
+}
+
+/* 基礎重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 主體樣式 */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 容器樣式 */
+.container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 頭部樣式 */
+.header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-radius: 8px 8px 0 0;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin: 0;
+}
+
+.project-info {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* 倒數計時器樣式 */
+.countdown-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+.countdown-label {
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.countdown-timer {
+    color: var(--warning-color);
+    font-size: 13px;
+    font-weight: bold;
+    font-family: 'Consolas', 'Monaco', monospace;
+    min-width: 45px;
+    text-align: center;
+}
+
+.countdown-timer.warning {
+    color: var(--warning-color);
+}
+
+.countdown-timer.danger {
+    color: var(--error-color);
+}
+
+
+
+
+
+/* 語言選擇器 */
+.language-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.language-selector select {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+/* 設定項目樣式 */
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-info {
+    flex: 1;
+}
+
+.setting-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.setting-description {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* 設定卡片樣式 */
+.settings-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.settings-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.settings-card-header {
+    background: var(--bg-secondary);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-card-body {
+    padding: 20px;
+}
+
+.settings-card .setting-item {
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-card .setting-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.settings-card .setting-label {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.settings-card .setting-description {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* 佈局模式選擇器 */
+.layout-mode-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.layout-option {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.layout-option:hover {
+    border-color: var(--accent-color);
+    background: rgba(0, 122, 204, 0.1);
+}
+
+.layout-option input[type="radio"] {
+    margin: 0;
+    margin-right: 12px;
+    margin-top: 2px;
+    accent-color: var(--accent-color);
+    transform: scale(1.2);
+}
+
+.layout-option label {
+    flex: 1;
+    cursor: pointer;
+}
+
+.layout-option-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.layout-option-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.layout-option input[type="radio"]:checked + label {
+    color: var(--accent-color);
+}
+
+.layout-option input[type="radio"]:checked + label .layout-option-title {
+    color: var(--accent-color);
+}
+
+.layout-option:has(input[type="radio"]:checked) {
+    border-color: var(--accent-color);
+    background: rgba(0, 122, 204, 0.15);
+}
+
+/* 語言選擇器現代化樣式 */
+.language-selector-modern {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.language-options {
+    display: flex;
+    gap: 12px;
+}
+
+.language-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 80px;
+}
+
+.language-option:hover {
+    border-color: var(--accent-color);
+    background: rgba(0, 122, 204, 0.1);
+}
+
+.language-option.active {
+    border-color: var(--accent-color);
+    background: var(--accent-color);
+    color: white;
+}
+
+.language-flag {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.language-name {
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.language-option.active .language-name {
+    color: white;
+}
+
+/* 表單元素樣式 */
+.input-group {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.input-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.text-input,
+.command-input {
+    width: 100%;
+    max-width: 100%;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 220px;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+}
+
+.text-input:focus,
+.command-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.command-input {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    min-height: 80px;
+}
+
+/* 新增：單行命令輸入框樣式 */
+.command-input-line {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+    transition: border-color 0.3s ease;
+}
+
+.command-input-line:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+/* 命令輸出區域 */
+.command-output {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    overflow-y: auto;
+    height: 320px;
+    width: 100%;
+    box-sizing: border-box;
+    /* 添加 terminal 風格 */
+    background: #0f0f0f;
+    border: 2px solid var(--border-color);
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+    /* 確保尺寸固定 */
+    flex-shrink: 0;
+    resize: none;
+}
+
+/* Terminal 提示符樣式 */
+.terminal-prompt {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+/* 按鈕樣式 */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: var(--accent-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--surface-color);
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: white;
+}
+
+.btn-success:hover {
+    background: #45a049;
+}
+
+/* 底部操作按鈕 */
+.footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    border-radius: 0 0 8px 8px;
+    margin-top: auto;
+}
+
+/* 主內容區域 */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* 分頁樣式 */
+.tabs {
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.tab-buttons {
+    display: flex;
+    gap: 2px;
+}
+
+.tab-button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 4px 4px 0 0;
+}
+
+.tab-button.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+    background: var(--bg-tertiary);
+}
+
+.tab-button:hover:not(.active) {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-button.hidden {
+    display: none;
+}
+
+/* 分頁內容 */
+.tab-content {
+    display: none;
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-height: 600px;
+}
+
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 分割器樣式（用於合併模式） */
+.splitter-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 8px;
+}
+
+.splitter-section {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px;
+    transition: all 0.3s ease;
+}
+
+.splitter-handle {
+    height: 8px;
+    background: var(--border-color);
+    border-radius: 4px;
+    cursor: row-resize;
+    transition: background 0.3s ease;
+    margin: 4px 0;
+}
+
+.splitter-handle:hover {
+    background: var(--accent-color);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .tab-buttons {
+        flex-wrap: wrap;
+    }
+
+    /* 小屏幕下調整命令輸出區域高度 */
+    .command-output {
+        height: 250px;
+    }
+}
+
+/* 更小屏幕的調整 */
+@media (max-width: 480px) {
+    .command-output {
+        height: 200px;
+        font-size: 12px;
+    }
+}

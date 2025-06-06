@@ -122,7 +122,19 @@
         "connecting": "Connecting...",
         "disconnected": "Disconnected",
         "reconnecting": "Reconnecting...",
-        "error": "Connection Error"
+        "error": "Connection Error",
+        "waiting": {
+            "title": "Waiting for Feedback",
+            "message": "Please provide your feedback"
+        },
+        "processing": {
+            "title": "Processing",
+            "message": "Submitting your feedback..."
+        },
+        "submitted": {
+            "title": "Feedback Submitted",
+            "message": "Waiting for next MCP call"
+        }
     },
     "notifications": {
         "feedback_sent": "Feedback sent",
@@ -130,6 +142,11 @@
         "settings_saved": "Settings saved",
         "connection_lost": "Connection lost",
         "connection_restored": "Connection restored"
+    },
+    "connection": {
+        "waiting": "Connected - Waiting for feedback",
+        "submitted": "Connected - Feedback submitted",
+        "processing": "Connected - Processing"
     },
     "errors": {
         "connection_failed": "Connection failed",
@@ -142,6 +159,8 @@
         "ok": "OK",
         "cancel": "❌ Cancel",
         "submit": "✅ Submit Feedback",
+        "processing": "Processing...",
+        "submitted": "Submitted",
         "retry": "Retry",
         "close": "Close",
         "upload": "Upload",
@@ -153,22 +172,7 @@
         "timeoutDescription": "Due to prolonged inactivity, the session has timed out. The interface will automatically close in 3 seconds.",
         "closing": "Closing..."
     },
-    "timeout": {
-        "enable": "Auto Close",
-        "enableTooltip": "When enabled, the interface will automatically close after the specified time",
-        "duration": {
-            "label": "Timeout Duration",
-            "description": "Set the auto-close time (30 seconds - 2 hours)"
-        },
-        "seconds": "seconds",
-        "remaining": "Time Remaining",
-        "expired": "⏰ Time expired, interface will close automatically",
-        "autoCloseMessage": "Interface will automatically close in {seconds} seconds",
-        "settings": {
-            "title": "Timeout Settings",
-            "description": "When enabled, the interface will automatically close after the specified time. The countdown timer will be displayed in the header area."
-        }
-    },
+
     "dynamic": {
         "aiSummary": "Test Web UI Functionality\n\n🎯 **Test Items:**\n- Web UI server startup and operation\n- WebSocket real-time communication\n- Feedback submission functionality\n- Image upload and preview\n- Command execution functionality\n- Smart Ctrl+V image pasting\n- Multi-language interface functionality\n\n📋 **Test Steps:**\n1. Test image upload (drag-drop, file selection, clipboard)\n2. Press Ctrl+V in text box to test smart pasting\n3. Try switching languages (Traditional Chinese/Simplified Chinese/English)\n4. Test command execution functionality\n5. Submit feedback and images\n\nPlease test these features and provide feedback!",
         "terminalWelcome": "Welcome to Interactive Feedback Terminal\n========================================\nProject Directory: {sessionId}\nEnter commands and press Enter or click Execute button\nSupported commands: ls, dir, pwd, cat, type, etc.\n\n$ "

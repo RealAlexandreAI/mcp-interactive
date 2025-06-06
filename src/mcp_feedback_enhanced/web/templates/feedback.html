@@ -6,176 +6,7 @@
     <title>{{ title }}</title>
     <link rel="stylesheet" href="/static/css/styles.css">
     <style>
-        :root {
-            /* 深色主題顏色變數 */
-            --bg-primary: #1e1e1e;
-            --bg-secondary: #2d2d30;
-            --bg-tertiary: #252526;
-            --surface-color: #333333;
-            --text-primary: #cccccc;
-            --text-secondary: #9e9e9e;
-            --accent-color: #007acc;
-            --accent-hover: #005a9e;
-            --border-color: #464647;
-            --success-color: #4caf50;
-            --warning-color: #ff9800;
-            --error-color: #f44336;
-            --info-color: #2196f3;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .container {
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 20px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* 頭部 */
-        .header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 15px 0;
-            margin-bottom: 20px;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .title {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--accent-color);
-            margin: 0;
-        }
-
-        .project-info {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        /* 倒數計時器顯示樣式 */
-        .countdown-display {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 4px 8px;
-        }
-
-        .countdown-label {
-            color: var(--text-secondary);
-            font-size: 11px;
-        }
-
-        .countdown-timer {
-            color: var(--warning-color);
-            font-size: 13px;
-            font-weight: bold;
-            font-family: 'Consolas', 'Monaco', monospace;
-            min-width: 45px;
-            text-align: center;
-        }
-
-        .countdown-timer.warning {
-            color: var(--warning-color);
-        }
-
-        .countdown-timer.danger {
-            color: var(--error-color);
-        }
-
-        /* 超時設置輸入組件樣式 */
-        .timeout-input-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .timeout-input {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 6px 12px;
-            color: var(--text-primary);
-            font-size: 13px;
-            width: 100px;
-            text-align: center;
-        }
-
-        .timeout-input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        .timeout-unit {
-            color: var(--text-secondary);
-            font-size: 13px;
-        }
-
-        /* 切換開關樣式 */
-        .toggle-switch {
-            position: relative;
-            width: 50px;
-            height: 24px;
-            background: #666666;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-
-        .toggle-switch.active {
-            background: var(--accent-color);
-        }
-
-        .toggle-knob {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            transition: transform 0.2s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-        }
-
-        .toggle-switch.active .toggle-knob {
-            transform: translateX(26px);
-        }
+        /* 僅保留必要的頁面特定樣式和響應式調整 */
 
         /* 響應式調整 */
         @media (max-width: 768px) {
@@ -190,646 +21,9 @@
             }
         }
 
-        .language-selector {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .language-selector select {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 5px 10px;
-            font-size: 14px;
-        }
-
-        /* 主內容區域 */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            max-width: 100%;
-            overflow: hidden;
-        }
-
-        /* 分頁樣式 */
-        .tabs {
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 20px;
-        }
-
-        .tab-buttons {
-            display: flex;
-            gap: 2px;
-        }
-
-        .tab-button {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            padding: 12px 20px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            font-weight: 500;
-            border-radius: 4px 4px 0 0;
-        }
-
-        .tab-button.active {
-            color: var(--accent-color);
-            border-bottom-color: var(--accent-color);
-            background: var(--bg-tertiary);
-        }
-
-        .tab-button:hover:not(.active) {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        /* 隱藏的分頁按鈕 */
-        .tab-button.hidden {
-            display: none;
-        }
-
-        /* 分頁內容 */
-        .tab-content {
-            display: none;
-            flex: 1;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            overflow-y: auto;
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            min-height: 600px;
-        }
-
-        .tab-content.active {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* 分割器樣式（用於合併模式） */
-        .splitter-container {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            gap: 8px;
-        }
-
-        .splitter-section {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .splitter-handle {
-            height: 8px;
-            background: var(--border-color);
-            border-radius: 4px;
-            cursor: row-resize;
-            transition: background 0.3s ease;
-            margin: 4px 0;
-        }
-
-        .splitter-handle:hover {
-            background: var(--accent-color);
-        }
-
-        /* 表單元素統一寬度 */
-        .input-group {
-            margin-bottom: 20px;
-            width: 100%;
-        }
-
-        .input-label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-        }
-
-        .text-input,
-        .command-input {
-            width: 100%;
-            max-width: 100%;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-            line-height: 1.5;
-            resize: vertical;
-            min-height: 220px;
-            font-family: inherit;
-            transition: border-color 0.3s ease;
-            box-sizing: border-box;
-        }
-
-        .text-input:focus,
-        .command-input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        .command-input {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            min-height: 80px;
-        }
-
-        /* 新增：單行命令輸入框樣式 */
-        .command-input-line {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 14px;
-            border: 1px solid var(--border-color);
-            transition: border-color 0.3s ease;
-        }
-
-        .command-input-line:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        /* 圖片上傳區域 */
-        .image-upload-area {
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 16px;
-            min-height: 120px;
-            width: 100%;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .image-upload-area:hover {
-            border-color: var(--accent-color);
-            background: rgba(0, 122, 204, 0.05);
-        }
-
-        .image-upload-area.dragover {
-            border-color: var(--accent-color);
-            background: rgba(0, 122, 204, 0.1);
-        }
-
-        .image-upload-area.has-images {
-            padding: 16px;
-            text-align: left;
-            min-height: auto;
-            align-items: flex-start;
-            justify-content: flex-start;
-        }
-
-        .image-upload-area.has-images #imageUploadText {
-            display: none;
-        }
-
-        .image-preview-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 16px;
-            width: 100%;
-        }
-
-        .image-upload-area.has-images .image-preview-container {
-            margin-top: 0;
-        }
-
-        .image-preview {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
-
-        .image-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .image-remove {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: var(--error-color);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 命令輸出區域 */
-        .command-output {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 12px;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.4;
-            color: var(--text-primary);
-            white-space: pre-wrap;
-            overflow-y: auto;
-            height: 320px;
-            width: 100%;
-            box-sizing: border-box;
-            /* 添加 terminal 風格 */
-            background: #0f0f0f;
-            border: 2px solid var(--border-color);
-            color: #00ff00;
-            text-shadow: 0 0 5px #00ff00;
-            /* 確保尺寸固定 */
-            flex-shrink: 0;
-            resize: none;
-        }
-
-        /* Terminal 提示符樣式 */
-        .terminal-prompt {
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-
-        /* 按鈕 */
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-        }
-
-        .btn-secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            background: var(--surface-color);
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #45a049;
-        }
-
-        /* 底部操作按鈕 */
-        .footer-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            padding: 20px;
-            border-top: 1px solid var(--border-color);
-            background: var(--bg-secondary);
-            border-radius: 0 0 8px 8px;
-            margin-top: auto;
-        }
-
-        /* 響應式設計 */
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .header-content {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .tab-buttons {
-                flex-wrap: wrap;
-            }
-            
-            /* 小屏幕下調整命令輸出區域高度 */
-            .command-output {
-                height: 250px;
-            }
-        }
-
-        /* 更小屏幕的調整 */
-        @media (max-width: 480px) {
-            .command-output {
-                height: 200px;
-                font-size: 12px;
-            }
-        }
-
-        /* 設定頁面樣式 */
-        .settings-group {
-            margin-bottom: 24px;
-        }
-
-        .settings-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 12px;
-        }
-
-        .setting-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .setting-item:last-child {
-            border-bottom: none;
-        }
-
-        .setting-label {
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        .setting-description {
-            color: var(--text-secondary);
-            font-size: 12px;
-            margin-top: 4px;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 50px;
-            height: 24px;
-            background: var(--border-color);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .toggle-switch.active {
-            background: var(--accent-color);
-        }
-
-        .toggle-knob {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            transition: transform 0.3s ease;
-        }
-
-        .toggle-switch.active .toggle-knob {
-            transform: translateX(26px);
-        }
-
-        /* 分頁描述文字 */
-        .section-description {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-bottom: 20px;
-            line-height: 1.5;
-            padding: 12px 16px;
-            background: var(--bg-tertiary);
-            border-radius: 6px;
-            border-left: 3px solid var(--accent-color);
-        }
-
-        /* 現代化語言選擇器樣式 */
-        .language-selector-modern {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .language-options {
-            display: flex;
-            gap: 12px;
-        }
-
-        .language-option {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 12px 16px;
-            background: var(--bg-primary);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-width: 80px;
-        }
-
-        .language-option:hover {
-            border-color: var(--accent-color);
-            background: rgba(0, 122, 204, 0.1);
-        }
-
-        .language-option.active {
-            border-color: var(--accent-color);
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .language-flag {
-            font-size: 24px;
-            margin-bottom: 4px;
-        }
-
-        .language-name {
-            font-size: 12px;
-            font-weight: 500;
-            text-align: center;
-        }
-
-        .language-option.active .language-name {
-            color: white;
-        }
-
-        /* 現代化設定卡片樣式 */
-        .settings-card {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease;
-        }
-
-        .settings-card:hover {
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        }
-
-        .settings-card-header {
-            background: var(--bg-secondary);
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .settings-card-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .settings-card-body {
-            padding: 20px;
-        }
-
-        .settings-card .setting-item {
-            padding: 16px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .settings-card .setting-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .setting-info {
-            flex: 1;
-        }
-
-        .settings-card .setting-label {
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-
-        .settings-card .setting-description {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.4;
-        }
-
-        /* 合併模式樣式 */
-        .combined-section {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .combined-section-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0 0 16px 0;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--accent-color);
-        }
-
-        /* 新增：水平佈局的 CSS 樣式 */
-        .layout-mode-selector {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 8px;
-        }
-
-        .layout-option {
-            display: flex;
-            align-items: flex-start;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: var(--bg-tertiary);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .layout-option:hover {
-            border-color: var(--accent-color);
-            background: rgba(0, 122, 204, 0.1);
-        }
-
-        .layout-option input[type="radio"] {
-            margin: 0;
-            margin-right: 12px;
-            margin-top: 2px;
-            accent-color: var(--accent-color);
-            transform: scale(1.2);
-        }
-
-        .layout-option label {
-            flex: 1;
-            cursor: pointer;
-        }
-
-        .layout-option-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-
-        .layout-option-desc {
-            font-size: 12px;
-            color: var(--text-secondary);
-            line-height: 1.4;
-        }
-
-        .layout-option input[type="radio"]:checked + label {
-            color: var(--accent-color);
-        }
-
-        .layout-option input[type="radio"]:checked + label .layout-option-title {
-            color: var(--accent-color);
-        }
-
-        .layout-option:has(input[type="radio"]:checked) {
-            border-color: var(--accent-color);
-            background: rgba(0, 122, 204, 0.15);
-        }
+        /* 頁面特定的佈局模式樣式 */
 
         /* 佈局模式樣式 */
-
         /* 預設分離模式 - 顯示回饋和AI摘要頁籤，隱藏合併模式頁籤 */
         body.layout-separate .tab-button[data-tab="combined"] {
             display: none;
@@ -851,6 +45,19 @@
         body.layout-combined-horizontal .tab-button[data-tab="feedback"],
         body.layout-combined-horizontal .tab-button[data-tab="summary"] {
             display: none;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .timeout-controls {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .timeout-separator {
+                display: none;
+            }
         }
 
 
@@ -1124,7 +331,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- 頭部 -->
+        <!-- ===== 頁面頭部區域 ===== -->
         <header class="header">
             <div class="header-content">
                 <div class="header-left">
@@ -1141,7 +348,7 @@
             </div>
         </header>
 
-        <!-- 主內容 -->
+        <!-- ===== 主內容區域 ===== -->
         <main class="main-content">
             <!-- 分頁導航 -->
             <div class="tabs">
@@ -1170,7 +377,7 @@
 
 
 
-            <!-- 回饋分頁 -->
+            <!-- ===== 回饋分頁 ===== -->
             <div id="tab-feedback" class="tab-content active">
                 <div class="section-description" data-i18n="feedback.description">
                     請提供您對 AI 工作成果的回饋意見。您可以輸入文字回饋並上傳相關圖片。
@@ -1190,56 +397,12 @@
                     ></textarea>
                 </div>
 
-                <!-- 圖片設定區域 -->
-                <div class="input-group" style="margin-bottom: 12px;">
-                    <details class="image-settings-details">
-                        <summary class="image-settings-summary" data-i18n="images.settings.title">⚙️ 圖片設定</summary>
-                        <div class="image-settings-content">
-                            <div class="image-setting-row">
-                                <label class="image-setting-label" data-i18n="images.settings.sizeLimit">圖片大小限制：</label>
-                                <select id="imageSizeLimit" class="image-setting-select">
-                                    <option value="0" data-i18n="images.settings.sizeLimitOptions.unlimited">無限制</option>
-                                    <option value="1048576" data-i18n="images.settings.sizeLimitOptions.1mb">1MB</option>
-                                    <option value="3145728" data-i18n="images.settings.sizeLimitOptions.3mb">3MB</option>
-                                    <option value="5242880" data-i18n="images.settings.sizeLimitOptions.5mb">5MB</option>
-                                </select>
-                            </div>
-                            <div class="image-setting-row">
-                                <label class="image-setting-checkbox-container">
-                                    <input type="checkbox" id="enableBase64Detail" class="image-setting-checkbox">
-                                    <span class="image-setting-checkmark"></span>
-                                    <span class="image-setting-label" data-i18n="images.settings.base64Detail">Base64 相容模式</span>
-                                </label>
-                                <small class="image-setting-help" data-i18n="images.settings.base64Warning">⚠️ 會增加傳輸量</small>
-                            </div>
-                            <div class="image-setting-help-text" data-i18n="images.settings.base64DetailHelp">
-                                啟用後會在文字中包含完整的 Base64 圖片資料，提升部分 AI 模型的相容性
-                            </div>
-                        </div>
-                    </details>
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label" data-i18n="feedback.imageLabel">圖片附件（可選）</label>
-                    <!-- 相容性提示區域 -->
-                    <div id="compatibilityHint" class="compatibility-hint" style="display: none;">
-                        <span data-i18n="images.settings.compatibilityHint">💡 圖片無法正確識別？</span>
-                        <button type="button" id="enableBase64Hint" class="compatibility-hint-btn" data-i18n="images.settings.enableBase64Hint">
-                            嘗試啟用 Base64 相容模式
-                        </button>
-                    </div>
-                    <div id="imageUploadArea" class="image-upload-area">
-                        <div id="imageUploadText" data-i18n="feedback.imageUploadText">
-                            📎 點擊選擇圖片或拖放圖片到此處<br>
-                            <small>支援 PNG、JPG、JPEG、GIF、BMP、WebP 等格式</small>
-                        </div>
-                        <div id="imagePreviewContainer" class="image-preview-container"></div>
-                        <input type="file" id="imageInput" multiple accept="image/*" style="display: none;">
-                    </div>
-                </div>
+                <!-- 圖片上傳組件 -->
+                {% set id_prefix = "feedback" %}
+                {% include 'components/image-upload.html' %}
             </div>
 
-            <!-- AI 摘要分頁 -->
+            <!-- ===== AI 摘要分頁 ===== -->
             <div id="tab-summary" class="tab-content">
                 <div class="section-description" data-i18n="summary.description">
                     以下是 AI 助手完成的工作摘要，請仔細查看並提供您的回饋意見。
@@ -1308,13 +471,12 @@
                         <h3 class="combined-section-title" data-i18n="combined.feedbackTitle">💬 提供回饋</h3>
 
                         <!-- 等待回饋狀態指示器 -->
-                        <div id="combinedFeedbackStatusIndicator" class="feedback-status-indicator status-waiting" style="display: none;">
-                            <div class="status-icon">⏳</div>
-                            <div class="status-text">
-                                <strong data-i18n="feedback.status.waiting.title">等待您的回饋</strong>
-                                <span data-i18n="feedback.status.waiting.message">請提供您對 AI 工作成果的意見和建議</span>
-                            </div>
-                        </div>
+                        {% set id = "combinedFeedbackStatusIndicator" %}
+                        {% set status = "waiting" %}
+                        {% set icon = "⏳" %}
+                        {% set title = "等待您的回饋" %}
+                        {% set message = "請提供您對 AI 工作成果的意見和建議" %}
+                        {% include 'components/status-indicator.html' %}
 
                         <div class="input-group">
                             <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
@@ -1331,53 +493,10 @@
                             ></textarea>
                         </div>
 
-                        <!-- 圖片設定區域 -->
-                        <div class="input-group" style="margin-bottom: 12px;">
-                            <details class="image-settings-details">
-                                <summary class="image-settings-summary" data-i18n="images.settings.title">⚙️ 圖片設定</summary>
-                                <div class="image-settings-content">
-                                    <div class="image-setting-row">
-                                        <label class="image-setting-label" data-i18n="images.settings.sizeLimit">圖片大小限制：</label>
-                                        <select id="combinedImageSizeLimit" class="image-setting-select">
-                                            <option value="0" data-i18n="images.settings.sizeLimitOptions.unlimited">無限制</option>
-                                            <option value="1048576" data-i18n="images.settings.sizeLimitOptions.1mb">1MB</option>
-                                            <option value="3145728" data-i18n="images.settings.sizeLimitOptions.3mb">3MB</option>
-                                            <option value="5242880" data-i18n="images.settings.sizeLimitOptions.5mb">5MB</option>
-                                        </select>
-                                    </div>
-                                    <div class="image-setting-row">
-                                        <label class="image-setting-checkbox-container">
-                                            <input type="checkbox" id="combinedEnableBase64Detail" class="image-setting-checkbox">
-                                            <span class="image-setting-checkmark"></span>
-                                            <span class="image-setting-label" data-i18n="images.settings.base64Detail">Base64 相容模式</span>
-                                        </label>
-                                        <small class="image-setting-help" data-i18n="images.settings.base64Warning">⚠️ 會增加傳輸量</small>
-                                    </div>
-                                    <div class="image-setting-help-text" data-i18n="images.settings.base64DetailHelp">
-                                        啟用後會在文字中包含完整的 Base64 圖片資料，提升部分 AI 模型的相容性
-                                    </div>
-                                </div>
-                            </details>
-                        </div>
-
-                        <div class="input-group">
-                            <label class="input-label" data-i18n="feedback.imageLabel">圖片附件（可選）</label>
-                            <!-- 相容性提示區域 -->
-                            <div id="combinedCompatibilityHint" class="compatibility-hint" style="display: none;">
-                                <span data-i18n="images.settings.compatibilityHint">💡 圖片無法正確識別？</span>
-                                <button type="button" id="combinedEnableBase64Hint" class="compatibility-hint-btn" data-i18n="images.settings.enableBase64Hint">
-                                    嘗試啟用 Base64 相容模式
-                                </button>
-                            </div>
-                            <div id="combinedImageUploadArea" class="image-upload-area" style="min-height: 100px;">
-                                <div id="combinedImageUploadText" data-i18n="feedback.imageUploadText">
-                                    📎 點擊選擇圖片或拖放圖片到此處<br>
-                                    <small>支援 PNG、JPG、JPEG、GIF、BMP、WebP 等格式</small>
-                                </div>
-                                <div id="combinedImagePreviewContainer" class="image-preview-container"></div>
-                                <input type="file" id="combinedImageInput" multiple accept="image/*" style="display: none;">
-                            </div>
-                        </div>
+                        <!-- 圖片上傳組件 -->
+                        {% set id_prefix = "combined" %}
+                        {% set min_height = "100px" %}
+                        {% include 'components/image-upload.html' %}
                     </div>
                 </div>
             </div>
@@ -1425,51 +544,11 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <div class="setting-label" data-i18n="settings.autoClose">自動關閉頁面</div>
-                                <div class="setting-description" data-i18n="settings.autoCloseDesc">
-                                    提交回饋後自動關閉頁面
-                                </div>
-                            </div>
-                            <div id="autoCloseToggle" class="toggle-switch active">
-                                <div class="toggle-knob"></div>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
 
-                <!-- 超時設定卡片 -->
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <h3 class="settings-card-title" data-i18n="timeout.settings.title">⏰ 超時設置</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div class="setting-item">
-                            <div class="setting-info">
-                                <div class="setting-label" data-i18n="timeout.enable">自動關閉</div>
-                                <div class="setting-description" data-i18n="timeout.settings.description">
-                                    啟用後，介面將在指定時間後自動關閉。倒數計時器會顯示在頂部區域。
-                                </div>
-                            </div>
-                            <div id="timeoutToggle" class="toggle-switch">
-                                <div class="toggle-knob"></div>
-                            </div>
-                        </div>
-                        <div class="setting-item" style="border-bottom: none;">
-                            <div class="setting-info">
-                                <div class="setting-label" data-i18n="timeout.duration.label">超時時間</div>
-                                <div class="setting-description" data-i18n="timeout.duration.description">
-                                    設置自動關閉的時間（30秒 - 2小時）
-                                </div>
-                            </div>
-                            <div class="timeout-input-group">
-                                <input type="number" id="timeoutDuration" class="timeout-input" min="30" max="7200" value="600">
-                                <span class="timeout-unit" data-i18n="timeout.seconds">秒</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- 語言設定卡片 -->
                 <div class="settings-card">

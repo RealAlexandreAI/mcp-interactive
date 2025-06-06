@@ -259,12 +259,35 @@ class FeedbackApp {
         this.commandOutput = document.getElementById('commandOutput');
         this.runCommandBtn = document.getElementById('runCommandBtn');
 
-        // 圖片相關元素
-        this.imageInput = document.getElementById('imageInput');
-        this.imageUploadArea = document.getElementById('imageUploadArea');
-        this.imagePreviewContainer = document.getElementById('imagePreviewContainer');
-        this.imageSizeLimitSelect = document.getElementById('imageSizeLimit');
-        this.enableBase64DetailCheckbox = document.getElementById('enableBase64Detail');
+        // 動態初始化圖片相關元素
+        this.initImageElements();
+    }
+
+    /**
+     * 動態初始化圖片相關元素，支援多佈局模式
+     */
+    initImageElements() {
+        // 根據當前佈局模式確定元素前綴
+        const prefix = this.layoutMode && this.layoutMode.startsWith('combined') ? 'combined' : 'feedback';
+
+        console.log(`🖼️ 初始化圖片元素，使用前綴: ${prefix}`);
+
+        // 圖片相關元素 - 優先使用當前模式的元素
+        this.imageInput = document.getElementById(`${prefix}ImageInput`) || document.getElementById('imageInput');
+        this.imageUploadArea = document.getElementById(`${prefix}ImageUploadArea`) || document.getElementById('imageUploadArea');
+        this.imagePreviewContainer = document.getElementById(`${prefix}ImagePreviewContainer`) || document.getElementById('imagePreviewContainer');
+        this.imageSizeLimitSelect = document.getElementById(`${prefix}ImageSizeLimit`) || document.getElementById('imageSizeLimit');
+        this.enableBase64DetailCheckbox = document.getElementById(`${prefix}EnableBase64Detail`) || document.getElementById('enableBase64Detail');
+
+        // 記錄當前使用的前綴，用於後續操作
+        this.currentImagePrefix = prefix;
+
+        // 驗證關鍵元素是否存在
+        if (!this.imageInput || !this.imageUploadArea) {
+            console.warn(`⚠️ 圖片元素初始化失敗 - imageInput: ${!!this.imageInput}, imageUploadArea: ${!!this.imageUploadArea}`);
+        } else {
+            console.log(`✅ 圖片元素初始化成功 - 前綴: ${prefix}`);
+        }
     }
 
     initTabs() {
@@ -349,67 +372,203 @@ class FeedbackApp {
             this.handleCombinedMode();
         }
 
+        // 重新初始化圖片處理（確保使用正確的佈局模式元素）
+        this.reinitializeImageHandling();
+
         // 保存當前頁籤設定
         this.saveSettings();
 
         console.log(`切換到頁籤: ${tabName}`);
     }
 
-    initImageHandling() {
-        if (!this.imageUploadArea || !this.imageInput) return;
+    /**
+     * 重新初始化圖片處理功能
+     */
+    reinitializeImageHandling() {
+        console.log('🔄 重新初始化圖片處理功能...');
 
+        // 移除舊的事件監聽器
+        this.removeImageEventListeners();
+
+        // 重新初始化圖片元素
+        this.initImageElements();
+
+        // 如果有必要的元素，重新設置事件監聽器
+        if (this.imageUploadArea && this.imageInput) {
+            this.setupImageEventListeners();
+            console.log('✅ 圖片處理功能重新初始化完成');
+        } else {
+            console.warn('⚠️ 圖片處理重新初始化失敗 - 缺少必要元素');
+        }
+
+        // 更新圖片預覽（確保在新的容器中顯示）
+        this.updateImagePreview();
+    }
+
+    /**
+     * 設置圖片事件監聽器
+     */
+    setupImageEventListeners() {
         // 文件選擇事件
-        this.imageInput.addEventListener('change', (e) => {
+        this.imageChangeHandler = (e) => {
             this.handleFileSelect(e.target.files);
-        });
+        };
+        this.imageInput.addEventListener('change', this.imageChangeHandler);
 
         // 點擊上傳區域
-        this.imageUploadArea.addEventListener('click', () => {
+        this.imageClickHandler = () => {
             this.imageInput.click();
-        });
+        };
+        this.imageUploadArea.addEventListener('click', this.imageClickHandler);
 
         // 拖放事件
-        this.imageUploadArea.addEventListener('dragover', (e) => {
+        this.imageDragOverHandler = (e) => {
             e.preventDefault();
             this.imageUploadArea.classList.add('dragover');
-        });
+        };
+        this.imageUploadArea.addEventListener('dragover', this.imageDragOverHandler);
 
-        this.imageUploadArea.addEventListener('dragleave', (e) => {
+        this.imageDragLeaveHandler = (e) => {
             e.preventDefault();
             this.imageUploadArea.classList.remove('dragover');
-        });
+        };
+        this.imageUploadArea.addEventListener('dragleave', this.imageDragLeaveHandler);
 
-        this.imageUploadArea.addEventListener('drop', (e) => {
+        this.imageDropHandler = (e) => {
             e.preventDefault();
             this.imageUploadArea.classList.remove('dragover');
             this.handleFileSelect(e.dataTransfer.files);
-        });
+        };
+        this.imageUploadArea.addEventListener('drop', this.imageDropHandler);
 
-        // 剪貼板貼上事件
-        document.addEventListener('paste', (e) => {
-            const items = e.clipboardData.items;
-            for (let item of items) {
-                if (item.type.indexOf('image') !== -1) {
-                    e.preventDefault();
-                    const file = item.getAsFile();
-                    this.handleFileSelect([file]);
-                    break;
+        // 初始化圖片設定事件
+        this.initImageSettings();
+    }
+
+    initImageHandling() {
+        console.log('🖼️ 開始初始化圖片處理功能...');
+
+        // 重新初始化圖片元素（確保使用最新的佈局模式）
+        this.initImageElements();
+
+        if (!this.imageUploadArea || !this.imageInput) {
+            console.warn('⚠️ 圖片處理初始化失敗 - 缺少必要元素');
+            return;
+        }
+
+        // 清除舊的事件監聽器（如果存在）
+        this.removeImageEventListeners();
+
+        // 設置圖片事件監聽器
+        this.setupImageEventListeners();
+
+        // 設置全域剪貼板貼上事件（只設置一次）
+        if (!this.pasteHandler) {
+            this.pasteHandler = (e) => {
+                const items = e.clipboardData.items;
+                for (let item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const file = item.getAsFile();
+                        this.handleFileSelect([file]);
+                        break;
+                    }
                 }
-            }
-        });
+            };
+            document.addEventListener('paste', this.pasteHandler);
+            console.log('✅ 全域剪貼板貼上事件已設置');
+        }
 
-        // 圖片設定事件
+        console.log('✅ 圖片處理功能初始化完成');
+    }
+
+    /**
+     * 移除舊的圖片事件監聽器
+     */
+    removeImageEventListeners() {
+        if (this.imageInput && this.imageChangeHandler) {
+            this.imageInput.removeEventListener('change', this.imageChangeHandler);
+        }
+        if (this.imageUploadArea) {
+            if (this.imageClickHandler) {
+                this.imageUploadArea.removeEventListener('click', this.imageClickHandler);
+            }
+            if (this.imageDragOverHandler) {
+                this.imageUploadArea.removeEventListener('dragover', this.imageDragOverHandler);
+            }
+            if (this.imageDragLeaveHandler) {
+                this.imageUploadArea.removeEventListener('dragleave', this.imageDragLeaveHandler);
+            }
+            if (this.imageDropHandler) {
+                this.imageUploadArea.removeEventListener('drop', this.imageDropHandler);
+            }
+        }
+    }
+
+    /**
+     * 初始化圖片設定事件
+     */
+    initImageSettings() {
+        // 圖片大小限制設定
         if (this.imageSizeLimitSelect) {
             this.imageSizeLimitSelect.addEventListener('change', (e) => {
                 this.imageSizeLimit = parseInt(e.target.value);
+                this.saveSettings();
             });
         }
 
+        // Base64 詳細模式設定
         if (this.enableBase64DetailCheckbox) {
             this.enableBase64DetailCheckbox.addEventListener('change', (e) => {
                 this.enableBase64Detail = e.target.checked;
+                this.saveSettings();
             });
         }
+
+        // 同步設定到其他佈局模式
+        this.syncImageSettingsAcrossLayouts();
+    }
+
+    /**
+     * 同步圖片設定到所有佈局模式
+     */
+    syncImageSettingsAcrossLayouts() {
+        const prefixes = ['feedback', 'combined'];
+
+        prefixes.forEach(prefix => {
+            const sizeSelect = document.getElementById(`${prefix}ImageSizeLimit`);
+            const base64Checkbox = document.getElementById(`${prefix}EnableBase64Detail`);
+
+            if (sizeSelect && sizeSelect !== this.imageSizeLimitSelect) {
+                sizeSelect.value = this.imageSizeLimit.toString();
+                sizeSelect.addEventListener('change', (e) => {
+                    this.imageSizeLimit = parseInt(e.target.value);
+                    // 同步到其他元素
+                    prefixes.forEach(otherPrefix => {
+                        const otherSelect = document.getElementById(`${otherPrefix}ImageSizeLimit`);
+                        if (otherSelect && otherSelect !== e.target) {
+                            otherSelect.value = e.target.value;
+                        }
+                    });
+                    this.saveSettings();
+                });
+            }
+
+            if (base64Checkbox && base64Checkbox !== this.enableBase64DetailCheckbox) {
+                base64Checkbox.checked = this.enableBase64Detail;
+                base64Checkbox.addEventListener('change', (e) => {
+                    this.enableBase64Detail = e.target.checked;
+                    // 同步到其他元素
+                    prefixes.forEach(otherPrefix => {
+                        const otherCheckbox = document.getElementById(`${otherPrefix}EnableBase64Detail`);
+                        if (otherCheckbox && otherCheckbox !== e.target) {
+                            otherCheckbox.checked = e.target.checked;
+                        }
+                    });
+                    this.saveSettings();
+                });
+            }
+        });
     }
 
     handleFileSelect(files) {
@@ -455,22 +614,149 @@ class FeedbackApp {
     }
 
     updateImagePreview() {
-        if (!this.imagePreviewContainer) return;
+        // 更新所有佈局模式的圖片預覽容器
+        const previewContainers = [
+            document.getElementById('feedbackImagePreviewContainer'),
+            document.getElementById('combinedImagePreviewContainer'),
+            this.imagePreviewContainer // 當前主要容器
+        ].filter(container => container); // 過濾掉不存在的容器
 
-        this.imagePreviewContainer.innerHTML = '';
+        if (previewContainers.length === 0) {
+            console.warn('⚠️ 沒有找到圖片預覽容器');
+            return;
+        }
 
-        this.images.forEach((image, index) => {
-            const preview = document.createElement('div');
-            preview.className = 'image-preview';
-            preview.innerHTML = `
-                <img src="data:${image.type};base64,${image.data}" alt="${image.name}">
-                <div class="image-info">
-                    <span class="image-name">${image.name}</span>
-                    <span class="image-size">${this.formatFileSize(image.size)}</span>
-                </div>
-                <button class="image-remove" onclick="window.feedbackApp.removeImage(${index})">×</button>
-            `;
-            this.imagePreviewContainer.appendChild(preview);
+        console.log(`🖼️ 更新 ${previewContainers.length} 個圖片預覽容器`);
+
+        previewContainers.forEach(container => {
+            container.innerHTML = '';
+
+            this.images.forEach((image, index) => {
+                // 創建圖片預覽項目容器
+                const preview = document.createElement('div');
+                preview.className = 'image-preview-item';
+                preview.style.position = 'relative';
+                preview.style.display = 'inline-block';
+
+                // 創建圖片元素
+                const img = document.createElement('img');
+                img.src = `data:${image.type};base64,${image.data}`;
+                img.alt = image.name;
+                img.style.width = '80px';
+                img.style.height = '80px';
+                img.style.objectFit = 'cover';
+                img.style.display = 'block';
+                img.style.borderRadius = '6px';
+
+                // 創建圖片信息容器
+                const imageInfo = document.createElement('div');
+                imageInfo.className = 'image-info';
+                imageInfo.style.position = 'absolute';
+                imageInfo.style.bottom = '0';
+                imageInfo.style.left = '0';
+                imageInfo.style.right = '0';
+                imageInfo.style.background = 'rgba(0, 0, 0, 0.7)';
+                imageInfo.style.color = 'white';
+                imageInfo.style.padding = '4px';
+                imageInfo.style.fontSize = '10px';
+                imageInfo.style.lineHeight = '1.2';
+
+                // 創建文件名元素
+                const imageName = document.createElement('div');
+                imageName.className = 'image-name';
+                imageName.textContent = image.name;
+                imageName.style.fontWeight = 'bold';
+                imageName.style.overflow = 'hidden';
+                imageName.style.textOverflow = 'ellipsis';
+                imageName.style.whiteSpace = 'nowrap';
+
+                // 創建文件大小元素
+                const imageSize = document.createElement('div');
+                imageSize.className = 'image-size';
+                imageSize.textContent = this.formatFileSize(image.size);
+                imageSize.style.fontSize = '9px';
+                imageSize.style.opacity = '0.8';
+
+                // 創建刪除按鈕
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'image-remove-btn';
+                removeBtn.textContent = '×';
+                removeBtn.title = '移除圖片';
+                removeBtn.style.position = 'absolute';
+                removeBtn.style.top = '-8px';
+                removeBtn.style.right = '-8px';
+                removeBtn.style.width = '20px';
+                removeBtn.style.height = '20px';
+                removeBtn.style.borderRadius = '50%';
+                removeBtn.style.background = '#f44336';
+                removeBtn.style.color = 'white';
+                removeBtn.style.border = 'none';
+                removeBtn.style.cursor = 'pointer';
+                removeBtn.style.fontSize = '12px';
+                removeBtn.style.fontWeight = 'bold';
+                removeBtn.style.display = 'flex';
+                removeBtn.style.alignItems = 'center';
+                removeBtn.style.justifyContent = 'center';
+                removeBtn.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.3)';
+                removeBtn.style.transition = 'all 0.3s ease';
+                removeBtn.style.zIndex = '10';
+
+                // 添加刪除按鈕懸停效果
+                removeBtn.addEventListener('mouseenter', () => {
+                    removeBtn.style.background = '#d32f2f';
+                    removeBtn.style.transform = 'scale(1.1)';
+                });
+                removeBtn.addEventListener('mouseleave', () => {
+                    removeBtn.style.background = '#f44336';
+                    removeBtn.style.transform = 'scale(1)';
+                });
+
+                // 添加刪除功能
+                removeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.removeImage(index);
+                });
+
+                // 組裝元素
+                imageInfo.appendChild(imageName);
+                imageInfo.appendChild(imageSize);
+
+                preview.appendChild(img);
+                preview.appendChild(imageInfo);
+                preview.appendChild(removeBtn);
+
+                container.appendChild(preview);
+            });
+        });
+
+        // 更新圖片計數顯示
+        this.updateImageCount();
+    }
+
+    /**
+     * 更新圖片計數顯示
+     */
+    updateImageCount() {
+        const count = this.images.length;
+        const countElements = document.querySelectorAll('.image-count');
+
+        countElements.forEach(element => {
+            element.textContent = count > 0 ? `(${count})` : '';
+        });
+
+        // 更新上傳區域的顯示狀態
+        const uploadAreas = [
+            document.getElementById('feedbackImageUploadArea'),
+            document.getElementById('combinedImageUploadArea')
+        ].filter(area => area);
+
+        uploadAreas.forEach(area => {
+            if (count > 0) {
+                area.classList.add('has-images');
+            } else {
+                area.classList.remove('has-images');
+            }
         });
     }
 
@@ -1348,31 +1634,36 @@ class FeedbackApp {
     }
 
     clearFeedback() {
-        // 清空分離模式的回饋文字
-        if (this.feedbackText) {
-            this.feedbackText.value = '';
-        }
+        console.log('🧹 清空回饋內容...');
 
-        // 清空合併模式的回饋文字
-        const combinedFeedbackText = document.getElementById('combinedFeedbackText');
-        if (combinedFeedbackText) {
-            combinedFeedbackText.value = '';
-        }
+        // 清空所有模式的回饋文字
+        const feedbackInputs = [
+            document.getElementById('feedbackText'),
+            document.getElementById('combinedFeedbackText')
+        ].filter(input => input);
 
+        feedbackInputs.forEach(input => {
+            input.value = '';
+        });
+
+        // 清空圖片數據
         this.images = [];
+
+        // 更新所有圖片預覽容器（updateImagePreview 現在會處理所有容器）
         this.updateImagePreview();
 
-        // 同時清空合併模式的圖片預覽
-        const combinedImagePreviewContainer = document.getElementById('combinedImagePreviewContainer');
-        if (combinedImagePreviewContainer) {
-            combinedImagePreviewContainer.innerHTML = '';
-        }
-
         // 重新啟用提交按鈕
-        if (this.submitBtn) {
-            this.submitBtn.disabled = false;
-            this.submitBtn.textContent = window.i18nManager ? window.i18nManager.t('buttons.submit') : '提交回饋';
-        }
+        const submitButtons = [
+            document.getElementById('submitBtn'),
+            document.getElementById('combinedSubmitBtn')
+        ].filter(btn => btn);
+
+        submitButtons.forEach(button => {
+            button.disabled = false;
+            button.textContent = window.i18nManager ? window.i18nManager.t('buttons.submit') : '提交回饋';
+        });
+
+        console.log('✅ 回饋內容清空完成');
     }
 
     runCommand() {

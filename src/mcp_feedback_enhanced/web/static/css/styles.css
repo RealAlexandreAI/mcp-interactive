@@ -989,9 +989,11 @@ body {
 .image-preview-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 4px;
     margin-top: 12px;
     justify-content: center;
+    /* 添加 padding 為刪除按鈕留出空間 */
+    padding: 8px;
 }
 
 .image-preview-container:empty {
@@ -1003,10 +1005,12 @@ body {
     position: relative;
     display: inline-block;
     border-radius: 6px;
-    overflow: hidden;
+    /* 移除 overflow: hidden 以確保刪除按鈕完全顯示 */
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
+    /* 添加一些 margin 為刪除按鈕留出空間 */
+    margin: 10px;
 }
 
 .image-preview-item:hover {
@@ -1019,6 +1023,7 @@ body {
     height: 80px;
     object-fit: cover;
     display: block;
+    border-radius: 6px;
 }
 
 /* 圖片刪除按鈕 */

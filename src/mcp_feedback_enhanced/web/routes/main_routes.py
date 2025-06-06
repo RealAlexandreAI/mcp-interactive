@@ -192,11 +192,16 @@ def setup_routes(manager: 'WebUIManager'):
                 await handle_websocket_message(manager, session, message)
 
         except WebSocketDisconnect:
-            debug_log(f"WebSocket 連接斷開")
+            debug_log(f"WebSocket 連接正常斷開")
+        except ConnectionResetError:
+            debug_log(f"WebSocket 連接被重置")
         except Exception as e:
             debug_log(f"WebSocket 錯誤: {e}")
         finally:
-            session.websocket = None
+            # 安全清理 WebSocket 連接
+            if session.websocket == websocket:
+                session.websocket = None
+                debug_log("已清理會話中的 WebSocket 連接")
 
     @manager.app.post("/api/save-settings")
     async def save_settings(request: Request):

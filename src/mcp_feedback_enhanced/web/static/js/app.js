@@ -800,7 +800,9 @@ class FeedbackApp {
      * 檢查是否可以提交回饋
      */
     canSubmitFeedback() {
-        return this.feedbackState === 'waiting_for_feedback' && this.isConnected;
+        const canSubmit = this.feedbackState === 'waiting_for_feedback' && this.isConnected;
+        console.log(`🔍 檢查提交權限: feedbackState=${this.feedbackState}, isConnected=${this.isConnected}, canSubmit=${canSubmit}`);
+        return canSubmit;
     }
 
     /**
@@ -989,6 +991,12 @@ class FeedbackApp {
                 // 停止心跳
                 this.stopWebSocketHeartbeat();
 
+                // 重置回饋狀態，避免卡在處理狀態
+                if (this.feedbackState === 'processing') {
+                    console.log('🔄 WebSocket 斷開，重置處理狀態');
+                    this.setFeedbackState('waiting_for_feedback');
+                }
+
                 if (event.code === 4004) {
                     // 沒有活躍會話
                     this.updateConnectionStatus('disconnected', '沒有活躍會話');
@@ -998,7 +1006,10 @@ class FeedbackApp {
                     // 只有在非正常關閉時才重連
                     if (event.code !== 1000) {
                         console.log('3秒後嘗試重連...');
-                        setTimeout(() => this.setupWebSocket(), 3000);
+                        setTimeout(() => {
+                            console.log('🔄 開始重連 WebSocket...');
+                            this.setupWebSocket();
+                        }, 3000);
                     }
                 }
             };
@@ -1107,12 +1118,16 @@ class FeedbackApp {
         // 顯示更新通知
         this.showSuccessMessage(data.message || '會話已更新，正在局部更新內容...');
 
-        // 重置回饋狀態為等待新回饋
-        this.setFeedbackState('waiting_for_feedback');
-
         // 更新會話信息
         if (data.session_info) {
-            this.currentSessionId = data.session_info.session_id;
+            const newSessionId = data.session_info.session_id;
+            console.log(`📋 會話 ID 更新: ${this.currentSessionId} -> ${newSessionId}`);
+
+            // 重置回饋狀態為等待新回饋（使用新的會話 ID）
+            this.setFeedbackState('waiting_for_feedback', newSessionId);
+
+            // 更新當前會話 ID
+            this.currentSessionId = newSessionId;
 
             // 更新頁面標題
             if (data.session_info.project_directory) {
@@ -1122,6 +1137,10 @@ class FeedbackApp {
 
             // 使用局部更新替代整頁刷新
             this.refreshPageContent();
+        } else {
+            // 如果沒有會話信息，仍然重置狀態
+            console.log('⚠️ 會話更新沒有包含會話信息，僅重置狀態');
+            this.setFeedbackState('waiting_for_feedback');
         }
 
         console.log('✅ 會話更新處理完成');
@@ -1576,16 +1595,22 @@ class FeedbackApp {
     // 所有事件監聽器已在 setupEventListeners() 中統一設置
 
     submitFeedback() {
+        console.log('📤 嘗試提交回饋...');
+
         // 檢查是否可以提交回饋
         if (!this.canSubmitFeedback()) {
-            console.log('⚠️ 無法提交回饋 - 當前狀態:', this.feedbackState);
+            console.log('⚠️ 無法提交回饋 - 當前狀態:', this.feedbackState, '連接狀態:', this.isConnected);
 
             if (this.feedbackState === 'feedback_submitted') {
                 this.showMessage('回饋已提交，請等待下次 MCP 調用', 'warning');
             } else if (this.feedbackState === 'processing') {
                 this.showMessage('正在處理中，請稍候', 'warning');
             } else if (!this.isConnected) {
-                this.showMessage('WebSocket 未連接', 'error');
+                this.showMessage('WebSocket 未連接，正在嘗試重連...', 'error');
+                // 嘗試重新建立連接
+                this.setupWebSocket();
+            } else {
+                this.showMessage(`當前狀態不允許提交: ${this.feedbackState}`, 'warning');
             }
             return;
         }

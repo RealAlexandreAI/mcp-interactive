@@ -324,7 +324,9 @@ class WebFeedbackSession:
                         "message": "會話已超時，介面將自動關閉"
                     })
                     await asyncio.sleep(0.1)  # 給前端一點時間處理消息
-                    await self.websocket.close()
+
+                    # 安全關閉 WebSocket
+                    await self._safe_close_websocket()
                     debug_log(f"會話 {self.session_id} WebSocket 已關閉")
                 except Exception as e:
                     debug_log(f"關閉 WebSocket 時發生錯誤: {e}")
@@ -402,3 +404,28 @@ class WebFeedbackSession:
 
         # 設置完成事件
         self.feedback_completed.set()
+
+    async def _safe_close_websocket(self):
+        """安全關閉 WebSocket 連接，避免事件循環衝突"""
+        if not self.websocket:
+            return
+
+        try:
+            # 檢查連接狀態
+            if hasattr(self.websocket, 'client_state') and self.websocket.client_state.DISCONNECTED:
+                debug_log("WebSocket 已斷開，跳過關閉操作")
+                return
+
+            # 嘗試正常關閉
+            await asyncio.wait_for(self.websocket.close(code=1000, reason="會話清理"), timeout=2.0)
+            debug_log(f"會話 {self.session_id} WebSocket 已正常關閉")
+
+        except asyncio.TimeoutError:
+            debug_log(f"會話 {self.session_id} WebSocket 關閉超時")
+        except RuntimeError as e:
+            if "attached to a different loop" in str(e):
+                debug_log(f"會話 {self.session_id} WebSocket 事件循環衝突，忽略關閉錯誤: {e}")
+            else:
+                debug_log(f"會話 {self.session_id} WebSocket 關閉時發生運行時錯誤: {e}")
+        except Exception as e:
+            debug_log(f"會話 {self.session_id} 關閉 WebSocket 時發生未知錯誤: {e}")

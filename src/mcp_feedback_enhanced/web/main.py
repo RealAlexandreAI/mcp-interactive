@@ -261,7 +261,7 @@ class WebUIManager:
 
         # 處理會話更新通知
         if old_websocket:
-            # 有舊連接，立即發送會話更新通知
+            # 有舊連接，立即發送會話更新通知並轉移連接
             self._old_websocket_for_update = old_websocket
             self._new_session_for_update = session
             debug_log("已保存舊 WebSocket 連接，準備發送會話更新通知")
@@ -269,10 +269,13 @@ class WebUIManager:
             # 立即發送會話更新通知
             import asyncio
             try:
-                # 在後台任務中發送通知
+                # 在後台任務中發送通知並轉移連接
                 asyncio.create_task(self._send_immediate_session_update())
             except Exception as e:
                 debug_log(f"創建會話更新任務失敗: {e}")
+                # 即使任務創建失敗，也要嘗試直接轉移連接
+                session.websocket = old_websocket
+                debug_log("任務創建失敗，直接轉移 WebSocket 連接到新會話")
                 self._pending_session_update = True
         else:
             # 沒有舊連接，標記需要發送會話更新通知（當新 WebSocket 連接建立時）
@@ -505,8 +508,21 @@ class WebUIManager:
                 old_websocket = self._old_websocket_for_update
                 new_session = self._new_session_for_update
 
-                # 檢查舊連接是否仍然有效
-                if old_websocket and not old_websocket.client_state.DISCONNECTED:
+                # 改進的連接有效性檢查
+                websocket_valid = False
+                if old_websocket:
+                    try:
+                        # 檢查 WebSocket 連接狀態
+                        if hasattr(old_websocket, 'client_state'):
+                            websocket_valid = old_websocket.client_state != old_websocket.client_state.DISCONNECTED
+                        else:
+                            # 如果沒有 client_state 屬性，嘗試發送測試消息來檢查連接
+                            websocket_valid = True
+                    except Exception as check_error:
+                        debug_log(f"檢查 WebSocket 連接狀態失敗: {check_error}")
+                        websocket_valid = False
+
+                if websocket_valid:
                     try:
                         # 發送會話更新通知
                         await old_websocket.send_json({
@@ -523,11 +539,18 @@ class WebUIManager:
                         # 延遲一小段時間讓前端處理消息
                         await asyncio.sleep(0.2)
 
+                        # 將 WebSocket 連接轉移到新會話
+                        new_session.websocket = old_websocket
+                        debug_log("已將 WebSocket 連接轉移到新會話")
+
                     except Exception as send_error:
                         debug_log(f"發送會話更新通知失敗: {send_error}")
-
-                # 安全關閉舊連接
-                await self._safe_close_websocket(old_websocket)
+                        # 如果發送失敗，仍然嘗試轉移連接
+                        new_session.websocket = old_websocket
+                        debug_log("發送失敗但仍轉移 WebSocket 連接到新會話")
+                else:
+                    debug_log("舊 WebSocket 連接無效，設置待更新標記")
+                    self._pending_session_update = True
 
                 # 清理臨時變數
                 delattr(self, '_old_websocket_for_update')
@@ -544,29 +567,24 @@ class WebUIManager:
             self._pending_session_update = True
 
     async def _safe_close_websocket(self, websocket):
-        """安全關閉 WebSocket 連接，避免事件循環衝突"""
+        """安全關閉 WebSocket 連接，避免事件循環衝突 - 僅在連接已轉移後調用"""
         if not websocket:
             return
 
+        # 注意：此方法現在主要用於清理，因為連接已經轉移到新會話
+        # 只有在確認連接沒有被新會話使用時才關閉
         try:
             # 檢查連接狀態
-            if websocket.client_state.DISCONNECTED:
+            if hasattr(websocket, 'client_state') and websocket.client_state.DISCONNECTED:
                 debug_log("WebSocket 已斷開，跳過關閉操作")
                 return
 
-            # 嘗試正常關閉
-            await asyncio.wait_for(websocket.close(code=1000, reason="會話更新"), timeout=2.0)
-            debug_log("已正常關閉舊 WebSocket 連接")
+            # 由於連接已轉移到新會話，這裡不再主動關閉
+            # 讓新會話管理這個連接的生命週期
+            debug_log("WebSocket 連接已轉移到新會話，跳過關閉操作")
 
-        except asyncio.TimeoutError:
-            debug_log("WebSocket 關閉超時，強制斷開")
-        except RuntimeError as e:
-            if "attached to a different loop" in str(e):
-                debug_log(f"WebSocket 事件循環衝突，忽略關閉錯誤: {e}")
-            else:
-                debug_log(f"WebSocket 關閉時發生運行時錯誤: {e}")
         except Exception as e:
-            debug_log(f"關閉 WebSocket 連接時發生未知錯誤: {e}")
+            debug_log(f"檢查 WebSocket 連接狀態時發生錯誤: {e}")
 
     async def _check_active_tabs(self) -> bool:
         """檢查是否有活躍標籤頁 - 優先檢查全局狀態，回退到 API"""

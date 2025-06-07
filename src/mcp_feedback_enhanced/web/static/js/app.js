@@ -170,6 +170,13 @@ class FeedbackApp {
         this.heartbeatInterval = null;
         this.heartbeatFrequency = 30000; // 30秒 WebSocket 心跳
 
+        // 新增：WebSocket 連接狀態管理
+        this.connectionReady = false;
+        this.pendingSubmission = null;
+        this.connectionCheckInterval = null;
+        this.sessionUpdatePending = false;
+        this.reconnectDelay = 1000; // 重連延遲，會逐漸增加
+
         // UI 狀態
         this.currentTab = 'feedback';
 
@@ -857,11 +864,11 @@ class FeedbackApp {
     }
 
     /**
-     * 檢查是否可以提交回饋
+     * 檢查是否可以提交回饋（舊版本，保持兼容性）
      */
     canSubmitFeedback() {
-        const canSubmit = this.feedbackState === 'waiting_for_feedback' && this.isConnected;
-        console.log(`🔍 檢查提交權限: feedbackState=${this.feedbackState}, isConnected=${this.isConnected}, canSubmit=${canSubmit}`);
+        const canSubmit = this.feedbackState === 'waiting_for_feedback' && this.isConnected && this.connectionReady;
+        console.log(`🔍 檢查提交權限: feedbackState=${this.feedbackState}, isConnected=${this.isConnected}, connectionReady=${this.connectionReady}, canSubmit=${canSubmit}`);
         return canSubmit;
     }
 
@@ -1025,11 +1032,13 @@ class FeedbackApp {
 
             this.websocket.onopen = () => {
                 this.isConnected = true;
+                this.connectionReady = false; // 等待連接確認
                 this.updateConnectionStatus('connected', '已連接');
                 console.log('WebSocket 連接已建立');
 
-                // 重置重連計數器
+                // 重置重連計數器和延遲
                 this.reconnectAttempts = 0;
+                this.reconnectDelay = 1000;
 
                 // 開始 WebSocket 心跳
                 this.startWebSocketHeartbeat();
@@ -1041,6 +1050,23 @@ class FeedbackApp {
                 if (this.feedbackState === 'processing') {
                     console.log('🔄 WebSocket 重連後重置處理狀態');
                     this.setFeedbackState('waiting_for_feedback');
+                }
+
+                // 如果有待處理的會話更新，處理它
+                if (this.sessionUpdatePending) {
+                    console.log('🔄 處理待處理的會話更新');
+                    this.sessionUpdatePending = false;
+                }
+
+                // 如果有待提交的回饋，處理它
+                if (this.pendingSubmission) {
+                    console.log('🔄 處理待提交的回饋');
+                    setTimeout(() => {
+                        if (this.connectionReady && this.pendingSubmission) {
+                            this.submitFeedbackInternal(this.pendingSubmission);
+                            this.pendingSubmission = null;
+                        }
+                    }, 500); // 等待連接完全就緒
                 }
             };
 
@@ -1055,6 +1081,7 @@ class FeedbackApp {
 
             this.websocket.onclose = (event) => {
                 this.isConnected = false;
+                this.connectionReady = false;
                 console.log('WebSocket 連接已關閉, code:', event.code, 'reason:', event.reason);
 
                 // 停止心跳
@@ -1072,15 +1099,23 @@ class FeedbackApp {
                 } else {
                     this.updateConnectionStatus('disconnected', '已斷開');
 
+                    // 會話更新導致的正常關閉，立即重連
+                    if (event.code === 1000 && event.reason === '會話更新') {
+                        console.log('🔄 會話更新導致的連接關閉，立即重連...');
+                        this.sessionUpdatePending = true;
+                        setTimeout(() => {
+                            this.setupWebSocket();
+                        }, 200); // 短延遲後重連
+                    }
                     // 只有在非正常關閉時才重連
-                    if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+                    else if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
                         this.reconnectAttempts++;
-                        const delay = Math.min(3000 * this.reconnectAttempts, 15000); // 最大延遲15秒
-                        console.log(`${delay / 1000}秒後嘗試重連... (第${this.reconnectAttempts}次)`);
+                        this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000); // 指數退避，最大15秒
+                        console.log(`${this.reconnectDelay / 1000}秒後嘗試重連... (第${this.reconnectAttempts}次)`);
                         setTimeout(() => {
                             console.log(`🔄 開始重連 WebSocket... (第${this.reconnectAttempts}次)`);
                             this.setupWebSocket();
-                        }, delay);
+                        }, this.reconnectDelay);
                     } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
                         console.log('❌ 達到最大重連次數，停止重連');
                         this.showMessage('WebSocket 連接失敗，請刷新頁面重試', 'error');
@@ -1138,6 +1173,18 @@ class FeedbackApp {
         switch (data.type) {
             case 'connection_established':
                 console.log('WebSocket 連接確認');
+                this.connectionReady = true;
+
+                // 如果有待提交的回饋，現在可以提交了
+                if (this.pendingSubmission) {
+                    console.log('🔄 連接就緒，提交待處理的回饋');
+                    setTimeout(() => {
+                        if (this.pendingSubmission) {
+                            this.submitFeedbackInternal(this.pendingSubmission);
+                            this.pendingSubmission = null;
+                        }
+                    }, 100);
+                }
                 break;
             case 'heartbeat_response':
                 // 心跳回應，更新標籤頁活躍狀態
@@ -1209,8 +1256,11 @@ class FeedbackApp {
                 document.title = `MCP Feedback - ${projectName}`;
             }
 
-            // 使用局部更新替代整頁刷新
-            this.refreshPageContent();
+            // 確保 WebSocket 連接就緒
+            this.ensureWebSocketReady(() => {
+                // 使用局部更新替代整頁刷新
+                this.refreshPageContent();
+            });
         } else {
             // 如果沒有會話信息，仍然重置狀態
             console.log('⚠️ 會話更新沒有包含會話信息，僅重置狀態');
@@ -1218,6 +1268,51 @@ class FeedbackApp {
         }
 
         console.log('✅ 會話更新處理完成');
+    }
+
+    /**
+     * 確保 WebSocket 連接就緒
+     */
+    ensureWebSocketReady(callback, maxWaitTime = 5000) {
+        const startTime = Date.now();
+
+        const checkConnection = () => {
+            if (this.isConnected && this.connectionReady) {
+                console.log('✅ WebSocket 連接已就緒');
+                if (callback) callback();
+                return;
+            }
+
+            const elapsed = Date.now() - startTime;
+            if (elapsed >= maxWaitTime) {
+                console.log('⚠️ WebSocket 連接等待超時，強制執行回調');
+                if (callback) callback();
+                return;
+            }
+
+            // 如果連接斷開，嘗試重連
+            if (!this.isConnected) {
+                console.log('🔄 WebSocket 未連接，嘗試重連...');
+                this.setupWebSocket();
+            }
+
+            // 繼續等待
+            setTimeout(checkConnection, 200);
+        };
+
+        checkConnection();
+    }
+
+    /**
+     * 檢查是否可以提交回饋
+     */
+    canSubmitFeedback() {
+        const canSubmit = this.isConnected &&
+                         this.connectionReady &&
+                         this.feedbackState === 'waiting_for_feedback';
+
+        console.log(`🔍 檢查提交權限: isConnected=${this.isConnected}, connectionReady=${this.connectionReady}, feedbackState=${this.feedbackState}, canSubmit=${canSubmit}`);
+        return canSubmit;
     }
 
     async refreshPageContent() {
@@ -1684,22 +1779,46 @@ class FeedbackApp {
 
         // 檢查是否可以提交回饋
         if (!this.canSubmitFeedback()) {
-            console.log('⚠️ 無法提交回饋 - 當前狀態:', this.feedbackState, '連接狀態:', this.isConnected);
+            console.log('⚠️ 無法提交回饋 - 當前狀態:', this.feedbackState, '連接狀態:', this.isConnected, '連接就緒:', this.connectionReady);
 
             if (this.feedbackState === 'feedback_submitted') {
                 this.showMessage('回饋已提交，請等待下次 MCP 調用', 'warning');
             } else if (this.feedbackState === 'processing') {
                 this.showMessage('正在處理中，請稍候', 'warning');
-            } else if (!this.isConnected) {
-                this.showMessage('WebSocket 未連接，正在嘗試重連...', 'error');
-                // 嘗試重新建立連接
-                this.setupWebSocket();
+            } else if (!this.isConnected || !this.connectionReady) {
+                // 收集回饋數據，等待連接就緒後提交
+                const feedbackData = this.collectFeedbackData();
+                if (feedbackData) {
+                    this.pendingSubmission = feedbackData;
+                    this.showMessage('WebSocket 連接中，回饋將在連接就緒後自動提交...', 'info');
+
+                    // 確保 WebSocket 連接
+                    this.ensureWebSocketReady(() => {
+                        if (this.pendingSubmission) {
+                            this.submitFeedbackInternal(this.pendingSubmission);
+                            this.pendingSubmission = null;
+                        }
+                    });
+                }
             } else {
                 this.showMessage(`當前狀態不允許提交: ${this.feedbackState}`, 'warning');
             }
             return;
         }
 
+        // 收集回饋數據並提交
+        const feedbackData = this.collectFeedbackData();
+        if (!feedbackData) {
+            return;
+        }
+
+        this.submitFeedbackInternal(feedbackData);
+    }
+
+    /**
+     * 收集回饋數據
+     */
+    collectFeedbackData() {
         // 根據當前佈局模式獲取回饋內容
         let feedback = '';
         if (this.layoutMode.startsWith('combined')) {
@@ -1712,8 +1831,24 @@ class FeedbackApp {
 
         if (!feedback && this.images.length === 0) {
             this.showMessage('請提供回饋文字或上傳圖片', 'warning');
-            return;
+            return null;
         }
+
+        return {
+            feedback: feedback,
+            images: [...this.images], // 創建副本
+            settings: {
+                image_size_limit: this.imageSizeLimit,
+                enable_base64_detail: this.enableBase64Detail
+            }
+        };
+    }
+
+    /**
+     * 內部提交回饋方法
+     */
+    submitFeedbackInternal(feedbackData) {
+        console.log('📤 內部提交回饋...');
 
         // 設置處理狀態
         this.setFeedbackState('processing');
@@ -1722,12 +1857,9 @@ class FeedbackApp {
             // 發送回饋
             this.websocket.send(JSON.stringify({
                 type: 'submit_feedback',
-                feedback: feedback,
-                images: this.images,
-                settings: {
-                    image_size_limit: this.imageSizeLimit,
-                    enable_base64_detail: this.enableBase64Detail
-                }
+                feedback: feedbackData.feedback,
+                images: feedbackData.images,
+                settings: feedbackData.settings
             }));
 
             // 清空表單

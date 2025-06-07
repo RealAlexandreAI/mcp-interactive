@@ -18,6 +18,7 @@ This version focuses on improving system stability and user experience, particul
 - 🔧 **Enhanced Error Handling**: Provides clearer explanations and solutions when problems occur
 - 🌐 **Connection Stability**: Improved Web UI connection stability
 - 🖼️ **Image Upload Optimization**: Enhanced stability of image upload functionality
+- 🎯 **Auto-focus Input Box**: Automatically focus on feedback input box when window opens, improving user experience (Thanks @penn201500)
 
 ### 🐛 Bug Fixes
 - 🌐 **Connection Issues**: Fixed WebSocket connection related problems

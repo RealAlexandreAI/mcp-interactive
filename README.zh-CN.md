@@ -193,6 +193,7 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # 测试 Web UI (自�
 - 🧹 **自动清理功能**: 自动清理临时文件和过期会话，保持系统整洁
 - 📊 **内存监控**: 监控内存使用情况，防止系统资源不足
 - 🔧 **连接稳定性**: 改善 Web UI 的连接稳定性和错误处理
+- 🎯 **自动聚焦输入框**: 反馈窗口开启时自动聚焦到输入框，提升用户体验 (感谢 @penn201500)
 
 ## 🐛 常见问题
 
@@ -263,6 +264,10 @@ A: 各种 AI 模型（包括 Gemini Pro 2.5、Claude 等）在图片解析上可
 
 ### 设计灵感
 **sanshao85** - [mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)
+
+### 贡献者
+**penn201500** - [GitHub @penn201500](https://github.com/penn201500)
+- 🎯 自动聚焦输入框功能 ([PR #39](https://github.com/Minidoracat/mcp-feedback-enhanced/pull/39))
 
 ### 社群支援
 - **Discord：** [https://discord.gg/Gur2V67](https://discord.gg/Gur2V67)

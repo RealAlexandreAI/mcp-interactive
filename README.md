@@ -54,7 +54,8 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 - **Port Forwarding Support**: Complete port forwarding setup guidance and troubleshooting
 - **MCP Integration Optimization**: Improved integration with MCP system for more stable connection experience
 - **Detailed Documentation**: [SSH Remote Environment Usage Guide](docs/en/ssh-remote/browser-launch-issues.md)
-
+- 🎯 **Auto-focus Input Box**: Automatically focus on feedback input box when window opens, improving user experience (Thanks @penn201500)
+  
 ## 🖥️ Interface Preview
 
 ### Qt GUI Interface (Refactored Version)
@@ -262,6 +263,10 @@ If you find this useful, please:
 
 ### Design Inspiration
 **sanshao85** - [mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)
+
+### Contributors
+**penn201500** - [GitHub @penn201500](https://github.com/penn201500)
+- 🎯 Auto-focus input box feature ([PR #39](https://github.com/Minidoracat/mcp-feedback-enhanced/pull/39))
 
 ### Community Support
 - **Discord:** [https://discord.gg/Gur2V67](https://discord.gg/Gur2V67)

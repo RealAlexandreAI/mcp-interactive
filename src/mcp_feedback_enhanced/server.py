@@ -203,13 +203,21 @@ def is_remote_environment() -> bool:
 def can_use_gui() -> bool:
     """
     檢測是否可以使用圖形介面
-    
+
+    WSL 環境預設使用 Web UI，因為大多數 WSL 安裝都是 Linux 環境，
+    沒有桌面應用支援，即使 PySide6 可以載入也應該使用 Web 介面。
+
     Returns:
         bool: True 表示可以使用 GUI，False 表示只能使用 Web UI
     """
     if is_remote_environment():
         return False
-    
+
+    # WSL 環境預設使用 Web UI
+    if is_wsl_environment():
+        debug_log("WSL 環境偵測到，預設使用 Web UI")
+        return False
+
     try:
         from PySide6.QtWidgets import QApplication
         debug_log("成功載入 PySide6，可使用 GUI")
@@ -552,7 +560,7 @@ async def interactive_feedback(
         # 使用統一錯誤處理，但不影響 JSON RPC 響應
         error_id = ErrorHandler.log_error_with_context(
             e,
-            context={"operation": "回饋收集", "project_dir": project_dir},
+            context={"operation": "回饋收集", "project_dir": project_directory},
             error_type=ErrorType.SYSTEM
         )
 

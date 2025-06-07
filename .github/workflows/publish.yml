@@ -77,15 +77,36 @@ jobs:
 
         # Extract highlights from English CHANGELOG
         if [ -f "RELEASE_NOTES/CHANGELOG.en.md" ]; then
-          # Find the section for the new version and extract highlights
-          awk "/## \[${NEW_VERSION}\]/{flag=1; next} /## \[/{flag=0} flag && /### 🌟 Highlights/{getline; while(getline && !/^###/ && !/^##/) if(/^[^[:space:]]/ || /^- /) print}' RELEASE_NOTES/CHANGELOG.en.md > highlights.txt
+          echo "🔍 Extracting highlights for $NEW_VERSION from CHANGELOG..."
 
-          # If no highlights section found, extract from new features
-          if [ ! -s highlights.txt ]; then
-            awk "/## \[${NEW_VERSION}\]/{flag=1; next} /## \[/{flag=0} flag && /### ✨ New Features/{getline; while(getline && !/^###/ && !/^##/) if(/^- /) print}' RELEASE_NOTES/CHANGELOG.en.md | head -4 > highlights.txt
+          # Step 1: Find the version section and extract everything until next version
+          sed -n "/## \[${NEW_VERSION}\]/,/## \[/p" RELEASE_NOTES/CHANGELOG.en.md | head -n -1 > version_section.txt
+
+          # Step 2: Try to extract highlights section
+          if grep -q "### 🌟 Highlights" version_section.txt; then
+            echo "📝 Found Highlights section"
+            sed -n '/### 🌟 Highlights/,/### /p' version_section.txt | head -n -1 | tail -n +2 | grep -E "^[^#]" | head -5 > highlights.txt
+          elif grep -q "### ✨ New Features" version_section.txt; then
+            echo "📝 Using New Features section as highlights"
+            sed -n '/### ✨ New Features/,/### /p' version_section.txt | head -n -1 | tail -n +2 | grep -E "^- " | head -4 > highlights.txt
+          else
+            echo "⚠️ No highlights or new features section found"
+            echo "" > highlights.txt
           fi
 
-          echo "✅ Extracted highlights for $NEW_VERSION"
+          # Clean up temporary file
+          rm -f version_section.txt
+
+          # Check if we got any content
+          if [ -s highlights.txt ]; then
+            echo "✅ Successfully extracted highlights for $NEW_VERSION"
+            echo "📄 Content preview:"
+            head -2 highlights.txt
+          else
+            echo "⚠️ No highlights extracted, using default content"
+            echo "- 🚀 New features and improvements" > highlights.txt
+            echo "- 🐛 Bug fixes and optimizations" >> highlights.txt
+          fi
         else
           echo "⚠️ CHANGELOG.en.md not found, using default highlights"
           echo "- 🚀 New features and improvements" > highlights.txt
@@ -98,7 +119,9 @@ jobs:
         NEW_VERSION="v${{ steps.bump_version.outputs.new }}"
 
         # Get release title from English CHANGELOG
-        RELEASE_TITLE=$(awk "/## \[${NEW_VERSION}\]/{print; exit}" RELEASE_NOTES/CHANGELOG.en.md | sed 's/## \[.*\] - //')
+        if [ -f "RELEASE_NOTES/CHANGELOG.en.md" ]; then
+          RELEASE_TITLE=$(grep "## \[${NEW_VERSION}\]" RELEASE_NOTES/CHANGELOG.en.md | head -1 | sed 's/## \[.*\] - //')
+        fi
         if [ -z "$RELEASE_TITLE" ]; then
           RELEASE_TITLE="Latest Release"
         fi

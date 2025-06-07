@@ -97,7 +97,8 @@
     },
     "window": {
       "title": "窗口定位",
-      "alwaysCenter": "总是在主屏幕中心显示窗口"
+      "alwaysCenter": "总是在主屏幕中心显示窗口",
+      "autoFocus": "窗口打开时自动聚焦到输入框"
     },
     "reset": {
       "title": "重置设置",
@@ -352,4 +353,4 @@
     "thanks": "致谢与贡献",
     "thanksText": "感谢原作者 Fábio Ferreira (@fabiomlferreira) 创建了原始的 interactive-feedback-mcp 项目。\n\n本增强版本由 Minidoracat 开发和维护，大幅扩展了项目功能，新增了 GUI 界面、图片支持、多语言能力以及许多其他改进功能。\n\n同时感谢 sanshao85 的 mcp-feedback-collector 项目提供的 UI 设计灵感。\n\n开源协作让技术变得更美好！"
   }
-} 
+}

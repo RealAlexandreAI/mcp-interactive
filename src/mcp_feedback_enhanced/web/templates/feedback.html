@@ -23,18 +23,8 @@
 
         /* 頁面特定的佈局模式樣式 */
 
-        /* 佈局模式樣式 */
-        /* 預設分離模式 - 顯示回饋和AI摘要頁籤，隱藏合併模式頁籤 */
-        body.layout-separate .tab-button[data-tab="combined"] {
-            display: none;
-        }
-
-        body.layout-separate .tab-button[data-tab="feedback"],
-        body.layout-separate .tab-button[data-tab="summary"] {
-            display: inline-block;
-        }
-
-        /* 合併模式 - 顯示合併模式頁籤，隱藏回饋和AI摘要頁籤 */
+        /* 佈局模式樣式 - 工作區模式 */
+        /* 工作區模式 - 顯示工作區頁籤，隱藏回饋和AI摘要頁籤 */
         body.layout-combined-vertical .tab-button[data-tab="combined"],
         body.layout-combined-horizontal .tab-button[data-tab="combined"] {
             display: inline-block;
@@ -62,7 +52,7 @@
 
 
 
-        /* 合併模式分頁的水平佈局樣式 */
+        /* 工作區分頁的水平佈局樣式 */
         #tab-combined.active.combined-horizontal .combined-content {
             display: flex !important;
             flex-direction: row !important;
@@ -99,7 +89,7 @@
             min-height: 200px;
         }
 
-        /* 合併模式分頁的垂直佈局樣式 */
+        /* 工作區分頁的垂直佈局樣式 */
         #tab-combined.active.combined-vertical .combined-content {
             display: flex !important;
             flex-direction: column !important;
@@ -144,7 +134,7 @@
             flex: 1;
         }
 
-        /* 合併模式基礎樣式 */
+        /* 工作區基礎樣式 */
         .combined-section {
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
@@ -395,9 +385,9 @@
             <!-- 分頁導航 -->
             <div class="tabs">
                 <div class="tab-buttons">
-                    <!-- 合併模式分頁 - 移到最左邊第一個 -->
+                    <!-- 工作區分頁 - 移到最左邊第一個 -->
                     <button class="tab-button hidden" data-tab="combined" data-i18n="tabs.combined">
-                        📝 合併模式
+                        📝 工作區
                     </button>
                     <button class="tab-button active" data-tab="feedback" data-i18n="tabs.feedback">
                         💬 回饋
@@ -499,16 +489,32 @@
                 </div>
             </div>
 
-            <!-- 合併模式分頁 - 移動到此位置 -->
+            <!-- 工作區分頁 - 移動到此位置 -->
             <div id="tab-combined" class="tab-content">
                 <div class="section-description" style="margin-bottom: 12px; padding: 8px 12px; font-size: 13px;" data-i18n="combined.description">
-                    合併模式：AI 摘要和回饋輸入在同一頁面中，方便對照查看。
+                    AI 摘要和回饋輸入在同一頁面中，方便對照查看。
                 </div>
                 
                 <div class="combined-content">
                     <!-- AI 摘要區域 -->
                     <div class="combined-section">
-                        <h3 class="combined-section-title" data-i18n="combined.summaryTitle">📋 AI 工作摘要</h3>
+                        <div class="section-header-with-controls">
+                            <h3 class="combined-section-title" data-i18n="combined.summaryTitle">📋 AI 工作摘要</h3>
+                            <div class="auto-refresh-controls">
+                                <label class="auto-refresh-toggle">
+                                    <input type="checkbox" id="autoRefreshEnabled" />
+                                    <span class="toggle-label" data-i18n="autoRefresh.enable"></span>
+                                </label>
+                                <div class="auto-refresh-interval">
+                                    <input type="number" id="autoRefreshInterval" min="5" max="300" value="5" />
+                                    <span class="interval-unit" data-i18n="autoRefresh.seconds"></span>
+                                </div>
+                                <div class="auto-refresh-status" id="autoRefreshStatus">
+                                    <span class="status-indicator" id="refreshStatusIndicator">⏸️</span>
+                                    <span class="status-text" id="refreshStatusText" data-i18n="autoRefresh.disabled"></span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="combined-summary">
                             <div id="combinedSummaryContent" class="text-input" style="min-height: 200px; white-space: pre-wrap !important; cursor: text; padding: 12px; line-height: 1.6; word-wrap: break-word; overflow-wrap: break-word;" data-dynamic-content="aiSummary">{{ summary }}</div>
                         </div>
@@ -570,23 +576,16 @@
                             </div>
                             <div class="layout-mode-selector">
                                 <div class="layout-option">
-                                    <input type="radio" id="separateMode" name="layoutMode" value="separate" checked>
-                                    <label for="separateMode">
-                                        <div class="layout-option-title" data-i18n="settings.separateMode">分離模式</div>
-                                        <div class="layout-option-desc" data-i18n="settings.separateModeDesc">AI 摘要和回饋分別在不同頁籤</div>
-                                    </label>
-                                </div>
-                                <div class="layout-option">
-                                    <input type="radio" id="combinedVertical" name="layoutMode" value="combined-vertical">
+                                    <input type="radio" id="combinedVertical" name="layoutMode" value="combined-vertical" checked>
                                     <label for="combinedVertical">
-                                        <div class="layout-option-title" data-i18n="settings.combinedVertical">合併模式（垂直布局）</div>
+                                        <div class="layout-option-title" data-i18n="settings.combinedVertical">垂直布局</div>
                                         <div class="layout-option-desc" data-i18n="settings.combinedVerticalDesc">AI 摘要在上，回饋輸入在下，摘要和回饋在同一頁面</div>
                                     </label>
                                 </div>
                                 <div class="layout-option">
                                     <input type="radio" id="combinedHorizontal" name="layoutMode" value="combined-horizontal">
                                     <label for="combinedHorizontal">
-                                        <div class="layout-option-title" data-i18n="settings.combinedHorizontal">合併模式（水平布局）</div>
+                                        <div class="layout-option-title" data-i18n="settings.combinedHorizontal">水平布局</div>
                                         <div class="layout-option-desc" data-i18n="settings.combinedHorizontalDesc">AI 摘要在左，回饋輸入在右，增大摘要可視區域</div>
                                     </label>
                                 </div>

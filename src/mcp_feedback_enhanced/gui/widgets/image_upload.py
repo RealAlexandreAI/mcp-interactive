@@ -25,6 +25,7 @@ from PySide6.QtWidgets import QSizePolicy
 # 導入多語系支援
 from ...i18n import t
 from ...debug import gui_debug_log as debug_log
+from ...utils.resource_manager import get_resource_manager, create_temp_file
 from .image_preview import ImagePreviewWidget
 
 
@@ -37,6 +38,7 @@ class ImageUploadWidget(QWidget):
         self.images: Dict[str, Dict[str, str]] = {}
         self.config_manager = config_manager
         self._last_paste_time = 0  # 添加最後貼上時間記錄
+        self.resource_manager = get_resource_manager()  # 獲取資源管理器
         self._setup_ui()
         self.setAcceptDrops(True)
         # 啟動時清理舊的臨時文件
@@ -350,20 +352,19 @@ class ImageUploadWidget(QWidget):
         if mimeData.hasImage():
             image = clipboard.image()
             if not image.isNull():
-                # 創建一個唯一的臨時文件名
-                temp_dir = Path.home() / ".cache" / "mcp-feedback-enhanced"
-                temp_dir.mkdir(parents=True, exist_ok=True)
-                
-                timestamp = int(time.time() * 1000)
-                temp_file = temp_dir / f"clipboard_{timestamp}_{uuid.uuid4().hex[:8]}.png"
+                # 使用資源管理器創建臨時文件
+                temp_file = create_temp_file(
+                    suffix=".png",
+                    prefix=f"clipboard_{int(time.time() * 1000)}_"
+                )
                 
                 # 保存剪貼板圖片
-                if image.save(str(temp_file), "PNG"):
+                if image.save(temp_file, "PNG"):
                     if os.path.getsize(temp_file) > 0:
-                        self._add_images([str(temp_file)])
+                        self._add_images([temp_file])
                         debug_log(f"從剪貼板成功粘貼圖片: {temp_file}")
                     else:
-                        QMessageBox.warning(self, t('errors.warning'), t('errors.imageSaveEmpty', path=str(temp_file)))
+                        QMessageBox.warning(self, t('errors.warning'), t('errors.imageSaveEmpty', path=temp_file))
                 else:
                     QMessageBox.warning(self, t('errors.warning'), t('errors.imageSaveFailed'))
             else:

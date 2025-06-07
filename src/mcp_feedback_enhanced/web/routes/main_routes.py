@@ -33,15 +33,15 @@ def load_user_layout_settings() -> str:
         if settings_file.exists():
             with open(settings_file, 'r', encoding='utf-8') as f:
                 settings = json.load(f)
-                layout_mode = settings.get('layoutMode', 'separate')
+                layout_mode = settings.get('layoutMode', 'combined-vertical')
                 debug_log(f"從設定檔案載入佈局模式: {layout_mode}")
                 return layout_mode
         else:
-            debug_log("設定檔案不存在，使用預設佈局模式: separate")
-            return 'separate'
+            debug_log("設定檔案不存在，使用預設佈局模式: combined-vertical")
+            return 'combined-vertical'
     except Exception as e:
-        debug_log(f"載入佈局設定失敗: {e}，使用預設佈局模式: separate")
-        return 'separate'
+        debug_log(f"載入佈局設定失敗: {e}，使用預設佈局模式: combined-vertical")
+        return 'combined-vertical'
 
 
 def setup_routes(manager: 'WebUIManager'):
@@ -140,6 +140,7 @@ def setup_routes(manager: 'WebUIManager'):
             )
 
         return JSONResponse(content={
+            "session_id": current_session.session_id,
             "project_directory": current_session.project_directory,
             "summary": current_session.summary,
             "feedback_completed": current_session.feedback_completed.is_set(),
@@ -157,9 +158,13 @@ def setup_routes(manager: 'WebUIManager'):
             return
 
         await websocket.accept()
-        session.websocket = websocket
 
-        debug_log(f"WebSocket 連接建立: 當前活躍會話")
+        # 檢查會話是否已有 WebSocket 連接
+        if session.websocket and session.websocket != websocket:
+            debug_log("會話已有 WebSocket 連接，替換為新連接")
+
+        session.websocket = websocket
+        debug_log(f"WebSocket 連接建立: 當前活躍會話 {session.session_id}")
 
         # 發送連接成功消息
         try:
@@ -197,7 +202,14 @@ def setup_routes(manager: 'WebUIManager'):
             while True:
                 data = await websocket.receive_text()
                 message = json.loads(data)
-                await handle_websocket_message(manager, session, message)
+
+                # 重新獲取當前會話，以防會話已切換
+                current_session = manager.get_current_session()
+                if current_session and current_session.websocket == websocket:
+                    await handle_websocket_message(manager, current_session, message)
+                else:
+                    debug_log("會話已切換或 WebSocket 連接不匹配，忽略消息")
+                    break
 
         except WebSocketDisconnect:
             debug_log(f"WebSocket 連接正常斷開")
@@ -207,8 +219,9 @@ def setup_routes(manager: 'WebUIManager'):
             debug_log(f"WebSocket 錯誤: {e}")
         finally:
             # 安全清理 WebSocket 連接
-            if session.websocket == websocket:
-                session.websocket = None
+            current_session = manager.get_current_session()
+            if current_session and current_session.websocket == websocket:
+                current_session.websocket = None
                 debug_log("已清理會話中的 WebSocket 連接")
 
     @manager.app.post("/api/save-settings")

@@ -188,7 +188,46 @@
     "confirmClearAll": "確定要清除所有 {count} 張圖片嗎？",
     "confirmClearTitle": "確認清除",
     "fileSizeExceeded": "圖片 {filename} 大小為 {size}MB，超過 1MB 限制！\n建議使用圖片編輯軟體壓縮後再上傳。",
-    "dataSizeExceeded": "圖片 {filename} 數據大小超過 1MB 限制！"
+    "dataSizeExceeded": "圖片 {filename} 數據大小超過 1MB 限制！",
+    "types": {
+      "network": "網絡連接出現問題",
+      "file_io": "文件讀寫出現問題",
+      "process": "進程執行出現問題",
+      "timeout": "操作超時",
+      "user_cancel": "用戶取消了操作",
+      "system": "系統出現問題",
+      "permission": "權限不足",
+      "validation": "數據驗證失敗",
+      "dependency": "依賴組件出現問題",
+      "config": "配置出現問題"
+    },
+    "solutions": {
+      "network": [
+        "檢查網絡連接是否正常",
+        "確認防火牆設置",
+        "嘗試重新啟動應用程序"
+      ],
+      "file_io": [
+        "檢查文件是否存在",
+        "確認文件權限",
+        "檢查磁盤空間是否足夠"
+      ],
+      "process": [
+        "檢查進程是否正在運行",
+        "確認系統資源是否足夠",
+        "嘗試重新啟動相關服務"
+      ],
+      "timeout": [
+        "增加超時時間設置",
+        "檢查網絡延遲",
+        "稍後重試操作"
+      ],
+      "permission": [
+        "以管理員身份運行",
+        "檢查文件/目錄權限",
+        "聯繫系統管理員"
+      ]
+    }
   },
   "languageNames": {
     "zhTw": "繁體中文",

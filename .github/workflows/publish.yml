@@ -9,9 +9,9 @@ on:
         default: 'patch'
         type: choice
         options:
-        - patch    # 2.0.0 -> 2.0.1 (bug fixes)
-        - minor    # 2.0.0 -> 2.1.0 (new features)
-        - major    # 2.0.0 -> 3.0.0 (breaking changes)
+        - patch    # 2.0.0 -> 2.0.1 (bug fixes, security patches, documentation updates)
+        - minor    # 2.0.0 -> 2.1.0 (new features, enhancements, backward-compatible changes)
+        - major    # 2.0.0 -> 3.0.0 (breaking changes, architecture refactoring, API changes)
 
 jobs:
   release:
@@ -70,167 +70,156 @@ jobs:
         NEW_VERSION="${{ steps.bump_version.outputs.new }}"
         sed -i "s/__version__ = \".*\"/__version__ = \"$NEW_VERSION\"/" src/mcp_feedback_enhanced/__init__.py
     
-    - name: Check Release Notes
-      id: check_notes
+    - name: Extract Release Highlights
+      id: extract_highlights
       run: |
         NEW_VERSION="v${{ steps.bump_version.outputs.new }}"
-        RELEASE_DIR="RELEASE_NOTES/${NEW_VERSION}"
-        
-        if [ ! -d "$RELEASE_DIR" ]; then
-          echo "❌ Error: Release notes directory not found at $RELEASE_DIR"
-          echo "Please create release notes before publishing!"
-          echo "Required files:"
-          echo "  - $RELEASE_DIR/en.md"
-          echo "  - $RELEASE_DIR/zh-TW.md"
-          exit 1
+
+        # Extract highlights from English CHANGELOG
+        if [ -f "RELEASE_NOTES/CHANGELOG.en.md" ]; then
+          # Find the section for the new version and extract highlights
+          awk "/## \[${NEW_VERSION}\]/{flag=1; next} /## \[/{flag=0} flag && /### 🌟 Highlights/{getline; while(getline && !/^###/ && !/^##/) if(/^[^[:space:]]/ || /^- /) print}' RELEASE_NOTES/CHANGELOG.en.md > highlights.txt
+
+          # If no highlights section found, extract from new features
+          if [ ! -s highlights.txt ]; then
+            awk "/## \[${NEW_VERSION}\]/{flag=1; next} /## \[/{flag=0} flag && /### ✨ New Features/{getline; while(getline && !/^###/ && !/^##/) if(/^- /) print}' RELEASE_NOTES/CHANGELOG.en.md | head -4 > highlights.txt
+          fi
+
+          echo "✅ Extracted highlights for $NEW_VERSION"
+        else
+          echo "⚠️ CHANGELOG.en.md not found, using default highlights"
+          echo "- 🚀 New features and improvements" > highlights.txt
+          echo "- 🐛 Bug fixes and optimizations" >> highlights.txt
         fi
-        
-        if [ ! -f "$RELEASE_DIR/en.md" ]; then
-          echo "❌ Error: English release notes not found at $RELEASE_DIR/en.md"
-          exit 1
-        fi
-        
-        if [ ! -f "$RELEASE_DIR/zh-TW.md" ]; then
-          echo "❌ Error: Traditional Chinese release notes not found at $RELEASE_DIR/zh-TW.md"
-          exit 1
-        fi
-        
-        if [ ! -f "$RELEASE_DIR/zh-CN.md" ]; then
-          echo "❌ Error: Simplified Chinese release notes not found at $RELEASE_DIR/zh-CN.md"
-          exit 1
-        fi
-        
-        echo "✅ Release notes found for $NEW_VERSION"
-        echo "release_dir=$RELEASE_DIR" >> $GITHUB_OUTPUT
     
     - name: Generate Release Body
       id: release_body
       run: |
         NEW_VERSION="v${{ steps.bump_version.outputs.new }}"
-        RELEASE_DIR="${{ steps.check_notes.outputs.release_dir }}"
-        
-        # Create multi-language release body
-        cat > release_body.md << 'EOF'
-        ## 🌐 Multi-Language Release Notes
-        
+
+        # Get release title from English CHANGELOG
+        RELEASE_TITLE=$(awk "/## \[${NEW_VERSION}\]/{print; exit}" RELEASE_NOTES/CHANGELOG.en.md | sed 's/## \[.*\] - //')
+        if [ -z "$RELEASE_TITLE" ]; then
+          RELEASE_TITLE="Latest Release"
+        fi
+
+        # Create release body with highlights and links
+        cat > release_body.md << EOF
+        # Release ${NEW_VERSION} - ${RELEASE_TITLE}
+
+        ## 🌟 Key Highlights
+        EOF
+
+        # Add highlights
+        if [ -s highlights.txt ]; then
+          cat highlights.txt >> release_body.md
+        else
+          echo "- 🚀 New features and improvements" >> release_body.md
+          echo "- 🐛 Bug fixes and optimizations" >> release_body.md
+        fi
+
+        # Add multi-language links section
+        cat >> release_body.md << 'EOF'
+
+        ## 🌐 Detailed Release Notes
+
         ### 🇺🇸 English
-        EOF
-        
-        # Add English content
-        cat "$RELEASE_DIR/en.md" >> release_body.md
-        
-        # Add separator
-        cat >> release_body.md << 'EOF'
-        
-        ---
-        
+        📖 **[View Complete English Release Notes](https://github.com/Minidoracat/mcp-feedback-enhanced/blob/main/RELEASE_NOTES/CHANGELOG.en.md)**
+
         ### 🇹🇼 繁體中文
-        EOF
-        
-        # Add Traditional Chinese content
-        cat "$RELEASE_DIR/zh-TW.md" >> release_body.md
-        
-        # Add separator
-        cat >> release_body.md << 'EOF'
-        
-        ---
-        
+        📖 **[查看完整繁體中文發布說明](https://github.com/Minidoracat/mcp-feedback-enhanced/blob/main/RELEASE_NOTES/CHANGELOG.zh-TW.md)**
+
         ### 🇨🇳 简体中文
-        EOF
-        
-        # Add Simplified Chinese content
-        cat "$RELEASE_DIR/zh-CN.md" >> release_body.md
-        
-        # Add installation section
-        cat >> release_body.md << 'EOF'
-        
+        📖 **[查看完整简体中文发布说明](https://github.com/Minidoracat/mcp-feedback-enhanced/blob/main/RELEASE_NOTES/CHANGELOG.zh-CN.md)**
+
         ---
-        
-        ## 📦 Installation & Update
-        
+
+        ## 📦 Quick Installation / 快速安裝
+
         ```bash
-        # Quick test latest version
-        uvx mcp-feedback-enhanced@latest test
-        
-        # Update to this specific version
+        # Latest version / 最新版本
+        uvx mcp-feedback-enhanced@latest
+
+        # This specific version / 此特定版本
         EOF
-        
-        echo "uvx mcp-feedback-enhanced@$NEW_VERSION test" >> release_body.md
-        
+
+        echo "uvx mcp-feedback-enhanced@${NEW_VERSION}" >> release_body.md
+
         cat >> release_body.md << 'EOF'
         ```
-        
+
         ## 🔗 Links
         - **Documentation**: [README.md](https://github.com/Minidoracat/mcp-feedback-enhanced/blob/main/README.md)
         - **Full Changelog**: [CHANGELOG](https://github.com/Minidoracat/mcp-feedback-enhanced/blob/main/RELEASE_NOTES/)
         - **Issues**: [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
-        
+
         ---
-        **Release automatically generated from RELEASE_NOTES system** 🤖
+        **Release automatically generated from CHANGELOG system** 🤖
         EOF
-        
+
         echo "Release body generated successfully"
     
-    - name: Sync CHANGELOG Files
+    - name: Verify CHANGELOG Files
       run: |
         NEW_VERSION="v${{ steps.bump_version.outputs.new }}"
-        RELEASE_DIR="${{ steps.check_notes.outputs.release_dir }}"
-        
-        # Function to add version to changelog
-        add_to_changelog() {
-          local lang_file="$1"
-          local changelog_file="$2"
-          local temp_file="changelog_temp.md"
-          
-          # Get the header and separator
-          head -n 5 "$changelog_file" > "$temp_file"
-          
-          # Add the new version content
-          cat "$lang_file" >> "$temp_file"
-          
-          # Add separator
-          echo "" >> "$temp_file"
-          echo "---" >> "$temp_file"
-          echo "" >> "$temp_file"
-          
-          # Add the rest of the changelog (skip header)
-          tail -n +7 "$changelog_file" >> "$temp_file"
-          
-          # Replace the original file
-          mv "$temp_file" "$changelog_file"
-          
-          echo "✅ Updated $changelog_file"
-        }
-        
-        # Check if CHANGELOG files exist
+
+        # Check if CHANGELOG files exist and contain the new version
+        echo "🔍 Verifying CHANGELOG files contain version ${NEW_VERSION}..."
+
+        MISSING_FILES=""
+
         if [ -f "RELEASE_NOTES/CHANGELOG.en.md" ]; then
-          add_to_changelog "$RELEASE_DIR/en.md" "RELEASE_NOTES/CHANGELOG.en.md"
+          if ! grep -q "\[${NEW_VERSION}\]" "RELEASE_NOTES/CHANGELOG.en.md"; then
+            echo "⚠️ Warning: ${NEW_VERSION} not found in CHANGELOG.en.md"
+            MISSING_FILES="${MISSING_FILES} en"
+          else
+            echo "✅ Found ${NEW_VERSION} in CHANGELOG.en.md"
+          fi
         else
-          echo "⚠️ CHANGELOG.en.md not found, skipping"
+          echo "❌ CHANGELOG.en.md not found"
+          MISSING_FILES="${MISSING_FILES} en"
         fi
-        
+
         if [ -f "RELEASE_NOTES/CHANGELOG.zh-TW.md" ]; then
-          add_to_changelog "$RELEASE_DIR/zh-TW.md" "RELEASE_NOTES/CHANGELOG.zh-TW.md"
+          if ! grep -q "\[${NEW_VERSION}\]" "RELEASE_NOTES/CHANGELOG.zh-TW.md"; then
+            echo "⚠️ Warning: ${NEW_VERSION} not found in CHANGELOG.zh-TW.md"
+            MISSING_FILES="${MISSING_FILES} zh-TW"
+          else
+            echo "✅ Found ${NEW_VERSION} in CHANGELOG.zh-TW.md"
+          fi
         else
-          echo "⚠️ CHANGELOG.zh-TW.md not found, skipping"
+          echo "❌ CHANGELOG.zh-TW.md not found"
+          MISSING_FILES="${MISSING_FILES} zh-TW"
         fi
-        
+
         if [ -f "RELEASE_NOTES/CHANGELOG.zh-CN.md" ]; then
-          add_to_changelog "$RELEASE_DIR/zh-CN.md" "RELEASE_NOTES/CHANGELOG.zh-CN.md"
+          if ! grep -q "\[${NEW_VERSION}\]" "RELEASE_NOTES/CHANGELOG.zh-CN.md"; then
+            echo "⚠️ Warning: ${NEW_VERSION} not found in CHANGELOG.zh-CN.md"
+            MISSING_FILES="${MISSING_FILES} zh-CN"
+          else
+            echo "✅ Found ${NEW_VERSION} in CHANGELOG.zh-CN.md"
+          fi
         else
-          echo "⚠️ CHANGELOG.zh-CN.md not found, skipping"
+          echo "❌ CHANGELOG.zh-CN.md not found"
+          MISSING_FILES="${MISSING_FILES} zh-CN"
         fi
-        
-        echo "📝 CHANGELOG files synchronized"
+
+        if [ -n "$MISSING_FILES" ]; then
+          echo ""
+          echo "📝 Note: Please ensure CHANGELOG files are updated with version ${NEW_VERSION}"
+          echo "Missing or incomplete files:${MISSING_FILES}"
+          echo "The release will continue, but manual CHANGELOG updates may be needed."
+        else
+          echo "✅ All CHANGELOG files verified successfully"
+        fi
     
-    - name: Commit version bump and changelog updates
+    - name: Commit version bump
       run: |
         git add .
         git commit -m "🔖 Release v${{ steps.bump_version.outputs.new }}
 
         - Updated version to ${{ steps.bump_version.outputs.new }}
-        - Synchronized CHANGELOG files with release notes
-        - Auto-generated from RELEASE_NOTES system"
+        - Auto-generated release from simplified workflow"
         git tag "v${{ steps.bump_version.outputs.new }}"
     
     - name: Build package
@@ -268,9 +257,11 @@ jobs:
         echo ""
         echo "📦 Published to PyPI: https://pypi.org/project/mcp-feedback-enhanced/"
         echo "🚀 GitHub Release: https://github.com/Minidoracat/mcp-feedback-enhanced/releases/tag/v${{ steps.bump_version.outputs.new }}"
-        echo "📝 CHANGELOG files have been automatically updated"
+        echo "📝 Release notes generated from CHANGELOG files"
         echo ""
         echo "✅ Next steps:"
         echo "  - Check the release on GitHub"
         echo "  - Verify the package on PyPI"
-        echo "  - Test installation with: uvx mcp-feedback-enhanced@v${{ steps.bump_version.outputs.new }} test" 
+        echo "  - Test installation with: uvx mcp-feedback-enhanced@v${{ steps.bump_version.outputs.new }}"
+        echo ""
+        echo "📋 Note: Make sure CHANGELOG files are updated for future releases"

@@ -170,6 +170,13 @@ class FeedbackApp {
         this.heartbeatInterval = null;
         this.heartbeatFrequency = 30000; // 30秒 WebSocket 心跳
 
+        // 新增：WebSocket 連接狀態管理
+        this.connectionReady = false;
+        this.pendingSubmission = null;
+        this.connectionCheckInterval = null;
+        this.sessionUpdatePending = false;
+        this.reconnectDelay = 1000; // 重連延遲，會逐漸增加
+
         // UI 狀態
         this.currentTab = 'feedback';
 
@@ -185,10 +192,16 @@ class FeedbackApp {
 
         // 設定
         this.autoClose = false;
-        this.layoutMode = 'separate';
+        this.layoutMode = 'combined-vertical';
 
         // 語言設定
         this.currentLanguage = 'zh-TW';
+
+        // 自動刷新設定
+        this.autoRefreshEnabled = false;
+        this.autoRefreshInterval = 5; // 默認5秒
+        this.autoRefreshTimer = null;
+        this.lastKnownSessionId = null;
 
         this.init();
     }
@@ -223,6 +236,9 @@ class FeedbackApp {
             // 確保狀態指示器使用正確的翻譯（在國際化系統載入後）
             this.updateStatusIndicators();
 
+            // 初始化自動刷新功能
+            this.initAutoRefresh();
+
             // 設置頁面關閉時的清理
             window.addEventListener('beforeunload', () => {
                 if (this.tabManager) {
@@ -230,6 +246,9 @@ class FeedbackApp {
                 }
                 if (this.heartbeatInterval) {
                     clearInterval(this.heartbeatInterval);
+                }
+                if (this.autoRefreshTimer) {
+                    clearInterval(this.autoRefreshTimer);
                 }
             });
 
@@ -258,6 +277,12 @@ class FeedbackApp {
         this.commandInput = document.getElementById('commandInput');
         this.commandOutput = document.getElementById('commandOutput');
         this.runCommandBtn = document.getElementById('runCommandBtn');
+
+        // 自動刷新相關元素
+        this.autoRefreshCheckbox = document.getElementById('autoRefreshEnabled');
+        this.autoRefreshIntervalInput = document.getElementById('autoRefreshInterval');
+        this.refreshStatusIndicator = document.getElementById('refreshStatusIndicator');
+        this.refreshStatusText = document.getElementById('refreshStatusText');
 
         // 動態初始化圖片相關元素
         this.initImageElements();
@@ -409,15 +434,28 @@ class FeedbackApp {
      * 設置圖片事件監聽器
      */
     setupImageEventListeners() {
+        console.log(`🖼️ 設置圖片事件監聽器 - imageInput: ${this.imageInput?.id}, imageUploadArea: ${this.imageUploadArea?.id}`);
+
         // 文件選擇事件
         this.imageChangeHandler = (e) => {
+            console.log(`📁 文件選擇事件觸發 - input: ${e.target.id}, files: ${e.target.files.length}`);
             this.handleFileSelect(e.target.files);
         };
         this.imageInput.addEventListener('change', this.imageChangeHandler);
 
-        // 點擊上傳區域
-        this.imageClickHandler = () => {
-            this.imageInput.click();
+        // 點擊上傳區域 - 使用更安全的方式確保只觸發對應的 input
+        this.imageClickHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // 確保我們觸發的是正確的 input 元素
+            const targetInput = this.imageInput;
+            if (targetInput) {
+                console.log(`🖱️ 點擊上傳區域 - 觸發 input: ${targetInput.id}`);
+                targetInput.click();
+            } else {
+                console.warn('⚠️ 沒有找到對應的 input 元素');
+            }
         };
         this.imageUploadArea.addEventListener('click', this.imageClickHandler);
 
@@ -451,8 +489,10 @@ class FeedbackApp {
         // 重新初始化圖片元素（確保使用最新的佈局模式）
         this.initImageElements();
 
+        console.log(`🔍 檢查圖片元素 - imageUploadArea: ${this.imageUploadArea?.id || 'null'}, imageInput: ${this.imageInput?.id || 'null'}`);
+
         if (!this.imageUploadArea || !this.imageInput) {
-            console.warn('⚠️ 圖片處理初始化失敗 - 缺少必要元素');
+            console.warn(`⚠️ 圖片處理初始化失敗 - imageUploadArea: ${!!this.imageUploadArea}, imageInput: ${!!this.imageInput}`);
             return;
         }
 
@@ -486,6 +526,7 @@ class FeedbackApp {
      * 移除舊的圖片事件監聽器
      */
     removeImageEventListeners() {
+        // 移除當前主要元素的事件監聽器
         if (this.imageInput && this.imageChangeHandler) {
             this.imageInput.removeEventListener('change', this.imageChangeHandler);
         }
@@ -503,6 +544,32 @@ class FeedbackApp {
                 this.imageUploadArea.removeEventListener('drop', this.imageDropHandler);
             }
         }
+
+        // 額外清理：移除所有可能的圖片上傳區域的 click 事件監聽器
+        const allImageUploadAreas = [
+            document.getElementById('feedbackImageUploadArea'),
+            document.getElementById('combinedImageUploadArea')
+        ].filter(area => area);
+
+        allImageUploadAreas.forEach(area => {
+            if (area && this.imageClickHandler) {
+                area.removeEventListener('click', this.imageClickHandler);
+                console.log(`🧹 已移除 ${area.id} 的 click 事件監聽器`);
+            }
+        });
+
+        // 清理所有可能的 input 元素的 change 事件監聽器
+        const allImageInputs = [
+            document.getElementById('feedbackImageInput'),
+            document.getElementById('combinedImageInput')
+        ].filter(input => input);
+
+        allImageInputs.forEach(input => {
+            if (input && this.imageChangeHandler) {
+                input.removeEventListener('change', this.imageChangeHandler);
+                console.log(`🧹 已移除 ${input.id} 的 change 事件監聽器`);
+            }
+        });
     }
 
     /**
@@ -797,11 +864,11 @@ class FeedbackApp {
     }
 
     /**
-     * 檢查是否可以提交回饋
+     * 檢查是否可以提交回饋（舊版本，保持兼容性）
      */
     canSubmitFeedback() {
-        const canSubmit = this.feedbackState === 'waiting_for_feedback' && this.isConnected;
-        console.log(`🔍 檢查提交權限: feedbackState=${this.feedbackState}, isConnected=${this.isConnected}, canSubmit=${canSubmit}`);
+        const canSubmit = this.feedbackState === 'waiting_for_feedback' && this.isConnected && this.connectionReady;
+        console.log(`🔍 檢查提交權限: feedbackState=${this.feedbackState}, isConnected=${this.isConnected}, connectionReady=${this.connectionReady}, canSubmit=${canSubmit}`);
         return canSubmit;
     }
 
@@ -965,11 +1032,13 @@ class FeedbackApp {
 
             this.websocket.onopen = () => {
                 this.isConnected = true;
+                this.connectionReady = false; // 等待連接確認
                 this.updateConnectionStatus('connected', '已連接');
                 console.log('WebSocket 連接已建立');
 
-                // 重置重連計數器
+                // 重置重連計數器和延遲
                 this.reconnectAttempts = 0;
+                this.reconnectDelay = 1000;
 
                 // 開始 WebSocket 心跳
                 this.startWebSocketHeartbeat();
@@ -981,6 +1050,23 @@ class FeedbackApp {
                 if (this.feedbackState === 'processing') {
                     console.log('🔄 WebSocket 重連後重置處理狀態');
                     this.setFeedbackState('waiting_for_feedback');
+                }
+
+                // 如果有待處理的會話更新，處理它
+                if (this.sessionUpdatePending) {
+                    console.log('🔄 處理待處理的會話更新');
+                    this.sessionUpdatePending = false;
+                }
+
+                // 如果有待提交的回饋，處理它
+                if (this.pendingSubmission) {
+                    console.log('🔄 處理待提交的回饋');
+                    setTimeout(() => {
+                        if (this.connectionReady && this.pendingSubmission) {
+                            this.submitFeedbackInternal(this.pendingSubmission);
+                            this.pendingSubmission = null;
+                        }
+                    }, 500); // 等待連接完全就緒
                 }
             };
 
@@ -995,6 +1081,7 @@ class FeedbackApp {
 
             this.websocket.onclose = (event) => {
                 this.isConnected = false;
+                this.connectionReady = false;
                 console.log('WebSocket 連接已關閉, code:', event.code, 'reason:', event.reason);
 
                 // 停止心跳
@@ -1012,15 +1099,23 @@ class FeedbackApp {
                 } else {
                     this.updateConnectionStatus('disconnected', '已斷開');
 
+                    // 會話更新導致的正常關閉，立即重連
+                    if (event.code === 1000 && event.reason === '會話更新') {
+                        console.log('🔄 會話更新導致的連接關閉，立即重連...');
+                        this.sessionUpdatePending = true;
+                        setTimeout(() => {
+                            this.setupWebSocket();
+                        }, 200); // 短延遲後重連
+                    }
                     // 只有在非正常關閉時才重連
-                    if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+                    else if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
                         this.reconnectAttempts++;
-                        const delay = Math.min(3000 * this.reconnectAttempts, 15000); // 最大延遲15秒
-                        console.log(`${delay/1000}秒後嘗試重連... (第${this.reconnectAttempts}次)`);
+                        this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000); // 指數退避，最大15秒
+                        console.log(`${this.reconnectDelay / 1000}秒後嘗試重連... (第${this.reconnectAttempts}次)`);
                         setTimeout(() => {
                             console.log(`🔄 開始重連 WebSocket... (第${this.reconnectAttempts}次)`);
                             this.setupWebSocket();
-                        }, delay);
+                        }, this.reconnectDelay);
                     } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
                         console.log('❌ 達到最大重連次數，停止重連');
                         this.showMessage('WebSocket 連接失敗，請刷新頁面重試', 'error');
@@ -1078,6 +1173,18 @@ class FeedbackApp {
         switch (data.type) {
             case 'connection_established':
                 console.log('WebSocket 連接確認');
+                this.connectionReady = true;
+
+                // 如果有待提交的回饋，現在可以提交了
+                if (this.pendingSubmission) {
+                    console.log('🔄 連接就緒，提交待處理的回饋');
+                    setTimeout(() => {
+                        if (this.pendingSubmission) {
+                            this.submitFeedbackInternal(this.pendingSubmission);
+                            this.pendingSubmission = null;
+                        }
+                    }, 100);
+                }
                 break;
             case 'heartbeat_response':
                 // 心跳回應，更新標籤頁活躍狀態
@@ -1149,8 +1256,11 @@ class FeedbackApp {
                 document.title = `MCP Feedback - ${projectName}`;
             }
 
-            // 使用局部更新替代整頁刷新
-            this.refreshPageContent();
+            // 確保 WebSocket 連接就緒
+            this.ensureWebSocketReady(() => {
+                // 使用局部更新替代整頁刷新
+                this.refreshPageContent();
+            });
         } else {
             // 如果沒有會話信息，仍然重置狀態
             console.log('⚠️ 會話更新沒有包含會話信息，僅重置狀態');
@@ -1158,6 +1268,51 @@ class FeedbackApp {
         }
 
         console.log('✅ 會話更新處理完成');
+    }
+
+    /**
+     * 確保 WebSocket 連接就緒
+     */
+    ensureWebSocketReady(callback, maxWaitTime = 5000) {
+        const startTime = Date.now();
+
+        const checkConnection = () => {
+            if (this.isConnected && this.connectionReady) {
+                console.log('✅ WebSocket 連接已就緒');
+                if (callback) callback();
+                return;
+            }
+
+            const elapsed = Date.now() - startTime;
+            if (elapsed >= maxWaitTime) {
+                console.log('⚠️ WebSocket 連接等待超時，強制執行回調');
+                if (callback) callback();
+                return;
+            }
+
+            // 如果連接斷開，嘗試重連
+            if (!this.isConnected) {
+                console.log('🔄 WebSocket 未連接，嘗試重連...');
+                this.setupWebSocket();
+            }
+
+            // 繼續等待
+            setTimeout(checkConnection, 200);
+        };
+
+        checkConnection();
+    }
+
+    /**
+     * 檢查是否可以提交回饋
+     */
+    canSubmitFeedback() {
+        const canSubmit = this.isConnected &&
+                         this.connectionReady &&
+                         this.feedbackState === 'waiting_for_feedback';
+
+        console.log(`🔍 檢查提交權限: isConnected=${this.isConnected}, connectionReady=${this.connectionReady}, feedbackState=${this.feedbackState}, canSubmit=${canSubmit}`);
+        return canSubmit;
     }
 
     async refreshPageContent() {
@@ -1200,16 +1355,22 @@ class FeedbackApp {
             const sessionData = await response.json();
             console.log('📥 獲取到最新會話資料:', sessionData);
 
-            // 2. 更新 AI 摘要內容
+            // 2. 重置回饋狀態為等待新回饋（使用新的會話 ID）
+            if (sessionData.session_id) {
+                this.setFeedbackState('waiting_for_feedback', sessionData.session_id);
+                console.log('🔄 已重置回饋狀態為等待新回饋');
+            }
+
+            // 3. 更新 AI 摘要內容
             this.updateAISummaryContent(sessionData.summary);
 
-            // 3. 重置回饋表單
+            // 4. 重置回饋表單
             this.resetFeedbackForm();
 
-            // 4. 更新狀態指示器
+            // 5. 更新狀態指示器
             this.updateStatusIndicators();
 
-            // 5. 更新頁面標題
+            // 6. 更新頁面標題
             if (sessionData.project_directory) {
                 const projectName = sessionData.project_directory.split(/[/\\]/).pop();
                 document.title = `MCP Feedback - ${projectName}`;
@@ -1410,9 +1571,9 @@ class FeedbackApp {
             word-wrap: break-word;
         `;
         messageDiv.textContent = message;
-        
+
         document.body.appendChild(messageDiv);
-        
+
         // 3秒後自動移除
         setTimeout(() => {
             if (messageDiv.parentNode) {
@@ -1450,12 +1611,12 @@ class FeedbackApp {
 
     async loadFeedbackInterface(sessionInfo) {
         if (!this.mainContainer) return;
-        
+
         this.sessionInfo = sessionInfo;
-        
+
         // 載入完整的回饋界面
         this.mainContainer.innerHTML = await this.generateFeedbackHTML(sessionInfo);
-        
+
         // 重新設置事件監聽器
         this.setupFeedbackEventListeners();
     }
@@ -1618,22 +1779,46 @@ class FeedbackApp {
 
         // 檢查是否可以提交回饋
         if (!this.canSubmitFeedback()) {
-            console.log('⚠️ 無法提交回饋 - 當前狀態:', this.feedbackState, '連接狀態:', this.isConnected);
+            console.log('⚠️ 無法提交回饋 - 當前狀態:', this.feedbackState, '連接狀態:', this.isConnected, '連接就緒:', this.connectionReady);
 
             if (this.feedbackState === 'feedback_submitted') {
                 this.showMessage('回饋已提交，請等待下次 MCP 調用', 'warning');
             } else if (this.feedbackState === 'processing') {
                 this.showMessage('正在處理中，請稍候', 'warning');
-            } else if (!this.isConnected) {
-                this.showMessage('WebSocket 未連接，正在嘗試重連...', 'error');
-                // 嘗試重新建立連接
-                this.setupWebSocket();
+            } else if (!this.isConnected || !this.connectionReady) {
+                // 收集回饋數據，等待連接就緒後提交
+                const feedbackData = this.collectFeedbackData();
+                if (feedbackData) {
+                    this.pendingSubmission = feedbackData;
+                    this.showMessage('WebSocket 連接中，回饋將在連接就緒後自動提交...', 'info');
+
+                    // 確保 WebSocket 連接
+                    this.ensureWebSocketReady(() => {
+                        if (this.pendingSubmission) {
+                            this.submitFeedbackInternal(this.pendingSubmission);
+                            this.pendingSubmission = null;
+                        }
+                    });
+                }
             } else {
                 this.showMessage(`當前狀態不允許提交: ${this.feedbackState}`, 'warning');
             }
             return;
         }
 
+        // 收集回饋數據並提交
+        const feedbackData = this.collectFeedbackData();
+        if (!feedbackData) {
+            return;
+        }
+
+        this.submitFeedbackInternal(feedbackData);
+    }
+
+    /**
+     * 收集回饋數據
+     */
+    collectFeedbackData() {
         // 根據當前佈局模式獲取回饋內容
         let feedback = '';
         if (this.layoutMode.startsWith('combined')) {
@@ -1646,8 +1831,24 @@ class FeedbackApp {
 
         if (!feedback && this.images.length === 0) {
             this.showMessage('請提供回饋文字或上傳圖片', 'warning');
-            return;
+            return null;
         }
+
+        return {
+            feedback: feedback,
+            images: [...this.images], // 創建副本
+            settings: {
+                image_size_limit: this.imageSizeLimit,
+                enable_base64_detail: this.enableBase64Detail
+            }
+        };
+    }
+
+    /**
+     * 內部提交回饋方法
+     */
+    submitFeedbackInternal(feedbackData) {
+        console.log('📤 內部提交回饋...');
 
         // 設置處理狀態
         this.setFeedbackState('processing');
@@ -1656,12 +1857,9 @@ class FeedbackApp {
             // 發送回饋
             this.websocket.send(JSON.stringify({
                 type: 'submit_feedback',
-                feedback: feedback,
-                images: this.images,
-                settings: {
-                    image_size_limit: this.imageSizeLimit,
-                    enable_base64_detail: this.enableBase64Detail
-                }
+                feedback: feedbackData.feedback,
+                images: feedbackData.images,
+                settings: feedbackData.settings
             }));
 
             // 清空表單
@@ -1801,6 +1999,8 @@ class FeedbackApp {
                 this.currentLanguage = settings.language || 'zh-TW';
                 this.imageSizeLimit = settings.imageSizeLimit || 0;
                 this.enableBase64Detail = settings.enableBase64Detail || false;
+                this.autoRefreshEnabled = settings.autoRefreshEnabled || false;
+                this.autoRefreshInterval = settings.autoRefreshInterval || 5;
 
                 // 處理 activeTab 設定
                 if (settings.activeTab) {
@@ -1846,6 +2046,8 @@ class FeedbackApp {
                 language: this.currentLanguage,
                 imageSizeLimit: this.imageSizeLimit,
                 enableBase64Detail: this.enableBase64Detail,
+                autoRefreshEnabled: this.autoRefreshEnabled,
+                autoRefreshInterval: this.autoRefreshInterval,
                 activeTab: this.currentTab
             };
 
@@ -1904,6 +2106,15 @@ class FeedbackApp {
         if (this.enableBase64DetailCheckbox) {
             this.enableBase64DetailCheckbox.checked = this.enableBase64Detail;
         }
+
+        // 應用自動刷新設定
+        if (this.autoRefreshCheckbox) {
+            this.autoRefreshCheckbox.checked = this.autoRefreshEnabled;
+        }
+
+        if (this.autoRefreshIntervalInput) {
+            this.autoRefreshIntervalInput.value = this.autoRefreshInterval;
+        }
     }
 
     applyLayoutMode() {
@@ -1927,18 +2138,11 @@ class FeedbackApp {
         // 同步合併佈局和分頁中的內容
         this.syncCombinedLayoutContent();
 
-        // 如果是合併模式，確保內容同步
-        if (this.layoutMode.startsWith('combined')) {
-            this.setupCombinedModeSync();
-            // 如果當前頁籤不是合併模式，則切換到合併模式頁籤
-            if (this.currentTab !== 'combined') {
-                this.currentTab = 'combined';
-            }
-        } else {
-            // 分離模式時，如果當前頁籤是合併模式，則切換到回饋頁籤
-            if (this.currentTab === 'combined') {
-                this.currentTab = 'feedback';
-            }
+        // 確保合併模式內容同步
+        this.setupCombinedModeSync();
+        // 如果當前頁籤不是合併模式，則切換到合併模式頁籤
+        if (this.currentTab !== 'combined') {
+            this.currentTab = 'combined';
         }
     }
 
@@ -1947,17 +2151,10 @@ class FeedbackApp {
         const feedbackTab = document.querySelector('.tab-button[data-tab="feedback"]');
         const summaryTab = document.querySelector('.tab-button[data-tab="summary"]');
 
-        if (this.layoutMode.startsWith('combined')) {
-            // 合併模式：顯示合併模式頁籤，隱藏回饋和AI摘要頁籤
-            if (combinedTab) combinedTab.style.display = 'inline-block';
-            if (feedbackTab) feedbackTab.style.display = 'none';
-            if (summaryTab) summaryTab.style.display = 'none';
-        } else {
-            // 分離模式：隱藏合併模式頁籤，顯示回饋和AI摘要頁籤
-            if (combinedTab) combinedTab.style.display = 'none';
-            if (feedbackTab) feedbackTab.style.display = 'inline-block';
-            if (summaryTab) summaryTab.style.display = 'inline-block';
-        }
+        // 只使用合併模式：顯示合併模式頁籤，隱藏回饋和AI摘要頁籤
+        if (combinedTab) combinedTab.style.display = 'inline-block';
+        if (feedbackTab) feedbackTab.style.display = 'none';
+        if (summaryTab) summaryTab.style.display = 'none';
     }
 
     syncCombinedLayoutContent() {
@@ -2012,27 +2209,6 @@ class FeedbackApp {
     }
 
     setupCombinedModeSync() {
-        // 設置文字輸入的雙向同步
-        const feedbackText = document.getElementById('feedbackText');
-        const combinedFeedbackText = document.getElementById('combinedFeedbackText');
-
-        if (feedbackText && combinedFeedbackText) {
-            // 移除舊的事件監聽器（如果存在）
-            feedbackText.removeEventListener('input', this.syncToCombinetText);
-            combinedFeedbackText.removeEventListener('input', this.syncToSeparateText);
-
-            // 添加新的事件監聽器
-            this.syncToCombinetText = (e) => {
-                combinedFeedbackText.value = e.target.value;
-            };
-            this.syncToSeparateText = (e) => {
-                feedbackText.value = e.target.value;
-            };
-
-            feedbackText.addEventListener('input', this.syncToCombinetText);
-            combinedFeedbackText.addEventListener('input', this.syncToSeparateText);
-        }
-
         // 設置圖片設定的同步
         this.setupImageSettingsSync();
 
@@ -2077,45 +2253,20 @@ class FeedbackApp {
 
     setupImageUploadSync() {
         // 設置合併模式的圖片上傳功能
-        const combinedImageInput = document.getElementById('combinedImageInput');
-        const combinedImageUploadArea = document.getElementById('combinedImageUploadArea');
-
-        if (combinedImageInput && combinedImageUploadArea) {
-            // 簡化的圖片上傳同步 - 只需要基本的事件監聽器
-            combinedImageInput.addEventListener('change', (e) => {
-                this.handleFileSelect(e.target.files);
-            });
-
-            combinedImageUploadArea.addEventListener('click', () => {
-                combinedImageInput.click();
-            });
-
-            // 拖放事件
-            combinedImageUploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                combinedImageUploadArea.classList.add('dragover');
-            });
-
-            combinedImageUploadArea.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                combinedImageUploadArea.classList.remove('dragover');
-            });
-
-            combinedImageUploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                combinedImageUploadArea.classList.remove('dragover');
-                this.handleFileSelect(e.dataTransfer.files);
-            });
-        }
+        // 注意：所有事件監聽器現在由 setupImageEventListeners() 統一處理
+        // 這個函數保留用於未來可能的同步邏輯，但不再設置重複的事件監聽器
+        console.log('🔄 setupImageUploadSync: 事件監聽器由 setupImageEventListeners() 統一處理');
     }
 
     resetSettings() {
         localStorage.removeItem('mcp-feedback-settings');
-        this.layoutMode = 'separate';
+        this.layoutMode = 'combined-vertical';
         this.autoClose = false;
         this.currentLanguage = 'zh-TW';
         this.imageSizeLimit = 0;
         this.enableBase64Detail = false;
+        this.autoRefreshEnabled = false;
+        this.autoRefreshInterval = 5;
         this.applySettings();
         this.saveSettings();
     }
@@ -2167,6 +2318,203 @@ class FeedbackApp {
         // 因為 updateStatusIndicator() 現在會同時更新兩個狀態指示器
         console.log('🔄 同步狀態指示器到合併模式...');
         // 不需要手動複製，updateStatusIndicator() 會處理所有狀態指示器
+    }
+
+    /**
+     * 初始化自動刷新功能
+     */
+    initAutoRefresh() {
+        console.log('🔄 初始化自動刷新功能...');
+
+        // 檢查必要元素是否存在
+        if (!this.autoRefreshCheckbox || !this.autoRefreshIntervalInput) {
+            console.warn('⚠️ 自動刷新元素不存在，跳過初始化');
+            return;
+        }
+
+        // 設置開關事件監聽器
+        this.autoRefreshCheckbox.addEventListener('change', (e) => {
+            this.autoRefreshEnabled = e.target.checked;
+            this.handleAutoRefreshToggle();
+            this.saveSettings();
+        });
+
+        // 設置間隔輸入事件監聽器
+        this.autoRefreshIntervalInput.addEventListener('change', (e) => {
+            const newInterval = parseInt(e.target.value);
+            if (newInterval >= 5 && newInterval <= 300) {
+                this.autoRefreshInterval = newInterval;
+                this.saveSettings();
+
+                // 如果自動刷新已啟用，重新啟動定時器
+                if (this.autoRefreshEnabled) {
+                    this.stopAutoRefresh();
+                    this.startAutoRefresh();
+                }
+            }
+        });
+
+        // 從設定中恢復狀態
+        this.autoRefreshCheckbox.checked = this.autoRefreshEnabled;
+        this.autoRefreshIntervalInput.value = this.autoRefreshInterval;
+
+        // 延遲更新狀態指示器，確保 i18n 已完全載入
+        setTimeout(() => {
+            this.updateAutoRefreshStatus();
+
+            // 如果自動刷新已啟用，啟動自動檢測
+            if (this.autoRefreshEnabled) {
+                console.log('🔄 自動刷新已啟用，啟動自動檢測...');
+                this.startAutoRefresh();
+            }
+        }, 100);
+
+        console.log('✅ 自動刷新功能初始化完成');
+    }
+
+    /**
+     * 處理自動刷新開關切換
+     */
+    handleAutoRefreshToggle() {
+        if (this.autoRefreshEnabled) {
+            this.startAutoRefresh();
+        } else {
+            this.stopAutoRefresh();
+        }
+        this.updateAutoRefreshStatus();
+    }
+
+    /**
+     * 啟動自動刷新
+     */
+    startAutoRefresh() {
+        if (this.autoRefreshTimer) {
+            clearInterval(this.autoRefreshTimer);
+        }
+
+        // 記錄當前會話 ID
+        this.lastKnownSessionId = this.currentSessionId;
+
+        this.autoRefreshTimer = setInterval(() => {
+            this.checkForSessionUpdate();
+        }, this.autoRefreshInterval * 1000);
+
+        console.log(`🔄 自動刷新已啟動，間隔: ${this.autoRefreshInterval}秒`);
+    }
+
+    /**
+     * 停止自動刷新
+     */
+    stopAutoRefresh() {
+        if (this.autoRefreshTimer) {
+            clearInterval(this.autoRefreshTimer);
+            this.autoRefreshTimer = null;
+        }
+        console.log('⏸️ 自動刷新已停止');
+    }
+
+    /**
+     * 檢查會話更新
+     */
+    async checkForSessionUpdate() {
+        try {
+            this.updateAutoRefreshStatus('checking');
+
+            const response = await fetch('/api/current-session');
+            if (!response.ok) {
+                throw new Error(`API 請求失敗: ${response.status}`);
+            }
+
+            const sessionData = await response.json();
+
+            // 檢查會話 ID 是否變化
+            if (sessionData.session_id && sessionData.session_id !== this.lastKnownSessionId) {
+                console.log(`🔄 檢測到新會話: ${this.lastKnownSessionId} -> ${sessionData.session_id}`);
+
+                // 更新記錄的會話 ID
+                this.lastKnownSessionId = sessionData.session_id;
+                this.currentSessionId = sessionData.session_id;
+
+                // 觸發局部刷新
+                await this.updatePageContentPartially();
+
+                this.updateAutoRefreshStatus('detected');
+
+                // 短暫顯示檢測成功狀態，然後恢復為檢測中
+                setTimeout(() => {
+                    if (this.autoRefreshEnabled) {
+                        this.updateAutoRefreshStatus('enabled');
+                    }
+                }, 2000);
+            } else {
+                this.updateAutoRefreshStatus('enabled');
+            }
+
+        } catch (error) {
+            console.error('❌ 自動刷新檢測失敗:', error);
+            this.updateAutoRefreshStatus('error');
+
+            // 短暫顯示錯誤狀態，然後恢復
+            setTimeout(() => {
+                if (this.autoRefreshEnabled) {
+                    this.updateAutoRefreshStatus('enabled');
+                }
+            }, 3000);
+        }
+    }
+
+    /**
+     * 更新自動刷新狀態指示器
+     */
+    updateAutoRefreshStatus(status = null) {
+        console.log(`🔧 updateAutoRefreshStatus 被調用，status: ${status}`);
+        console.log(`🔧 refreshStatusIndicator: ${this.refreshStatusIndicator ? 'found' : 'null'}`);
+        console.log(`🔧 refreshStatusText: ${this.refreshStatusText ? 'found' : 'null'}`);
+
+        if (!this.refreshStatusIndicator || !this.refreshStatusText) {
+            console.log(`⚠️ 自動檢測狀態元素未找到，跳過更新`);
+            return;
+        }
+
+        let indicator = '⏸️';
+        let textKey = 'autoRefresh.disabled';
+
+        if (status === null) {
+            status = this.autoRefreshEnabled ? 'enabled' : 'disabled';
+        }
+
+        switch (status) {
+            case 'enabled':
+                indicator = '🔄';
+                textKey = 'autoRefresh.enabled';
+                break;
+            case 'checking':
+                indicator = '🔍';
+                textKey = 'autoRefresh.checking';
+                break;
+            case 'detected':
+                indicator = '✅';
+                textKey = 'autoRefresh.detected';
+                break;
+            case 'error':
+                indicator = '❌';
+                textKey = 'autoRefresh.error';
+                break;
+            case 'disabled':
+            default:
+                indicator = '⏸️';
+                textKey = 'autoRefresh.disabled';
+                break;
+        }
+
+        this.refreshStatusIndicator.textContent = indicator;
+
+        // 使用多語系翻譯
+
+        const translatedText = window.i18nManager.t(textKey);
+        console.log(`🔄 自動檢測狀態翻譯: ${textKey} -> ${translatedText} (語言: ${window.i18nManager.currentLanguage})`);
+        this.refreshStatusText.textContent = translatedText;
+
     }
 
 

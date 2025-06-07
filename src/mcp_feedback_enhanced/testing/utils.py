@@ -54,15 +54,26 @@ class TestUtils:
     
     @staticmethod
     def find_free_port(start_port: int = 8765, max_attempts: int = 100) -> int:
-        """尋找可用端口"""
-        for port in range(start_port, start_port + max_attempts):
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.bind(('127.0.0.1', port))
-                    return port
-            except OSError:
-                continue
-        raise RuntimeError(f"無法找到可用端口 (嘗試範圍: {start_port}-{start_port + max_attempts})")
+        """尋找可用端口 - 使用增強的端口管理"""
+        try:
+            # 嘗試使用增強的端口管理
+            from ..web.utils.port_manager import PortManager
+            return PortManager.find_free_port_enhanced(
+                preferred_port=start_port,
+                auto_cleanup=False,  # 測試時不自動清理
+                host='127.0.0.1',
+                max_attempts=max_attempts
+            )
+        except ImportError:
+            # 回退到原始方法
+            for port in range(start_port, start_port + max_attempts):
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.bind(('127.0.0.1', port))
+                        return port
+                except OSError:
+                    continue
+            raise RuntimeError(f"無法找到可用端口 (嘗試範圍: {start_port}-{start_port + max_attempts})")
     
     @staticmethod
     def is_port_open(host: str, port: int, timeout: float = 1.0) -> bool:

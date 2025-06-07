@@ -10,7 +10,7 @@
         "commands": "⚡ Commands",
         "command": "⚡ Commands",
         "settings": "⚙️ Settings",
-        "combined": "📝 Combined Mode",
+        "combined": "📝 Workspace",
         "about": "ℹ️ About"
     },
     "feedback": {
@@ -73,7 +73,7 @@
         "history": "Command History"
     },
     "combined": {
-        "description": "Combined mode: AI summary and feedback input are on the same page for easy comparison.",
+        "description": "AI summary and feedback input are on the same page for easy comparison.",
         "summaryTitle": "📋 AI Work Summary",
         "feedbackTitle": "💬 Provide Feedback"
     },
@@ -86,12 +86,10 @@
         "interface": "Interface Settings",
         "layoutMode": "Interface Layout Mode",
         "layoutModeDesc": "Select how AI summary and feedback input are displayed",
-        "separateMode": "Separate Mode",
-        "separateModeDesc": "AI summary and feedback are in separate tabs",
-        "combinedVertical": "Combined Mode (Vertical Layout)",
-        "combinedVerticalDesc": "AI summary on top, feedback input below, both on the same page",
-        "combinedHorizontal": "Combined Mode (Horizontal Layout)",
-        "combinedHorizontalDesc": "AI summary on left, feedback input on right, expanding summary viewing area",
+        "combinedVertical": "Vertical Layout",
+        "combinedVerticalDesc": "AI summary on top, feedback input below, suitable for standard screens",
+        "combinedHorizontal": "Horizontal Layout",
+        "combinedHorizontalDesc": "AI summary on left, feedback input on right, suitable for widescreen displays",
         "autoClose": "Auto Close Page",
         "autoCloseDesc": "Automatically close page after submitting feedback",
         "theme": "Theme",
@@ -171,6 +169,15 @@
         "timeoutWarning": "Session is about to timeout",
         "timeoutDescription": "Due to prolonged inactivity, the session has timed out. The interface will automatically close in 3 seconds.",
         "closing": "Closing..."
+    },
+    "autoRefresh": {
+        "enable": "Auto Detect",
+        "seconds": "seconds",
+        "disabled": "Disabled",
+        "enabled": "Detecting",
+        "checking": "Checking",
+        "detected": "Detected",
+        "error": "Failed"
     },
 
     "dynamic": {

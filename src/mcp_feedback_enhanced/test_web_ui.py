@@ -95,11 +95,17 @@ def get_test_summary():
 
 def find_free_port():
     """Find a free port to use for testing"""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('', 0))
-        s.listen(1)
-        port = s.getsockname()[1]
-    return port
+    try:
+        # 嘗試使用增強的端口管理
+        from .web.utils.port_manager import PortManager
+        return PortManager.find_free_port_enhanced(preferred_port=8765, auto_cleanup=False)
+    except ImportError:
+        # 回退到原始方法
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            s.listen(1)
+            port = s.getsockname()[1]
+        return port
 
 def test_web_ui(keep_running=False):
     """Test the Web UI functionality"""

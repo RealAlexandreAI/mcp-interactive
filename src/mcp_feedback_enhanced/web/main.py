@@ -17,17 +17,23 @@ import threading
 import time
 import webbrowser
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+from datetime import datetime
 import uuid
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.gzip import GZipMiddleware
 import uvicorn
 
-from .models import WebFeedbackSession, FeedbackResult
+from .models import WebFeedbackSession, FeedbackResult, CleanupReason, SessionStatus
 from .routes import setup_routes
 from .utils import find_free_port, get_browser_opener
+from .utils.port_manager import PortManager
+from .utils.compression_config import get_compression_manager
+from ..utils.error_handler import ErrorHandler, ErrorType
+from ..utils.memory_monitor import get_memory_monitor
 from ..debug import web_debug_log as debug_log
 from ..i18n import get_i18n_manager
 
@@ -56,9 +62,19 @@ class WebUIManager:
         else:
             debug_log(f"未設定 MCP_WEB_PORT 環境變數，使用預設端口 {preferred_port}")
 
-        # 優先使用指定端口，確保 localStorage 的一致性
-        self.port = port or find_free_port(preferred_port=preferred_port)
+        # 使用增強的端口管理，支持自動清理
+        self.port = port or PortManager.find_free_port_enhanced(
+            preferred_port=preferred_port,
+            auto_cleanup=True,
+            host=self.host
+        )
         self.app = FastAPI(title="MCP Feedback Enhanced")
+
+        # 設置壓縮和緩存中間件
+        self._setup_compression_middleware()
+
+        # 設置內存監控
+        self._setup_memory_monitoring()
 
         # 重構：使用單一活躍會話而非會話字典
         self.current_session: Optional[WebFeedbackSession] = None
@@ -69,6 +85,17 @@ class WebUIManager:
 
         # 會話更新通知標記
         self._pending_session_update = False
+
+        # 會話清理統計
+        self.cleanup_stats = {
+            "total_cleanups": 0,
+            "expired_cleanups": 0,
+            "memory_pressure_cleanups": 0,
+            "manual_cleanups": 0,
+            "last_cleanup_time": None,
+            "total_cleanup_duration": 0.0,
+            "sessions_cleaned": 0
+        }
 
         self.server_thread = None
         self.server_process = None
@@ -82,6 +109,105 @@ class WebUIManager:
         setup_routes(self)
 
         debug_log(f"WebUIManager 初始化完成，將在 {self.host}:{self.port} 啟動")
+
+    def _setup_compression_middleware(self):
+        """設置壓縮和緩存中間件"""
+        # 獲取壓縮管理器
+        compression_manager = get_compression_manager()
+        config = compression_manager.config
+
+        # 添加 Gzip 壓縮中間件
+        self.app.add_middleware(
+            GZipMiddleware,
+            minimum_size=config.minimum_size
+        )
+
+        # 添加緩存和壓縮統計中間件
+        @self.app.middleware("http")
+        async def compression_and_cache_middleware(request: Request, call_next):
+            """壓縮和緩存中間件"""
+            response = await call_next(request)
+
+            # 添加緩存頭
+            if not config.should_exclude_path(request.url.path):
+                cache_headers = config.get_cache_headers(request.url.path)
+                for key, value in cache_headers.items():
+                    response.headers[key] = value
+
+            # 更新壓縮統計（如果可能）
+            try:
+                content_length = int(response.headers.get('content-length', 0))
+                content_encoding = response.headers.get('content-encoding', '')
+                was_compressed = 'gzip' in content_encoding
+
+                if content_length > 0:
+                    # 估算原始大小（如果已壓縮，假設壓縮比為 30%）
+                    original_size = content_length if not was_compressed else int(content_length / 0.7)
+                    compression_manager.update_stats(original_size, content_length, was_compressed)
+            except (ValueError, TypeError):
+                # 忽略統計錯誤，不影響正常響應
+                pass
+
+            return response
+
+        debug_log("壓縮和緩存中間件設置完成")
+
+    def _setup_memory_monitoring(self):
+        """設置內存監控"""
+        try:
+            self.memory_monitor = get_memory_monitor()
+
+            # 添加 Web 應用特定的警告回調
+            def web_memory_alert(alert):
+                debug_log(f"Web UI 內存警告 [{alert.level}]: {alert.message}")
+
+                # 根據警告級別觸發不同的清理策略
+                if alert.level == "critical":
+                    # 危險級別：清理過期會話
+                    cleaned = self.cleanup_expired_sessions()
+                    debug_log(f"內存危險警告觸發，清理了 {cleaned} 個過期會話")
+                elif alert.level == "emergency":
+                    # 緊急級別：強制清理會話
+                    cleaned = self.cleanup_sessions_by_memory_pressure(force=True)
+                    debug_log(f"內存緊急警告觸發，強制清理了 {cleaned} 個會話")
+
+            self.memory_monitor.add_alert_callback(web_memory_alert)
+
+            # 添加會話清理回調到內存監控
+            def session_cleanup_callback(force: bool = False):
+                """內存監控觸發的會話清理回調"""
+                try:
+                    if force:
+                        # 強制清理：包括內存壓力清理
+                        cleaned = self.cleanup_sessions_by_memory_pressure(force=True)
+                        debug_log(f"內存監控強制清理了 {cleaned} 個會話")
+                    else:
+                        # 常規清理：只清理過期會話
+                        cleaned = self.cleanup_expired_sessions()
+                        debug_log(f"內存監控清理了 {cleaned} 個過期會話")
+                except Exception as e:
+                    error_id = ErrorHandler.log_error_with_context(
+                        e,
+                        context={"operation": "內存監控會話清理", "force": force},
+                        error_type=ErrorType.SYSTEM
+                    )
+                    debug_log(f"內存監控會話清理失敗 [錯誤ID: {error_id}]: {e}")
+
+            self.memory_monitor.add_cleanup_callback(session_cleanup_callback)
+
+            # 確保內存監控已啟動（ResourceManager 可能已經啟動了）
+            if not self.memory_monitor.is_monitoring:
+                self.memory_monitor.start_monitoring()
+
+            debug_log("Web UI 內存監控設置完成，已集成會話清理回調")
+
+        except Exception as e:
+            error_id = ErrorHandler.log_error_with_context(
+                e,
+                context={"operation": "設置 Web UI 內存監控"},
+                error_type=ErrorType.SYSTEM
+            )
+            debug_log(f"設置 Web UI 內存監控失敗 [錯誤ID: {error_id}]: {e}")
 
     def _setup_static_files(self):
         """設置靜態文件服務"""
@@ -135,7 +261,7 @@ class WebUIManager:
 
         # 處理會話更新通知
         if old_websocket:
-            # 有舊連接，立即發送會話更新通知
+            # 有舊連接，立即發送會話更新通知並轉移連接
             self._old_websocket_for_update = old_websocket
             self._new_session_for_update = session
             debug_log("已保存舊 WebSocket 連接，準備發送會話更新通知")
@@ -143,10 +269,13 @@ class WebUIManager:
             # 立即發送會話更新通知
             import asyncio
             try:
-                # 在後台任務中發送通知
+                # 在後台任務中發送通知並轉移連接
                 asyncio.create_task(self._send_immediate_session_update())
             except Exception as e:
                 debug_log(f"創建會話更新任務失敗: {e}")
+                # 即使任務創建失敗，也要嘗試直接轉移連接
+                session.websocket = old_websocket
+                debug_log("任務創建失敗，直接轉移 WebSocket 連接到新會話")
                 self._pending_session_update = True
         else:
             # 沒有舊連接，標記需要發送會話更新通知（當新 WebSocket 連接建立時）
@@ -262,16 +391,44 @@ class WebUIManager:
                     if e.errno == 10048:  # Windows: 位址已在使用中
                         retry_count += 1
                         if retry_count < max_retries:
-                            debug_log(f"端口 {self.port} 被占用，嘗試下一個端口")
-                            self.port = find_free_port(self.port + 1)
+                            debug_log(f"端口 {self.port} 被占用，使用增強端口管理查找新端口")
+                            # 使用增強的端口管理查找新端口
+                            try:
+                                self.port = PortManager.find_free_port_enhanced(
+                                    preferred_port=self.port + 1,
+                                    auto_cleanup=False,  # 啟動時不自動清理，避免誤殺其他服務
+                                    host=self.host
+                                )
+                                debug_log(f"找到新的可用端口: {self.port}")
+                            except RuntimeError as port_error:
+                                # 使用統一錯誤處理
+                                error_id = ErrorHandler.log_error_with_context(
+                                    port_error,
+                                    context={"operation": "端口查找", "current_port": self.port},
+                                    error_type=ErrorType.NETWORK
+                                )
+                                debug_log(f"無法找到可用端口 [錯誤ID: {error_id}]: {port_error}")
+                                break
                         else:
                             debug_log("已達到最大重試次數，無法啟動伺服器")
                             break
                     else:
-                        debug_log(f"伺服器啟動錯誤: {e}")
+                        # 使用統一錯誤處理
+                        error_id = ErrorHandler.log_error_with_context(
+                            e,
+                            context={"operation": "伺服器啟動", "host": self.host, "port": self.port},
+                            error_type=ErrorType.NETWORK
+                        )
+                        debug_log(f"伺服器啟動錯誤 [錯誤ID: {error_id}]: {e}")
                         break
                 except Exception as e:
-                    debug_log(f"伺服器運行錯誤: {e}")
+                    # 使用統一錯誤處理
+                    error_id = ErrorHandler.log_error_with_context(
+                        e,
+                        context={"operation": "伺服器運行", "host": self.host, "port": self.port},
+                        error_type=ErrorType.SYSTEM
+                    )
+                    debug_log(f"伺服器運行錯誤 [錯誤ID: {error_id}]: {e}")
                     break
 
         # 在新線程中啟動伺服器
@@ -351,8 +508,21 @@ class WebUIManager:
                 old_websocket = self._old_websocket_for_update
                 new_session = self._new_session_for_update
 
-                # 檢查舊連接是否仍然有效
-                if old_websocket and not old_websocket.client_state.DISCONNECTED:
+                # 改進的連接有效性檢查
+                websocket_valid = False
+                if old_websocket:
+                    try:
+                        # 檢查 WebSocket 連接狀態
+                        if hasattr(old_websocket, 'client_state'):
+                            websocket_valid = old_websocket.client_state != old_websocket.client_state.DISCONNECTED
+                        else:
+                            # 如果沒有 client_state 屬性，嘗試發送測試消息來檢查連接
+                            websocket_valid = True
+                    except Exception as check_error:
+                        debug_log(f"檢查 WebSocket 連接狀態失敗: {check_error}")
+                        websocket_valid = False
+
+                if websocket_valid:
                     try:
                         # 發送會話更新通知
                         await old_websocket.send_json({
@@ -369,11 +539,18 @@ class WebUIManager:
                         # 延遲一小段時間讓前端處理消息
                         await asyncio.sleep(0.2)
 
+                        # 將 WebSocket 連接轉移到新會話
+                        new_session.websocket = old_websocket
+                        debug_log("已將 WebSocket 連接轉移到新會話")
+
                     except Exception as send_error:
                         debug_log(f"發送會話更新通知失敗: {send_error}")
-
-                # 安全關閉舊連接
-                await self._safe_close_websocket(old_websocket)
+                        # 如果發送失敗，仍然嘗試轉移連接
+                        new_session.websocket = old_websocket
+                        debug_log("發送失敗但仍轉移 WebSocket 連接到新會話")
+                else:
+                    debug_log("舊 WebSocket 連接無效，設置待更新標記")
+                    self._pending_session_update = True
 
                 # 清理臨時變數
                 delattr(self, '_old_websocket_for_update')
@@ -390,29 +567,24 @@ class WebUIManager:
             self._pending_session_update = True
 
     async def _safe_close_websocket(self, websocket):
-        """安全關閉 WebSocket 連接，避免事件循環衝突"""
+        """安全關閉 WebSocket 連接，避免事件循環衝突 - 僅在連接已轉移後調用"""
         if not websocket:
             return
 
+        # 注意：此方法現在主要用於清理，因為連接已經轉移到新會話
+        # 只有在確認連接沒有被新會話使用時才關閉
         try:
             # 檢查連接狀態
-            if websocket.client_state.DISCONNECTED:
+            if hasattr(websocket, 'client_state') and websocket.client_state.DISCONNECTED:
                 debug_log("WebSocket 已斷開，跳過關閉操作")
                 return
 
-            # 嘗試正常關閉
-            await asyncio.wait_for(websocket.close(code=1000, reason="會話更新"), timeout=2.0)
-            debug_log("已正常關閉舊 WebSocket 連接")
+            # 由於連接已轉移到新會話，這裡不再主動關閉
+            # 讓新會話管理這個連接的生命週期
+            debug_log("WebSocket 連接已轉移到新會話，跳過關閉操作")
 
-        except asyncio.TimeoutError:
-            debug_log("WebSocket 關閉超時，強制斷開")
-        except RuntimeError as e:
-            if "attached to a different loop" in str(e):
-                debug_log(f"WebSocket 事件循環衝突，忽略關閉錯誤: {e}")
-            else:
-                debug_log(f"WebSocket 關閉時發生運行時錯誤: {e}")
         except Exception as e:
-            debug_log(f"關閉 WebSocket 連接時發生未知錯誤: {e}")
+            debug_log(f"檢查 WebSocket 連接狀態時發生錯誤: {e}")
 
     async def _check_active_tabs(self) -> bool:
         """檢查是否有活躍標籤頁 - 優先檢查全局狀態，回退到 API"""
@@ -451,13 +623,176 @@ class WebUIManager:
         """獲取伺服器 URL"""
         return f"http://{self.host}:{self.port}"
 
+    def cleanup_expired_sessions(self) -> int:
+        """清理過期會話"""
+        cleanup_start_time = time.time()
+        expired_sessions = []
+
+        # 掃描過期會話
+        for session_id, session in self.sessions.items():
+            if session.is_expired():
+                expired_sessions.append(session_id)
+
+        # 批量清理過期會話
+        cleaned_count = 0
+        for session_id in expired_sessions:
+            try:
+                session = self.sessions.get(session_id)
+                if session:
+                    # 使用增強清理方法
+                    session._cleanup_sync_enhanced(CleanupReason.EXPIRED)
+                    del self.sessions[session_id]
+                    cleaned_count += 1
+
+                    # 如果清理的是當前活躍會話，清空當前會話
+                    if self.current_session and self.current_session.session_id == session_id:
+                        self.current_session = None
+                        debug_log("清空過期的當前活躍會話")
+
+            except Exception as e:
+                error_id = ErrorHandler.log_error_with_context(
+                    e,
+                    context={"session_id": session_id, "operation": "清理過期會話"},
+                    error_type=ErrorType.SYSTEM
+                )
+                debug_log(f"清理過期會話 {session_id} 失敗 [錯誤ID: {error_id}]: {e}")
+
+        # 更新統計
+        cleanup_duration = time.time() - cleanup_start_time
+        self.cleanup_stats.update({
+            "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
+            "expired_cleanups": self.cleanup_stats["expired_cleanups"] + 1,
+            "last_cleanup_time": datetime.now().isoformat(),
+            "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"] + cleanup_duration,
+            "sessions_cleaned": self.cleanup_stats["sessions_cleaned"] + cleaned_count
+        })
+
+        if cleaned_count > 0:
+            debug_log(f"清理了 {cleaned_count} 個過期會話，耗時: {cleanup_duration:.2f}秒")
+
+        return cleaned_count
+
+    def cleanup_sessions_by_memory_pressure(self, force: bool = False) -> int:
+        """根據內存壓力清理會話"""
+        cleanup_start_time = time.time()
+        sessions_to_clean = []
+
+        # 根據優先級選擇要清理的會話
+        # 優先級：已完成 > 已提交反饋 > 錯誤狀態 > 空閒時間最長
+        for session_id, session in self.sessions.items():
+            # 跳過當前活躍會話（除非強制清理）
+            if not force and self.current_session and session.session_id == self.current_session.session_id:
+                continue
+
+            # 優先清理已完成或錯誤狀態的會話
+            if session.status in [SessionStatus.COMPLETED, SessionStatus.ERROR, SessionStatus.TIMEOUT]:
+                sessions_to_clean.append((session_id, session, 1))  # 高優先級
+            elif session.status == SessionStatus.FEEDBACK_SUBMITTED:
+                # 已提交反饋但空閒時間較長的會話
+                if session.get_idle_time() > 300:  # 5分鐘空閒
+                    sessions_to_clean.append((session_id, session, 2))  # 中優先級
+            elif session.get_idle_time() > 600:  # 10分鐘空閒
+                sessions_to_clean.append((session_id, session, 3))  # 低優先級
+
+        # 按優先級排序
+        sessions_to_clean.sort(key=lambda x: x[2])
+
+        # 清理會話（限制數量避免過度清理）
+        max_cleanup = min(len(sessions_to_clean), 5 if not force else len(sessions_to_clean))
+        cleaned_count = 0
+
+        for i in range(max_cleanup):
+            session_id, session, priority = sessions_to_clean[i]
+            try:
+                # 使用增強清理方法
+                session._cleanup_sync_enhanced(CleanupReason.MEMORY_PRESSURE)
+                del self.sessions[session_id]
+                cleaned_count += 1
+
+                # 如果清理的是當前活躍會話，清空當前會話
+                if self.current_session and self.current_session.session_id == session_id:
+                    self.current_session = None
+                    debug_log("因內存壓力清空當前活躍會話")
+
+            except Exception as e:
+                error_id = ErrorHandler.log_error_with_context(
+                    e,
+                    context={"session_id": session_id, "operation": "內存壓力清理"},
+                    error_type=ErrorType.SYSTEM
+                )
+                debug_log(f"內存壓力清理會話 {session_id} 失敗 [錯誤ID: {error_id}]: {e}")
+
+        # 更新統計
+        cleanup_duration = time.time() - cleanup_start_time
+        self.cleanup_stats.update({
+            "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
+            "memory_pressure_cleanups": self.cleanup_stats["memory_pressure_cleanups"] + 1,
+            "last_cleanup_time": datetime.now().isoformat(),
+            "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"] + cleanup_duration,
+            "sessions_cleaned": self.cleanup_stats["sessions_cleaned"] + cleaned_count
+        })
+
+        if cleaned_count > 0:
+            debug_log(f"因內存壓力清理了 {cleaned_count} 個會話，耗時: {cleanup_duration:.2f}秒")
+
+        return cleaned_count
+
+    def get_session_cleanup_stats(self) -> dict:
+        """獲取會話清理統計"""
+        stats = self.cleanup_stats.copy()
+        stats.update({
+            "active_sessions": len(self.sessions),
+            "current_session_id": self.current_session.session_id if self.current_session else None,
+            "expired_sessions": sum(1 for s in self.sessions.values() if s.is_expired()),
+            "idle_sessions": sum(1 for s in self.sessions.values() if s.get_idle_time() > 300),
+            "memory_usage_mb": 0  # 將在下面計算
+        })
+
+        # 計算內存使用（如果可能）
+        try:
+            import psutil
+            process = psutil.Process()
+            stats["memory_usage_mb"] = round(process.memory_info().rss / (1024 * 1024), 2)
+        except:
+            pass
+
+        return stats
+
+    def _scan_expired_sessions(self) -> List[str]:
+        """掃描過期會話ID列表"""
+        expired_sessions = []
+        for session_id, session in self.sessions.items():
+            if session.is_expired():
+                expired_sessions.append(session_id)
+        return expired_sessions
+
     def stop(self):
         """停止 Web UI 服務"""
         # 清理所有會話
+        cleanup_start_time = time.time()
+        session_count = len(self.sessions)
+
         for session in list(self.sessions.values()):
-            session.cleanup()
+            try:
+                session._cleanup_sync_enhanced(CleanupReason.SHUTDOWN)
+            except Exception as e:
+                debug_log(f"停止服務時清理會話失敗: {e}")
+
         self.sessions.clear()
-        
+        self.current_session = None
+
+        # 更新統計
+        cleanup_duration = time.time() - cleanup_start_time
+        self.cleanup_stats.update({
+            "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
+            "manual_cleanups": self.cleanup_stats["manual_cleanups"] + 1,
+            "last_cleanup_time": datetime.now().isoformat(),
+            "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"] + cleanup_duration,
+            "sessions_cleaned": self.cleanup_stats["sessions_cleaned"] + session_count
+        })
+
+        debug_log(f"停止服務時清理了 {session_count} 個會話，耗時: {cleanup_duration:.2f}秒")
+
         # 停止伺服器（注意：uvicorn 的 graceful shutdown 需要額外處理）
         if self.server_thread and self.server_thread.is_alive():
             debug_log("正在停止 Web UI 服務")

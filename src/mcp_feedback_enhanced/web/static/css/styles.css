@@ -1266,3 +1266,127 @@ body {
 .compatibility-hint-btn:hover {
     background: #f57c00;
 }
+
+/* 自動刷新控制項樣式 */
+.section-header-with-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* AI 工作摘要標題樣式 */
+h3.combined-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.auto-refresh-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 10px;
+    transition: all 0.3s ease;
+}
+
+.auto-refresh-controls:hover {
+    border-color: var(--accent-color);
+    background: var(--surface-color);
+}
+
+.auto-refresh-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.auto-refresh-toggle input[type="checkbox"] {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    background: var(--bg-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.auto-refresh-toggle input[type="checkbox"]:checked {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.auto-refresh-toggle input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 9px;
+    font-weight: bold;
+}
+
+.toggle-label {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.auto-refresh-interval {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.auto-refresh-interval input[type="number"] {
+    width: 50px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 4px 6px;
+    font-size: 13px;
+    text-align: center;
+}
+
+.auto-refresh-interval input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.interval-unit {
+    color: var(--text-secondary);
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.auto-refresh-status {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 4px;
+    background: var(--bg-primary);
+    border-radius: 3px;
+    border: 1px solid var(--border-color);
+}
+
+.auto-refresh-status .status-indicator {
+    font-size: 13px;
+}
+
+.auto-refresh-status .status-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+    white-space: nowrap;
+}

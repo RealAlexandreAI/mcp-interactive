@@ -42,11 +42,18 @@
 - **智能偵測**：根據系統語言自動選擇
 - **即時切換**：介面內可直接切換語言
 
-### ✨ WSL 環境支援（v2.2.5 新功能）
+### ✨ WSL 環境支援（v2.2.5）
 - **自動檢測**：智能識別 WSL (Windows Subsystem for Linux) 環境
 - **瀏覽器整合**：WSL 環境下自動啟動 Windows 瀏覽器
 - **多種啟動方式**：支援 `cmd.exe`、`powershell.exe`、`wslview` 等多種瀏覽器啟動方法
 - **無縫體驗**：WSL 用戶可直接使用 Web UI，無需額外配置
+
+### 🌐 SSH Remote 環境支援（v2.3.0 新功能）
+- **智能檢測**：自動識別 SSH Remote 環境（Cursor SSH Remote、VS Code Remote SSH 等）
+- **瀏覽器啟動指引**：當無法自動啟動瀏覽器時，提供清晰的解決方案
+- **端口轉發支援**：完整的端口轉發設定指引和故障排除
+- **MCP 整合優化**：改善與 MCP 系統的整合，提供更穩定的連接體驗
+- **詳細文檔**：[SSH Remote 環境使用指南](docs/zh-TW/ssh-remote/browser-launch-issues.md)
 
 ## 🖥️ 介面預覽
 
@@ -180,14 +187,29 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # 測試 Web UI (自�
 
 📋 **完整版本更新記錄：** [RELEASE_NOTES/CHANGELOG.zh-TW.md](RELEASE_NOTES/CHANGELOG.zh-TW.md)
 
-### 最新版本亮點（v2.2.5）
-- ✨ **WSL 環境支援**: 新增 WSL (Windows Subsystem for Linux) 環境的完整支援
-- 🌐 **智能瀏覽器啟動**: WSL 環境下自動調用 Windows 瀏覽器，支援多種啟動方式
-- 🎯 **環境檢測優化**: 改進遠端環境檢測邏輯，WSL 不再被誤判為遠端環境
-- 🧪 **測試體驗提升**: 測試模式下自動嘗試啟動瀏覽器，提供更好的測試體驗
+### 最新版本亮點（v2.3.0）
+- 🌐 **SSH Remote 環境支援**: 解決 Cursor SSH Remote 無法啟動瀏覽器的問題，提供清晰的使用指引
+- 🛡️ **錯誤提示改善**: 當發生錯誤時，提供更友善的錯誤訊息和解決建議
+- 🧹 **自動清理功能**: 自動清理臨時文件和過期會話，保持系統整潔
+- 📊 **記憶體監控**: 監控記憶體使用情況，防止系統資源不足
+- 🔧 **連線穩定性**: 改善 Web UI 的連線穩定性和錯誤處理
 
 ## 🐛 常見問題
 
+### 🌐 SSH Remote 環境問題
+**Q: SSH Remote 環境下瀏覽器無法啟動**
+A: 這是正常現象。SSH Remote 環境沒有圖形界面，需要手動在本地瀏覽器開啟。詳細解決方案請參考：[SSH Remote 環境使用指南](docs/zh-TW/ssh-remote/browser-launch-issues.md)
+
+**Q: 為什麼沒有接收到 MCP 新的反饋？**
+A: 可能是 WebSocket 連接問題。**解決方法**：直接重新整理瀏覽器頁面。
+
+**Q: 為什麼沒有呼叫出 MCP？**
+A: 請確認 MCP 工具狀態為綠燈。**解決方法**：反覆開關 MCP 工具，等待幾秒讓系統重新連接。
+
+**Q: Augment 無法啟動 MCP**
+A: **解決方法**：完全關閉並重新啟動 VS Code 或 Cursor，重新開啟專案。
+
+### 🔧 一般問題
 **Q: 出現 "Unexpected token 'D'" 錯誤**
 A: 調試輸出干擾。設置 `MCP_DEBUG=false` 或移除該環境變數。
 

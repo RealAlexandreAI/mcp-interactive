@@ -8,7 +8,7 @@
 
 ## 🎯 Core Concept
 
-This is an [MCP server](https://modelcontextprotocol.io/) that establishes **feedback-oriented development workflows**, perfectly adapting to local, **SSH remote development environments**, and **WSL (Windows Subsystem for Linux) environments**. By guiding AI to confirm with users rather than making speculative operations, it can consolidate multiple tool calls into a single feedback-oriented request, dramatically reducing platform costs and improving development efficiency.
+This is an [MCP server](https://modelcontextprotocol.io/) that establishes **feedback-oriented development workflows**, perfectly adapting to local, **SSH Remote environments** (Cursor SSH Remote, VS Code Remote SSH), and **WSL (Windows Subsystem for Linux) environments**. By guiding AI to confirm with users rather than making speculative operations, it can consolidate multiple tool calls into a single feedback-oriented request, dramatically reducing platform costs and improving development efficiency.
 
 **Supported Platforms:** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
@@ -42,11 +42,18 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 - **Smart Detection**: Auto-select based on system language
 - **Live Switching**: Change language directly within interface
 
-### ✨ WSL Environment Support (v2.2.5 New Feature)
+### ✨ WSL Environment Support (v2.2.5)
 - **Auto Detection**: Intelligently identifies WSL (Windows Subsystem for Linux) environments
 - **Browser Integration**: Automatically launches Windows browser in WSL environments
 - **Multiple Launch Methods**: Supports `cmd.exe`, `powershell.exe`, `wslview` and other browser launch methods
 - **Seamless Experience**: WSL users can directly use Web UI without additional configuration
+
+### 🌐 SSH Remote Environment Support (v2.3.0 New Feature)
+- **Smart Detection**: Automatically identifies SSH Remote environments (Cursor SSH Remote, VS Code Remote SSH, etc.)
+- **Browser Launch Guidance**: Provides clear solutions when browser cannot launch automatically
+- **Port Forwarding Support**: Complete port forwarding setup guidance and troubleshooting
+- **MCP Integration Optimization**: Improved integration with MCP system for more stable connection experience
+- **Detailed Documentation**: [SSH Remote Environment Usage Guide](docs/en/ssh-remote/browser-launch-issues.md)
 
 ## 🖥️ Interface Preview
 
@@ -134,6 +141,7 @@ For best results, add these rules to your AI assistant:
 |----------|---------|--------|---------|
 | `FORCE_WEB` | Force use Web UI | `true`/`false` | `false` |
 | `MCP_DEBUG` | Debug mode | `true`/`false` | `false` |
+| `MCP_WEB_PORT` | Web UI port | `1024-65535` | `8765` |
 
 ### Testing Options
 ```bash
@@ -178,19 +186,37 @@ uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto co
 
 📋 **Complete Version History:** [RELEASE_NOTES/CHANGELOG.en.md](RELEASE_NOTES/CHANGELOG.en.md)
 
-### Latest Version Highlights (v2.2.5)
-- ✨ **WSL Environment Support**: Added comprehensive support for WSL (Windows Subsystem for Linux) environments
-- 🌐 **Smart Browser Launching**: Automatically invokes Windows browser in WSL environments with multiple launch methods
-- 🎯 **Environment Detection Optimization**: Improved remote environment detection logic, WSL no longer misidentified as remote environment
-- 🧪 **Testing Experience Improvement**: Test mode automatically attempts browser launching for better testing experience
+### Latest Version Highlights (v2.3.0)
+- 🌐 **SSH Remote Environment Support**: Solved Cursor SSH Remote browser launch issues with clear usage guidance
+- 🛡️ **Error Message Improvements**: Provides more user-friendly error messages and solution suggestions when errors occur
+- 🧹 **Auto-cleanup Features**: Automatically cleans temporary files and expired sessions to keep the system tidy
+- 📊 **Memory Monitoring**: Monitors memory usage to prevent system resource shortage
+- 🔧 **Connection Stability**: Improved Web UI connection stability and error handling
 
 ## 🐛 Common Issues
 
+### 🌐 SSH Remote Environment Issues
+**Q: Browser cannot launch in SSH Remote environment**
+A: This is normal behavior. SSH Remote environments have no graphical interface, requiring manual opening in local browser. For detailed solutions, see: [SSH Remote Environment Usage Guide](docs/en/ssh-remote/browser-launch-issues.md)
+
+**Q: Why am I not receiving new MCP feedback?**
+A: There might be a WebSocket connection issue. **Solution**: Simply refresh the browser page.
+
+**Q: Why isn't MCP being called?**
+A: Please confirm the MCP tool status shows green light. **Solution**: Toggle the MCP tool on/off repeatedly, wait a few seconds for system reconnection.
+
+**Q: Augment cannot start MCP**
+A: **Solution**: Completely close and restart VS Code or Cursor, then reopen the project.
+
+### 🔧 General Issues
 **Q: Getting "Unexpected token 'D'" error**
 A: Debug output interference. Set `MCP_DEBUG=false` or remove the environment variable.
 
 **Q: Chinese character garbled text**
 A: Fixed in v2.0.3. Update to latest version: `uvx mcp-feedback-enhanced@latest`
+
+**Q: Multi-screen window disappearing or positioning errors**
+A: Fixed in v2.1.1. Go to "⚙️ Settings" tab, check "Always show window at primary screen center" to resolve. Especially useful for T-shaped screen arrangements and other complex multi-monitor configurations.
 
 **Q: Image upload fails**
 A: Check file size (≤1MB) and format (PNG/JPG/GIF/BMP/WebP).
@@ -218,21 +244,11 @@ uv cache clean
 ```
 For detailed instructions, see: [Cache Management Guide](docs/en/cache-management.md)
 
-**Q: Gemini Pro 2.5 cannot parse images**
-A: Known issue. Gemini Pro 2.5 may not correctly parse uploaded image content. Testing shows Claude-4-Sonnet can properly analyze images. Recommend using Claude models for better image understanding capabilities.
-
-**Q: Multi-screen window positioning issues**
-A: Fixed in v2.1.1. Go to "⚙️ Settings" tab, check "Always show window at primary screen center" to resolve window positioning issues. Especially useful for T-shaped screen arrangements and other complex multi-monitor configurations.
-
-**Q: Cannot launch browser in WSL environment**
-A: v2.2.5 has added WSL environment support. If issues persist:
-1. Confirm WSL version (WSL 2 recommended)
-2. Check if Windows browser is properly installed
-3. Try manual test: run `cmd.exe /c start https://www.google.com` in WSL
-4. If `wslu` package is installed, you can also try the `wslview` command
-
-**Q: WSL environment misidentified as remote environment**
-A: v2.2.5 has fixed this issue. WSL environments are now correctly identified and use Web UI with Windows browser launching, instead of being misidentified as remote environments.
+**Q: AI models cannot parse images**
+A: Various AI models (including Gemini Pro 2.5, Claude, etc.) may have instability in image parsing, sometimes correctly identifying and sometimes unable to parse uploaded image content. This is a known limitation of AI visual understanding technology. Recommendations:
+1. Ensure good image quality (high contrast, clear text)
+2. Try uploading multiple times, retries usually succeed
+3. If parsing continues to fail, try adjusting image size or format
 
 ## 🙏 Acknowledgments
 
@@ -246,3 +262,14 @@ If you find this useful, please:
 
 ### Design Inspiration
 **sanshao85** - [mcp-feedback-collector](https://github.com/sanshao85/mcp-feedback-collector)
+
+### Community Support
+- **Discord:** [https://discord.gg/Gur2V67](https://discord.gg/Gur2V67)
+- **Issues:** [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+---
+**🌟 Welcome to Star and share with more developers!**

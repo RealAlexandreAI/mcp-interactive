@@ -2,37 +2,31 @@
 
 This document records all version updates for **MCP Feedback Enhanced**.
 
-## [v2.2.5] - WSL Environment Support & Cross-Platform Enhancement
-# Release v2.2.5 - WSL Environment Support & Cross-Platform Enhancement
+## [v2.3.0] - System Stability & Resource Management Enhancement
 
-## 🌟 Highlights
-This version introduces comprehensive support for WSL (Windows Subsystem for Linux) environments, enabling WSL users to seamlessly use this tool with automatic Windows browser launching, significantly improving cross-platform development experience.
+### 🌟 Highlights
+This version focuses on improving system stability and user experience, particularly solving the browser launch issue in Cursor SSH Remote environments.
 
-## ✨ New Features
-- 🐧 **WSL Environment Detection**: Automatically identifies WSL environments and provides specialized support logic
-- 🌐 **Smart Browser Launching**: Automatically invokes Windows browser in WSL environments with multiple launch methods
-- 🔧 **Cross-Platform Testing Enhancement**: Test functionality integrates WSL detection for improved test coverage
+### ✨ New Features
+- 🌐 **SSH Remote Environment Support**: Solved Cursor SSH Remote browser launch issues with clear usage guidance
+- 🛡️ **Error Message Improvements**: Provides more user-friendly error messages and solution suggestions when errors occur
+- 🧹 **Auto-cleanup Features**: Automatically cleans temporary files and expired sessions to keep the system tidy
+- 📊 **Memory Monitoring**: Monitors memory usage to prevent system resource shortage
 
-## 🚀 Improvements
-- 🎯 **Environment Detection Optimization**: Improved remote environment detection logic, WSL no longer misidentified as remote environment
-- 📊 **System Information Enhancement**: System information tool now displays WSL environment status
-- 🧪 **Testing Experience Improvement**: Test mode automatically attempts browser launching for better testing experience
+### 🚀 Improvements
+- 💾 **Resource Management Optimization**: Better system resource management for improved performance
+- 🔧 **Enhanced Error Handling**: Provides clearer explanations and solutions when problems occur
+- 🌐 **Connection Stability**: Improved Web UI connection stability
+- 🖼️ **Image Upload Optimization**: Enhanced stability of image upload functionality
 
-## 📦 Installation & Update
-```bash
-# Quick test latest version
-uvx mcp-feedback-enhanced@latest test --gui
-
-# Update to specific version
-uvx mcp-feedback-enhanced@v2.2.5 test
-```
-
-## 🔗 Related Links
-- Full Documentation: [README.md](../../README.md)
-- Issue Reports: [GitHub Issues](https://github.com/Minidoracat/mcp-feedback-enhanced/issues)
-- Project Homepage: [GitHub Repository](https://github.com/Minidoracat/mcp-feedback-enhanced)
+### 🐛 Bug Fixes
+- 🌐 **Connection Issues**: Fixed WebSocket connection related problems
+- 🔄 **Session Management**: Fixed session state tracking issues
+- 🖼️ **Image Processing**: Fixed event handling issues during image upload
 
 ---
+
+## [v2.2.5] - WSL Environment Support & Cross-Platform Enhancement
 
 ### ✨ New Features
 - 🐧 **WSL Environment Detection**: Automatically identifies WSL environments and provides specialized support logic

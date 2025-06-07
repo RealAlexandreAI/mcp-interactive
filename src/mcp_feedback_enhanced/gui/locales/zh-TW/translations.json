@@ -129,7 +129,8 @@
     },
     "window": {
       "title": "視窗定位",
-      "alwaysCenter": "總是在主螢幕中心顯示視窗"
+      "alwaysCenter": "總是在主螢幕中心顯示視窗",
+      "autoFocus": "窗口打開時自動聚焦到輸入框"
     },
     "reset": {
       "title": "重置設定",
@@ -352,4 +353,4 @@
       "findPortFailed": "❌ 尋找可用端口失敗: {error}"
     }
   }
-} 
+}

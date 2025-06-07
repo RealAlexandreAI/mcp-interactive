@@ -117,7 +117,8 @@
     },
     "window": {
       "title": "Window Positioning",
-      "alwaysCenter": "Always show window at primary screen center"
+      "alwaysCenter": "Always show window at primary screen center",
+      "autoFocus": "Auto-focus input box when window opens"
     },
     "reset": {
       "title": "Reset Settings",
@@ -357,4 +358,4 @@
       "findPortFailed": "❌ Failed to find available port: {error}"
     }
   }
-} 
+}

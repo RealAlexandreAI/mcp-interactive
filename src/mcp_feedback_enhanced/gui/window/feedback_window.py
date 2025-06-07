@@ -61,11 +61,14 @@ class FeedbackWindow(QMainWindow):
         # 如果啟用了超時，自動開始倒數計時
         self.start_timeout_if_enabled()
 
-        # 設置定時器在窗口顯示後自動聚焦到輸入框
-        self._focus_timer = QTimer()
-        self._focus_timer.setSingleShot(True)
-        self._focus_timer.timeout.connect(self._auto_focus_input)
-        self._focus_timer.start(300)  # 延遲300ms確保窗口和UI元素完全加載
+        # 設置定時器在窗口顯示後自動聚焦到輸入框（如果啟用）
+        if self.config_manager.get_auto_focus_enabled():
+            self._focus_timer = QTimer()
+            self._focus_timer.setSingleShot(True)
+            self._focus_timer.timeout.connect(self._auto_focus_input)
+            self._focus_timer.start(300)  # 延遲300ms確保窗口和UI元素完全加載
+        else:
+            debug_log("自動聚焦已停用")
 
     def _setup_ui(self) -> None:
         """設置用戶介面"""

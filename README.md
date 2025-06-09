@@ -21,13 +21,13 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 
 ## 🌟 Key Features
 
-### 🖥️ Dual Interface System
-- **Qt GUI**: Native experience for local environments, modular refactored design
-- **Web UI**: Modern interface for remote SSH and WSL environments, brand new architecture
-- **Smart Switching**: Auto-detect environment (local/remote/WSL) and choose optimal interface
+### 🌐 Web UI Interface System
+- **Web UI**: Modern interface for all environments, brand new architecture
+- **Universal Compatibility**: Supports local, SSH Remote, and WSL environments
+- **Auto Adaptation**: Intelligent environment detection and optimal configuration
 
-### 🎨 Brand New Interface Design (v2.1.0)
-- **Modular Architecture**: Both GUI and Web UI adopt modular design
+### 🎨 Modern Interface Design (v2.1.0)
+- **Modular Architecture**: Web UI adopts modular design
 - **Centralized Management**: Reorganized folder structure for easier maintenance
 - **Modern Themes**: Improved visual design and user experience
 - **Responsive Layout**: Adapts to different screen sizes and window dimensions
@@ -56,23 +56,15 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 - **Detailed Documentation**: [SSH Remote Environment Usage Guide](docs/en/ssh-remote/browser-launch-issues.md)
 - 🎯 **Auto-focus Input Box**: Automatically focus on feedback input box when window opens, improving user experience (Thanks @penn201500)
   
-## 🖥️ Interface Preview
+## 🌐 Interface Preview
 
-### Qt GUI Interface (Refactored Version)
-<div align="center">
-  <img src="docs/en/images/gui1.png" width="400" alt="Qt GUI Main Interface" />
-  <img src="docs/en/images/gui2.png" width="400" alt="Qt GUI Settings Interface" />
-</div>
-
-*Qt GUI Interface - Modular refactoring, supporting local environments*
-
-### Web UI Interface (Refactored Version)
+### Web UI Interface (Modern Version)
 <div align="center">
   <img src="docs/en/images/web1.png" width="400" alt="Web UI Main Interface" />
   <img src="docs/en/images/web2.png" width="400" alt="Web UI Settings Interface" />
 </div>
 
-*Web UI Interface - Brand new architecture, suitable for SSH Remote environments*
+*Web UI Interface - Modern architecture, suitable for all environments*
 
 **Keyboard Shortcuts**
 - `Ctrl+Enter` (Windows/Linux) / `Cmd+Enter` (macOS): Submit feedback (supports both main keyboard and numpad)
@@ -113,8 +105,8 @@ uvx mcp-feedback-enhanced@latest test
       "args": ["mcp-feedback-enhanced@latest"],
       "timeout": 600,
       "env": {
-        "FORCE_WEB": "true",
-        "MCP_DEBUG": "false"
+        "MCP_DEBUG": "false",
+        "MCP_WEB_PORT": "8765"
       },
       "autoApprove": ["interactive_feedback"]
     }
@@ -140,7 +132,6 @@ For best results, add these rules to your AI assistant:
 ### Environment Variables
 | Variable | Purpose | Values | Default |
 |----------|---------|--------|---------|
-| `FORCE_WEB` | Force use Web UI | `true`/`false` | `false` |
 | `MCP_DEBUG` | Debug mode | `true`/`false` | `false` |
 | `MCP_WEB_PORT` | Web UI port | `1024-65535` | `8765` |
 
@@ -149,9 +140,9 @@ For best results, add these rules to your AI assistant:
 # Version check
 uvx mcp-feedback-enhanced@latest version       # Check version
 
-# Interface-specific testing
-uvx mcp-feedback-enhanced@latest test --gui    # Quick test Qt GUI
+# Interface testing
 uvx mcp-feedback-enhanced@latest test --web    # Test Web UI (auto continuous running)
+uvx mcp-feedback-enhanced@latest test --enhanced # Enhanced test suite
 
 # Debug mode
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
@@ -172,16 +163,16 @@ uv run python -m mcp_feedback_enhanced test
 # Method 2: Complete test suite (macOS and Windows dev environment)
 uvx --with-editable . mcp-feedback-enhanced test
 
-# Method 3: Interface-specific testing
-uvx --with-editable . mcp-feedback-enhanced test --gui    # Quick test Qt GUI
+# Method 3: Interface testing
 uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto continuous running)
+uvx --with-editable . mcp-feedback-enhanced test --enhanced # Enhanced test suite
 ```
 
 **Testing Descriptions**
 - **Standard Test**: Complete functionality check, suitable for daily development verification
 - **Complete Test**: Deep testing of all components, suitable for pre-release verification
-- **Qt GUI Test**: Quick launch and test of local graphical interface
 - **Web UI Test**: Start Web server and keep running for complete Web functionality testing
+- **Enhanced Test**: Comprehensive test suite with advanced scenarios
 
 ## 🆕 Version History
 
@@ -223,7 +214,7 @@ A: Fixed in v2.1.1. Go to "⚙️ Settings" tab, check "Always show window at pr
 A: Check file size (≤1MB) and format (PNG/JPG/GIF/BMP/WebP).
 
 **Q: Web UI won't start**
-A: Set `FORCE_WEB=true` or check firewall settings.
+A: Check firewall settings or try using a different port.
 
 **Q: UV Cache taking up too much disk space**
 A: Due to frequent use of `uvx` commands, cache may accumulate to tens of GB. Regular cleanup is recommended:

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Web UI 回饋結果資料模型
-======================
+回饋結果資料模型
 
-定義回饋收集的資料結構，與 GUI 版本保持一致。
+定義回饋收集的資料結構，用於 Web UI 與後端的資料傳輸。
 """
 
 from typing import TypedDict, List

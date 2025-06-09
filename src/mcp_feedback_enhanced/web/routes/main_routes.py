@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 def load_user_layout_settings() -> str:
     """載入用戶的佈局模式設定"""
     try:
-        # 使用與 GUI 版本相同的設定檔案路徑
+        # 使用統一的設定檔案路徑
         config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
         settings_file = config_dir / "ui_settings.json"
 
@@ -230,7 +230,7 @@ def setup_routes(manager: 'WebUIManager'):
         try:
             data = await request.json()
 
-            # 使用與 GUI 版本相同的設定檔案路徑
+            # 使用統一的設定檔案路徑
             config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
             config_dir.mkdir(parents=True, exist_ok=True)
             settings_file = config_dir / "ui_settings.json"
@@ -254,7 +254,7 @@ def setup_routes(manager: 'WebUIManager'):
     async def load_settings():
         """從檔案載入設定"""
         try:
-            # 使用與 GUI 版本相同的設定檔案路徑
+            # 使用統一的設定檔案路徑
             config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
             settings_file = config_dir / "ui_settings.json"
 
@@ -279,7 +279,7 @@ def setup_routes(manager: 'WebUIManager'):
     async def clear_settings():
         """清除設定檔案"""
         try:
-            # 使用與 GUI 版本相同的設定檔案路徑
+            # 使用統一的設定檔案路徑
             config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
             settings_file = config_dir / "ui_settings.json"
 

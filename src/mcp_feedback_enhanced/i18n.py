@@ -35,7 +35,7 @@ class I18nManager:
         self._supported_languages = ['zh-TW', 'en', 'zh-CN']
         self._fallback_language = 'en'
         self._config_file = self._get_config_file_path()
-        self._locales_dir = Path(__file__).parent / "gui" / "locales"
+        self._locales_dir = Path(__file__).parent / "web" / "locales"
         
         # 載入翻譯
         self._load_all_translations()
@@ -55,7 +55,7 @@ class I18nManager:
         
         for lang_code in self._supported_languages:
             lang_dir = self._locales_dir / lang_code
-            translation_file = lang_dir / "translations.json"
+            translation_file = lang_dir / "translation.json"
             
             if translation_file.exists():
                 try:
@@ -270,7 +270,6 @@ class I18nManager:
             'language_zh_cn': 'languageNames.zhCn',
             
             # 測試
-            'test_qt_gui_summary': 'test.qtGuiSummary',
             'test_web_ui_summary': 'test.webUiSummary',
         }
         

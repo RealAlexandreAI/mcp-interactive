@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Web UI 主要管理器
-================
+Web UI 主要管理類
 
-基於 FastAPI 的 Web 用戶介面主要管理類，參考 GUI 的設計模式重構。
-專為 SSH 遠端開發環境設計，支援現代化界面和多語言。
+基於 FastAPI 的 Web 用戶介面主要管理類，採用現代化架構設計。
+提供完整的回饋收集、圖片上傳、命令執行等功能。
 """
 
 import asyncio

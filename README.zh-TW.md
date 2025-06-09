@@ -21,13 +21,13 @@
 
 ## 🌟 主要功能
 
-### 🖥️ 雙介面系統
-- **Qt GUI**：本地環境原生體驗，模組化重構設計
-- **Web UI**：遠端 SSH 環境與 WSL 環境現代化界面，全新架構
-- **智能切換**：自動檢測環境（本地/遠端/WSL）並選擇最適介面
+### 🌐 Web UI 介面系統
+- **Web UI**：適用於所有環境的現代化界面，全新架構
+- **通用相容性**：支援本地、SSH Remote 和 WSL 環境
+- **自動適配**：智能環境檢測與最佳配置
 
-### 🎨 全新界面設計（v2.1.0）
-- **模組化架構**：GUI 和 Web UI 均採用模組化設計
+### 🎨 現代化界面設計（v2.1.0）
+- **模組化架構**：Web UI 採用模組化設計
 - **集中管理**：資料夾結構重新組織，維護更容易
 - **現代化主題**：改進的視覺設計和用戶體驗
 - **響應式布局**：適應不同螢幕尺寸和視窗大小
@@ -55,23 +55,15 @@
 - **MCP 整合優化**：改善與 MCP 系統的整合，提供更穩定的連接體驗
 - **詳細文檔**：[SSH Remote 環境使用指南](docs/zh-TW/ssh-remote/browser-launch-issues.md)
 
-## 🖥️ 介面預覽
+## 🌐 介面預覽
 
-### Qt GUI 介面（重構版）
-<div align="center">
-  <img src="docs/zh-TW/images/gui1.png" width="400" alt="Qt GUI 主介面" />
-  <img src="docs/zh-TW/images/gui2.png" width="400" alt="Qt GUI 設定介面" />
-</div>
-
-*Qt GUI 介面 - 模組化重構，支援本地環境*
-
-### Web UI 介面（重構版）
+### Web UI 介面（現代版）
 <div align="center">
   <img src="docs/zh-TW/images/web1.png" width="400" alt="Web UI 主介面" />
   <img src="docs/zh-TW/images/web2.png" width="400" alt="Web UI 設定介面" />
 </div>
 
-*Web UI 介面 - 全新架構，適合 SSH Remote 環境*
+*Web UI 介面 - 現代化架構，適合所有環境*
 
 **快捷鍵支援**
 - `Ctrl+Enter`（Windows/Linux）/ `Cmd+Enter`（macOS）：提交回饋（主鍵盤與數字鍵盤皆支援）
@@ -112,7 +104,6 @@ uvx mcp-feedback-enhanced@latest test
       "args": ["mcp-feedback-enhanced@latest"],
       "timeout": 600,
       "env": {
-        "FORCE_WEB": "true",
         "MCP_DEBUG": "false",
         "MCP_WEB_PORT": "8765"
       },
@@ -140,7 +131,6 @@ uvx mcp-feedback-enhanced@latest test
 ### 環境變數
 | 變數 | 用途 | 值 | 默認 |
 |------|------|-----|------|
-| `FORCE_WEB` | 強制使用 Web UI | `true`/`false` | `false` |
 | `MCP_DEBUG` | 調試模式 | `true`/`false` | `false` |
 | `MCP_WEB_PORT` | Web UI 端口 | `1024-65535` | `8765` |
 
@@ -149,9 +139,9 @@ uvx mcp-feedback-enhanced@latest test
 # 版本查詢
 uvx mcp-feedback-enhanced@latest version       # 檢查版本
 
-# 指定介面測試
-uvx mcp-feedback-enhanced@latest test --gui    # 快速測試 Qt GUI
+# 介面測試
 uvx mcp-feedback-enhanced@latest test --web    # 測試 Web UI (自動持續運行)
+uvx mcp-feedback-enhanced@latest test --enhanced # 增強測試套件
 
 # 調試模式
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
@@ -172,16 +162,16 @@ uv run python -m mcp_feedback_enhanced test
 # 方式二：完整測試套件（macOS 和 windows 通用開發環境）
 uvx --with-editable . mcp-feedback-enhanced test
 
-# 方式三：指定介面測試
-uvx --with-editable . mcp-feedback-enhanced test --gui    # 快速測試 Qt GUI
+# 方式三：介面測試
 uvx --with-editable . mcp-feedback-enhanced test --web    # 測試 Web UI (自動持續運行)
+uvx --with-editable . mcp-feedback-enhanced test --enhanced # 增強測試套件
 ```
 
 **測試說明**
 - **標準測試**：執行完整的功能檢查，適合日常開發驗證
 - **完整測試**：包含所有組件的深度測試，適合發布前驗證
-- **Qt GUI 測試**：快速啟動並測試本地圖形界面
 - **Web UI 測試**：啟動 Web 服務器並保持運行，便於完整測試 Web 功能
+- **增強測試**：完整的測試套件，包含進階場景
 
 ## 🆕 版本更新記錄
 
@@ -224,7 +214,7 @@ A: 已在 v2.1.1 修復。進入「⚙️ 設定」分頁，勾選「總是在�
 A: 檢查檔案大小（≤1MB）和格式（PNG/JPG/GIF/BMP/WebP）。
 
 **Q: Web UI 無法啟動**
-A: 設置 `FORCE_WEB=true` 或檢查防火牆設定。
+A: 檢查防火牆設定或嘗試使用不同的端口。
 
 **Q: UV Cache 佔用過多磁碟空間**
 A: 由於頻繁使用 `uvx` 命令，cache 可能會累積到數十 GB。建議定期清理：

@@ -29,7 +29,6 @@ def main():
     # 測試命令
     test_parser = subparsers.add_parser('test', help='執行測試')
     test_parser.add_argument('--web', action='store_true', help='測試 Web UI (自動持續運行)')
-    test_parser.add_argument('--gui', action='store_true', help='測試 Qt GUI (快速測試)')
     test_parser.add_argument('--enhanced', action='store_true', help='執行增強 MCP 測試 (推薦)')
     test_parser.add_argument('--scenario', help='運行特定的測試場景')
     test_parser.add_argument('--tags', help='根據標籤運行測試場景 (逗號分隔)')
@@ -123,11 +122,6 @@ def run_tests(args):
             print("💡 提示：服務器將持續運行，可在瀏覽器中測試互動功能")
             print("💡 按 Ctrl+C 停止服務器")
             interactive_demo(session_info)
-    elif args.gui:
-        print("🧪 執行 Qt GUI 測試...")
-        from .test_qt_gui import test_qt_gui
-        if not test_qt_gui():
-            sys.exit(1)
     else:
         # 默認執行增強測試系統的快速測試
         print("🧪 執行快速測試套件 (使用增強測試系統)...")

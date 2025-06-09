@@ -48,46 +48,32 @@ except ImportError as e:
     debug_log(t('test.messages.webModuleLoadFailed', error=str(e)))
     WEB_UI_AVAILABLE = False
 
-def load_web_ui_language_setting():
-    """載入 Web UI 的語言設定並同步到 GUI 國際化系統"""
+def sync_language_from_web_ui():
+    """載入 Web UI 的語言設定並同步到國際化系統"""
     try:
-        # 讀取 ui_settings.json 配置文件
-        config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
-        settings_file = config_dir / "ui_settings.json"
-
-        if settings_file.exists():
-            with open(settings_file, 'r', encoding='utf-8') as f:
-                settings = json.load(f)
-                language = settings.get('language')
-
-                if language:
-                    debug_log(t('test.messages.loadingLanguageFromSettings', language=language))
-
-                    # 獲取 GUI 國際化管理器並設定語言
-                    i18n_manager = get_i18n_manager()
-                    current_language = i18n_manager.get_current_language()
-
-                    if language != current_language:
-                        debug_log(t('test.messages.syncingLanguage', **{'from': current_language, 'to': language}))
-                        success = i18n_manager.set_language(language)
-                        if success:
-                            debug_log(t('test.messages.guiLanguageSynced', language=language))
-                        else:
-                            debug_log(t('test.messages.languageSetFailed', language=current_language))
-                    else:
-                        debug_log(t('test.messages.languageAlreadySynced', language=language))
-
-                    return language
-                else:
-                    debug_log(t('test.messages.noLanguageInSettings'))
+        # 載入 Web UI 語言設定
+        web_lang_file = Path(__file__).parent / "web" / "config" / "language.json"
+        
+        language = 'zh-TW'  # 預設語言
+        if web_lang_file.exists():
+            try:
+                with open(web_lang_file, 'r', encoding='utf-8') as f:
+                    web_config = json.load(f)
+                    language = web_config.get('language', 'zh-TW')
+            except Exception as e:
+                debug_log(f"讀取 Web UI 語言設定失敗: {e}")
+        
+        # 獲取國際化管理器並設定語言
+        i18n = get_i18n_manager()
+        success = i18n.set_language(language)
+        
+        if success:
+            debug_log(t('test.messages.languageSynced', language=language))
         else:
-            debug_log(t('test.messages.settingsFileNotExists'))
-
+            debug_log(f"設定語言失敗: {language}")
+            
     except Exception as e:
-        debug_log(t('test.messages.loadLanguageSettingsFailed', error=str(e)))
-
-    # 返回當前語言作為回退
-    return get_i18n_manager().get_current_language()
+        debug_log(f"語言同步失敗: {e}")
 
 def get_test_summary():
     """獲取測試摘要，使用國際化系統"""
@@ -113,10 +99,8 @@ def test_web_ui(keep_running=False):
     debug_log(t('test.messages.testingWebUi'))
     debug_log("=" * 50)
 
-    # 同步 Web UI 語言設定到 GUI 國際化系統
-    debug_log(t('test.messages.syncingLanguageSettings'))
-    current_language = load_web_ui_language_setting()
-    debug_log(t('test.messages.currentLanguage', language=current_language))
+    # 同步 Web UI 語言設定到國際化系統
+    sync_language_from_web_ui()
     debug_log("-" * 30)
     
     # Test import
@@ -241,7 +225,7 @@ def test_web_ui(keep_running=False):
     debug_log(t('test.messages.allTestsPassed'))
     debug_log(t('test.messages.notes'))
     debug_log(t('test.messages.webUiAutoEnabled'))
-    debug_log(t('test.messages.localEnvironmentGui'))
+    debug_log(t('test.messages.localEnvironmentWebUi'))
     debug_log(t('test.messages.realtimeCommandSupport'))
     debug_log(t('test.messages.modernDarkTheme'))
     debug_log(t('test.messages.smartCtrlVPaste'))
@@ -254,22 +238,14 @@ def test_environment_detection():
     debug_log("-" * 30)
 
     try:
-        from .server import is_remote_environment, is_wsl_environment, can_use_gui
+        from .server import is_remote_environment, is_wsl_environment
 
         wsl_detected = is_wsl_environment()
         remote_detected = is_remote_environment()
-        gui_available = can_use_gui()
 
         debug_log(t('test.messages.wslDetection', result=t('test.messages.yes') if wsl_detected else t('test.messages.no')))
         debug_log(t('test.messages.remoteDetection', result=t('test.messages.yes') if remote_detected else t('test.messages.no')))
-        debug_log(t('test.messages.guiAvailability', result=t('test.messages.yes') if gui_available else t('test.messages.no')))
 
-        if wsl_detected:
-            debug_log(t('test.messages.wslEnvironmentWebUi'))
-        elif remote_detected:
-            debug_log(t('test.messages.remoteEnvironmentWebUi'))
-        else:
-            debug_log(t('test.messages.localEnvironmentQtGui'))
 
         return True
 
@@ -320,14 +296,6 @@ def test_new_parameters():
             debug_log(t('test.messages.timeoutParameterMissing'))
             return False
 
-        # 檢查環境變數支援
-        import os
-        current_force_web = os.getenv("FORCE_WEB")
-        if current_force_web:
-            debug_log(t('test.messages.forceWebDetected', value=current_force_web))
-        else:
-            debug_log(t('test.messages.forceWebNotSet'))
-
         debug_log(t('test.messages.parameterFunctionalityNormal'))
         return True
 
@@ -341,27 +309,19 @@ def test_environment_web_ui_mode():
     debug_log("-" * 30)
 
     try:
-        from .server import interactive_feedback, is_remote_environment, is_wsl_environment, can_use_gui
-        import os
+        from .server import interactive_feedback, is_remote_environment, is_wsl_environment
 
         # 顯示當前環境狀態
         is_wsl = is_wsl_environment()
         is_remote = is_remote_environment()
-        gui_available = can_use_gui()
-        force_web_env = os.getenv("FORCE_WEB", "").lower()
 
-        debug_log(t('test.messages.currentEnvironment', wsl=is_wsl, remote=is_remote, gui=gui_available))
-        debug_log(t('test.messages.forceWebVariable', value=force_web_env or t('test.messages.notSet')))
+        debug_log(t('test.messages.currentEnvironment', wsl=is_wsl, remote=is_remote, webui=True))
+        debug_log("介面類型: Web UI")
 
-        if force_web_env in ("true", "1", "yes", "on"):
-            debug_log(t('test.messages.forceWebEnabled'))
-        elif is_wsl:
+        if is_wsl:
             debug_log(t('test.messages.wslEnvironmentWebUiBrowser'))
-        elif not is_remote and gui_available:
-            debug_log(t('test.messages.localGuiEnvironmentQtGui'))
-            debug_log(t('test.messages.forceWebTestHint'))
         else:
-            debug_log(t('test.messages.autoWebUiRemoteOrNoGui'))
+            debug_log("使用 Web UI 介面")
 
         return True
 
@@ -429,7 +389,7 @@ if __name__ == "__main__":
         debug_log(t('test.messages.usageInstructions'))
         debug_log(t('test.messages.configureMcpServer'))
         debug_log(t('test.messages.aiAssistantAutoCall'))
-        debug_log(t('test.messages.autoSelectGuiOrWebUi'))
+        debug_log(t('test.messages.autoSelectWebUi'))
         debug_log(t('test.messages.provideFeedbackContinue'))
 
         debug_log(t('test.messages.webUiNewFeatures'))

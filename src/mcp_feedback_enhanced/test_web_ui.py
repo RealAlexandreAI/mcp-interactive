@@ -77,7 +77,7 @@ def sync_language_from_web_ui():
 
 def get_test_summary():
     """獲取測試摘要，使用國際化系統"""
-    return t('test.webUiSummary')
+    return t('dynamic.aiSummary')
 
 def find_free_port():
     """Find a free port to use for testing"""
@@ -193,7 +193,7 @@ def test_web_ui(keep_running=False):
     try:
         project_dir = str(Path.cwd())
         # 使用國際化系統獲取測試摘要
-        summary = t('test.webUiSummary')
+        summary = t('dynamic.aiSummary')
         session_id = manager.create_session(project_dir, summary)
         session_info = {
             'manager': manager,

@@ -128,11 +128,8 @@ class I18nManager {
             localStorage.setItem('language', language);
             this.applyTranslations();
 
-            // 更新語言選擇器（只更新設定頁面的）
-            const selector = document.getElementById('settingsLanguageSelect');
-            if (selector) {
-                selector.value = language;
-            }
+            // 更新所有語言選擇器（包括現代化版本）
+            this.setupLanguageSelectors();
 
             // 更新 HTML lang 屬性
             document.documentElement.lang = language;
@@ -174,23 +171,32 @@ class I18nManager {
         // 只更新終端歡迎信息，不要覆蓋 AI 摘要
         this.updateTerminalWelcome();
 
-        // 更新應用程式中的動態狀態文字
-        if (window.feedbackApp) {
-            window.feedbackApp.updateUIState();
-            window.feedbackApp.updateStatusIndicator();
+        // 更新應用程式中的動態狀態文字（使用新的模組化架構）
+        if (window.feedbackApp && window.feedbackApp.isInitialized) {
+            // 更新 UI 狀態
+            if (window.feedbackApp.uiManager && typeof window.feedbackApp.uiManager.updateUIState === 'function') {
+                window.feedbackApp.uiManager.updateUIState();
+            }
+
+            if (window.feedbackApp.uiManager && typeof window.feedbackApp.uiManager.updateStatusIndicator === 'function') {
+                window.feedbackApp.uiManager.updateStatusIndicator();
+            }
+
             // 更新自動檢測狀態文字
-            if (window.feedbackApp.updateAutoRefreshStatus) {
-                window.feedbackApp.updateAutoRefreshStatus();
+            if (window.feedbackApp.autoRefreshManager && typeof window.feedbackApp.autoRefreshManager.updateAutoRefreshStatus === 'function') {
+                window.feedbackApp.autoRefreshManager.updateAutoRefreshStatus();
             }
         }
     }
 
     updateTerminalWelcome() {
         const commandOutput = document.getElementById('commandOutput');
-        if (commandOutput && window.feedbackApp) {
+        if (commandOutput && window.feedbackApp && window.feedbackApp.isInitialized) {
             const welcomeTemplate = this.t('dynamic.terminalWelcome');
             if (welcomeTemplate && welcomeTemplate !== 'dynamic.terminalWelcome') {
-                const welcomeMessage = welcomeTemplate.replace('{sessionId}', window.feedbackApp.sessionId || 'unknown');
+                // 使用 currentSessionId 而不是 sessionId
+                const sessionId = window.feedbackApp.currentSessionId || window.feedbackApp.sessionId || 'unknown';
+                const welcomeMessage = welcomeTemplate.replace('{sessionId}', sessionId);
                 commandOutput.textContent = welcomeMessage;
             }
         }
@@ -212,7 +218,7 @@ class I18nManager {
         // 新版現代化語言選擇器
         const languageOptions = document.querySelectorAll('.language-option');
         if (languageOptions.length > 0) {
-            // 設置當前語言的活躍狀態
+            // 設置當前語言的活躍狀態和點擊事件
             languageOptions.forEach(option => {
                 const lang = option.getAttribute('data-lang');
                 if (lang === this.currentLanguage) {
@@ -220,6 +226,15 @@ class I18nManager {
                 } else {
                     option.classList.remove('active');
                 }
+
+                // 移除舊的事件監聽器（如果存在）
+                option.removeEventListener('click', option._languageClickHandler);
+
+                // 添加新的點擊事件監聽器
+                option._languageClickHandler = () => {
+                    this.setLanguage(lang);
+                };
+                option.addEventListener('click', option._languageClickHandler);
             });
         }
     }

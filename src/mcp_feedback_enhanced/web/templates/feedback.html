@@ -747,19 +747,46 @@
 
     <!-- WebSocket 和 JavaScript -->
     <script src="/static/js/i18n.js?v=2025010510"></script>
+    <!-- 載入所有模組 -->
+    <script src="/static/js/modules/utils.js?v=2025010510"></script>
+    <script src="/static/js/modules/tab-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/websocket-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/image-handler.js?v=2025010510"></script>
+    <script src="/static/js/modules/settings-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/ui-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/auto-refresh-manager.js?v=2025010510"></script>
+    <!-- 主應用程式 -->
     <script src="/static/js/app.js?v=2025010510"></script>
     <script>
-        // 等待 I18nManager 初始化完成後再初始化 FeedbackApp
+        // 等待所有模組載入完成後再初始化 FeedbackApp
         async function initializeApp() {
             const sessionId = '{{ session_id }}';
 
-            // 確保 I18nManager 已經初始化
-            if (window.i18nManager) {
-                await window.i18nManager.init();
+            // 檢查所有必要的模組是否已載入
+            if (!window.MCPFeedback ||
+                !window.MCPFeedback.Utils ||
+                !window.MCPFeedback.FeedbackApp) {
+                console.error('❌ 模組載入不完整，延遲初始化...');
+                setTimeout(initializeApp, 100);
+                return;
             }
 
-            // 初始化 FeedbackApp
-            window.feedbackApp = new FeedbackApp(sessionId);
+            try {
+                // 確保 I18nManager 已經初始化
+                if (window.i18nManager) {
+                    await window.i18nManager.init();
+                }
+
+                // 初始化 FeedbackApp（使用新的命名空間）
+                window.feedbackApp = new window.MCPFeedback.FeedbackApp(sessionId);
+
+                // 初始化應用程式
+                await window.feedbackApp.init();
+
+                console.log('✅ 應用程式初始化完成');
+            } catch (error) {
+                console.error('❌ 應用程式初始化失敗:', error);
+            }
         }
 
         // 頁面載入完成後初始化

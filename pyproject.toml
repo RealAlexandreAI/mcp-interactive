@@ -1,13 +1,13 @@
 [project]
 name = "mcp-feedback-enhanced"
 version = "2.3.0"
-description = "Enhanced MCP server for interactive user feedback and command execution in AI-assisted development, featuring Web UI with intelligent environment detection."
+description = "Enhanced MCP server for interactive user feedback and command execution in AI-assisted development, featuring Web UI with intelligent environment detection and optional Electron desktop application."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
     { name = "Minidoracat", email = "minidora0702@gmail.com" }
 ]
-keywords = ["mcp", "ai", "feedback", "web-ui", "interactive", "development"]
+keywords = ["mcp", "ai", "feedback", "web-ui", "interactive", "development", "electron", "desktop", "cross-platform"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -33,6 +33,9 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
+]
+desktop = [
+    "nodejs>=16.0.0",  # Node.js 環境（需要系統安裝）
 ]
 
 [project.urls]

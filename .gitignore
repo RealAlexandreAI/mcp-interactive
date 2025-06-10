@@ -10,13 +10,62 @@ wheels/
 .venv*/
 venv*/
 
+# Node.js / Electron (Desktop App)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.npm
+.yarn-integrity
+
+# Electron build outputs
+dist-desktop/
+out/
+*.dmg
+*.exe
+*.deb
+*.rpm
+*.AppImage
+*.zip
+*.tar.gz
+
+# Electron cache
+.electron/
+.electron-gyp/
+
 # Logs
 *.log
 
-#Others
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
 
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Others
 .cursor/rules/
 uv.lock
 .mcp_feedback_settings.json
 test_reports/
+
+# Temporary test files
+test_*.py
+
+# User configuration files
+ui_settings.json
+.config/

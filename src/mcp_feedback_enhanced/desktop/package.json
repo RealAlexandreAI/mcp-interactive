@@ -1,0 +1,169 @@
+{
+  "name": "mcp-feedback-enhanced-desktop",
+  "version": "2.3.0",
+  "description": "MCP Feedback Enhanced Desktop Application - Electron-based desktop interface for AI feedback collection",
+  "main": "main.js",
+  "author": {
+    "name": "Augment Agent",
+    "email": "minidora0702@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/minidoracat/mcp-feedback-enhanced",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/minidoracat/mcp-feedback-enhanced.git"
+  },
+  "keywords": [
+    "electron",
+    "mcp",
+    "feedback",
+    "ai",
+    "desktop",
+    "cross-platform"
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --windows",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "dist": "npm run build",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps",
+    "clean": "rimraf dist node_modules",
+    "lint": "eslint *.js",
+    "test": "echo \"桌面應用測試功能待實現\" && exit 0"
+  },
+  "dependencies": {
+    "electron": "^28.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.0.0",
+    "rimraf": "^5.0.0",
+    "eslint": "^8.0.0"
+  },
+  "build": {
+    "appId": "com.minidoracat.mcp-feedback-enhanced",
+    "productName": "MCP Feedback Enhanced",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../",
+        "to": "app",
+        "filter": [
+          "**/*",
+          "!desktop/node_modules",
+          "!desktop/dist",
+          "!**/*.pyc",
+          "!**/__pycache__"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "Development",
+      "desktop": {
+        "StartupNotify": "true",
+        "Encoding": "UTF-8",
+        "MimeType": "x-scheme-handler/mcp-feedback"
+      }
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MCP Feedback Enhanced"
+    },
+    "dmg": {
+      "title": "MCP Feedback Enhanced",
+      "icon": "assets/icon.icns",
+      "background": "assets/dmg-background.png",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "minidoracat",
+      "repo": "mcp-feedback-enhanced"
+    }
+  },
+  "electronDownload": {
+    "mirror": "https://npmmirror.com/mirrors/electron/"
+  }
+}

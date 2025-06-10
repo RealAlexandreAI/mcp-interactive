@@ -29,12 +29,7 @@ def main():
     # 測試命令
     test_parser = subparsers.add_parser('test', help='執行測試')
     test_parser.add_argument('--web', action='store_true', help='測試 Web UI (自動持續運行)')
-    test_parser.add_argument('--enhanced', action='store_true', help='執行增強 MCP 測試 (推薦)')
-    test_parser.add_argument('--scenario', help='運行特定的測試場景')
-    test_parser.add_argument('--tags', help='根據標籤運行測試場景 (逗號分隔)')
-    test_parser.add_argument('--list-scenarios', action='store_true', help='列出所有可用的測試場景')
-    test_parser.add_argument('--report-format', choices=['html', 'json', 'markdown'], help='報告格式')
-    test_parser.add_argument('--timeout', type=int, help='測試超時時間 (秒)')
+    test_parser.add_argument('--timeout', type=int, default=60, help='測試超時時間 (秒)')
     
     # 版本命令
     version_parser = subparsers.add_parser('version', help='顯示版本資訊')
@@ -64,92 +59,81 @@ def run_tests(args):
     # 啟用調試模式以顯示測試過程
     os.environ["MCP_DEBUG"] = "true"
 
-    if args.enhanced or args.scenario or args.tags or args.list_scenarios:
-        # 使用新的增強測試系統
-        print("🚀 執行增強 MCP 測試系統...")
-        import asyncio
-        from .test_mcp_enhanced import MCPTestRunner, TestConfig
-
-        # 創建配置
-        config = TestConfig.from_env()
-        if args.timeout:
-            config.test_timeout = args.timeout
-        if args.report_format:
-            config.report_format = args.report_format
-
-        runner = MCPTestRunner(config)
-
-        async def run_enhanced_tests():
-            try:
-                if args.list_scenarios:
-                    # 列出測試場景
-                    tags = args.tags.split(',') if args.tags else None
-                    runner.list_scenarios(tags)
-                    return True
-
-                success = False
-
-                if args.scenario:
-                    # 運行特定場景
-                    success = await runner.run_single_scenario(args.scenario)
-                elif args.tags:
-                    # 根據標籤運行
-                    tags = [tag.strip() for tag in args.tags.split(',')]
-                    success = await runner.run_scenarios_by_tags(tags)
-                else:
-                    # 運行所有場景
-                    success = await runner.run_all_scenarios()
-
-                return success
-
-            except Exception as e:
-                print(f"❌ 增強測試執行失敗: {e}")
-                return False
-
-        success = asyncio.run(run_enhanced_tests())
-        if not success:
-            sys.exit(1)
-
-    elif args.web:
+    if args.web:
         print("🧪 執行 Web UI 測試...")
-        from .test_web_ui import test_web_ui, interactive_demo
-        success, session_info = test_web_ui()
+        success = test_web_ui_simple()
         if not success:
             sys.exit(1)
-        # Web UI 測試自動啟用持續模式
-        if session_info:
-            print("📝 Web UI 測試完成，進入持續模式...")
-            print("💡 提示：服務器將持續運行，可在瀏覽器中測試互動功能")
-            print("💡 按 Ctrl+C 停止服務器")
-            interactive_demo(session_info)
     else:
-        # 默認執行增強測試系統的快速測試
-        print("🧪 執行快速測試套件 (使用增強測試系統)...")
-        print("💡 提示：使用 --enhanced 參數可執行完整測試")
+        print("❌ 測試功能已簡化")
+        print("💡 對於用戶：使用 'test --web' 測試 Web UI")
+        print("💡 對於開發者：使用 'uv run pytest' 執行完整測試")
+        sys.exit(1)
 
-        import asyncio
-        from .test_mcp_enhanced import MCPTestRunner, TestConfig
 
-        config = TestConfig.from_env()
-        config.test_timeout = 60  # 快速測試使用較短超時
+def test_web_ui_simple():
+    """簡單的 Web UI 測試"""
+    try:
+        from .web.main import WebUIManager
+        import tempfile
+        import time
+        import webbrowser
 
-        runner = MCPTestRunner(config)
+        print("🔧 創建 Web UI 管理器...")
+        manager = WebUIManager(host="127.0.0.1", port=8765)  # 使用固定端口
 
-        async def run_quick_tests():
-            try:
-                # 運行快速測試標籤
-                success = await runner.run_scenarios_by_tags(["quick"])
-                return success
-            except Exception as e:
-                print(f"❌ 快速測試執行失敗: {e}")
+        print("🔧 創建測試會話...")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            session_id = manager.create_session(
+                temp_dir,
+                "Web UI 測試 - 驗證基本功能"
+            )
+
+            if session_id:
+                print("✅ 會話創建成功")
+
+                print("🚀 啟動 Web 服務器...")
+                manager.start_server()
+                time.sleep(5)  # 等待服務器完全啟動
+
+                if manager.server_thread and manager.server_thread.is_alive():
+                    print("✅ Web 服務器啟動成功")
+                    url = f"http://{manager.host}:{manager.port}"
+                    print(f"🌐 服務器運行在: {url}")
+
+                    # 嘗試開啟瀏覽器
+                    print("🌐 正在開啟瀏覽器...")
+                    try:
+                        webbrowser.open(url)
+                        print("✅ 瀏覽器已開啟")
+                    except Exception as e:
+                        print(f"⚠️  無法自動開啟瀏覽器: {e}")
+                        print(f"💡 請手動開啟瀏覽器並訪問: {url}")
+
+                    print("📝 Web UI 測試完成，進入持續模式...")
+                    print("💡 提示：服務器將持續運行，可在瀏覽器中測試互動功能")
+                    print("💡 按 Ctrl+C 停止服務器")
+
+                    try:
+                        # 保持服務器運行
+                        while True:
+                            time.sleep(1)
+                    except KeyboardInterrupt:
+                        print("\n🛑 停止服務器...")
+                        return True
+                else:
+                    print("❌ Web 服務器啟動失敗")
+                    return False
+            else:
+                print("❌ 會話創建失敗")
                 return False
 
-        success = asyncio.run(run_quick_tests())
-        if not success:
-            sys.exit(1)
+    except Exception as e:
+        print(f"❌ Web UI 測試失敗: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
-        print("🎉 快速測試通過！")
-        print("💡 使用 'test --enhanced' 執行完整測試套件")
 
 def show_version():
     """顯示版本資訊"""

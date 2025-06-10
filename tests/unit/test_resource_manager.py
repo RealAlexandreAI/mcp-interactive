@@ -179,21 +179,25 @@ class TestResourceManager:
     def test_cleanup_temp_files(self):
         """測試清理臨時文件"""
         rm = get_resource_manager()
-        
+
         # 創建多個臨時文件
         temp_files = []
         for i in range(3):
             temp_file = rm.create_temp_file(prefix=f"cleanup_test_{i}_")
             temp_files.append(temp_file)
-        
+
         # 確認文件都存在
         for temp_file in temp_files:
             assert os.path.exists(temp_file)
             assert temp_file in rm.temp_files
-        
+
+        # 等待一小段時間讓文件有年齡
+        import time
+        time.sleep(0.1)
+
         # 執行清理（max_age=0 清理所有文件）
         cleaned_count = rm.cleanup_temp_files(max_age=0)
-        
+
         assert cleaned_count == 3
         for temp_file in temp_files:
             assert not os.path.exists(temp_file)
@@ -225,30 +229,34 @@ class TestResourceManager:
     def test_cleanup_all(self):
         """測試全面清理"""
         rm = get_resource_manager()
-        
+
         # 創建各種資源
         temp_file = rm.create_temp_file(prefix="cleanup_all_")
         temp_dir = rm.create_temp_dir(prefix="cleanup_all_")
-        
+
         # 註冊進程
         current_pid = os.getpid()
         rm.register_process(current_pid, description="測試進程", auto_cleanup=False)
-        
+
+        # 等待一小段時間讓文件有年齡
+        import time
+        time.sleep(0.1)
+
         # 執行全面清理
         results = rm.cleanup_all()
-        
+
         assert isinstance(results, dict)
         assert "temp_files" in results
         assert "temp_dirs" in results
         assert "processes" in results
         assert "file_handles" in results
-        
+
         # 檢查文件和目錄是否被清理
         assert not os.path.exists(temp_file)
         assert not os.path.exists(temp_dir)
         assert temp_file not in rm.temp_files
         assert temp_dir not in rm.temp_dirs
-        
+
         # 進程不應該被清理（auto_cleanup=False）
         assert current_pid in rm.processes
     

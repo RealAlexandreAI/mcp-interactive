@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 MCP Feedback Enhanced Web UI 模組
 
@@ -16,11 +15,12 @@ MCP Feedback Enhanced Web UI 模組
 - 本地和遠端環境適配
 """
 
-from .main import WebUIManager, launch_web_feedback_ui, get_web_ui_manager, stop_web_ui
+from .main import WebUIManager, get_web_ui_manager, launch_web_feedback_ui, stop_web_ui
+
 
 __all__ = [
-    'WebUIManager',
-    'launch_web_feedback_ui', 
-    'get_web_ui_manager',
-    'stop_web_ui'
-] 
+    "WebUIManager",
+    "get_web_ui_manager",
+    "launch_web_feedback_ui",
+    "stop_web_ui",
+]

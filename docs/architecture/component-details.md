@@ -13,25 +13,25 @@ graph TB
         TOOL[interactive_feedback<br/>核心工具]
         I18N[i18n.py<br/>國際化支援]
     end
-    
+
     subgraph "第二層：Web UI 管理層"
         MANAGER[WebUIManager<br/>單例管理器]
         SESSION[WebFeedbackSession<br/>會話模型]
         RESULT[FeedbackResult<br/>結果模型]
     end
-    
+
     subgraph "第三層：Web 服務層"
         MAIN[main.py<br/>FastAPI 應用]
         ROUTES[main_routes.py<br/>路由處理]
         WS[WebSocket<br/>實時通信]
     end
-    
+
     subgraph "第四層：前端交互層"
         HTML[feedback.html<br/>主頁面]
         JS[app.js<br/>交互邏輯]
         CSS[樣式文件]
     end
-    
+
     subgraph "工具層"
         BROWSER[browser.py<br/>瀏覽器控制]
         NETWORK[network.py<br/>網路工具]
@@ -39,14 +39,14 @@ graph TB
         CLEANUP[session_cleanup_manager.py<br/>清理管理]
         COMPRESS[compression_*.py<br/>壓縮工具]
     end
-    
+
     SERVER --> MANAGER
     TOOL --> SESSION
     MANAGER --> MAIN
     SESSION --> ROUTES
     ROUTES --> HTML
     HTML --> JS
-    
+
     BROWSER --> MANAGER
     NETWORK --> MAIN
     PORT --> MAIN
@@ -63,7 +63,7 @@ class MCPServer:
     def __init__(self):
         self.app = FastMCP("mcp-feedback-enhanced")
         self.setup_tools()
-    
+
     @self.app.tool()
     async def interactive_feedback(
         project_directory: str,
@@ -128,12 +128,12 @@ stateDiagram-v2
     FEEDBACK_PROCESSING --> FEEDBACK_SUBMITTED: 處理完成
     FEEDBACK_SUBMITTED --> WAITING: 新會話更新
     FEEDBACK_SUBMITTED --> [*]: 會話結束
-    
+
     note right of WAITING
         等待用戶輸入
         顯示 AI 摘要
     end note
-    
+
     note right of FEEDBACK_PROCESSING
         處理回饋數據
         圖片壓縮等
@@ -155,7 +155,7 @@ class FastAPIApp:
         self.setup_middleware()
         self.setup_routes()
         self.setup_websocket()
-    
+
     def setup_middleware(self):
         # CORS 設定
         # 靜態文件服務
@@ -176,13 +176,13 @@ graph LR
         FEEDBACK[GET /feedback]
         STATIC[靜態資源]
     end
-    
+
     subgraph "WebSocket 路由"
         WS[/ws]
         MSG[訊息處理]
         BROADCAST[廣播機制]
     end
-    
+
     GET --> FEEDBACK
     FEEDBACK --> STATIC
     WS --> MSG
@@ -220,15 +220,15 @@ class FeedbackApp {
         this.currentSession = null;
         this.feedbackState = 'WAITING';
     }
-    
+
     // WebSocket 管理
     initWebSocket() { /* ... */ }
     handleWebSocketMessage(data) { /* ... */ }
-    
+
     // 用戶交互
     submitFeedback() { /* ... */ }
     handleImageUpload() { /* ... */ }
-    
+
     // UI 更新
     updateSessionDisplay() { /* ... */ }
     updateFeedbackState() { /* ... */ }

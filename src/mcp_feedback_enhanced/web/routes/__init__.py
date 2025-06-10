@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Web UI 路由模組
 ==============
@@ -9,4 +8,5 @@ Web UI 路由模組
 
 from .main_routes import setup_routes
 
-__all__ = ['setup_routes'] 
+
+__all__ = ["setup_routes"]

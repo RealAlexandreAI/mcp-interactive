@@ -13,7 +13,7 @@ graph TB
         LOCAL_BROWSER[本地瀏覽器]
         LOCAL --> LOCAL_BROWSER
     end
-    
+
     subgraph "SSH 遠程環境"
         REMOTE[遠程服務器]
         SSH_TUNNEL[SSH 隧道]
@@ -21,13 +21,13 @@ graph TB
         REMOTE --> SSH_TUNNEL
         SSH_TUNNEL --> LOCAL_CLIENT
     end
-    
+
     subgraph "WSL 環境"
         WSL[WSL 子系統]
         WIN_BROWSER[Windows 瀏覽器]
         WSL --> WIN_BROWSER
     end
-    
+
     subgraph "容器化部署"
         DOCKER[Docker 容器]
         PORT_MAP[埠映射]
@@ -97,11 +97,11 @@ flowchart TD
     SSH -->|否| WSL{WSL 環境?}
     WSL -->|是| WSL_CONFIG[WSL 配置]
     WSL -->|否| LOCAL_CONFIG[本地配置]
-    
+
     SSH_CONFIG --> TUNNEL[建立 SSH 隧道]
     WSL_CONFIG --> WSL_BROWSER[WSL 瀏覽器開啟]
     LOCAL_CONFIG --> LOCAL_BROWSER[本地瀏覽器開啟]
-    
+
     TUNNEL --> SUCCESS[部署成功]
     WSL_BROWSER --> SUCCESS
     LOCAL_BROWSER --> SUCCESS

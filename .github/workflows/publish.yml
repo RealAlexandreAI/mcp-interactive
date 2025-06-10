@@ -19,44 +19,44 @@ jobs:
     permissions:
       contents: write
       id-token: write
-    
+
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Install uv
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
-    
+
     - name: Set up Python
       run: uv python install
-    
+
     - name: Install dependencies
       run: |
         uv sync --dev
-    
+
     - name: Configure Git
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-    
+
     - name: Commit dependency changes if any
       run: |
         if [ -n "$(git status --porcelain)" ]; then
           git add .
           git commit -m "📦 Update dependencies" || true
         fi
-    
+
     - name: Get current version
       id: current_version
       run: |
         CURRENT_VERSION=$(grep '^version =' pyproject.toml | cut -d'"' -f2)
         echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "Current version: $CURRENT_VERSION"
-    
+
     - name: Bump version
       id: bump_version
       run: |
@@ -64,12 +64,12 @@ jobs:
         NEW_VERSION=$(grep '^version =' pyproject.toml | cut -d'"' -f2)
         echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
         echo "New version: $NEW_VERSION"
-    
+
     - name: Update __init__.py version
       run: |
         NEW_VERSION="${{ steps.bump_version.outputs.new }}"
         sed -i "s/__version__ = \".*\"/__version__ = \"$NEW_VERSION\"/" src/mcp_feedback_enhanced/__init__.py
-    
+
     - name: Extract Release Highlights
       id: extract_highlights
       run: |
@@ -112,7 +112,7 @@ jobs:
           echo "- 🚀 New features and improvements" > highlights.txt
           echo "- 🐛 Bug fixes and optimizations" >> highlights.txt
         fi
-    
+
     - name: Generate Release Body
       id: release_body
       run: |
@@ -173,7 +173,7 @@ jobs:
         echo "**Release automatically generated from CHANGELOG system** 🤖" >> release_body.md
 
         echo "Release body generated successfully"
-    
+
     - name: Verify CHANGELOG Files
       run: |
         NEW_VERSION="v${{ steps.bump_version.outputs.new }}"
@@ -227,7 +227,7 @@ jobs:
         else
           echo "✅ All CHANGELOG files verified successfully"
         fi
-    
+
     - name: Commit version bump
       run: |
         git add .
@@ -236,24 +236,24 @@ jobs:
         - Updated version to ${{ steps.bump_version.outputs.new }}
         - Auto-generated release from simplified workflow"
         git tag "v${{ steps.bump_version.outputs.new }}"
-    
+
     - name: Build package
       run: uv build
-    
+
     - name: Check package
       run: uv run twine check dist/*
-    
+
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-    
+
     - name: Push changes and tags
       run: |
         git push origin main
         git push origin "v${{ steps.bump_version.outputs.new }}"
-    
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
@@ -265,7 +265,7 @@ jobs:
         generate_release_notes: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Summary
       run: |
         echo "🎉 Release v${{ steps.bump_version.outputs.new }} completed successfully!"

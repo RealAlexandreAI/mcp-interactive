@@ -14,7 +14,7 @@ This project now uses a simplified release workflow that no longer requires crea
 Before releasing, manually update these three files:
 
 - `RELEASE_NOTES/CHANGELOG.en.md`
-- `RELEASE_NOTES/CHANGELOG.zh-TW.md` 
+- `RELEASE_NOTES/CHANGELOG.zh-TW.md`
 - `RELEASE_NOTES/CHANGELOG.zh-CN.md`
 
 ### 2. CHANGELOG 格式要求 / CHANGELOG Format Requirements

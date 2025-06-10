@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 瀏覽器工具函數
 ==============
@@ -8,10 +7,9 @@
 """
 
 import os
-import sys
 import subprocess
 import webbrowser
-from typing import Callable
+from collections.abc import Callable
 
 # 導入調試功能
 from ...debug import server_debug_log as debug_log
@@ -26,20 +24,20 @@ def is_wsl_environment() -> bool:
     """
     try:
         # 檢查 /proc/version 文件是否包含 WSL 標識
-        if os.path.exists('/proc/version'):
-            with open('/proc/version', 'r') as f:
+        if os.path.exists("/proc/version"):
+            with open("/proc/version") as f:
                 version_info = f.read().lower()
-                if 'microsoft' in version_info or 'wsl' in version_info:
+                if "microsoft" in version_info or "wsl" in version_info:
                     return True
 
         # 檢查 WSL 相關環境變數
-        wsl_env_vars = ['WSL_DISTRO_NAME', 'WSL_INTEROP', 'WSLENV']
+        wsl_env_vars = ["WSL_DISTRO_NAME", "WSL_INTEROP", "WSLENV"]
         for env_var in wsl_env_vars:
             if os.getenv(env_var):
                 return True
 
         # 檢查是否存在 WSL 特有的路徑
-        wsl_paths = ['/mnt/c', '/mnt/d', '/proc/sys/fs/binfmt_misc/WSLInterop']
+        wsl_paths = ["/mnt/c", "/mnt/d", "/proc/sys/fs/binfmt_misc/WSLInterop"]
         for path in wsl_paths:
             if os.path.exists(path):
                 return True
@@ -59,42 +57,51 @@ def open_browser_in_wsl(url: str) -> None:
     """
     try:
         # 嘗試使用 cmd.exe 啟動瀏覽器
-        cmd = ['cmd.exe', '/c', 'start', url]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        cmd = ["cmd.exe", "/c", "start", url]
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=10, check=False
+        )
 
         if result.returncode == 0:
             debug_log(f"成功使用 cmd.exe 啟動瀏覽器: {url}")
             return
-        else:
-            debug_log(f"cmd.exe 啟動失敗，返回碼: {result.returncode}, 錯誤: {result.stderr}")
+        debug_log(
+            f"cmd.exe 啟動失敗，返回碼: {result.returncode}, 錯誤: {result.stderr}"
+        )
 
     except Exception as e:
         debug_log(f"使用 cmd.exe 啟動瀏覽器失敗: {e}")
 
     try:
         # 嘗試使用 powershell.exe 啟動瀏覽器
-        cmd = ['powershell.exe', '-c', f'Start-Process "{url}"']
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        cmd = ["powershell.exe", "-c", f'Start-Process "{url}"']
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=10, check=False
+        )
 
         if result.returncode == 0:
             debug_log(f"成功使用 powershell.exe 啟動瀏覽器: {url}")
             return
-        else:
-            debug_log(f"powershell.exe 啟動失敗，返回碼: {result.returncode}, 錯誤: {result.stderr}")
+        debug_log(
+            f"powershell.exe 啟動失敗，返回碼: {result.returncode}, 錯誤: {result.stderr}"
+        )
 
     except Exception as e:
         debug_log(f"使用 powershell.exe 啟動瀏覽器失敗: {e}")
 
     try:
         # 最後嘗試使用 wslview（如果安裝了 wslu 套件）
-        cmd = ['wslview', url]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        cmd = ["wslview", url]
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=10, check=False
+        )
 
         if result.returncode == 0:
             debug_log(f"成功使用 wslview 啟動瀏覽器: {url}")
             return
-        else:
-            debug_log(f"wslview 啟動失敗，返回碼: {result.returncode}, 錯誤: {result.stderr}")
+        debug_log(
+            f"wslview 啟動失敗，返回碼: {result.returncode}, 錯誤: {result.stderr}"
+        )
 
     except Exception as e:
         debug_log(f"使用 wslview 啟動瀏覽器失敗: {e}")

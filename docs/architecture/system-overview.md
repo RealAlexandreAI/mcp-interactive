@@ -11,40 +11,40 @@ graph TB
     subgraph "AI 助手環境"
         AI[AI 助手<br/>Claude/GPT等]
     end
-    
+
     subgraph "MCP Feedback Enhanced"
         subgraph "MCP 服務層"
             MCP[MCP Server<br/>server.py]
             TOOL[interactive_feedback<br/>工具]
         end
-        
+
         subgraph "Web UI 管理層"
             WM[WebUIManager<br/>單例模式]
             SESSION[WebFeedbackSession<br/>會話管理]
         end
-        
+
         subgraph "Web 服務層"
             API[FastAPI<br/>HTTP/WebSocket]
             ROUTES[路由處理<br/>main_routes.py]
         end
-        
+
         subgraph "前端交互層"
             UI[Web UI<br/>HTML/JS]
             WS[WebSocket<br/>實時通信]
         end
-        
+
         subgraph "工具層"
             ENV[環境檢測]
             BROWSER[智能瀏覽器開啟]
             RESOURCE[資源管理]
         end
     end
-    
+
     subgraph "用戶環境"
         USER[用戶瀏覽器]
         FILES[專案文件]
     end
-    
+
     AI -->|調用 MCP 工具| MCP
     MCP --> TOOL
     TOOL --> WM
@@ -54,11 +54,11 @@ graph TB
     ROUTES --> UI
     UI --> WS
     WS --> USER
-    
+
     ENV --> MCP
     BROWSER --> USER
     RESOURCE --> SESSION
-    
+
     USER -->|回饋提交| WS
     FILES -->|專案內容| TOOL
 ```
@@ -74,7 +74,7 @@ stateDiagram-v2
     SessionUpdated --> ActiveSession: 會話切換完成
     ActiveSession --> Cleanup: 超時或手動清理
     Cleanup --> NoSession: 資源釋放
-    
+
     note right of ActiveSession
         只維護一個活躍會話
         提升性能和用戶體驗
@@ -97,7 +97,7 @@ flowchart TD
     REMOTE -->|否| WSL{WSL 環境?}
     WSL -->|是| WSLOPEN[WSL 瀏覽器開啟]
     WSL -->|否| FALLBACK[回退模式]
-    
+
     DIRECT --> SUCCESS[成功啟動]
     TUNNEL --> SUCCESS
     WSLOPEN --> SUCCESS
@@ -148,7 +148,7 @@ sequenceDiagram
     participant WM as WebUIManager
     participant UI as Web UI
     participant User as 用戶
-    
+
     AI->>MCP: interactive_feedback()
     MCP->>WM: 創建/更新會話
     WM->>UI: 啟動 Web 服務
@@ -168,7 +168,7 @@ graph LR
     D --> E[會話無縫更新]
     E --> F[用戶再次回饋]
     F --> G[持續循環...]
-    
+
     style D fill:#e1f5fe
     style E fill:#e8f5e8
 ```

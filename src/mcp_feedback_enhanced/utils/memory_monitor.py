@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 集成式內存監控系統
 ==================
@@ -11,15 +10,16 @@
 - 性能優化建議
 """
 
-import os
 import gc
-import time
 import threading
-import psutil
-from typing import Dict, List, Optional, Callable, Any
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 from collections import deque
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+import psutil
+
 from ..debug import debug_log
 from .error_handler import ErrorHandler, ErrorType
 
@@ -27,6 +27,7 @@ from .error_handler import ErrorHandler, ErrorType
 @dataclass
 class MemorySnapshot:
     """內存快照數據類"""
+
     timestamp: datetime
     system_total: int  # 系統總內存 (bytes)
     system_available: int  # 系統可用內存 (bytes)
@@ -41,6 +42,7 @@ class MemorySnapshot:
 @dataclass
 class MemoryAlert:
     """內存警告數據類"""
+
     level: str  # warning, critical, emergency
     message: str
     timestamp: datetime
@@ -51,6 +53,7 @@ class MemoryAlert:
 @dataclass
 class MemoryStats:
     """內存統計數據類"""
+
     monitoring_duration: float  # 監控持續時間 (秒)
     snapshots_count: int  # 快照數量
     average_system_usage: float  # 平均系統內存使用率
@@ -64,16 +67,18 @@ class MemoryStats:
 
 class MemoryMonitor:
     """集成式內存監控器"""
-    
-    def __init__(self, 
-                 warning_threshold: float = 0.8,
-                 critical_threshold: float = 0.9,
-                 emergency_threshold: float = 0.95,
-                 monitoring_interval: int = 30,
-                 max_snapshots: int = 1000):
+
+    def __init__(
+        self,
+        warning_threshold: float = 0.8,
+        critical_threshold: float = 0.9,
+        emergency_threshold: float = 0.95,
+        monitoring_interval: int = 30,
+        max_snapshots: int = 1000,
+    ):
         """
         初始化內存監控器
-        
+
         Args:
             warning_threshold: 警告閾值 (0.0-1.0)
             critical_threshold: 危險閾值 (0.0-1.0)
@@ -86,140 +91,134 @@ class MemoryMonitor:
         self.emergency_threshold = emergency_threshold
         self.monitoring_interval = monitoring_interval
         self.max_snapshots = max_snapshots
-        
+
         # 監控狀態
         self.is_monitoring = False
-        self.monitor_thread: Optional[threading.Thread] = None
+        self.monitor_thread: threading.Thread | None = None
         self._stop_event = threading.Event()
-        
+
         # 數據存儲
         self.snapshots: deque = deque(maxlen=max_snapshots)
-        self.alerts: List[MemoryAlert] = []
+        self.alerts: list[MemoryAlert] = []
         self.max_alerts = 100
-        
+
         # 回調函數
-        self.cleanup_callbacks: List[Callable] = []
-        self.alert_callbacks: List[Callable[[MemoryAlert], None]] = []
-        
+        self.cleanup_callbacks: list[Callable] = []
+        self.alert_callbacks: list[Callable[[MemoryAlert], None]] = []
+
         # 統計數據
-        self.start_time: Optional[datetime] = None
+        self.start_time: datetime | None = None
         self.cleanup_triggers_count = 0
-        
+
         # 進程信息
         self.process = psutil.Process()
-        
+
         debug_log("MemoryMonitor 初始化完成")
-    
+
     def start_monitoring(self) -> bool:
         """
         開始內存監控
-        
+
         Returns:
             bool: 是否成功啟動
         """
         if self.is_monitoring:
             debug_log("內存監控已在運行")
             return True
-        
+
         try:
             self.is_monitoring = True
             self.start_time = datetime.now()
             self._stop_event.clear()
-            
+
             self.monitor_thread = threading.Thread(
-                target=self._monitoring_loop,
-                name="MemoryMonitor",
-                daemon=True
+                target=self._monitoring_loop, name="MemoryMonitor", daemon=True
             )
             self.monitor_thread.start()
-            
+
             debug_log(f"內存監控已啟動，間隔 {self.monitoring_interval} 秒")
             return True
-            
+
         except Exception as e:
             self.is_monitoring = False
             error_id = ErrorHandler.log_error_with_context(
-                e,
-                context={"operation": "啟動內存監控"},
-                error_type=ErrorType.SYSTEM
+                e, context={"operation": "啟動內存監控"}, error_type=ErrorType.SYSTEM
             )
             debug_log(f"啟動內存監控失敗 [錯誤ID: {error_id}]: {e}")
             return False
-    
+
     def stop_monitoring(self) -> bool:
         """
         停止內存監控
-        
+
         Returns:
             bool: 是否成功停止
         """
         if not self.is_monitoring:
             debug_log("內存監控未在運行")
             return True
-        
+
         try:
             self.is_monitoring = False
             self._stop_event.set()
-            
+
             if self.monitor_thread and self.monitor_thread.is_alive():
                 self.monitor_thread.join(timeout=5)
-            
+
             debug_log("內存監控已停止")
             return True
-            
+
         except Exception as e:
             error_id = ErrorHandler.log_error_with_context(
-                e,
-                context={"operation": "停止內存監控"},
-                error_type=ErrorType.SYSTEM
+                e, context={"operation": "停止內存監控"}, error_type=ErrorType.SYSTEM
             )
             debug_log(f"停止內存監控失敗 [錯誤ID: {error_id}]: {e}")
             return False
-    
+
     def _monitoring_loop(self):
         """內存監控主循環"""
         debug_log("內存監控循環開始")
-        
+
         while not self._stop_event.is_set():
             try:
                 # 收集內存快照
                 snapshot = self._collect_memory_snapshot()
                 self.snapshots.append(snapshot)
-                
+
                 # 檢查內存使用情況
                 self._check_memory_usage(snapshot)
-                
+
                 # 等待下次監控
                 if self._stop_event.wait(self.monitoring_interval):
                     break
-                    
+
             except Exception as e:
                 error_id = ErrorHandler.log_error_with_context(
                     e,
                     context={"operation": "內存監控循環"},
-                    error_type=ErrorType.SYSTEM
+                    error_type=ErrorType.SYSTEM,
                 )
                 debug_log(f"內存監控循環錯誤 [錯誤ID: {error_id}]: {e}")
-                
+
                 # 發生錯誤時等待較短時間後重試
                 if self._stop_event.wait(5):
                     break
-        
+
         debug_log("內存監控循環結束")
-    
+
     def _collect_memory_snapshot(self) -> MemorySnapshot:
         """收集內存快照"""
         try:
             # 系統內存信息
             system_memory = psutil.virtual_memory()
-            
+
             # 進程內存信息
             process_memory = self.process.memory_info()
             process_percent = self.process.memory_percent()
-            
+
             # Python 垃圾回收信息
             gc_objects = len(gc.get_objects())
-            
+
             return MemorySnapshot(
                 timestamp=datetime.now(),
                 system_total=system_memory.total,
@@ -229,22 +228,20 @@ class MemoryMonitor:
                 process_rss=process_memory.rss,
                 process_vms=process_memory.vms,
                 process_percent=process_percent,
-                gc_objects=gc_objects
+                gc_objects=gc_objects,
             )
-            
+
         except Exception as e:
             error_id = ErrorHandler.log_error_with_context(
-                e,
-                context={"operation": "收集內存快照"},
-                error_type=ErrorType.SYSTEM
+                e, context={"operation": "收集內存快照"}, error_type=ErrorType.SYSTEM
             )
             debug_log(f"收集內存快照失敗 [錯誤ID: {error_id}]: {e}")
             raise
-    
+
     def _check_memory_usage(self, snapshot: MemorySnapshot):
         """檢查內存使用情況並觸發相應動作"""
         usage_percent = snapshot.system_percent / 100.0
-        
+
         # 檢查緊急閾值
         if usage_percent >= self.emergency_threshold:
             alert = MemoryAlert(
@@ -252,11 +249,11 @@ class MemoryMonitor:
                 message=f"內存使用率達到緊急水平: {snapshot.system_percent:.1f}%",
                 timestamp=snapshot.timestamp,
                 memory_percent=snapshot.system_percent,
-                recommended_action="立即執行強制清理和垃圾回收"
+                recommended_action="立即執行強制清理和垃圾回收",
             )
             self._handle_alert(alert)
             self._trigger_emergency_cleanup()
-            
+
         # 檢查危險閾值
         elif usage_percent >= self.critical_threshold:
             alert = MemoryAlert(
@@ -264,11 +261,11 @@ class MemoryMonitor:
                 message=f"內存使用率達到危險水平: {snapshot.system_percent:.1f}%",
                 timestamp=snapshot.timestamp,
                 memory_percent=snapshot.system_percent,
-                recommended_action="執行資源清理和垃圾回收"
+                recommended_action="執行資源清理和垃圾回收",
             )
             self._handle_alert(alert)
             self._trigger_cleanup()
-            
+
         # 檢查警告閾值
         elif usage_percent >= self.warning_threshold:
             alert = MemoryAlert(
@@ -276,61 +273,62 @@ class MemoryMonitor:
                 message=f"內存使用率較高: {snapshot.system_percent:.1f}%",
                 timestamp=snapshot.timestamp,
                 memory_percent=snapshot.system_percent,
-                recommended_action="考慮執行輕量級清理"
+                recommended_action="考慮執行輕量級清理",
             )
             self._handle_alert(alert)
-    
+
     def _handle_alert(self, alert: MemoryAlert):
         """處理內存警告"""
         # 添加到警告列表
         self.alerts.append(alert)
-        
+
         # 限制警告數量
         if len(self.alerts) > self.max_alerts:
-            self.alerts = self.alerts[-self.max_alerts:]
-        
+            self.alerts = self.alerts[-self.max_alerts :]
+
         # 調用警告回調
         for callback in self.alert_callbacks:
             try:
                 callback(alert)
             except Exception as e:
                 debug_log(f"警告回調執行失敗: {e}")
-        
+
         debug_log(f"內存警告 [{alert.level}]: {alert.message}")
-    
+
     def _trigger_cleanup(self):
         """觸發清理操作"""
         self.cleanup_triggers_count += 1
         debug_log("觸發內存清理操作")
-        
+
         # 執行 Python 垃圾回收
         collected = gc.collect()
         debug_log(f"垃圾回收清理了 {collected} 個對象")
-        
+
         # 調用清理回調
         for callback in self.cleanup_callbacks:
             try:
                 callback()
             except Exception as e:
                 debug_log(f"清理回調執行失敗: {e}")
-    
+
     def _trigger_emergency_cleanup(self):
         """觸發緊急清理操作"""
         debug_log("觸發緊急內存清理操作")
-        
+
         # 執行強制垃圾回收
         for _ in range(3):
             collected = gc.collect()
             debug_log(f"強制垃圾回收清理了 {collected} 個對象")
-        
+
         # 調用清理回調（強制模式）
         for callback in self.cleanup_callbacks:
             try:
-                if hasattr(callback, '__call__'):
+                if callable(callback):
                     # 嘗試傳遞 force 參數
                     import inspect
+
                     sig = inspect.signature(callback)
-                    if 'force' in sig.parameters:
+                    if "force" in sig.parameters:
                         callback(force=True)
                     else:
                         callback()
@@ -338,7 +336,6 @@ class MemoryMonitor:
                     callback()
             except Exception as e:
                 debug_log(f"緊急清理回調執行失敗: {e}")
-
 
     def add_cleanup_callback(self, callback: Callable):
         """添加清理回調函數"""
@@ -364,7 +361,7 @@ class MemoryMonitor:
             self.alert_callbacks.remove(callback)
             debug_log("移除警告回調函數")
 
-    def get_current_memory_info(self) -> Dict[str, Any]:
+    def get_current_memory_info(self) -> dict[str, Any]:
         """獲取當前內存信息"""
         try:
             snapshot = self._collect_memory_snapshot()
@@ -374,21 +371,21 @@ class MemoryMonitor:
                     "total_gb": round(snapshot.system_total / (1024**3), 2),
                     "available_gb": round(snapshot.system_available / (1024**3), 2),
                     "used_gb": round(snapshot.system_used / (1024**3), 2),
-                    "usage_percent": round(snapshot.system_percent, 1)
+                    "usage_percent": round(snapshot.system_percent, 1),
                 },
                 "process": {
                     "rss_mb": round(snapshot.process_rss / (1024**2), 2),
                     "vms_mb": round(snapshot.process_vms / (1024**2), 2),
-                    "usage_percent": round(snapshot.process_percent, 1)
+                    "usage_percent": round(snapshot.process_percent, 1),
                 },
                 "gc_objects": snapshot.gc_objects,
-                "status": self._get_memory_status(snapshot.system_percent / 100.0)
+                "status": self._get_memory_status(snapshot.system_percent / 100.0),
             }
         except Exception as e:
             error_id = ErrorHandler.log_error_with_context(
                 e,
                 context={"operation": "獲取當前內存信息"},
-                error_type=ErrorType.SYSTEM
+                error_type=ErrorType.SYSTEM,
             )
             debug_log(f"獲取內存信息失敗 [錯誤ID: {error_id}]: {e}")
             return {}
@@ -405,7 +402,7 @@ class MemoryMonitor:
                 peak_process_usage=0.0,
                 alerts_count=0,
                 cleanup_triggers=0,
-                memory_trend="unknown"
+                memory_trend="unknown",
             )
 
         # 計算統計數據
@@ -425,10 +422,10 @@ class MemoryMonitor:
             peak_process_usage=max(process_usages),
             alerts_count=len(self.alerts),
             cleanup_triggers=self.cleanup_triggers_count,
-            memory_trend=self._analyze_memory_trend()
+            memory_trend=self._analyze_memory_trend(),
         )
 
-    def get_recent_alerts(self, limit: int = 10) -> List[MemoryAlert]:
+    def get_recent_alerts(self, limit: int = 10) -> list[MemoryAlert]:
         """獲取最近的警告"""
         return self.alerts[-limit:] if self.alerts else []
 
@@ -436,12 +433,11 @@ class MemoryMonitor:
         """獲取內存狀態描述"""
         if usage_percent >= self.emergency_threshold:
             return "emergency"
-        elif usage_percent >= self.critical_threshold:
+        if usage_percent >= self.critical_threshold:
             return "critical"
-        elif usage_percent >= self.warning_threshold:
+        if usage_percent >= self.warning_threshold:
             return "warning"
-        else:
-            return "normal"
+        return "normal"
 
     def _analyze_memory_trend(self) -> str:
         """分析內存使用趨勢"""
@@ -463,10 +459,9 @@ class MemoryMonitor:
 
         if abs(diff) < 2.0:  # 變化小於 2%
             return "stable"
-        elif diff > 0:
+        if diff > 0:
             return "increasing"
-        else:
-            return "decreasing"
+        return "decreasing"
 
     def force_cleanup(self):
         """手動觸發清理操作"""
@@ -486,14 +481,14 @@ class MemoryMonitor:
         self.start_time = datetime.now() if self.is_monitoring else None
         debug_log("內存監控統計數據已重置")
 
-    def export_memory_data(self) -> Dict[str, Any]:
+    def export_memory_data(self) -> dict[str, Any]:
         """導出內存數據"""
         return {
             "config": {
                 "warning_threshold": self.warning_threshold,
                 "critical_threshold": self.critical_threshold,
                 "emergency_threshold": self.emergency_threshold,
-                "monitoring_interval": self.monitoring_interval
+                "monitoring_interval": self.monitoring_interval,
             },
             "current_info": self.get_current_memory_info(),
             "stats": self.get_memory_stats().__dict__,
@@ -503,16 +498,16 @@ class MemoryMonitor:
                     "message": alert.message,
                     "timestamp": alert.timestamp.isoformat(),
                     "memory_percent": alert.memory_percent,
-                    "recommended_action": alert.recommended_action
+                    "recommended_action": alert.recommended_action,
                 }
                 for alert in self.get_recent_alerts()
             ],
-            "is_monitoring": self.is_monitoring
+            "is_monitoring": self.is_monitoring,
         }
 
 
 # 全域內存監控器實例
-_memory_monitor: Optional[MemoryMonitor] = None
+_memory_monitor: MemoryMonitor | None = None
 _monitor_lock = threading.Lock()
 
 

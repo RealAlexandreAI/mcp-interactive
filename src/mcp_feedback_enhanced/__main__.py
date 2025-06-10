@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 MCP Interactive Feedback Enhanced - 主程式入口
 ==============================================
@@ -11,15 +10,18 @@ MCP Interactive Feedback Enhanced - 主程式入口
   python -m mcp_feedback_enhanced test   # 執行測試
 """
 
-import sys
 import argparse
-import os
 import asyncio
+import os
+import sys
 import warnings
 
+
 # 抑制 Windows 上的 asyncio ResourceWarning
-if sys.platform == 'win32':
-    warnings.filterwarnings("ignore", category=ResourceWarning, message=".*unclosed transport.*")
+if sys.platform == "win32":
+    warnings.filterwarnings(
+        "ignore", category=ResourceWarning, message=".*unclosed transport.*"
+    )
     warnings.filterwarnings("ignore", category=ResourceWarning, message=".*unclosed.*")
 
     # 設置 asyncio 事件循環策略以減少警告
@@ -28,47 +30,59 @@ if sys.platform == 'win32':
     except AttributeError:
         pass
 
+
 def main():
     """主程式入口點"""
     parser = argparse.ArgumentParser(
         description="MCP Feedback Enhanced Enhanced - 互動式回饋收集 MCP 伺服器"
     )
-    
-    subparsers = parser.add_subparsers(dest='command', help='可用命令')
-    
+
+    subparsers = parser.add_subparsers(dest="command", help="可用命令")
+
     # 伺服器命令（預設）
-    server_parser = subparsers.add_parser('server', help='啟動 MCP 伺服器（預設）')
-    
+    server_parser = subparsers.add_parser("server", help="啟動 MCP 伺服器（預設）")
+
     # 測試命令
-    test_parser = subparsers.add_parser('test', help='執行測試')
-    test_parser.add_argument('--web', action='store_true', help='測試 Web UI (自動持續運行)')
-    test_parser.add_argument('--desktop', action='store_true', help='測試桌面應用 (啟動 Electron 應用)')
-    test_parser.add_argument('--full', action='store_true', help='完整整合測試 (Web + 桌面)')
-    test_parser.add_argument('--electron-only', action='store_true', help='僅測試 Electron 環境')
-    test_parser.add_argument('--timeout', type=int, default=60, help='測試超時時間 (秒)')
-    
+    test_parser = subparsers.add_parser("test", help="執行測試")
+    test_parser.add_argument(
+        "--web", action="store_true", help="測試 Web UI (自動持續運行)"
+    )
+    test_parser.add_argument(
+        "--desktop", action="store_true", help="測試桌面應用 (啟動 Electron 應用)"
+    )
+    test_parser.add_argument(
+        "--full", action="store_true", help="完整整合測試 (Web + 桌面)"
+    )
+    test_parser.add_argument(
+        "--electron-only", action="store_true", help="僅測試 Electron 環境"
+    )
+    test_parser.add_argument(
+        "--timeout", type=int, default=60, help="測試超時時間 (秒)"
+    )
+
     # 版本命令
-    version_parser = subparsers.add_parser('version', help='顯示版本資訊')
-    
+    version_parser = subparsers.add_parser("version", help="顯示版本資訊")
+
     args = parser.parse_args()
-    
-    if args.command == 'test':
+
+    if args.command == "test":
         run_tests(args)
-    elif args.command == 'version':
+    elif args.command == "version":
         show_version()
-    elif args.command == 'server':
-        run_server()
-    elif args.command is None:
+    elif args.command == "server" or args.command is None:
         run_server()
     else:
         # 不應該到達這裡
         parser.print_help()
         sys.exit(1)
 
+
 def run_server():
     """啟動 MCP 伺服器"""
     from .server import main as server_main
+
     return server_main()
+
 
 def run_tests(args):
     """執行測試"""
@@ -76,7 +90,7 @@ def run_tests(args):
     os.environ["MCP_DEBUG"] = "true"
 
     # 在 Windows 上抑制 asyncio 警告
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         os.environ["PYTHONWARNINGS"] = "ignore::ResourceWarning"
 
     if args.web:
@@ -113,20 +127,18 @@ def run_tests(args):
 def test_web_ui_simple():
     """簡單的 Web UI 測試"""
     try:
-        from .web.main import WebUIManager
         import tempfile
         import time
         import webbrowser
+
+        from .web.main import WebUIManager
 
         print("🔧 創建 Web UI 管理器...")
         manager = WebUIManager(host="127.0.0.1", port=8765)  # 使用固定端口
 
         print("🔧 創建測試會話...")
         with tempfile.TemporaryDirectory() as temp_dir:
-            session_id = manager.create_session(
-                temp_dir,
-                "Web UI 測試 - 驗證基本功能"
-            )
+            session_id = manager.create_session(temp_dir, "Web UI 測試 - 驗證基本功能")
 
             if session_id:
                 print("✅ 會話創建成功")
@@ -170,6 +182,7 @@ def test_web_ui_simple():
     except Exception as e:
         print(f"❌ Web UI 測試失敗: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -181,6 +194,7 @@ def test_desktop_app():
 
         # 檢查桌面環境可用性
         from .desktop import is_desktop_available
+
         if not is_desktop_available():
             print("❌ 桌面環境不可用")
             print("💡 請確保 Node.js 已安裝且不在遠程環境中")
@@ -189,10 +203,9 @@ def test_desktop_app():
         print("✅ 桌面環境檢查通過")
 
         # 設置桌面模式
-        os.environ['MCP_FEEDBACK_MODE'] = 'desktop'
+        os.environ["MCP_FEEDBACK_MODE"] = "desktop"
 
         print("🔧 創建 Electron 管理器...")
-        from .desktop.electron_manager import ElectronManager
         import asyncio
 
         async def run_desktop_test():
@@ -208,7 +221,7 @@ def test_desktop_app():
                 result = await launch_desktop_app(
                     os.getcwd(),
                     "桌面應用測試 - 驗證 Electron 整合功能",
-                    300  # 5分鐘超時
+                    300,  # 5分鐘超時
                 )
 
                 print("✅ 桌面應用測試完成")
@@ -224,6 +237,7 @@ def test_desktop_app():
     except Exception as e:
         print(f"❌ 桌面應用測試失敗: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -236,11 +250,11 @@ async def wait_for_process(process):
 
         # 確保管道正確關閉
         try:
-            if hasattr(process, 'stdout') and process.stdout:
+            if hasattr(process, "stdout") and process.stdout:
                 process.stdout.close()
-            if hasattr(process, 'stderr') and process.stderr:
+            if hasattr(process, "stderr") and process.stderr:
                 process.stderr.close()
-            if hasattr(process, 'stdin') and process.stdin:
+            if hasattr(process, "stdin") and process.stdin:
                 process.stdin.close()
         except Exception as close_error:
             print(f"關閉進程管道時出錯: {close_error}")
@@ -256,9 +270,15 @@ def test_electron_environment():
 
         # 檢查 Node.js
         import subprocess
+
         try:
-            result = subprocess.run(['node', '--version'],
-                                  capture_output=True, text=True, timeout=10)
+            result = subprocess.run(
+                ["node", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
             if result.returncode == 0:
                 print(f"✅ Node.js 版本: {result.stdout.strip()}")
             else:
@@ -270,6 +290,7 @@ def test_electron_environment():
 
         # 檢查桌面模組
         from .desktop import is_desktop_available
+
         if is_desktop_available():
             print("✅ 桌面環境可用")
         else:
@@ -278,6 +299,7 @@ def test_electron_environment():
 
         # 檢查 Electron 管理器
         from .desktop.electron_manager import ElectronManager
+
         manager = ElectronManager()
 
         if manager.is_electron_available():
@@ -288,7 +310,7 @@ def test_electron_environment():
 
         # 檢查文件結構
         desktop_dir = manager.desktop_dir
-        required_files = ['main.js', 'preload.js', 'package.json']
+        required_files = ["main.js", "preload.js", "package.json"]
 
         for file_name in required_files:
             file_path = desktop_dir / file_name
@@ -324,20 +346,24 @@ def test_full_integration():
         test_cases = [("auto", "auto"), ("web", "web"), ("desktop", "desktop")]
 
         for env_value, expected in test_cases:
-            os.environ['MCP_FEEDBACK_MODE'] = env_value
+            os.environ["MCP_FEEDBACK_MODE"] = env_value
 
             # 重新導入以獲取新的環境變數值
             import sys
-            if 'mcp_feedback_enhanced.server' in sys.modules:
-                del sys.modules['mcp_feedback_enhanced.server']
+
+            if "mcp_feedback_enhanced.server" in sys.modules:
+                del sys.modules["mcp_feedback_enhanced.server"]
 
             from .server import get_feedback_mode
+
             actual = get_feedback_mode().value
 
             if actual == expected:
                 print(f"  ✅ MCP_FEEDBACK_MODE='{env_value}' → {actual}")
             else:
-                print(f"  ❌ MCP_FEEDBACK_MODE='{env_value}' → {actual} (期望: {expected})")
+                print(
+                    f"  ❌ MCP_FEEDBACK_MODE='{env_value}' → {actual} (期望: {expected})"
+                )
                 return False
 
         # 2. Electron 環境測試
@@ -348,8 +374,9 @@ def test_full_integration():
 
         # 3. Web UI 基本功能測試
         print("\n📋 3. 測試 Web UI 基本功能...")
-        from .web.main import WebUIManager
         import tempfile
+
+        from .web.main import WebUIManager
 
         with tempfile.TemporaryDirectory() as temp_dir:
             manager = WebUIManager(host="127.0.0.1", port=8766)  # 使用不同端口避免衝突
@@ -363,7 +390,7 @@ def test_full_integration():
 
         # 4. 桌面模式檢測測試
         print("\n📋 4. 測試桌面模式檢測...")
-        os.environ['MCP_FEEDBACK_MODE'] = 'desktop'
+        os.environ["MCP_FEEDBACK_MODE"] = "desktop"
 
         manager = WebUIManager()
         if manager.should_use_desktop_mode():
@@ -379,16 +406,19 @@ def test_full_integration():
     except Exception as e:
         print(f"❌ 完整整合測試失敗: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def show_version():
     """顯示版本資訊"""
-    from . import __version__, __author__
+    from . import __author__, __version__
+
     print(f"MCP Feedback Enhanced Enhanced v{__version__}")
     print(f"作者: {__author__}")
     print("GitHub: https://github.com/Minidoracat/mcp-feedback-enhanced")
 
+
 if __name__ == "__main__":
-    main() 
+    main()

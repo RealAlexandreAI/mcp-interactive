@@ -16,7 +16,7 @@ sequenceDiagram
     participant WS as WebSocket
     participant UI as Web UI
     participant User as 用戶
-    
+
     Note over AI,User: 第一次調用流程
     AI->>MCP: interactive_feedback(summary, timeout)
     MCP->>WM: launch_web_feedback_ui()
@@ -26,14 +26,14 @@ sequenceDiagram
     User->>UI: 訪問回饋頁面
     UI->>WS: 建立 WebSocket 連接
     WS->>UI: connection_established
-    
+
     Note over AI,User: 用戶回饋流程
     User->>UI: 填寫回饋內容
     UI->>WS: submit_feedback
     WS->>WM: 處理回饋數據
     WM->>MCP: 設置回饋完成
     MCP->>AI: 返回回饋結果
-    
+
     Note over AI,User: 第二次調用流程
     AI->>MCP: interactive_feedback(new_summary, timeout)
     MCP->>WM: 更新現有會話
@@ -98,7 +98,7 @@ async def create_session(self, summary: str, project_dir: str):
     old_websockets = []
     if self.current_session:
         old_websockets = list(self.current_session.websockets)
-    
+
     # 創建新會話
     session_id = str(uuid.uuid4())
     self.current_session = WebFeedbackSession(
@@ -106,11 +106,11 @@ async def create_session(self, summary: str, project_dir: str):
         summary=summary,
         project_directory=project_dir
     )
-    
+
     # 繼承 WebSocket 連接
     for ws in old_websockets:
         self.current_session.add_websocket(ws)
-    
+
     # 標記需要發送會話更新
     self._pending_session_update = True
 ```
@@ -123,13 +123,13 @@ sequenceDiagram
     participant UI as Web UI
     participant WS as WebSocket
     participant Session as 會話管理
-    
+
     Browser->>UI: 訪問 /feedback
     UI->>WS: 建立 WebSocket 連接
     WS->>Session: 註冊連接
     Session->>WS: connection_established
     WS->>UI: 發送連接確認
-    
+
     alt 有待處理的會話更新
         Session->>WS: session_updated
         WS->>UI: 會話更新訊息
@@ -153,13 +153,13 @@ stateDiagram-v2
     AIProcessing --> SecondCall: AI 再次調用
     SecondCall --> SessionUpdated: 會話更新
     SessionUpdated --> UserFeedback: 等待新回饋
-    
+
     note right of SessionActive
         Web 服務器持續運行
         瀏覽器標籤頁保持開啟
         WebSocket 連接維持
     end note
-    
+
     note right of SessionUpdated
         無需重新開啟瀏覽器
         局部更新頁面內容
@@ -199,19 +199,19 @@ flowchart TD
 function handleSessionUpdated(data) {
     // 顯示會話更新通知
     showNotification('會話已更新', 'info');
-    
+
     // 重置回饋狀態
     feedbackState = 'FEEDBACK_WAITING';
-    
+
     // 局部更新 AI 摘要
     updateAISummary(data.summary);
-    
+
     // 清空回饋表單
     clearFeedbackForm();
-    
+
     // 更新會話 ID
     currentSessionId = data.session_id;
-    
+
     // 保持 WebSocket 連接不變
     // 無需重新建立連接
 }
@@ -229,7 +229,7 @@ graph LR
         FR[feedback_received<br/>回饋確認]
         ST[status_update<br/>狀態更新]
     end
-    
+
     subgraph "客戶端 → 服務器"
         SF[submit_feedback<br/>提交回饋]
         HB[heartbeat<br/>心跳檢測]
@@ -246,7 +246,7 @@ stateDiagram-v2
     FEEDBACK_PROCESSING --> FEEDBACK_SUBMITTED: 處理完成
     FEEDBACK_SUBMITTED --> WAITING: 新會話更新
     FEEDBACK_SUBMITTED --> [*]: 會話結束
-    
+
     WAITING --> ERROR: 連接錯誤
     FEEDBACK_PROCESSING --> ERROR: 處理錯誤
     ERROR --> WAITING: 錯誤恢復
@@ -260,7 +260,7 @@ stateDiagram-v2
 // WebSocket 重連機制
 function handleWebSocketClose() {
     console.log('WebSocket 連接已關閉，嘗試重連...');
-    
+
     setTimeout(() => {
         initWebSocket();
     }, 3000); // 3秒後重連

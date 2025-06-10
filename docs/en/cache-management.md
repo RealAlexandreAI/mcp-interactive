@@ -57,7 +57,7 @@ python scripts/cleanup_cache.py --force
    # Windows
    taskkill /f /im uvx.exe
    taskkill /f /im python.exe /fi "WINDOWTITLE eq *mcp-feedback-enhanced*"
-   
+
    # Then execute cleanup
    uv cache clean
    ```

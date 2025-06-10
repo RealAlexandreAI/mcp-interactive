@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 統一調試日誌模組
 ================
@@ -29,26 +28,26 @@ from typing import Any
 def debug_log(message: Any, prefix: str = "DEBUG") -> None:
     """
     輸出調試訊息到標準錯誤，避免污染標準輸出
-    
+
     Args:
         message: 要輸出的調試信息
         prefix: 調試信息的前綴標識，默認為 "DEBUG"
     """
     # 只在啟用調試模式時才輸出，避免干擾 MCP 通信
-    if not os.getenv("MCP_DEBUG", "").lower() in ("true", "1", "yes", "on"):
+    if os.getenv("MCP_DEBUG", "").lower() not in ("true", "1", "yes", "on"):
         return
-        
+
     try:
         # 確保消息是字符串類型
         if not isinstance(message, str):
             message = str(message)
-        
+
         # 安全地輸出到 stderr，處理編碼問題
         try:
             print(f"[{prefix}] {message}", file=sys.stderr, flush=True)
         except UnicodeEncodeError:
             # 如果遇到編碼問題，使用 ASCII 安全模式
-            safe_message = message.encode('ascii', errors='replace').decode('ascii')
+            safe_message = message.encode("ascii", errors="replace").decode("ascii")
             print(f"[{prefix}] {safe_message}", file=sys.stderr, flush=True)
     except Exception:
         # 最後的備用方案：靜默失敗，不影響主程序
@@ -77,4 +76,4 @@ def is_debug_enabled() -> bool:
 
 def set_debug_mode(enabled: bool) -> None:
     """設置調試模式（用於測試）"""
-    os.environ["MCP_DEBUG"] = "true" if enabled else "false" 
+    os.environ["MCP_DEBUG"] = "true" if enabled else "false"

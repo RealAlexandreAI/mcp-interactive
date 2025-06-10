@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Web UI 主要管理類
 
@@ -8,33 +7,28 @@ Web UI 主要管理類
 """
 
 import asyncio
-import json
-import logging
 import os
-import socket
 import threading
 import time
-import webbrowser
-from pathlib import Path
-from typing import Dict, Optional, List
-from datetime import datetime
 import uuid
+from datetime import datetime
+from pathlib import Path
 
-from fastapi import FastAPI, Request, Response
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.middleware.gzip import GZipMiddleware
-import uvicorn
 
-from .models import WebFeedbackSession, FeedbackResult, CleanupReason, SessionStatus
-from .routes import setup_routes
-from .utils import find_free_port, get_browser_opener
-from .utils.port_manager import PortManager
-from .utils.compression_config import get_compression_manager
-from ..utils.error_handler import ErrorHandler, ErrorType
-from ..utils.memory_monitor import get_memory_monitor
 from ..debug import web_debug_log as debug_log
 from ..i18n import get_i18n_manager
+from ..utils.error_handler import ErrorHandler, ErrorType
+from ..utils.memory_monitor import get_memory_monitor
+from .models import CleanupReason, SessionStatus, WebFeedbackSession
+from .routes import setup_routes
+from .utils import get_browser_opener
+from .utils.compression_config import get_compression_manager
+from .utils.port_manager import PortManager
 
 
 class WebUIManager:
@@ -55,17 +49,19 @@ class WebUIManager:
                     preferred_port = custom_port
                     debug_log(f"使用環境變數指定的端口: {preferred_port}")
                 else:
-                    debug_log(f"MCP_WEB_PORT 值無效 ({custom_port})，必須在 1024-65535 範圍內，使用預設端口 8765")
+                    debug_log(
+                        f"MCP_WEB_PORT 值無效 ({custom_port})，必須在 1024-65535 範圍內，使用預設端口 8765"
+                    )
             except ValueError:
-                debug_log(f"MCP_WEB_PORT 格式錯誤 ({env_port})，必須為數字，使用預設端口 8765")
+                debug_log(
+                    f"MCP_WEB_PORT 格式錯誤 ({env_port})，必須為數字，使用預設端口 8765"
+                )
         else:
             debug_log(f"未設定 MCP_WEB_PORT 環境變數，使用預設端口 {preferred_port}")
 
         # 使用增強的端口管理，支持自動清理
         self.port = port or PortManager.find_free_port_enhanced(
-            preferred_port=preferred_port,
-            auto_cleanup=True,
-            host=self.host
+            preferred_port=preferred_port, auto_cleanup=True, host=self.host
         )
         self.app = FastAPI(title="MCP Feedback Enhanced")
 
@@ -76,11 +72,11 @@ class WebUIManager:
         self._setup_memory_monitoring()
 
         # 重構：使用單一活躍會話而非會話字典
-        self.current_session: Optional[WebFeedbackSession] = None
-        self.sessions: Dict[str, WebFeedbackSession] = {}  # 保留用於向後兼容
+        self.current_session: WebFeedbackSession | None = None
+        self.sessions: dict[str, WebFeedbackSession] = {}  # 保留用於向後兼容
 
         # 全局標籤頁狀態管理 - 跨會話保持
-        self.global_active_tabs: Dict[str, dict] = {}
+        self.global_active_tabs: dict[str, dict] = {}
 
         # 會話更新通知標記
         self._pending_session_update = False
@@ -93,7 +89,7 @@ class WebUIManager:
             "manual_cleanups": 0,
             "last_cleanup_time": None,
             "total_cleanup_duration": 0.0,
-            "sessions_cleaned": 0
+            "sessions_cleaned": 0,
         }
 
         self.server_thread = None
@@ -120,18 +116,18 @@ class WebUIManager:
 
     def _detect_feedback_mode(self) -> str:
         """檢測回饋模式"""
-        mode = os.environ.get('MCP_FEEDBACK_MODE', 'auto').lower()
-        if mode in ['web', 'desktop', 'auto']:
+        mode = os.environ.get("MCP_FEEDBACK_MODE", "auto").lower()
+        if mode in ["web", "desktop", "auto"]:
             return mode
-        else:
-            debug_log(f"無效的 MCP_FEEDBACK_MODE 值: {mode}，使用預設值 'auto'")
-            return 'auto'
+        debug_log(f"無效的 MCP_FEEDBACK_MODE 值: {mode}，使用預設值 'auto'")
+        return "auto"
 
     def _init_desktop_manager(self):
         """初始化桌面管理器（如果可用）"""
         try:
             # 嘗試導入桌面模組
             from ..desktop import ElectronManager
+
             self.desktop_manager = ElectronManager()
             debug_log("桌面管理器初始化成功")
         except ImportError:
@@ -145,14 +141,15 @@ class WebUIManager:
         """判斷是否應該使用桌面模式"""
         if self.mode == "web":
             return False
-        elif self.mode == "desktop":
+        if self.mode == "desktop":
             return self.desktop_manager is not None
-        else:  # auto
-            # 自動模式：檢測環境
-            from ..server import is_remote_environment
-            if is_remote_environment():
-                return False
-            return self.desktop_manager is not None
+        # auto
+        # 自動模式：檢測環境
+        from ..server import is_remote_environment
+
+        if is_remote_environment():
+            return False
+        return self.desktop_manager is not None
 
     def _setup_compression_middleware(self):
         """設置壓縮和緩存中間件"""
@@ -161,10 +158,7 @@ class WebUIManager:
         config = compression_manager.config
 
         # 添加 Gzip 壓縮中間件
-        self.app.add_middleware(
-            GZipMiddleware,
-            minimum_size=config.minimum_size
-        )
+        self.app.add_middleware(GZipMiddleware, minimum_size=config.minimum_size)
 
         # 添加緩存和壓縮統計中間件
         @self.app.middleware("http")
@@ -180,14 +174,20 @@ class WebUIManager:
 
             # 更新壓縮統計（如果可能）
             try:
-                content_length = int(response.headers.get('content-length', 0))
-                content_encoding = response.headers.get('content-encoding', '')
-                was_compressed = 'gzip' in content_encoding
+                content_length = int(response.headers.get("content-length", 0))
+                content_encoding = response.headers.get("content-encoding", "")
+                was_compressed = "gzip" in content_encoding
 
                 if content_length > 0:
                     # 估算原始大小（如果已壓縮，假設壓縮比為 30%）
-                    original_size = content_length if not was_compressed else int(content_length / 0.7)
-                    compression_manager.update_stats(original_size, content_length, was_compressed)
+                    original_size = (
+                        content_length
+                        if not was_compressed
+                        else int(content_length / 0.7)
+                    )
+                    compression_manager.update_stats(
+                        original_size, content_length, was_compressed
+                    )
             except (ValueError, TypeError):
                 # 忽略統計錯誤，不影響正常響應
                 pass
@@ -233,7 +233,7 @@ class WebUIManager:
                     error_id = ErrorHandler.log_error_with_context(
                         e,
                         context={"operation": "內存監控會話清理", "force": force},
-                        error_type=ErrorType.SYSTEM
+                        error_type=ErrorType.SYSTEM,
                     )
                     debug_log(f"內存監控會話清理失敗 [錯誤ID: {error_id}]: {e}")
 
@@ -249,7 +249,7 @@ class WebUIManager:
             error_id = ErrorHandler.log_error_with_context(
                 e,
                 context={"operation": "設置 Web UI 內存監控"},
-                error_type=ErrorType.SYSTEM
+                error_type=ErrorType.SYSTEM,
             )
             debug_log(f"設置 Web UI 內存監控失敗 [錯誤ID: {error_id}]: {e}")
 
@@ -258,7 +258,9 @@ class WebUIManager:
         # Web UI 靜態文件
         web_static_path = Path(__file__).parent / "static"
         if web_static_path.exists():
-            self.app.mount("/static", StaticFiles(directory=str(web_static_path)), name="static")
+            self.app.mount(
+                "/static", StaticFiles(directory=str(web_static_path)), name="static"
+            )
         else:
             raise RuntimeError(f"Static files directory not found: {web_static_path}")
 
@@ -283,7 +285,7 @@ class WebUIManager:
         if self.current_session:
             debug_log("保存現有會話的標籤頁狀態並清理會話")
             # 保存標籤頁狀態到全局
-            if hasattr(self.current_session, 'active_tabs'):
+            if hasattr(self.current_session, "active_tabs"):
                 self._merge_tabs_to_global(self.current_session.active_tabs)
 
             # 同步清理會話資源（但保留 WebSocket 連接）
@@ -312,6 +314,7 @@ class WebUIManager:
 
             # 立即發送會話更新通知
             import asyncio
+
             try:
                 # 在後台任務中發送通知並轉移連接
                 asyncio.create_task(self._send_immediate_session_update())
@@ -328,11 +331,11 @@ class WebUIManager:
 
         return session_id
 
-    def get_session(self, session_id: str) -> Optional[WebFeedbackSession]:
+    def get_session(self, session_id: str) -> WebFeedbackSession | None:
         """獲取回饋會話 - 保持向後兼容"""
         return self.sessions.get(session_id)
 
-    def get_current_session(self) -> Optional[WebFeedbackSession]:
+    def get_current_session(self) -> WebFeedbackSession | None:
         """獲取當前活躍會話"""
         return self.current_session
 
@@ -372,12 +375,12 @@ class WebUIManager:
         self.global_active_tabs = {
             tab_id: tab_info
             for tab_id, tab_info in self.global_active_tabs.items()
-            if current_time - tab_info.get('last_seen', 0) <= expired_threshold
+            if current_time - tab_info.get("last_seen", 0) <= expired_threshold
         }
 
         # 合併會話標籤頁到全局
         for tab_id, tab_info in session_tabs.items():
-            if current_time - tab_info.get('last_seen', 0) <= expired_threshold:
+            if current_time - tab_info.get("last_seen", 0) <= expired_threshold:
                 self.global_active_tabs[tab_id] = tab_info
 
         debug_log(f"合併標籤頁狀態，全局活躍標籤頁數量: {len(self.global_active_tabs)}")
@@ -391,7 +394,7 @@ class WebUIManager:
         valid_tabs = {
             tab_id: tab_info
             for tab_id, tab_info in self.global_active_tabs.items()
-            if current_time - tab_info.get('last_seen', 0) <= expired_threshold
+            if current_time - tab_info.get("last_seen", 0) <= expired_threshold
         }
 
         self.global_active_tabs = valid_tabs
@@ -411,47 +414,57 @@ class WebUIManager:
 
     def start_server(self):
         """啟動 Web 伺服器"""
+
         def run_server_with_retry():
             max_retries = 5
             retry_count = 0
-            
+
             while retry_count < max_retries:
                 try:
-                    debug_log(f"嘗試啟動伺服器在 {self.host}:{self.port} (嘗試 {retry_count + 1}/{max_retries})")
-                    
+                    debug_log(
+                        f"嘗試啟動伺服器在 {self.host}:{self.port} (嘗試 {retry_count + 1}/{max_retries})"
+                    )
+
                     config = uvicorn.Config(
                         app=self.app,
                         host=self.host,
                         port=self.port,
                         log_level="warning",
-                        access_log=False
+                        access_log=False,
                     )
-                    
+
                     server = uvicorn.Server(config)
                     asyncio.run(server.serve())
                     break
-                    
+
                 except OSError as e:
                     if e.errno == 10048:  # Windows: 位址已在使用中
                         retry_count += 1
                         if retry_count < max_retries:
-                            debug_log(f"端口 {self.port} 被占用，使用增強端口管理查找新端口")
+                            debug_log(
+                                f"端口 {self.port} 被占用，使用增強端口管理查找新端口"
+                            )
                             # 使用增強的端口管理查找新端口
                             try:
                                 self.port = PortManager.find_free_port_enhanced(
                                     preferred_port=self.port + 1,
                                     auto_cleanup=False,  # 啟動時不自動清理，避免誤殺其他服務
-                                    host=self.host
+                                    host=self.host,
                                 )
                                 debug_log(f"找到新的可用端口: {self.port}")
                             except RuntimeError as port_error:
                                 # 使用統一錯誤處理
                                 error_id = ErrorHandler.log_error_with_context(
                                     port_error,
-                                    context={"operation": "端口查找", "current_port": self.port},
-                                    error_type=ErrorType.NETWORK
+                                    context={
+                                        "operation": "端口查找",
+                                        "current_port": self.port,
+                                    },
+                                    error_type=ErrorType.NETWORK,
                                 )
-                                debug_log(f"無法找到可用端口 [錯誤ID: {error_id}]: {port_error}")
+                                debug_log(
+                                    f"無法找到可用端口 [錯誤ID: {error_id}]: {port_error}"
+                                )
                                 break
                         else:
                             debug_log("已達到最大重試次數，無法啟動伺服器")
@@ -460,8 +473,12 @@ class WebUIManager:
                         # 使用統一錯誤處理
                         error_id = ErrorHandler.log_error_with_context(
                             e,
-                            context={"operation": "伺服器啟動", "host": self.host, "port": self.port},
-                            error_type=ErrorType.NETWORK
+                            context={
+                                "operation": "伺服器啟動",
+                                "host": self.host,
+                                "port": self.port,
+                            },
+                            error_type=ErrorType.NETWORK,
                         )
                         debug_log(f"伺服器啟動錯誤 [錯誤ID: {error_id}]: {e}")
                         break
@@ -469,8 +486,12 @@ class WebUIManager:
                     # 使用統一錯誤處理
                     error_id = ErrorHandler.log_error_with_context(
                         e,
-                        context={"operation": "伺服器運行", "host": self.host, "port": self.port},
-                        error_type=ErrorType.SYSTEM
+                        context={
+                            "operation": "伺服器運行",
+                            "host": self.host,
+                            "port": self.port,
+                        },
+                        error_type=ErrorType.SYSTEM,
                     )
                     debug_log(f"伺服器運行錯誤 [錯誤ID: {error_id}]: {e}")
                     break
@@ -478,7 +499,7 @@ class WebUIManager:
         # 在新線程中啟動伺服器
         self.server_thread = threading.Thread(target=run_server_with_retry, daemon=True)
         self.server_thread.start()
-        
+
         # 等待伺服器啟動
         time.sleep(2)
 
@@ -497,8 +518,6 @@ class WebUIManager:
         Returns:
             bool: True 表示檢測到活躍標籤頁，False 表示開啟了新視窗
         """
-        import asyncio
-        import aiohttp
 
         try:
             # 檢查是否有活躍標籤頁
@@ -525,15 +544,17 @@ class WebUIManager:
             # 檢查是否有活躍的 WebSocket 連接
             if session.websocket:
                 # 直接通過當前會話的 WebSocket 發送
-                await session.websocket.send_json({
-                    "type": "session_updated",
-                    "message": "新會話已創建，正在更新頁面內容",
-                    "session_info": {
-                        "project_directory": session.project_directory,
-                        "summary": session.summary,
-                        "session_id": session.session_id
+                await session.websocket.send_json(
+                    {
+                        "type": "session_updated",
+                        "message": "新會話已創建，正在更新頁面內容",
+                        "session_info": {
+                            "project_directory": session.project_directory,
+                            "summary": session.summary,
+                            "session_id": session.session_id,
+                        },
                     }
-                })
+                )
                 debug_log("會話更新通知已通過 WebSocket 發送")
             else:
                 # 沒有活躍連接，設置待更新標記
@@ -548,7 +569,9 @@ class WebUIManager:
         """立即發送會話更新通知（使用舊的 WebSocket 連接）"""
         try:
             # 檢查是否有保存的舊 WebSocket 連接
-            if hasattr(self, '_old_websocket_for_update') and hasattr(self, '_new_session_for_update'):
+            if hasattr(self, "_old_websocket_for_update") and hasattr(
+                self, "_new_session_for_update"
+            ):
                 old_websocket = self._old_websocket_for_update
                 new_session = self._new_session_for_update
 
@@ -557,8 +580,11 @@ class WebUIManager:
                 if old_websocket:
                     try:
                         # 檢查 WebSocket 連接狀態
-                        if hasattr(old_websocket, 'client_state'):
-                            websocket_valid = old_websocket.client_state != old_websocket.client_state.DISCONNECTED
+                        if hasattr(old_websocket, "client_state"):
+                            websocket_valid = (
+                                old_websocket.client_state
+                                != old_websocket.client_state.DISCONNECTED
+                            )
                         else:
                             # 如果沒有 client_state 屬性，嘗試發送測試消息來檢查連接
                             websocket_valid = True
@@ -569,15 +595,17 @@ class WebUIManager:
                 if websocket_valid:
                     try:
                         # 發送會話更新通知
-                        await old_websocket.send_json({
-                            "type": "session_updated",
-                            "message": "新會話已創建，正在更新頁面內容",
-                            "session_info": {
-                                "project_directory": new_session.project_directory,
-                                "summary": new_session.summary,
-                                "session_id": new_session.session_id
+                        await old_websocket.send_json(
+                            {
+                                "type": "session_updated",
+                                "message": "新會話已創建，正在更新頁面內容",
+                                "session_info": {
+                                    "project_directory": new_session.project_directory,
+                                    "summary": new_session.summary,
+                                    "session_id": new_session.session_id,
+                                },
                             }
-                        })
+                        )
                         debug_log("已通過舊 WebSocket 連接發送會話更新通知")
 
                         # 延遲一小段時間讓前端處理消息
@@ -597,8 +625,8 @@ class WebUIManager:
                     self._pending_session_update = True
 
                 # 清理臨時變數
-                delattr(self, '_old_websocket_for_update')
-                delattr(self, '_new_session_for_update')
+                delattr(self, "_old_websocket_for_update")
+                delattr(self, "_new_session_for_update")
 
             else:
                 # 沒有舊連接，設置待更新標記
@@ -619,7 +647,10 @@ class WebUIManager:
         # 只有在確認連接沒有被新會話使用時才關閉
         try:
             # 檢查連接狀態
-            if hasattr(websocket, 'client_state') and websocket.client_state.DISCONNECTED:
+            if (
+                hasattr(websocket, "client_state")
+                and websocket.client_state.DISCONNECTED
+            ):
                 debug_log("WebSocket 已斷開，跳過關閉操作")
                 return
 
@@ -645,18 +676,20 @@ class WebUIManager:
 
             # 調用活躍標籤頁 API
             import aiohttp
+
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.get_server_url()}/api/active-tabs", timeout=2) as response:
+                async with session.get(
+                    f"{self.get_server_url()}/api/active-tabs", timeout=2
+                ) as response:
                     if response.status == 200:
                         data = await response.json()
                         tab_count = data.get("count", 0)
                         debug_log(f"API 檢測到 {tab_count} 個活躍標籤頁")
                         return tab_count > 0
-                    else:
-                        debug_log(f"檢查活躍標籤頁失敗，狀態碼：{response.status}")
-                        return False
+                    debug_log(f"檢查活躍標籤頁失敗，狀態碼：{response.status}")
+                    return False
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             debug_log("檢查活躍標籤頁超時")
             return False
         except Exception as e:
@@ -689,7 +722,10 @@ class WebUIManager:
                     cleaned_count += 1
 
                     # 如果清理的是當前活躍會話，清空當前會話
-                    if self.current_session and self.current_session.session_id == session_id:
+                    if (
+                        self.current_session
+                        and self.current_session.session_id == session_id
+                    ):
                         self.current_session = None
                         debug_log("清空過期的當前活躍會話")
 
@@ -697,22 +733,28 @@ class WebUIManager:
                 error_id = ErrorHandler.log_error_with_context(
                     e,
                     context={"session_id": session_id, "operation": "清理過期會話"},
-                    error_type=ErrorType.SYSTEM
+                    error_type=ErrorType.SYSTEM,
                 )
                 debug_log(f"清理過期會話 {session_id} 失敗 [錯誤ID: {error_id}]: {e}")
 
         # 更新統計
         cleanup_duration = time.time() - cleanup_start_time
-        self.cleanup_stats.update({
-            "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
-            "expired_cleanups": self.cleanup_stats["expired_cleanups"] + 1,
-            "last_cleanup_time": datetime.now().isoformat(),
-            "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"] + cleanup_duration,
-            "sessions_cleaned": self.cleanup_stats["sessions_cleaned"] + cleaned_count
-        })
+        self.cleanup_stats.update(
+            {
+                "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
+                "expired_cleanups": self.cleanup_stats["expired_cleanups"] + 1,
+                "last_cleanup_time": datetime.now().isoformat(),
+                "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"]
+                + cleanup_duration,
+                "sessions_cleaned": self.cleanup_stats["sessions_cleaned"]
+                + cleaned_count,
+            }
+        )
 
         if cleaned_count > 0:
-            debug_log(f"清理了 {cleaned_count} 個過期會話，耗時: {cleanup_duration:.2f}秒")
+            debug_log(
+                f"清理了 {cleaned_count} 個過期會話，耗時: {cleanup_duration:.2f}秒"
+            )
 
         return cleaned_count
 
@@ -725,11 +767,19 @@ class WebUIManager:
         # 優先級：已完成 > 已提交反饋 > 錯誤狀態 > 空閒時間最長
         for session_id, session in self.sessions.items():
             # 跳過當前活躍會話（除非強制清理）
-            if not force and self.current_session and session.session_id == self.current_session.session_id:
+            if (
+                not force
+                and self.current_session
+                and session.session_id == self.current_session.session_id
+            ):
                 continue
 
             # 優先清理已完成或錯誤狀態的會話
-            if session.status in [SessionStatus.COMPLETED, SessionStatus.ERROR, SessionStatus.TIMEOUT]:
+            if session.status in [
+                SessionStatus.COMPLETED,
+                SessionStatus.ERROR,
+                SessionStatus.TIMEOUT,
+            ]:
                 sessions_to_clean.append((session_id, session, 1))  # 高優先級
             elif session.status == SessionStatus.FEEDBACK_SUBMITTED:
                 # 已提交反饋但空閒時間較長的會話
@@ -742,7 +792,9 @@ class WebUIManager:
         sessions_to_clean.sort(key=lambda x: x[2])
 
         # 清理會話（限制數量避免過度清理）
-        max_cleanup = min(len(sessions_to_clean), 5 if not force else len(sessions_to_clean))
+        max_cleanup = min(
+            len(sessions_to_clean), 5 if not force else len(sessions_to_clean)
+        )
         cleaned_count = 0
 
         for i in range(max_cleanup):
@@ -754,7 +806,10 @@ class WebUIManager:
                 cleaned_count += 1
 
                 # 如果清理的是當前活躍會話，清空當前會話
-                if self.current_session and self.current_session.session_id == session_id:
+                if (
+                    self.current_session
+                    and self.current_session.session_id == session_id
+                ):
                     self.current_session = None
                     debug_log("因內存壓力清空當前活躍會話")
 
@@ -762,47 +817,69 @@ class WebUIManager:
                 error_id = ErrorHandler.log_error_with_context(
                     e,
                     context={"session_id": session_id, "operation": "內存壓力清理"},
-                    error_type=ErrorType.SYSTEM
+                    error_type=ErrorType.SYSTEM,
                 )
-                debug_log(f"內存壓力清理會話 {session_id} 失敗 [錯誤ID: {error_id}]: {e}")
+                debug_log(
+                    f"內存壓力清理會話 {session_id} 失敗 [錯誤ID: {error_id}]: {e}"
+                )
 
         # 更新統計
         cleanup_duration = time.time() - cleanup_start_time
-        self.cleanup_stats.update({
-            "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
-            "memory_pressure_cleanups": self.cleanup_stats["memory_pressure_cleanups"] + 1,
-            "last_cleanup_time": datetime.now().isoformat(),
-            "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"] + cleanup_duration,
-            "sessions_cleaned": self.cleanup_stats["sessions_cleaned"] + cleaned_count
-        })
+        self.cleanup_stats.update(
+            {
+                "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
+                "memory_pressure_cleanups": self.cleanup_stats[
+                    "memory_pressure_cleanups"
+                ]
+                + 1,
+                "last_cleanup_time": datetime.now().isoformat(),
+                "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"]
+                + cleanup_duration,
+                "sessions_cleaned": self.cleanup_stats["sessions_cleaned"]
+                + cleaned_count,
+            }
+        )
 
         if cleaned_count > 0:
-            debug_log(f"因內存壓力清理了 {cleaned_count} 個會話，耗時: {cleanup_duration:.2f}秒")
+            debug_log(
+                f"因內存壓力清理了 {cleaned_count} 個會話，耗時: {cleanup_duration:.2f}秒"
+            )
 
         return cleaned_count
 
     def get_session_cleanup_stats(self) -> dict:
         """獲取會話清理統計"""
         stats = self.cleanup_stats.copy()
-        stats.update({
-            "active_sessions": len(self.sessions),
-            "current_session_id": self.current_session.session_id if self.current_session else None,
-            "expired_sessions": sum(1 for s in self.sessions.values() if s.is_expired()),
-            "idle_sessions": sum(1 for s in self.sessions.values() if s.get_idle_time() > 300),
-            "memory_usage_mb": 0  # 將在下面計算
-        })
+        stats.update(
+            {
+                "active_sessions": len(self.sessions),
+                "current_session_id": self.current_session.session_id
+                if self.current_session
+                else None,
+                "expired_sessions": sum(
+                    1 for s in self.sessions.values() if s.is_expired()
+                ),
+                "idle_sessions": sum(
+                    1 for s in self.sessions.values() if s.get_idle_time() > 300
+                ),
+                "memory_usage_mb": 0,  # 將在下面計算
+            }
+        )
 
         # 計算內存使用（如果可能）
         try:
             import psutil
+
             process = psutil.Process()
-            stats["memory_usage_mb"] = round(process.memory_info().rss / (1024 * 1024), 2)
+            stats["memory_usage_mb"] = round(
+                process.memory_info().rss / (1024 * 1024), 2
+            )
         except:
             pass
 
         return stats
 
-    def _scan_expired_sessions(self) -> List[str]:
+    def _scan_expired_sessions(self) -> list[str]:
         """掃描過期會話ID列表"""
         expired_sessions = []
         for session_id, session in self.sessions.items():
@@ -827,15 +904,21 @@ class WebUIManager:
 
         # 更新統計
         cleanup_duration = time.time() - cleanup_start_time
-        self.cleanup_stats.update({
-            "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
-            "manual_cleanups": self.cleanup_stats["manual_cleanups"] + 1,
-            "last_cleanup_time": datetime.now().isoformat(),
-            "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"] + cleanup_duration,
-            "sessions_cleaned": self.cleanup_stats["sessions_cleaned"] + session_count
-        })
+        self.cleanup_stats.update(
+            {
+                "total_cleanups": self.cleanup_stats["total_cleanups"] + 1,
+                "manual_cleanups": self.cleanup_stats["manual_cleanups"] + 1,
+                "last_cleanup_time": datetime.now().isoformat(),
+                "total_cleanup_duration": self.cleanup_stats["total_cleanup_duration"]
+                + cleanup_duration,
+                "sessions_cleaned": self.cleanup_stats["sessions_cleaned"]
+                + session_count,
+            }
+        )
 
-        debug_log(f"停止服務時清理了 {session_count} 個會話，耗時: {cleanup_duration:.2f}秒")
+        debug_log(
+            f"停止服務時清理了 {session_count} 個會話，耗時: {cleanup_duration:.2f}秒"
+        )
 
         # 停止伺服器（注意：uvicorn 的 graceful shutdown 需要額外處理）
         if self.server_thread and self.server_thread.is_alive():
@@ -843,7 +926,7 @@ class WebUIManager:
 
 
 # 全域實例
-_web_ui_manager: Optional[WebUIManager] = None
+_web_ui_manager: WebUIManager | None = None
 
 
 def get_web_ui_manager() -> WebUIManager:
@@ -854,7 +937,9 @@ def get_web_ui_manager() -> WebUIManager:
     return _web_ui_manager
 
 
-async def launch_web_feedback_ui(project_directory: str, summary: str, timeout: int = 600) -> dict:
+async def launch_web_feedback_ui(
+    project_directory: str, summary: str, timeout: int = 600
+) -> dict:
     """
     啟動 Web 回饋介面並等待用戶回饋 - 重構為使用根路徑
 
@@ -893,10 +978,10 @@ async def launch_web_feedback_ui(project_directory: str, summary: str, timeout: 
     try:
         # 等待用戶回饋，傳遞 timeout 參數
         result = await session.wait_for_feedback(timeout)
-        debug_log(f"收到用戶回饋")
+        debug_log("收到用戶回饋")
         return result
     except TimeoutError:
-        debug_log(f"會話超時")
+        debug_log("會話超時")
         # 資源已在 wait_for_feedback 中清理，這裡只需要記錄和重新拋出
         raise
     except Exception as e:
@@ -919,13 +1004,15 @@ def stop_web_ui():
 
 # 測試用主函數
 if __name__ == "__main__":
+
     async def main():
         try:
             project_dir = os.getcwd()
             summary = "這是一個測試摘要，用於驗證 Web UI 功能。"
-            
+
             from ..debug import debug_log
-            debug_log(f"啟動 Web UI 測試...")
+
+            debug_log("啟動 Web UI 測試...")
             debug_log(f"專案目錄: {project_dir}")
             debug_log("等待用戶回饋...")
 
@@ -943,4 +1030,4 @@ if __name__ == "__main__":
         finally:
             stop_web_ui()
 
-    asyncio.run(main()) 
+    asyncio.run(main())

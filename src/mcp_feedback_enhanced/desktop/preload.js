@@ -1,16 +1,16 @@
 /**
  * Electron 預載腳本
  * ==================
- * 
+ *
  * 此腳本在渲染進程中運行，但在網頁內容載入之前執行。
  * 它提供了安全的方式讓網頁與主進程通信，同時保持安全性。
- * 
+ *
  * 主要功能：
  * - 提供安全的 IPC 通信接口
  * - 擴展現有的 WebSocket 管理器
  * - 添加桌面應用特有的 API
  * - 標記桌面環境
- * 
+ *
  * 作者: Augment Agent
  * 版本: 2.3.0
  */
@@ -45,7 +45,7 @@ const desktopAPI = {
         onSessionUpdate: (callback) => {
             const wrappedCallback = (event, ...args) => callback(...args);
             ipcRenderer.on('session-updated', wrappedCallback);
-            
+
             // 返回清理函數
             return () => {
                 ipcRenderer.removeListener('session-updated', wrappedCallback);
@@ -55,7 +55,7 @@ const desktopAPI = {
         onFeedbackRequest: (callback) => {
             const wrappedCallback = (event, ...args) => callback(...args);
             ipcRenderer.on('feedback-request', wrappedCallback);
-            
+
             return () => {
                 ipcRenderer.removeListener('feedback-request', wrappedCallback);
             };
@@ -124,18 +124,18 @@ const logger = {
 try {
     // 主要的桌面 API
     contextBridge.exposeInMainWorld('electronAPI', desktopAPI);
-    
+
     // Web UI 擴展
     contextBridge.exposeInMainWorld('desktopExtensions', webUIExtensions);
-    
+
     // 日誌工具
     contextBridge.exposeInMainWorld('desktopLogger', logger);
-    
+
     // 標記桌面環境（向後兼容）
     contextBridge.exposeInMainWorld('MCP_DESKTOP_MODE', true);
-    
+
     logger.info('桌面 API 已成功暴露到渲染進程');
-    
+
 } catch (error) {
     console.error('暴露桌面 API 失敗:', error);
 }
@@ -145,19 +145,19 @@ try {
  */
 window.addEventListener('DOMContentLoaded', () => {
     logger.debug('DOM 載入完成，開始桌面環境初始化');
-    
+
     // 添加桌面環境樣式類
     document.body.classList.add('desktop-mode');
     document.body.classList.add(`platform-${process.platform}`);
-    
+
     // 設置桌面環境變數
     document.documentElement.style.setProperty('--is-desktop', '1');
-    
+
     // 如果是 macOS，添加特殊樣式
     if (process.platform === 'darwin') {
         document.body.classList.add('macos-titlebar');
     }
-    
+
     // 監聽鍵盤快捷鍵
     document.addEventListener('keydown', (event) => {
         // Ctrl/Cmd + R: 重新載入
@@ -167,20 +167,20 @@ window.addEventListener('DOMContentLoaded', () => {
                 location.reload();
             }
         }
-        
+
         // F12: 開發者工具
         if (event.key === 'F12' && process.env.NODE_ENV === 'development') {
             event.preventDefault();
             desktopAPI.dev.openDevTools();
         }
-        
+
         // Escape: 最小化視窗
         if (event.key === 'Escape' && event.ctrlKey) {
             event.preventDefault();
             desktopAPI.window.minimize();
         }
     });
-    
+
     logger.debug('桌面環境初始化完成');
 });
 

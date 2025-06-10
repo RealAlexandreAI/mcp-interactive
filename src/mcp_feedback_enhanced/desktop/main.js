@@ -2,16 +2,16 @@
 /**
  * Electron 主進程
  * ===============
- * 
+ *
  * 此文件是 MCP Feedback Enhanced 桌面應用的主進程入口點。
  * 負責創建和管理 BrowserWindow，以及與現有 Web UI 的整合。
- * 
+ *
  * 主要功能：
  * - 創建和管理應用視窗
  * - 載入本地 Web 服務器內容
  * - 處理應用生命週期事件
  * - 提供桌面應用特有的功能
- * 
+ *
  * 作者: Augment Agent
  * 版本: 2.3.0
  */
@@ -42,7 +42,7 @@ class ElectronApp {
         this.mainWindow = null;
         this.webServerPort = APP_CONFIG.defaultPort;
         this.isDevMode = process.argv.includes('--dev');
-        
+
         this.setupEventHandlers();
         this.parseCommandLineArgs();
     }
@@ -53,7 +53,7 @@ class ElectronApp {
     parseCommandLineArgs() {
         const args = process.argv;
         const portIndex = args.indexOf('--port');
-        
+
         if (portIndex !== -1 && portIndex + 1 < args.length) {
             const port = parseInt(args[portIndex + 1]);
             if (!isNaN(port) && port > 0 && port < 65536) {
@@ -197,7 +197,7 @@ class ElectronApp {
         <head>
             <title>連接錯誤 - ${APP_CONFIG.name}</title>
             <style>
-                body { 
+                body {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     background: #f5f5f5;
                     margin: 0;
@@ -247,7 +247,7 @@ class ElectronApp {
      */
     getAppIcon() {
         const iconPath = path.join(__dirname, 'assets');
-        
+
         if (process.platform === 'win32') {
             return path.join(iconPath, 'icon.ico');
         } else if (process.platform === 'darwin') {

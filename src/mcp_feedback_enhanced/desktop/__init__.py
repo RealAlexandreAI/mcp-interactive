@@ -120,19 +120,33 @@ async def launch_desktop_app(project_dir: str, summary: str, timeout: int) -> di
 
         if desktop_success:
             debug_log("桌面應用啟動成功，等待用戶回饋...")
-            # 等待用戶回饋
-            result = await session.wait_for_feedback(timeout)
-            debug_log("收到桌面應用用戶回饋")
-            return result
-        debug_log("桌面應用啟動失敗，回退到 Web 模式")
-        # 回退到 Web 模式
-        from ..web import launch_web_feedback_ui
+            try:
+                # 等待用戶回饋
+                result = await session.wait_for_feedback(timeout)
+                debug_log("收到桌面應用用戶回饋")
+                return result
+            finally:
+                # 確保 Electron 進程被正確清理
+                debug_log("清理 Electron 進程...")
+                await manager.cleanup_async()
+                debug_log("Electron 進程清理完成")
+        else:
+            debug_log("桌面應用啟動失敗，回退到 Web 模式")
+            # 回退到 Web 模式
+            from ..web import launch_web_feedback_ui
 
-        return await launch_web_feedback_ui(project_dir, summary, timeout)
+            return await launch_web_feedback_ui(project_dir, summary, timeout)
 
     except Exception as e:
         debug_log(f"桌面應用啟動過程中出錯: {e}")
         debug_log("回退到 Web 模式")
+        # 確保清理 Electron 進程
+        try:
+            if "manager" in locals():
+                await manager.cleanup_async()
+        except Exception as cleanup_error:
+            debug_log(f"清理 Electron 進程時出錯: {cleanup_error}")
+
         # 回退到 Web 模式
         from ..web import launch_web_feedback_ui
 

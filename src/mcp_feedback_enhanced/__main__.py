@@ -91,7 +91,18 @@ def run_tests(args):
 
     # 在 Windows 上抑制 asyncio 警告
     if sys.platform == "win32":
-        os.environ["PYTHONWARNINGS"] = "ignore::ResourceWarning"
+        import warnings
+
+        # 設置更全面的警告抑制
+        os.environ["PYTHONWARNINGS"] = (
+            "ignore::ResourceWarning,ignore::DeprecationWarning"
+        )
+        warnings.filterwarnings("ignore", category=ResourceWarning)
+        warnings.filterwarnings("ignore", message=".*unclosed transport.*")
+        warnings.filterwarnings("ignore", message=".*I/O operation on closed pipe.*")
+        warnings.filterwarnings("ignore", message=".*unclosed.*")
+        # 抑制 asyncio 相關的所有警告
+        warnings.filterwarnings("ignore", module="asyncio.*")
 
     if args.web:
         print("🧪 執行 Web UI 測試...")
@@ -216,7 +227,9 @@ def test_desktop_app():
 
         print("✅ 桌面環境檢查通過")
 
-        # 設置桌面模式
+        # 設置測試環境變數，避免端口衝突和權限問題
+        os.environ["MCP_TEST_MODE"] = "true"
+        os.environ["MCP_WEB_PORT"] = "9767"  # 使用不同端口避免與 Web 測試衝突
         os.environ["MCP_FEEDBACK_MODE"] = "desktop"
 
         print("🔧 創建 Electron 管理器...")
@@ -254,6 +267,11 @@ def test_desktop_app():
 
         traceback.print_exc()
         return False
+    finally:
+        # 清理測試環境變數
+        os.environ.pop("MCP_TEST_MODE", None)
+        os.environ.pop("MCP_WEB_PORT", None)
+        os.environ.pop("MCP_FEEDBACK_MODE", None)
 
 
 async def wait_for_process(process):

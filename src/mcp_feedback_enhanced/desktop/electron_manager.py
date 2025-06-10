@@ -16,24 +16,46 @@ Electron 管理器
 """
 
 import asyncio
+import os
+import platform
+import signal
 import subprocess
+import warnings
 from pathlib import Path
 
 from ..debug import web_debug_log as debug_log
 from ..utils.error_handler import ErrorHandler, ErrorType
 
 
+def suppress_windows_asyncio_warnings():
+    """抑制 Windows 上的 asyncio 相關警告"""
+    if platform.system().lower() == "windows":
+        # 抑制 ResourceWarning 和 asyncio 相關警告
+        warnings.filterwarnings("ignore", category=ResourceWarning)
+        warnings.filterwarnings("ignore", message=".*unclosed transport.*")
+        warnings.filterwarnings("ignore", message=".*I/O operation on closed pipe.*")
+        # 設置環境變數抑制 asyncio 警告
+        os.environ.setdefault("PYTHONWARNINGS", "ignore::ResourceWarning")
+        debug_log("已設置 Windows asyncio 警告抑制")
+
+
 class ElectronManager:
-    """Electron 進程管理器"""
+    """Electron 進程管理器 - 跨平台支持"""
 
     def __init__(self):
         """初始化 Electron 管理器"""
         self.electron_process: asyncio.subprocess.Process | None = None
         self.desktop_dir = Path(__file__).parent
         self.web_server_port: int | None = None
+        self.platform = platform.system().lower()
+        self._cleanup_in_progress = False
+
+        # 設置平台特定的警告抑制
+        suppress_windows_asyncio_warnings()
 
         debug_log("ElectronManager 初始化完成")
         debug_log(f"桌面模組目錄: {self.desktop_dir}")
+        debug_log(f"檢測到平台: {self.platform}")
 
     async def launch_desktop_app(self, summary: str, project_dir: str) -> bool:
         """
@@ -142,50 +164,221 @@ class ElectronManager:
             return False
 
     def cleanup(self):
-        """清理資源"""
-        if self.electron_process:
-            try:
-                # 檢查進程是否還在運行
-                if self.electron_process.returncode is None:
-                    self.electron_process.terminate()
-                    debug_log("Electron 進程已終止")
-                else:
-                    debug_log("Electron 進程已自然結束")
-            except Exception as e:
-                debug_log(f"終止 Electron 進程時出錯: {e}")
-                try:
-                    if self.electron_process.returncode is None:
-                        self.electron_process.kill()
-                        debug_log("強制終止 Electron 進程")
-                except Exception as kill_error:
-                    debug_log(f"強制終止 Electron 進程失敗: {kill_error}")
-            finally:
-                # 關閉管道以避免 ResourceWarning
-                try:
-                    # 對於 asyncio 子進程，需要特殊處理
-                    if (
-                        hasattr(self.electron_process, "stdout")
-                        and self.electron_process.stdout
-                    ):
-                        if hasattr(self.electron_process.stdout, "close"):
-                            self.electron_process.stdout.close()
-                    if (
-                        hasattr(self.electron_process, "stderr")
-                        and self.electron_process.stderr
-                    ):
-                        if hasattr(self.electron_process.stderr, "close"):
-                            self.electron_process.stderr.close()
-                    if (
-                        hasattr(self.electron_process, "stdin")
-                        and self.electron_process.stdin
-                    ):
-                        if hasattr(self.electron_process.stdin, "close"):
-                            self.electron_process.stdin.close()
-                except Exception:
-                    # 忽略管道關閉錯誤，這些通常是無害的
-                    pass
+        """同步清理資源（向後兼容）"""
+        try:
+            # 在事件循環中運行異步清理
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # 如果事件循環正在運行，創建任務
+                asyncio.create_task(self.cleanup_async())
+            else:
+                # 如果沒有事件循環，運行異步清理
+                asyncio.run(self.cleanup_async())
+        except Exception as e:
+            debug_log(f"同步清理失敗，嘗試基本清理: {e}")
+            self._basic_cleanup()
 
+    async def cleanup_async(self):
+        """異步清理資源 - 跨平台支持"""
+        if self._cleanup_in_progress or not self.electron_process:
+            return
+
+        self._cleanup_in_progress = True
+        debug_log(f"開始清理 Electron 進程 (平台: {self.platform})")
+
+        try:
+            # 檢查進程是否還在運行
+            if self.electron_process.returncode is None:
+                await self._terminate_process_cross_platform()
+            else:
+                debug_log("Electron 進程已自然結束")
+
+            # 等待進程完全結束並清理管道
+            await self._wait_and_cleanup_pipes()
+
+        except Exception as e:
+            debug_log(f"清理 Electron 進程時出錯: {e}")
+            # 嘗試強制清理
+            await self._force_cleanup()
+        finally:
+            self.electron_process = None
+            self._cleanup_in_progress = False
+            debug_log("Electron 進程清理完成")
+
+    async def _terminate_process_cross_platform(self):
+        """跨平台進程終止"""
+        if self.platform == "windows":
+            await self._terminate_windows()
+        else:
+            await self._terminate_unix()
+
+    async def _terminate_windows(self):
+        """Windows 平台進程終止"""
+        debug_log("使用 Windows 進程終止策略")
+        if not self.electron_process:
+            return
+
+        try:
+            # Windows: 使用 terminate() 然後等待
+            self.electron_process.terminate()
+            try:
+                await asyncio.wait_for(self.electron_process.wait(), timeout=5.0)
+                debug_log("Electron 進程已優雅終止")
+            except TimeoutError:
+                debug_log("優雅終止超時，強制終止")
+                self.electron_process.kill()
+                await asyncio.wait_for(self.electron_process.wait(), timeout=3.0)
+                debug_log("Electron 進程已強制終止")
+        except Exception as e:
+            debug_log(f"Windows 進程終止失敗: {e}")
+            raise
+
+    async def _terminate_unix(self):
+        """Unix 系統進程終止"""
+        debug_log("使用 Unix 進程終止策略")
+        if not self.electron_process:
+            return
+
+        try:
+            # Unix: 發送 SIGTERM 然後等待
+            self.electron_process.send_signal(signal.SIGTERM)
+            try:
+                await asyncio.wait_for(self.electron_process.wait(), timeout=5.0)
+                debug_log("Electron 進程已優雅終止")
+            except TimeoutError:
+                debug_log("優雅終止超時，發送 SIGKILL")
+                # 使用 getattr 來處理可能不存在的 SIGKILL
+                sigkill = getattr(signal, "SIGKILL", signal.SIGTERM)
+                self.electron_process.send_signal(sigkill)
+                await asyncio.wait_for(self.electron_process.wait(), timeout=3.0)
+                debug_log("Electron 進程已強制終止")
+        except Exception as e:
+            debug_log(f"Unix 進程終止失敗: {e}")
+            raise
+
+    async def _wait_and_cleanup_pipes(self):
+        """等待進程結束並清理管道"""
+        if not self.electron_process:
+            return
+
+        try:
+            # 確保進程已經結束
+            if self.electron_process.returncode is None:
+                await self.electron_process.wait()
+
+            # 平台特定的管道清理
+            if self.platform == "windows":
+                await self._cleanup_pipes_windows()
+            else:
+                await self._cleanup_pipes_unix()
+
+        except Exception as e:
+            debug_log(f"管道清理失敗: {e}")
+
+    async def _cleanup_pipes_windows(self):
+        """Windows 平台管道清理"""
+        debug_log("清理 Windows 管道")
+        if not self.electron_process:
+            return
+
+        try:
+            # Windows: 需要特殊處理 asyncio 管道
+            pipes = [
+                ("stdout", self.electron_process.stdout),
+                ("stderr", self.electron_process.stderr),
+                ("stdin", self.electron_process.stdin),
+            ]
+
+            for pipe_name, pipe in pipes:
+                if pipe and hasattr(pipe, "close"):
+                    try:
+                        # 檢查是否有 is_closing 方法（某些管道類型可能沒有）
+                        if not hasattr(pipe, "is_closing") or not pipe.is_closing():
+                            pipe.close()
+                        # 等待管道關閉
+                        if hasattr(pipe, "wait_closed"):
+                            await pipe.wait_closed()
+                        debug_log(f"已關閉 {pipe_name} 管道")
+                    except Exception as e:
+                        # Windows 上的管道關閉錯誤通常是無害的
+                        debug_log(f"關閉 {pipe_name} 管道時出現預期錯誤: {e}")
+
+        except Exception as e:
+            debug_log(f"Windows 管道清理失敗: {e}")
+
+    async def _cleanup_pipes_unix(self):
+        """Unix 系統管道清理"""
+        debug_log("清理 Unix 管道")
+        if not self.electron_process:
+            return
+
+        try:
+            # Unix: 直接關閉管道
+            pipes = [
+                ("stdout", self.electron_process.stdout),
+                ("stderr", self.electron_process.stderr),
+                ("stdin", self.electron_process.stdin),
+            ]
+
+            for pipe_name, pipe in pipes:
+                if pipe and hasattr(pipe, "close"):
+                    try:
+                        pipe.close()
+                        if hasattr(pipe, "wait_closed"):
+                            await pipe.wait_closed()
+                        debug_log(f"已關閉 {pipe_name} 管道")
+                    except Exception as e:
+                        debug_log(f"關閉 {pipe_name} 管道失敗: {e}")
+
+        except Exception as e:
+            debug_log(f"Unix 管道清理失敗: {e}")
+
+    async def _force_cleanup(self):
+        """強制清理（最後手段）"""
+        debug_log("執行強制清理")
+        try:
+            if self.electron_process and self.electron_process.returncode is None:
+                # 嘗試使用 psutil 強制終止
+                try:
+                    import psutil
+
+                    process = psutil.Process(self.electron_process.pid)
+                    process.kill()
+                    debug_log("使用 psutil 強制終止進程")
+                except ImportError:
+                    debug_log("psutil 不可用，使用系統調用")
+                    if self.electron_process:
+                        if self.platform == "windows":
+                            self.electron_process.kill()
+                        else:
+                            # 使用 getattr 來處理可能不存在的 SIGKILL
+                            sigkill = getattr(signal, "SIGKILL", signal.SIGTERM)
+                            self.electron_process.send_signal(sigkill)
+                except Exception as e:
+                    debug_log(f"強制終止失敗: {e}")
+
+            # 基本清理
+            self._basic_cleanup()
+
+        except Exception as e:
+            debug_log(f"強制清理失敗: {e}")
+
+    def _basic_cleanup(self):
+        """基本清理（同步）"""
+        debug_log("執行基本清理")
+        try:
+            if self.electron_process:
+                # 嘗試基本的管道關閉
+                for pipe_name in ["stdout", "stderr", "stdin"]:
+                    pipe = getattr(self.electron_process, pipe_name, None)
+                    if pipe and hasattr(pipe, "close"):
+                        try:
+                            pipe.close()
+                        except Exception:
+                            pass  # 忽略錯誤
                 self.electron_process = None
+        except Exception as e:
+            debug_log(f"基本清理失敗: {e}")
 
     async def _create_package_json(self):
         """創建 package.json 文件"""

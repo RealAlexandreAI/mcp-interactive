@@ -141,7 +141,7 @@ class TestWebUISessionManagement:
         assert current_session.summary == "第二個會話"
 
         # 3. 測試會話狀態更新
-        from src.mcp_feedback_enhanced.web.models import SessionStatus
+        from mcp_feedback_enhanced.web.models import SessionStatus
 
         current_session.update_status(SessionStatus.FEEDBACK_SUBMITTED, "已提交回饋")
         assert current_session.status == SessionStatus.FEEDBACK_SUBMITTED
@@ -150,7 +150,7 @@ class TestWebUISessionManagement:
     async def test_session_feedback_flow(self, web_ui_manager, test_project_dir):
         """測試會話回饋流程"""
         # 創建會話
-        session_id = web_ui_manager.create_session(
+        web_ui_manager.create_session(
             str(test_project_dir), TestData.SAMPLE_SESSION["summary"]
         )
 
@@ -169,7 +169,7 @@ class TestWebUISessionManagement:
         assert session.settings == TestData.SAMPLE_FEEDBACK["settings"]
 
         # 驗證狀態已更新
-        from src.mcp_feedback_enhanced.web.models import SessionStatus
+        from mcp_feedback_enhanced.web.models import SessionStatus
 
         assert session.status == SessionStatus.FEEDBACK_SUBMITTED
 
@@ -177,7 +177,7 @@ class TestWebUISessionManagement:
     async def test_session_timeout_handling(self, web_ui_manager, test_project_dir):
         """測試會話超時處理"""
         # 創建會話，設置短超時
-        session_id = web_ui_manager.create_session(
+        web_ui_manager.create_session(
             str(test_project_dir), TestData.SAMPLE_SESSION["summary"]
         )
 

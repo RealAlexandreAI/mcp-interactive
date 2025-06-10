@@ -200,16 +200,24 @@ class ErrorHandler:
 
             i18n = get_i18n_manager()
             key = f"errors.solutions.{error_type.value}"
-            solutions = i18n.t(key)
-            if isinstance(solutions, list) and len(solutions) > 0:
-                return solutions
-            # 如果沒有找到或為空，使用回退
-            raise Exception("Solutions not found")
+            i18n_result = i18n.t(key)
+
+            # 修復類型推斷問題 - 使用 Any 類型並明確檢查
+            from typing import Any
+
+            result: Any = i18n_result
+
+            # 檢查是否為列表類型且非空
+            if isinstance(result, list) and len(result) > 0:
+                return result
+
+            # 如果不是列表或為空，使用回退
+            raise Exception("Solutions not found or invalid format")
         except Exception:
             # 回退到內建映射
             language = ErrorHandler.get_current_language()
-            solutions = ErrorHandler._ERROR_SOLUTIONS.get(error_type, {})
-            return solutions.get(language, solutions.get("zh-TW", []))
+            solutions_dict = ErrorHandler._ERROR_SOLUTIONS.get(error_type, {})
+            return solutions_dict.get(language, solutions_dict.get("zh-TW", []))
 
     @staticmethod
     def classify_error(error: Exception) -> ErrorType:
@@ -377,19 +385,7 @@ class ErrorHandler:
         if error_type is None:
             error_type = ErrorHandler.classify_error(error)
 
-        # 構建錯誤記錄
-        error_record = {
-            "error_id": error_id,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "error_type": error_type.value,
-            "severity": severity.value,
-            "exception_type": type(error).__name__,
-            "exception_message": str(error),
-            "context": context or {},
-            "traceback": traceback.format_exc()
-            if severity in [ErrorSeverity.HIGH, ErrorSeverity.CRITICAL]
-            else None,
-        }
+        # 錯誤記錄已通過 debug_log 輸出，無需額外存儲
 
         # 記錄到調試日誌（不影響 JSON RPC）
         debug_log(f"錯誤記錄 [{error_id}]: {error_type.value} - {error!s}")

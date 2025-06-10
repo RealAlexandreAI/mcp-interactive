@@ -13,6 +13,7 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -34,7 +35,7 @@ from .utils.port_manager import PortManager
 class WebUIManager:
     """Web UI 管理器 - 重構為單一活躍會話模式"""
 
-    def __init__(self, host: str = "127.0.0.1", port: int = None):
+    def __init__(self, host: str = "127.0.0.1", port: int | None = None):
         self.host = host
 
         # 確定偏好端口：環境變數 > 參數 > 預設值 8765
@@ -83,7 +84,7 @@ class WebUIManager:
         self._pending_session_update = False
 
         # 會話清理統計
-        self.cleanup_stats = {
+        self.cleanup_stats: dict[str, Any] = {
             "total_cleanups": 0,
             "expired_cleanups": 0,
             "memory_pressure_cleanups": 0,
@@ -93,13 +94,13 @@ class WebUIManager:
             "sessions_cleaned": 0,
         }
 
-        self.server_thread = None
+        self.server_thread: threading.Thread | None = None
         self.server_process = None
         self.i18n = get_i18n_manager()
 
         # 添加模式檢測支援
         self.mode = self._detect_feedback_mode()
-        self.desktop_manager = None
+        self.desktop_manager: Any = None
 
         # 如果是桌面模式，嘗試初始化桌面管理器
         if self.mode == "desktop":
@@ -678,15 +679,16 @@ class WebUIManager:
             # 調用活躍標籤頁 API
             import aiohttp
 
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=2)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(
-                    f"{self.get_server_url()}/api/active-tabs", timeout=2
+                    f"{self.get_server_url()}/api/active-tabs"
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
                         tab_count = data.get("count", 0)
                         debug_log(f"API 檢測到 {tab_count} 個活躍標籤頁")
-                        return tab_count > 0
+                        return bool(tab_count > 0)
                     debug_log(f"檢查活躍標籤頁失敗，狀態碼：{response.status}")
                     return False
 
@@ -715,8 +717,8 @@ class WebUIManager:
         cleaned_count = 0
         for session_id in expired_sessions:
             try:
-                session = self.sessions.get(session_id)
-                if session:
+                if session_id in self.sessions:
+                    session = self.sessions[session_id]
                     # 使用增強清理方法
                     session._cleanup_sync_enhanced(CleanupReason.EXPIRED)
                     del self.sessions[session_id]
@@ -922,7 +924,7 @@ class WebUIManager:
         )
 
         # 停止伺服器（注意：uvicorn 的 graceful shutdown 需要額外處理）
-        if self.server_thread and self.server_thread.is_alive():
+        if self.server_thread is not None and self.server_thread.is_alive():
             debug_log("正在停止 Web UI 服務")
 
 
@@ -955,14 +957,14 @@ async def launch_web_feedback_ui(
     manager = get_web_ui_manager()
 
     # 創建或更新當前活躍會話
-    session_id = manager.create_session(project_directory, summary)
+    manager.create_session(project_directory, summary)
     session = manager.get_current_session()
 
     if not session:
         raise RuntimeError("無法創建回饋會話")
 
     # 啟動伺服器（如果尚未啟動）
-    if not manager.server_thread or not manager.server_thread.is_alive():
+    if manager.server_thread is None or not manager.server_thread.is_alive():
         manager.start_server()
 
     # 使用根路徑 URL 並智能開啟瀏覽器

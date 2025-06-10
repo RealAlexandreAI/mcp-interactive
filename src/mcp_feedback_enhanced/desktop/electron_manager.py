@@ -28,7 +28,7 @@ class ElectronManager:
 
     def __init__(self):
         """初始化 Electron 管理器"""
-        self.electron_process: subprocess.Popen | None = None
+        self.electron_process: asyncio.subprocess.Process | None = None
         self.desktop_dir = Path(__file__).parent
         self.web_server_port: int | None = None
 

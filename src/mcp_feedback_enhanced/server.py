@@ -29,7 +29,7 @@ import json
 import os
 import sys
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
 from fastmcp.utilities.types import Image as MCPImage
@@ -60,11 +60,20 @@ def init_encoding():
             msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
             # 重新包裝為 UTF-8 文本流，並禁用緩衝
+            # 修復 union-attr 錯誤 - 安全獲取 buffer 或 detach
+            stdin_buffer = getattr(sys.stdin, "buffer", None)
+            if stdin_buffer is None and hasattr(sys.stdin, "detach"):
+                stdin_buffer = sys.stdin.detach()
+
+            stdout_buffer = getattr(sys.stdout, "buffer", None)
+            if stdout_buffer is None and hasattr(sys.stdout, "detach"):
+                stdout_buffer = sys.stdout.detach()
+
             sys.stdin = io.TextIOWrapper(
-                sys.stdin.detach(), encoding="utf-8", errors="replace", newline=None
+                stdin_buffer, encoding="utf-8", errors="replace", newline=None
             )
             sys.stdout = io.TextIOWrapper(
-                sys.stdout.detach(),
+                stdout_buffer,
                 encoding="utf-8",
                 errors="replace",
                 newline="",
@@ -149,7 +158,7 @@ else:
     # 預設使用 INFO 等級
     fastmcp_settings["log_level"] = "INFO"
 
-mcp = FastMCP(SERVER_NAME, version=__version__, **fastmcp_settings)
+mcp: Any = FastMCP(SERVER_NAME, version=__version__)
 
 
 # ===== 工具函數 =====
@@ -237,7 +246,7 @@ def is_remote_environment() -> bool:
     return False
 
 
-def save_feedback_to_file(feedback_data: dict, file_path: str = None) -> str:
+def save_feedback_to_file(feedback_data: dict, file_path: str | None = None) -> str:
     """
     將回饋資料儲存到 JSON 文件
 
@@ -527,6 +536,7 @@ async def interactive_feedback(
         # 添加圖片回饋
         if result.get("images"):
             mcp_images = process_images(result["images"])
+            # 修復 arg-type 錯誤 - 直接擴展列表
             feedback_items.extend(mcp_images)
             debug_log(f"已添加 {len(mcp_images)} 張圖片")
 

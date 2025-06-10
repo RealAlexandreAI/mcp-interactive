@@ -8,16 +8,12 @@
 """
 
 import socket
-import sys
 import time
 from unittest.mock import patch
 
 import pytest
 
-
-# 添加 src 目錄到 Python 路徑
-sys.path.insert(0, "src")
-
+# 移除手動路徑操作，讓 mypy 和 pytest 使用正確的模組解析
 from mcp_feedback_enhanced.web.utils.port_manager import PortManager
 
 

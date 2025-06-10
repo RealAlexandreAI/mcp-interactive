@@ -88,7 +88,7 @@ async def launch_desktop_app(project_dir: str, summary: str, timeout: int) -> di
         web_manager = get_web_ui_manager()
 
         # 創建會話
-        session_id = web_manager.create_session(project_dir, summary)
+        web_manager.create_session(project_dir, summary)
         session = web_manager.get_current_session()
 
         if not session:

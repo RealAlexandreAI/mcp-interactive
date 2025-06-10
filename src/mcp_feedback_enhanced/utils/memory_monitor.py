@@ -323,15 +323,13 @@ class MemoryMonitor:
         # 調用清理回調（強制模式）
         for callback in self.cleanup_callbacks:
             try:
-                if callable(callback):
-                    # 嘗試傳遞 force 參數
-                    import inspect
+                # 修復 unreachable 錯誤 - 簡化邏輯，移除不可達的 else 分支
+                # 嘗試傳遞 force 參數
+                import inspect
 
-                    sig = inspect.signature(callback)
-                    if "force" in sig.parameters:
-                        callback(force=True)
-                    else:
-                        callback()
+                sig = inspect.signature(callback)
+                if "force" in sig.parameters:
+                    callback(force=True)
                 else:
                     callback()
             except Exception as e:

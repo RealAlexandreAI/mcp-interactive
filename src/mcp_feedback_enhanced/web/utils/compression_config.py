@@ -8,7 +8,8 @@
 """
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -24,14 +25,14 @@ class CompressionConfig:
     api_cache_max_age: int = 0  # API 響應緩存時間（秒，0表示不緩存）
 
     # 支援的 MIME 類型
-    compressible_types: list[str] = None
+    compressible_types: list[str] = field(default_factory=list)
 
     # 排除的路徑
-    exclude_paths: list[str] = None
+    exclude_paths: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         """初始化後處理"""
-        if self.compressible_types is None:
+        if not self.compressible_types:
             self.compressible_types = [
                 "text/html",
                 "text/css",
@@ -45,7 +46,7 @@ class CompressionConfig:
                 "image/svg+xml",
             ]
 
-        if self.exclude_paths is None:
+        if not self.exclude_paths:
             self.exclude_paths = [
                 "/ws",  # WebSocket 連接
                 "/api/ws",  # WebSocket API
@@ -111,7 +112,7 @@ class CompressionConfig:
         expires_time = datetime.utcnow() + timedelta(seconds=max_age)
         return expires_time.strftime("%a, %d %b %Y %H:%M:%S GMT")
 
-    def get_compression_stats(self) -> dict[str, any]:
+    def get_compression_stats(self) -> dict[str, Any]:
         """獲取壓縮配置統計"""
         return {
             "minimum_size": self.minimum_size,
@@ -156,7 +157,7 @@ class CompressionManager:
                 1 - self._stats["bytes_compressed"] / self._stats["bytes_original"]
             ) * 100
 
-    def get_stats(self) -> dict[str, any]:
+    def get_stats(self) -> dict[str, Any]:
         """獲取壓縮統計"""
         stats = self._stats.copy()
         stats["compression_percentage"] = (

@@ -9,18 +9,18 @@ from typing import Dict, Any, List
 
 class TestData:
     """測試數據類"""
-    
+
     # 測試會話數據
-    SAMPLE_SESSION = {
+    SAMPLE_SESSION: Dict[str, Any] = {
         "session_id": "test-session-12345",
         "project_directory": "/test/project",
         "summary": "測試 AI 工作摘要 - 已完成代碼重構",
         "status": "waiting",
         "timeout": 600
     }
-    
+
     # 測試回饋數據
-    SAMPLE_FEEDBACK = {
+    SAMPLE_FEEDBACK: Dict[str, Any] = {
         "feedback": "測試回饋內容 - 代碼看起來不錯，請繼續",
         "images": [],
         "settings": {
@@ -30,10 +30,10 @@ class TestData:
     }
     
     # 測試圖片數據（Base64 編碼的小圖片）
-    SAMPLE_IMAGE_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
-    
+    SAMPLE_IMAGE_BASE64: str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+
     # 測試 WebSocket 消息
-    WEBSOCKET_MESSAGES = {
+    WEBSOCKET_MESSAGES: Dict[str, Dict[str, Any]] = {
         "connection_established": {
             "type": "connection_established",
             "message": "WebSocket 連接已建立"
@@ -58,9 +58,9 @@ class TestData:
     }
     
     # I18N 測試數據
-    I18N_TEST_KEYS = [
+    I18N_TEST_KEYS: List[str] = [
         "common.submit",
-        "common.cancel", 
+        "common.cancel",
         "common.loading",
         "feedback.placeholder",
         "feedback.submit",
@@ -69,19 +69,19 @@ class TestData:
         "error.connection",
         "error.timeout"
     ]
-    
+
     # 支援的語言列表
-    SUPPORTED_LANGUAGES = ["zh-TW", "zh-CN", "en"]
-    
+    SUPPORTED_LANGUAGES: List[str] = ["zh-TW", "zh-CN", "en"]
+
     # 測試環境變數
-    TEST_ENV_VARS = {
+    TEST_ENV_VARS: Dict[str, str] = {
         "MCP_DEBUG": "true",
         "MCP_WEB_PORT": "8765",
         "MCP_TEST_MODE": "true"
     }
-    
+
     # 測試配置
-    TEST_CONFIG = {
+    TEST_CONFIG: Dict[str, Dict[str, Any]] = {
         "web_ui": {
             "host": "127.0.0.1",
             "port": 0,  # 使用隨機端口

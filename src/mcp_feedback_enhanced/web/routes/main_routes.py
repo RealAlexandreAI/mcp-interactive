@@ -34,7 +34,8 @@ def load_user_layout_settings() -> str:
                 settings = json.load(f)
                 layout_mode = settings.get("layoutMode", "combined-vertical")
                 debug_log(f"從設定檔案載入佈局模式: {layout_mode}")
-                return layout_mode
+                # 修復 no-any-return 錯誤 - 確保返回 str 類型
+                return str(layout_mode)
         else:
             debug_log("設定檔案不存在，使用預設佈局模式: combined-vertical")
             return "combined-vertical"

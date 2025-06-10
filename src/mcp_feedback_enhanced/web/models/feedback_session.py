@@ -4,10 +4,14 @@ Web 回饋會話模型
 ===============
 
 管理 Web 回饋會話的資料和邏輯。
+
+注意：此文件中的 subprocess 調用已經過安全處理，使用 shlex.split() 解析命令
+並禁用 shell=True 以防止命令注入攻擊。
 """
 
 import asyncio
 import base64
+import shlex
 import subprocess
 import threading
 import time
@@ -15,6 +19,7 @@ from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from fastapi import WebSocket
 
@@ -59,6 +64,54 @@ SUPPORTED_IMAGE_TYPES = {
 TEMP_DIR = Path.home() / ".cache" / "interactive-feedback-mcp-web"
 
 
+def _safe_parse_command(command: str) -> list[str]:
+    """
+    安全解析命令字符串，避免 shell 注入攻擊
+
+    Args:
+        command: 命令字符串
+
+    Returns:
+        list[str]: 解析後的命令參數列表
+
+    Raises:
+        ValueError: 如果命令包含不安全的字符
+    """
+    try:
+        # 使用 shlex 安全解析命令
+        parsed = shlex.split(command)
+
+        # 基本安全檢查：禁止某些危險字符和命令
+        dangerous_patterns = [
+            ";",
+            "&&",
+            "||",
+            "|",
+            ">",
+            "<",
+            "`",
+            "$(",
+            "rm -rf",
+            "del /f",
+            "format",
+            "fdisk",
+        ]
+
+        command_lower = command.lower()
+        for pattern in dangerous_patterns:
+            if pattern in command_lower:
+                raise ValueError(f"命令包含不安全的模式: {pattern}")
+
+        if not parsed:
+            raise ValueError("空命令")
+
+        return parsed
+
+    except Exception as e:
+        debug_log(f"命令解析失敗: {e}")
+        raise ValueError(f"無法安全解析命令: {e}") from e
+
+
 class WebFeedbackSession:
     """Web 回饋會話管理"""
 
@@ -76,10 +129,10 @@ class WebFeedbackSession:
         self.websocket: WebSocket | None = None
         self.feedback_result: str | None = None
         self.images: list[dict] = []
-        self.settings: dict = {}  # 圖片設定
+        self.settings: dict[str, Any] = {}  # 圖片設定
         self.feedback_completed = threading.Event()
         self.process: subprocess.Popen | None = None
-        self.command_logs = []
+        self.command_logs: list[str] = []
         self._cleanup_done = False  # 防止重複清理
 
         # 新增：會話狀態管理
@@ -93,10 +146,10 @@ class WebFeedbackSession:
         self.auto_cleanup_delay = auto_cleanup_delay  # 自動清理延遲時間（秒）
         self.max_idle_time = max_idle_time  # 最大空閒時間（秒）
         self.cleanup_timer: threading.Timer | None = None
-        self.cleanup_callbacks: list[Callable] = []  # 清理回調函數列表
+        self.cleanup_callbacks: list[Callable[..., None]] = []  # 清理回調函數列表
 
         # 新增：清理統計
-        self.cleanup_stats = {
+        self.cleanup_stats: dict[str, Any] = {
             "cleanup_count": 0,
             "last_cleanup_time": None,
             "cleanup_reason": None,
@@ -104,6 +157,9 @@ class WebFeedbackSession:
             "memory_freed": 0,
             "resources_cleaned": 0,
         }
+
+        # 新增：活躍標籤頁管理
+        self.active_tabs: dict[str, Any] = {}
 
         # 確保臨時目錄存在
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -118,7 +174,7 @@ class WebFeedbackSession:
             f"會話 {self.session_id} 初始化完成，自動清理延遲: {auto_cleanup_delay}秒，最大空閒: {max_idle_time}秒"
         )
 
-    def update_status(self, status: SessionStatus, message: str = None):
+    def update_status(self, status: SessionStatus, message: str | None = None):
         """更新會話狀態"""
         self.status = status
         if message:
@@ -134,7 +190,7 @@ class WebFeedbackSession:
             f"會話 {self.session_id} 狀態更新: {status.value} - {self.status_message}"
         )
 
-    def get_status_info(self) -> dict:
+    def get_status_info(self) -> dict[str, Any]:
         """獲取會話狀態信息"""
         return {
             "status": self.status.value,
@@ -233,7 +289,7 @@ class WebFeedbackSession:
             f"會話 {self.session_id} 自動清理定時器已設置，{self.auto_cleanup_delay}秒後觸發"
         )
 
-    def extend_cleanup_timer(self, additional_time: int = None):
+    def extend_cleanup_timer(self, additional_time: int | None = None):
         """延長清理定時器"""
         if additional_time is None:
             additional_time = self.auto_cleanup_delay
@@ -247,19 +303,19 @@ class WebFeedbackSession:
 
         debug_log(f"會話 {self.session_id} 清理定時器已延長 {additional_time} 秒")
 
-    def add_cleanup_callback(self, callback: Callable):
+    def add_cleanup_callback(self, callback: Callable[..., None]):
         """添加清理回調函數"""
         if callback not in self.cleanup_callbacks:
             self.cleanup_callbacks.append(callback)
             debug_log(f"會話 {self.session_id} 添加清理回調函數")
 
-    def remove_cleanup_callback(self, callback: Callable):
+    def remove_cleanup_callback(self, callback: Callable[..., None]):
         """移除清理回調函數"""
         if callback in self.cleanup_callbacks:
             self.cleanup_callbacks.remove(callback)
             debug_log(f"會話 {self.session_id} 移除清理回調函數")
 
-    def get_cleanup_stats(self) -> dict:
+    def get_cleanup_stats(self) -> dict[str, Any]:
         """獲取清理統計信息"""
         stats = self.cleanup_stats.copy()
         stats.update(
@@ -278,7 +334,7 @@ class WebFeedbackSession:
         )
         return stats
 
-    async def wait_for_feedback(self, timeout: int = 600) -> dict:
+    async def wait_for_feedback(self, timeout: int = 600) -> dict[str, Any]:
         """
         等待用戶回饋，包含圖片，支援超時自動清理
 
@@ -330,7 +386,10 @@ class WebFeedbackSession:
             raise
 
     async def submit_feedback(
-        self, feedback: str, images: list[dict], settings: dict = None
+        self,
+        feedback: str,
+        images: list[dict[str, Any]],
+        settings: dict[str, Any] | None = None,
     ):
         """
         提交回饋和圖片
@@ -431,7 +490,7 @@ class WebFeedbackSession:
         self.command_logs.append(log_entry)
 
     async def run_command(self, command: str):
-        """執行命令並透過 WebSocket 發送輸出"""
+        """執行命令並透過 WebSocket 發送輸出（安全版本）"""
         if self.process:
             # 終止現有進程
             try:
@@ -447,9 +506,22 @@ class WebFeedbackSession:
         try:
             debug_log(f"執行命令: {command}")
 
+            # 安全解析命令
+            try:
+                parsed_command = _safe_parse_command(command)
+            except ValueError as e:
+                error_msg = f"命令安全檢查失敗: {e}"
+                debug_log(error_msg)
+                if self.websocket:
+                    await self.websocket.send_json(
+                        {"type": "command_error", "error": error_msg}
+                    )
+                return
+
+            # 使用安全的方式執行命令（不使用 shell=True）
             self.process = subprocess.Popen(
-                command,
-                shell=True,
+                parsed_command,
+                shell=False,  # 安全：不使用 shell
                 cwd=self.project_directory,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,

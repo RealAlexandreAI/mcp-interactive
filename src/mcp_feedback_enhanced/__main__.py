@@ -40,7 +40,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="可用命令")
 
     # 伺服器命令（預設）
-    server_parser = subparsers.add_parser("server", help="啟動 MCP 伺服器（預設）")
+    subparsers.add_parser("server", help="啟動 MCP 伺服器（預設）")
 
     # 測試命令
     test_parser = subparsers.add_parser("test", help="執行測試")
@@ -61,7 +61,7 @@ def main():
     )
 
     # 版本命令
-    version_parser = subparsers.add_parser("version", help="顯示版本資訊")
+    subparsers.add_parser("version", help="顯示版本資訊")
 
     args = parser.parse_args()
 
@@ -143,16 +143,21 @@ def test_web_ui_simple():
 
         print("🔧 創建測試會話...")
         with tempfile.TemporaryDirectory() as temp_dir:
-            session_id = manager.create_session(temp_dir, "Web UI 測試 - 驗證基本功能")
+            created_session_id = manager.create_session(
+                temp_dir, "Web UI 測試 - 驗證基本功能"
+            )
 
-            if session_id:
+            if created_session_id:
                 print("✅ 會話創建成功")
 
                 print("🚀 啟動 Web 服務器...")
                 manager.start_server()
                 time.sleep(5)  # 等待服務器完全啟動
 
-                if manager.server_thread and manager.server_thread.is_alive():
+                if (
+                    manager.server_thread is not None
+                    and manager.server_thread.is_alive()
+                ):
                     print("✅ Web 服務器啟動成功")
                     url = f"http://{manager.host}:{manager.port}"
                     print(f"🌐 服務器運行在: {url}")

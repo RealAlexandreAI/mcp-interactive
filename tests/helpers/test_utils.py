@@ -109,7 +109,9 @@ class MockWebSocketClient:
         if not self.connected:
             raise RuntimeError("WebSocket 未連接")
         if self.responses:
-            return self.responses.pop(0)
+            response = self.responses.pop(0)
+            # 修復 no-any-return 錯誤 - 確保返回明確類型
+            return dict(response)  # 明確返回 dict[str, Any] 類型
         # 返回默認回應
         return {"type": "connection_established", "message": "連接成功"}
 
@@ -126,8 +128,8 @@ class PerformanceTimer:
     """性能計時器"""
 
     def __init__(self):
-        self.start_time = None
-        self.end_time = None
+        self.start_time: float | None = None
+        self.end_time: float | None = None
 
     def start(self):
         """開始計時"""

@@ -18,16 +18,16 @@ class SimpleMCPClient:
     def __init__(self, timeout: int = 30):
         self.timeout = timeout
         self.server_process: subprocess.Popen | None = None
-        self.stdin = None
-        self.stdout = None
-        self.stderr = None
+        self.stdin: Any = None
+        self.stdout: Any = None
+        self.stderr: Any = None
         self.initialized = False
 
     async def start_server(self) -> bool:
         """啟動 MCP 服務器"""
         try:
             # 使用當前專案的 MCP 服務器
-            cmd = ["python", "-m", "src.mcp_feedback_enhanced.server"]
+            cmd = ["python", "-m", "mcp_feedback_enhanced.server"]
 
             self.server_process = subprocess.Popen(
                 cmd,
@@ -114,7 +114,8 @@ class SimpleMCPClient:
             if response and "result" in response:
                 result = response["result"]
                 result["performance"] = {"duration": timer.duration}
-                return result
+                # 修復 no-any-return 錯誤 - 確保返回明確類型
+                return dict(result)  # 明確返回 dict[str, Any] 類型
             return {"error": "無效的回應格式", "response": response}
 
         except TimeoutError:
@@ -143,7 +144,13 @@ class SimpleMCPClient:
             )
 
             if response_line:
-                return json.loads(response_line.strip())
+                response_data = json.loads(response_line.strip())
+                # 修復 no-any-return 錯誤 - 確保返回明確類型
+                return (
+                    dict(response_data)
+                    if isinstance(response_data, dict)
+                    else response_data
+                )
             return None
 
         except TimeoutError:
@@ -190,7 +197,12 @@ class MCPWorkflowTester:
         self, project_dir: str, summary: str
     ) -> dict[str, Any]:
         """測試基本工作流程"""
-        result = {"success": False, "steps": {}, "errors": [], "performance": {}}
+        result: dict[str, Any] = {
+            "success": False,
+            "steps": {},
+            "errors": [],
+            "performance": {},
+        }
 
         with PerformanceTimer() as timer:
             try:

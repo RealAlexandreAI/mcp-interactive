@@ -7,22 +7,18 @@
 """
 
 import asyncio
-import os
-import sys
 import time
 from unittest.mock import Mock
 
 import pytest
 
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from src.mcp_feedback_enhanced.web.models.feedback_session import (
+# 移除手動路徑操作，讓 mypy 和 pytest 使用正確的模組解析
+from mcp_feedback_enhanced.web.models.feedback_session import (
     CleanupReason,
     SessionStatus,
     WebFeedbackSession,
 )
-from src.mcp_feedback_enhanced.web.utils.session_cleanup_manager import (
+from mcp_feedback_enhanced.web.utils.session_cleanup_manager import (
     CleanupPolicy,
     CleanupTrigger,
     SessionCleanupManager,
@@ -191,6 +187,8 @@ class TestWebFeedbackSessionCleanup:
 
         # 檢查定時器是否被重置
         assert self.session.cleanup_timer != old_timer
+        # 修復 union-attr 錯誤 - 檢查 Timer 是否存在且活躍
+        assert self.session.cleanup_timer is not None
         assert self.session.cleanup_timer.is_alive()
         assert self.session.status == SessionStatus.ACTIVE
 

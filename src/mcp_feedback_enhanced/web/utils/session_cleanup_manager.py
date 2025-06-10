@@ -62,7 +62,7 @@ class CleanupTrigger(Enum):
 class SessionCleanupManager:
     """會話清理管理器"""
 
-    def __init__(self, web_ui_manager, policy: CleanupPolicy = None):
+    def __init__(self, web_ui_manager, policy: CleanupPolicy | None = None):
         """
         初始化會話清理管理器
 
@@ -319,7 +319,6 @@ class SessionCleanupManager:
     def _cleanup_expired_sessions(self) -> int:
         """清理過期會話"""
         expired_sessions = []
-        current_time = time.time()
 
         for session_id, session in self.web_ui_manager.sessions.items():
             # 檢查是否過期

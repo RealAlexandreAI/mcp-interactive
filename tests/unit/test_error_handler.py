@@ -8,15 +8,11 @@
 - 錯誤上下文記錄
 """
 
-import sys
 from unittest.mock import patch
 
 import pytest
 
-
-# 添加 src 目錄到 Python 路徑
-sys.path.insert(0, "src")
-
+# 移除手動路徑操作，讓 mypy 和 pytest 使用正確的模組解析
 from mcp_feedback_enhanced.utils.error_handler import (
     ErrorHandler,
     ErrorSeverity,
@@ -34,8 +30,9 @@ class TestErrorHandler:
         assert ErrorHandler.classify_error(error) == ErrorType.NETWORK
 
         # 測試包含網絡關鍵字的錯誤（不包含 timeout）
-        error = Exception("socket connection failed")
-        assert ErrorHandler.classify_error(error) == ErrorType.NETWORK
+        # 修復 assignment 錯誤 - 使用正確的異常類型
+        network_error = Exception("socket connection failed")
+        assert ErrorHandler.classify_error(network_error) == ErrorType.NETWORK
 
     def test_classify_error_file_io(self):
         """測試文件 I/O 錯誤分類"""
@@ -44,32 +41,33 @@ class TestErrorHandler:
         assert ErrorHandler.classify_error(error) == ErrorType.FILE_IO
 
         # 測試包含文件關鍵字的錯誤（不包含權限關鍵字）
-        error = Exception("file not found")
-        assert ErrorHandler.classify_error(error) == ErrorType.FILE_IO
+        # 修復 assignment 錯誤 - 使用正確的異常類型
+        file_error = Exception("file not found")
+        assert ErrorHandler.classify_error(file_error) == ErrorType.FILE_IO
 
     def test_classify_error_timeout(self):
         """測試超時錯誤分類"""
         error = TimeoutError("Operation timed out")
         assert ErrorHandler.classify_error(error) == ErrorType.TIMEOUT
 
-        error = Exception("timeout occurred")
-        assert ErrorHandler.classify_error(error) == ErrorType.TIMEOUT
+        timeout_error = Exception("timeout occurred")
+        assert ErrorHandler.classify_error(timeout_error) == ErrorType.TIMEOUT
 
     def test_classify_error_permission(self):
         """測試權限錯誤分類"""
         error = PermissionError("Access denied")
         assert ErrorHandler.classify_error(error) == ErrorType.PERMISSION
 
-        error = Exception("access denied")
-        assert ErrorHandler.classify_error(error) == ErrorType.PERMISSION
+        permission_error = Exception("access denied")
+        assert ErrorHandler.classify_error(permission_error) == ErrorType.PERMISSION
 
     def test_classify_error_validation(self):
         """測試驗證錯誤分類"""
         error = ValueError("Invalid value")
         assert ErrorHandler.classify_error(error) == ErrorType.VALIDATION
 
-        error = TypeError("Wrong type")
-        assert ErrorHandler.classify_error(error) == ErrorType.VALIDATION
+        type_error = TypeError("Wrong type")
+        assert ErrorHandler.classify_error(type_error) == ErrorType.VALIDATION
 
     def test_classify_error_default_system(self):
         """測試默認系統錯誤分類"""

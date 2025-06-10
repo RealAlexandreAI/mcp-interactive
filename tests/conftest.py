@@ -6,7 +6,6 @@
 import asyncio
 import os
 import shutil
-import sys
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
@@ -14,13 +13,9 @@ from typing import Any
 
 import pytest
 
-
-# 添加專案根目錄到 Python 路徑
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
-
-from src.mcp_feedback_enhanced.i18n import get_i18n_manager
-from src.mcp_feedback_enhanced.web.main import WebUIManager
+# 使用正確的模組導入，不手動修改 sys.path
+from mcp_feedback_enhanced.i18n import get_i18n_manager
+from mcp_feedback_enhanced.web.main import WebUIManager
 
 
 @pytest.fixture(scope="session")

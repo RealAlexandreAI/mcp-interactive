@@ -110,7 +110,8 @@ class I18nManager:
             if self._config_file.exists():
                 with open(self._config_file, encoding="utf-8") as f:
                     config = json.load(f)
-                    return config.get("language")
+                    language = config.get("language")
+                    return language if isinstance(language, str) else None
         except Exception:
             pass
         return None
@@ -126,7 +127,7 @@ class I18nManager:
 
     def get_current_language(self) -> str:
         """獲取當前語言"""
-        return self._current_language
+        return self._current_language or "zh-TW"
 
     def set_language(self, language: str) -> bool:
         """設定語言"""
@@ -136,20 +137,21 @@ class I18nManager:
             return True
         return False
 
-    def get_supported_languages(self) -> list:
+    def get_supported_languages(self) -> list[str]:
         """獲取支援的語言列表"""
         return self._supported_languages.copy()
 
     def get_language_info(self, language_code: str) -> dict[str, Any]:
         """獲取語言的元資料信息"""
         if language_code in self._translations:
-            return self._translations[language_code].get("meta", {})
+            meta = self._translations[language_code].get("meta", {})
+            return meta if isinstance(meta, dict) else {}
         return {}
 
     def _get_nested_value(self, data: dict[str, Any], key_path: str) -> str | None:
         """從巢狀字典中獲取值，支援點分隔的鍵路徑"""
         keys = key_path.split(".")
-        current = data
+        current: Any = data
 
         for key in keys:
             if isinstance(current, dict) and key in current:
@@ -157,7 +159,7 @@ class I18nManager:
             else:
                 return None
 
-        return current if isinstance(current, str) else None
+        return str(current) if isinstance(current, str) else None
 
     def t(self, key: str, **kwargs) -> str:
         """
@@ -303,7 +305,8 @@ class I18nManager:
 
         # 回退到元資料中的顯示名稱
         meta = self.get_language_info(language_code)
-        return meta.get("displayName", language_code)
+        display_name = meta.get("displayName", language_code)
+        return str(display_name) if display_name else language_code
 
     def reload_translations(self) -> None:
         """重新載入所有翻譯檔案（開發時使用）"""

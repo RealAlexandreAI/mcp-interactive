@@ -41,9 +41,7 @@ class TestWebUIManager:
     def test_session_switching(self, web_ui_manager, test_project_dir):
         """測試會話切換"""
         # 創建第一個會話
-        session_id_1 = web_ui_manager.create_session(
-            str(test_project_dir), "第一個會話"
-        )
+        web_ui_manager.create_session(str(test_project_dir), "第一個會話")
 
         # 創建第二個會話
         session_id_2 = web_ui_manager.create_session(
@@ -83,7 +81,7 @@ class TestWebFeedbackSession:
 
     def test_session_creation(self, test_project_dir):
         """測試會話創建"""
-        from src.mcp_feedback_enhanced.web.models import WebFeedbackSession
+        from mcp_feedback_enhanced.web.models import WebFeedbackSession
 
         session = WebFeedbackSession(
             "test-session", str(test_project_dir), TestData.SAMPLE_SESSION["summary"]
@@ -98,7 +96,7 @@ class TestWebFeedbackSession:
 
     def test_session_status_management(self, test_project_dir):
         """測試會話狀態管理"""
-        from src.mcp_feedback_enhanced.web.models import (
+        from mcp_feedback_enhanced.web.models import (
             SessionStatus,
             WebFeedbackSession,
         )
@@ -113,11 +111,12 @@ class TestWebFeedbackSession:
         # 測試狀態更新
         session.update_status(SessionStatus.FEEDBACK_SUBMITTED, "已提交回饋")
         assert session.status == SessionStatus.FEEDBACK_SUBMITTED
-        assert session.status_message == "已提交回饋"
+        # 修復 unreachable 錯誤 - 使用 type: ignore 註解
+        assert session.status_message == "已提交回饋"  # type: ignore[unreachable]
 
     def test_session_age_and_idle_time(self, test_project_dir):
         """測試會話年齡和空閒時間"""
-        from src.mcp_feedback_enhanced.web.models import WebFeedbackSession
+        from mcp_feedback_enhanced.web.models import WebFeedbackSession
 
         session = WebFeedbackSession(
             "test-session", str(test_project_dir), TestData.SAMPLE_SESSION["summary"]
@@ -136,7 +135,7 @@ class TestWebFeedbackSession:
     @pytest.mark.asyncio
     async def test_session_feedback_submission(self, test_project_dir):
         """測試回饋提交"""
-        from src.mcp_feedback_enhanced.web.models import (
+        from mcp_feedback_enhanced.web.models import (
             SessionStatus,
             WebFeedbackSession,
         )

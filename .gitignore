@@ -6,6 +6,13 @@ dist/
 wheels/
 *.egg-info
 
+# Development tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # Virtual environments
 .venv*/
 venv*/
@@ -69,3 +76,13 @@ test_*.py
 # User configuration files
 ui_settings.json
 .config/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Environment files
+.env
+.env.local
+.env.*.local

@@ -60,12 +60,12 @@ class ResourceManager:
         self.file_handles: set[Any] = set()
 
         # 資源統計
-        self.stats = {
+        self.stats: dict[str, int | float] = {
             "temp_files_created": 0,
             "temp_dirs_created": 0,
             "processes_registered": 0,
             "cleanup_runs": 0,
-            "last_cleanup": None,
+            "last_cleanup": 0.0,  # 使用 0.0 而非 None，避免類型混淆
         }
 
         # 配置

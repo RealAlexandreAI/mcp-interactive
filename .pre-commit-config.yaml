@@ -38,7 +38,7 @@ repos:
     hooks:
       # Ruff linter with auto-fix
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--fix]
         types_or: [python, pyi]
       # Ruff formatter
       - id: ruff-format

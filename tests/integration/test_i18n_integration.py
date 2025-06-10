@@ -53,22 +53,17 @@ class TestI18NWebIntegration:
         """測試 I18N API 端點"""
         import asyncio
 
-        import aiohttp
-
         # 啟動服務器
         web_ui_manager.start_server()
 
         async def test_api():
             await asyncio.sleep(3)
 
-            base_url = f"http://{web_ui_manager.host}:{web_ui_manager.port}"
-
-            async with aiohttp.ClientSession() as session:
-                # 測試語言切換 API（如果存在）
-                for lang in TestData.SUPPORTED_LANGUAGES:
-                    # 這裡可以測試語言切換 API
-                    # 例如 POST /api/set-language
-                    pass
+            # 測試語言切換 API（如果存在）
+            for lang in TestData.SUPPORTED_LANGUAGES:
+                # 這裡可以測試語言切換 API
+                # 例如 POST /api/set-language
+                pass
 
         asyncio.run(test_api())
 
@@ -104,7 +99,7 @@ class TestI18NFileSystemIntegration:
     def test_translation_files_exist(self):
         """測試翻譯文件存在"""
         # 獲取 I18N 文件目錄
-        from src.mcp_feedback_enhanced.i18n import I18nManager
+        from mcp_feedback_enhanced.i18n import I18nManager
 
         manager = I18nManager()
         locales_dir = manager._locales_dir
@@ -131,7 +126,7 @@ class TestI18NFileSystemIntegration:
 
     def test_translation_file_encoding(self):
         """測試翻譯文件編碼"""
-        from src.mcp_feedback_enhanced.i18n import I18nManager
+        from mcp_feedback_enhanced.i18n import I18nManager
 
         manager = I18nManager()
         locales_dir = manager._locales_dir
@@ -154,7 +149,7 @@ class TestI18NEnvironmentIntegration:
 
     def test_language_detection_in_different_environments(self):
         """測試不同環境下的語言檢測"""
-        from src.mcp_feedback_enhanced.i18n import I18nManager
+        from mcp_feedback_enhanced.i18n import I18nManager
 
         # 保存原始環境變數
         original_env = {}
@@ -183,7 +178,8 @@ class TestI18NEnvironmentIntegration:
 
                 # 創建新的管理器實例
                 manager = I18nManager()
-                detected = manager.detect_system_language()
+                # 修復 attr-defined 錯誤 - 使用正確的方法名
+                detected = manager._detect_language()
 
                 # 驗證檢測結果
                 expected = test_case["expected"]
@@ -193,10 +189,13 @@ class TestI18NEnvironmentIntegration:
 
         finally:
             # 恢復原始環境變數
-            for var, value in original_env.items():
-                if value is not None:
-                    os.environ[var] = value
-                else:
+            # 修復 assignment 和 unreachable 錯誤 - 明確處理類型
+            for var in original_env:
+                original_value: str | None = original_env.get(var)
+                if original_value is not None:
+                    os.environ[var] = original_value
+                elif var in os.environ:
+                    # 如果原始值為 None，且變數存在於環境中，則移除
                     os.environ.pop(var, None)
 
     def test_i18n_with_web_ui_manager(self, web_ui_manager, i18n_manager):

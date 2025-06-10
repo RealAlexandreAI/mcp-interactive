@@ -133,8 +133,13 @@ def test_web_ui_simple():
 
         from .web.main import WebUIManager
 
+        # 設置測試模式，禁用自動清理避免權限問題
+        os.environ["MCP_TEST_MODE"] = "true"
+        # 設置更高的端口範圍避免系統保留端口
+        os.environ["MCP_WEB_PORT"] = "9765"
+
         print("🔧 創建 Web UI 管理器...")
-        manager = WebUIManager(host="127.0.0.1", port=8765)  # 使用固定端口
+        manager = WebUIManager(host="127.0.0.1")  # 使用動態端口分配
 
         print("🔧 創建測試會話...")
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -185,6 +190,10 @@ def test_web_ui_simple():
 
         traceback.print_exc()
         return False
+    finally:
+        # 清理測試環境變數
+        os.environ.pop("MCP_TEST_MODE", None)
+        os.environ.pop("MCP_WEB_PORT", None)
 
 
 def test_desktop_app():
@@ -378,8 +387,12 @@ def test_full_integration():
 
         from .web.main import WebUIManager
 
+        # 設置測試模式
+        os.environ["MCP_TEST_MODE"] = "true"
+        os.environ["MCP_WEB_PORT"] = "9766"
+
         with tempfile.TemporaryDirectory() as temp_dir:
-            manager = WebUIManager(host="127.0.0.1", port=8766)  # 使用不同端口避免衝突
+            manager = WebUIManager(host="127.0.0.1")  # 使用動態端口分配避免衝突
             session_id = manager.create_session(temp_dir, "整合測試會話")
 
             if session_id:
@@ -409,6 +422,10 @@ def test_full_integration():
 
         traceback.print_exc()
         return False
+    finally:
+        # 清理測試環境變數
+        os.environ.pop("MCP_TEST_MODE", None)
+        os.environ.pop("MCP_WEB_PORT", None)
 
 
 def show_version():

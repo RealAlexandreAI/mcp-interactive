@@ -59,9 +59,10 @@ class WebUIManager:
         else:
             debug_log(f"未設定 MCP_WEB_PORT 環境變數，使用預設端口 {preferred_port}")
 
-        # 使用增強的端口管理，支持自動清理
+        # 使用增強的端口管理，測試模式下禁用自動清理避免權限問題
+        auto_cleanup = os.environ.get("MCP_TEST_MODE", "").lower() != "true"
         self.port = port or PortManager.find_free_port_enhanced(
-            preferred_port=preferred_port, auto_cleanup=True, host=self.host
+            preferred_port=preferred_port, auto_cleanup=auto_cleanup, host=self.host
         )
         self.app = FastAPI(title="MCP Feedback Enhanced")
 

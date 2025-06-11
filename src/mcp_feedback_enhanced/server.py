@@ -28,7 +28,6 @@ import io
 import json
 import os
 import sys
-from enum import Enum
 from typing import Annotated, Any
 
 from fastmcp import FastMCP
@@ -112,35 +111,6 @@ _encoding_initialized = init_encoding()
 SERVER_NAME = "互動式回饋收集 MCP"
 SSH_ENV_VARS = ["SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY"]
 REMOTE_ENV_VARS = ["REMOTE_CONTAINERS", "CODESPACES"]
-
-
-# ===== 回饋模式枚舉 =====
-class FeedbackMode(Enum):
-    """回饋模式枚舉"""
-
-    WEB = "web"
-    DESKTOP = "desktop"
-    AUTO = "auto"
-
-
-def get_feedback_mode() -> FeedbackMode:
-    """
-    從環境變數獲取回饋模式
-
-    環境變數 MCP_FEEDBACK_MODE 可設置為：
-    - 'web': 強制使用 Web 模式
-    - 'desktop': 強制使用桌面模式
-    - 'auto': 自動檢測（預設）
-
-    Returns:
-        FeedbackMode: 回饋模式
-    """
-    mode = os.environ.get("MCP_FEEDBACK_MODE", "auto").lower()
-    try:
-        return FeedbackMode(mode)
-    except ValueError:
-        debug_log(f"無效的 MCP_FEEDBACK_MODE 值: {mode}，使用預設值 'auto'")
-        return FeedbackMode.AUTO
 
 
 # 初始化 MCP 服務器
@@ -500,18 +470,10 @@ async def interactive_feedback(
             project_directory = os.getcwd()
         project_directory = os.path.abspath(project_directory)
 
-        # 根據模式選擇啟動方式
-        mode = get_feedback_mode()
-        debug_log(f"回饋模式: {mode.value}")
+        # 使用 Web 模式
+        debug_log("回饋模式: web")
 
-        if mode == FeedbackMode.DESKTOP:
-            result = await launch_desktop_feedback_ui(
-                project_directory, summary, timeout
-            )
-        elif mode == FeedbackMode.WEB:
-            result = await launch_web_feedback_ui(project_directory, summary, timeout)
-        else:  # AUTO
-            result = await launch_auto_feedback_ui(project_directory, summary, timeout)
+        result = await launch_web_feedback_ui(project_directory, summary, timeout)
 
         # 處理取消情況
         if not result:
@@ -601,70 +563,6 @@ async def launch_web_feedback_ui(project_dir: str, summary: str, timeout: int) -
             "interactive_feedback": user_error_msg,
             "images": [],
         }
-
-
-async def launch_desktop_feedback_ui(
-    project_dir: str, summary: str, timeout: int
-) -> dict:
-    """
-    啟動桌面應用收集回饋
-
-    Args:
-        project_dir: 專案目錄路徑
-        summary: AI 工作摘要
-        timeout: 超時時間（秒）
-
-    Returns:
-        dict: 收集到的回饋資料
-    """
-    debug_log(f"啟動桌面應用介面，超時時間: {timeout} 秒")
-
-    try:
-        # 嘗試導入桌面模組
-        from .desktop import launch_desktop_app
-
-        return await launch_desktop_app(project_dir, summary, timeout)
-    except ImportError as e:
-        debug_log(f"桌面模組未安裝或不可用，回退到 Web 模式: {e}")
-        # 回退到 Web 模式
-        return await launch_web_feedback_ui(project_dir, summary, timeout)
-    except Exception as e:
-        debug_log(f"桌面應用啟動失敗，回退到 Web 模式: {e}")
-        # 回退到 Web 模式
-        return await launch_web_feedback_ui(project_dir, summary, timeout)
-
-
-async def launch_auto_feedback_ui(project_dir: str, summary: str, timeout: int) -> dict:
-    """
-    自動檢測環境並選擇合適的回饋介面
-
-    Args:
-        project_dir: 專案目錄路徑
-        summary: AI 工作摘要
-        timeout: 超時時間（秒）
-
-    Returns:
-        dict: 收集到的回饋資料
-    """
-    debug_log("自動檢測環境以選擇回饋介面")
-
-    # 檢測是否為遠程環境
-    if is_remote_environment():
-        debug_log("檢測到遠程環境，使用 Web 模式")
-        return await launch_web_feedback_ui(project_dir, summary, timeout)
-
-    # 本地環境：嘗試桌面模式，失敗則回退到 Web 模式
-    try:
-        from .desktop import is_desktop_available
-
-        if is_desktop_available():
-            debug_log("檢測到桌面環境可用，使用桌面模式")
-            return await launch_desktop_feedback_ui(project_dir, summary, timeout)
-    except ImportError:
-        debug_log("桌面模組不可用")
-
-    debug_log("使用 Web 模式作為預設選擇")
-    return await launch_web_feedback_ui(project_dir, summary, timeout)
 
 
 @mcp.tool()

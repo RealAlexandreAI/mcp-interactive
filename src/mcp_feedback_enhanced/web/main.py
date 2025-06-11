@@ -124,14 +124,12 @@ class WebUIManager:
         self._init_basic_components()
 
         debug_log(f"WebUIManager 基本初始化完成，將在 {self.host}:{self.port} 啟動")
-        debug_log(f"回饋模式: {self.mode}")
+        debug_log("回饋模式: web")
 
     def _init_basic_components(self):
         """同步初始化基本組件"""
         # 基本組件初始化（必須同步）
         self.i18n = get_i18n_manager()
-        self.mode = self._detect_feedback_mode()
-        self.desktop_manager: Any = None
 
         # 設置靜態文件和模板（必須同步）
         self._setup_static_files()
@@ -152,11 +150,7 @@ class WebUIManager:
         # 創建並行任務
         tasks = []
 
-        # 任務1：桌面管理器初始化
-        if self.mode == "desktop":
-            tasks.append(self._init_desktop_manager_async())
-
-        # 任務2：I18N 預載入（如果需要）
+        # 任務：I18N 預載入（如果需要）
         tasks.append(self._preload_i18n_async())
 
         # 並行執行所有任務
@@ -173,51 +167,6 @@ class WebUIManager:
 
         elapsed = time.time() - start_time
         debug_log(f"並行初始化完成，耗時: {elapsed:.2f}秒")
-
-    def _detect_feedback_mode(self) -> str:
-        """檢測回饋模式"""
-        mode = os.environ.get("MCP_FEEDBACK_MODE", "auto").lower()
-        if mode in ["web", "desktop", "auto"]:
-            return mode
-        debug_log(f"無效的 MCP_FEEDBACK_MODE 值: {mode}，使用預設值 'auto'")
-        return "auto"
-
-    def _init_desktop_manager(self):
-        """初始化桌面管理器（如果可用）- 同步版本"""
-        try:
-            # 嘗試導入桌面模組
-            from ..desktop import ElectronManager
-
-            self.desktop_manager = ElectronManager()
-            debug_log("桌面管理器初始化成功")
-        except ImportError:
-            debug_log("桌面模組不可用，將在需要時回退到 Web 模式")
-            self.desktop_manager = None
-        except Exception as e:
-            debug_log(f"桌面管理器初始化失敗: {e}")
-            self.desktop_manager = None
-
-    async def _init_desktop_manager_async(self):
-        """異步初始化桌面管理器"""
-
-        def init_desktop():
-            try:
-                from ..desktop import ElectronManager
-
-                manager = ElectronManager()
-                debug_log("桌面管理器異步初始化成功")
-                return manager
-            except ImportError:
-                debug_log("桌面模組不可用，將在需要時回退到 Web 模式")
-                return None
-            except Exception as e:
-                debug_log(f"桌面管理器異步初始化失敗: {e}")
-                return None
-
-        # 在線程池中執行同步初始化
-        loop = asyncio.get_event_loop()
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            self.desktop_manager = await loop.run_in_executor(executor, init_desktop)
 
     async def _preload_i18n_async(self):
         """異步預載入 I18N 資源"""
@@ -236,20 +185,6 @@ class WebUIManager:
         loop = asyncio.get_event_loop()
         with concurrent.futures.ThreadPoolExecutor() as executor:
             await loop.run_in_executor(executor, preload_i18n)
-
-    def should_use_desktop_mode(self) -> bool:
-        """判斷是否應該使用桌面模式"""
-        if self.mode == "web":
-            return False
-        if self.mode == "desktop":
-            return self.desktop_manager is not None
-        # auto
-        # 自動模式：檢測環境
-        from ..server import is_remote_environment
-
-        if is_remote_environment():
-            return False
-        return self.desktop_manager is not None
 
     def _setup_compression_middleware(self):
         """設置壓縮和緩存中間件"""

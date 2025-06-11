@@ -158,7 +158,7 @@ else:
     # 預設使用 INFO 等級
     fastmcp_settings["log_level"] = "INFO"
 
-mcp: Any = FastMCP(SERVER_NAME, version=__version__)
+mcp: Any = FastMCP(SERVER_NAME)
 
 
 # ===== 工具函數 =====

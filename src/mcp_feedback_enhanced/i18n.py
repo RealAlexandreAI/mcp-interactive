@@ -83,25 +83,37 @@ class I18nManager:
         if env_lang and env_lang in self._supported_languages:
             return env_lang
 
-        # 3. 自動偵測系統語言
-        try:
-            # 獲取系統語言
-            system_locale = locale.getdefaultlocale()[0]
-            if system_locale:
-                if system_locale.startswith("zh_TW") or system_locale.startswith(
-                    "zh_Hant"
-                ):
+        # 3. 檢查其他環境變數（LANG, LC_ALL 等）
+        for env_var in ["LANG", "LC_ALL", "LC_MESSAGES", "LANGUAGE"]:
+            env_value = os.getenv(env_var, "").strip()
+            if env_value:
+                if env_value.startswith("zh_TW") or env_value.startswith("zh_Hant"):
                     return "zh-TW"
-                if system_locale.startswith("zh_CN") or system_locale.startswith(
-                    "zh_Hans"
-                ):
+                if env_value.startswith("zh_CN") or env_value.startswith("zh_Hans"):
                     return "zh-CN"
-                if system_locale.startswith("en"):
+                if env_value.startswith("en"):
                     return "en"
-        except Exception:
-            pass
 
-        # 4. 回退到默認語言
+        # 4. 自動偵測系統語言（僅在非測試模式下）
+        if not os.getenv("MCP_TEST_MODE"):
+            try:
+                # 獲取系統語言
+                system_locale = locale.getdefaultlocale()[0]
+                if system_locale:
+                    if system_locale.startswith("zh_TW") or system_locale.startswith(
+                        "zh_Hant"
+                    ):
+                        return "zh-TW"
+                    if system_locale.startswith("zh_CN") or system_locale.startswith(
+                        "zh_Hans"
+                    ):
+                        return "zh-CN"
+                    if system_locale.startswith("en"):
+                        return "en"
+            except Exception:
+                pass
+
+        # 5. 回退到默認語言
         return self._fallback_language
 
     def _load_saved_language(self) -> str | None:

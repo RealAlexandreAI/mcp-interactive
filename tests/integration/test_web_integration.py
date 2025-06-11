@@ -97,6 +97,24 @@ class TestWebUIIntegration:
                     data = msg.json()
                     assert data["type"] == "connection_established"
 
+                    # 可能會收到額外的消息（session_updated 或 status_update），先處理掉
+                    try:
+                        while True:
+                            extra_msg = await asyncio.wait_for(ws.receive(), timeout=1)
+                            if extra_msg.type == aiohttp.WSMsgType.TEXT:
+                                extra_data = extra_msg.json()
+                                if extra_data["type"] in [
+                                    "session_updated",
+                                    "status_update",
+                                ]:
+                                    continue
+                                # 如果是其他類型的消息，可能是我們要的回應，先保存
+                                break
+                            break
+                    except TimeoutError:
+                        # 沒有額外消息，繼續測試
+                        pass
+
                     # 測試發送心跳
                     heartbeat_msg = {
                         "type": "heartbeat",

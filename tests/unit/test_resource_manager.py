@@ -33,6 +33,11 @@ class TestResourceManager:
         # 重置單例實例
         ResourceManager._instance = None
 
+        # 重置全局資源管理器實例
+        import mcp_feedback_enhanced.utils.resource_manager as rm_module
+
+        rm_module._resource_manager = None
+
     def test_singleton_pattern(self):
         """測試單例模式"""
         rm1 = ResourceManager()

@@ -106,9 +106,10 @@ class TestI18NFileSystemIntegration:
 
         assert locales_dir.exists(), f"翻譯目錄不存在: {locales_dir}"
 
-        # 檢查每種支援語言的翻譯文件
+        # 檢查每種支援語言的翻譯文件（使用正確的路徑結構）
         for lang in TestData.SUPPORTED_LANGUAGES:
-            lang_file = locales_dir / f"{lang}.json"
+            lang_dir = locales_dir / lang
+            lang_file = lang_dir / "translation.json"
             assert lang_file.exists(), f"翻譯文件不存在: {lang_file}"
 
             # 檢查文件內容
@@ -132,7 +133,8 @@ class TestI18NFileSystemIntegration:
         locales_dir = manager._locales_dir
 
         for lang in TestData.SUPPORTED_LANGUAGES:
-            lang_file = locales_dir / f"{lang}.json"
+            lang_dir = locales_dir / lang
+            lang_file = lang_dir / "translation.json"
 
             if lang_file.exists():
                 # 測試 UTF-8 編碼
@@ -160,6 +162,9 @@ class TestI18NEnvironmentIntegration:
         try:
             # 測試不同的環境設置
             test_cases = [
+                {"MCP_LANGUAGE": "zh-TW", "expected": "zh-TW"},
+                {"MCP_LANGUAGE": "zh-CN", "expected": "zh-CN"},
+                {"MCP_LANGUAGE": "en", "expected": "en"},
                 {"LANG": "zh_TW.UTF-8", "expected": "zh-TW"},
                 {"LANG": "zh_CN.UTF-8", "expected": "zh-CN"},
                 {"LANG": "en_US.UTF-8", "expected": "en"},
@@ -170,22 +175,34 @@ class TestI18NEnvironmentIntegration:
                 # 清理環境變數
                 for var in env_vars:
                     os.environ.pop(var, None)
+                # 也清理 MCP_LANGUAGE
+                os.environ.pop("MCP_LANGUAGE", None)
+
+                # 設置測試模式，禁用系統語言檢測
+                os.environ["MCP_TEST_MODE"] = "true"
 
                 # 設置測試環境
                 for key, value in test_case.items():
                     if key != "expected":
                         os.environ[key] = value
 
-                # 創建新的管理器實例
-                manager = I18nManager()
-                # 修復 attr-defined 錯誤 - 使用正確的方法名
-                detected = manager._detect_language()
+                # 創建新的管理器實例，並清理可能的保存設定
+                import tempfile
+                from pathlib import Path
 
-                # 驗證檢測結果
-                expected = test_case["expected"]
-                assert detected == expected, (
-                    f"環境 {test_case} 檢測到 {detected}，預期 {expected}"
-                )
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    # 臨時修改配置文件路徑，避免使用真實的用戶配置
+                    manager = I18nManager()
+                    manager._config_file = Path(temp_dir) / "test_language.json"
+
+                    # 修復 attr-defined 錯誤 - 使用正確的方法名
+                    detected = manager._detect_language()
+
+                    # 驗證檢測結果
+                    expected = test_case["expected"]
+                    assert detected == expected, (
+                        f"環境 {test_case} 檢測到 {detected}，預期 {expected}"
+                    )
 
         finally:
             # 恢復原始環境變數

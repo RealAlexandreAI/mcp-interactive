@@ -50,13 +50,35 @@ def test_project_dir(temp_dir: Path) -> Path:
 @pytest.fixture
 def web_ui_manager() -> Generator[WebUIManager, None, None]:
     """創建 WebUIManager fixture"""
-    manager = WebUIManager(host="127.0.0.1", port=0)  # 使用隨機端口
-    yield manager
+    import os
 
-    # 清理
-    if manager.server_thread and manager.server_thread.is_alive():
-        # 這裡可以添加服務器停止邏輯
-        pass
+    # 設置測試模式環境變數
+    original_test_mode = os.environ.get("MCP_TEST_MODE")
+    original_web_port = os.environ.get("MCP_WEB_PORT")
+
+    os.environ["MCP_TEST_MODE"] = "true"
+    # 使用動態端口範圍避免衝突
+    os.environ["MCP_WEB_PORT"] = "0"  # 讓系統自動分配端口
+
+    try:
+        manager = WebUIManager(host="127.0.0.1")  # 使用環境變數控制端口
+        yield manager
+    finally:
+        # 恢復原始環境變數
+        if original_test_mode is not None:
+            os.environ["MCP_TEST_MODE"] = original_test_mode
+        else:
+            os.environ.pop("MCP_TEST_MODE", None)
+
+        if original_web_port is not None:
+            os.environ["MCP_WEB_PORT"] = original_web_port
+        else:
+            os.environ.pop("MCP_WEB_PORT", None)
+
+        # 清理
+        if manager.server_thread and manager.server_thread.is_alive():
+            # 這裡可以添加服務器停止邏輯
+            pass
 
 
 @pytest.fixture

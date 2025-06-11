@@ -47,12 +47,16 @@ class WebUIManager:
         if env_port:
             try:
                 custom_port = int(env_port)
-                if 1024 <= custom_port <= 65535:
+                if custom_port == 0:
+                    # 特殊值 0 表示使用系統自動分配的端口
+                    preferred_port = 0
+                    debug_log("使用環境變數指定的自動端口分配 (0)")
+                elif 1024 <= custom_port <= 65535:
                     preferred_port = custom_port
                     debug_log(f"使用環境變數指定的端口: {preferred_port}")
                 else:
                     debug_log(
-                        f"MCP_WEB_PORT 值無效 ({custom_port})，必須在 1024-65535 範圍內，使用預設端口 8765"
+                        f"MCP_WEB_PORT 值無效 ({custom_port})，必須在 1024-65535 範圍內或為 0，使用預設端口 8765"
                     )
             except ValueError:
                 debug_log(
@@ -63,9 +67,23 @@ class WebUIManager:
 
         # 使用增強的端口管理，測試模式下禁用自動清理避免權限問題
         auto_cleanup = os.environ.get("MCP_TEST_MODE", "").lower() != "true"
-        self.port = port or PortManager.find_free_port_enhanced(
-            preferred_port=preferred_port, auto_cleanup=auto_cleanup, host=self.host
-        )
+
+        if port is not None:
+            # 如果明確指定了端口，使用指定的端口
+            self.port = port
+        elif preferred_port == 0:
+            # 如果偏好端口為 0，使用系統自動分配
+            import socket
+
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind((self.host, 0))
+                self.port = s.getsockname()[1]
+            debug_log(f"系統自動分配端口: {self.port}")
+        else:
+            # 使用增強的端口管理
+            self.port = PortManager.find_free_port_enhanced(
+                preferred_port=preferred_port, auto_cleanup=auto_cleanup, host=self.host
+            )
         self.app = FastAPI(title="MCP Feedback Enhanced")
 
         # 設置壓縮和緩存中間件

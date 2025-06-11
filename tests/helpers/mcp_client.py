@@ -26,8 +26,8 @@ class SimpleMCPClient:
     async def start_server(self) -> bool:
         """啟動 MCP 服務器"""
         try:
-            # 使用當前專案的 MCP 服務器
-            cmd = ["python", "-m", "mcp_feedback_enhanced.server"]
+            # 使用正確的 uv run 命令啟動 MCP 服務器
+            cmd = ["uv", "run", "python", "-m", "mcp_feedback_enhanced"]
 
             self.server_process = subprocess.Popen(
                 cmd,
@@ -37,6 +37,8 @@ class SimpleMCPClient:
                 text=True,
                 bufsize=0,
                 cwd=Path.cwd(),
+                encoding="utf-8",  # 明確指定 UTF-8 編碼
+                errors="replace",  # 處理編碼錯誤
             )
 
             self.stdin = self.server_process.stdin

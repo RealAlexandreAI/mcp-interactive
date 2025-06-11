@@ -163,6 +163,10 @@ class ElectronManager:
             debug_log(f"依賴檢查失敗 [錯誤ID: {error_id}]: {e}")
             return False
 
+    async def ensure_dependencies_async(self) -> bool:
+        """異步確保依賴已安裝（別名方法）"""
+        return await self.ensure_dependencies()
+
     def cleanup(self):
         """同步清理資源（向後兼容）"""
         try:

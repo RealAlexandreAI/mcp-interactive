@@ -7,6 +7,7 @@ Web UI 主要管理類
 """
 
 import asyncio
+import concurrent.futures
 import os
 import threading
 import time
@@ -96,25 +97,64 @@ class WebUIManager:
 
         self.server_thread: threading.Thread | None = None
         self.server_process = None
-        self.i18n = get_i18n_manager()
 
-        # 添加模式檢測支援
+        # 初始化標記，用於追蹤異步初始化狀態
+        self._initialization_complete = False
+        self._initialization_lock = threading.Lock()
+
+        # 同步初始化基本組件
+        self._init_basic_components()
+
+        debug_log(f"WebUIManager 基本初始化完成，將在 {self.host}:{self.port} 啟動")
+        debug_log(f"回饋模式: {self.mode}")
+
+    def _init_basic_components(self):
+        """同步初始化基本組件"""
+        # 基本組件初始化（必須同步）
+        self.i18n = get_i18n_manager()
         self.mode = self._detect_feedback_mode()
         self.desktop_manager: Any = None
 
-        # 如果是桌面模式，嘗試初始化桌面管理器
-        if self.mode == "desktop":
-            self._init_desktop_manager()
-
-        # 設置靜態文件和模板
+        # 設置靜態文件和模板（必須同步）
         self._setup_static_files()
         self._setup_templates()
 
-        # 設置路由
+        # 設置路由（必須同步）
         setup_routes(self)
 
-        debug_log(f"WebUIManager 初始化完成，將在 {self.host}:{self.port} 啟動")
-        debug_log(f"回饋模式: {self.mode}")
+    async def _init_async_components(self):
+        """異步初始化組件（並行執行）"""
+        with self._initialization_lock:
+            if self._initialization_complete:
+                return
+
+        debug_log("開始並行初始化組件...")
+        start_time = time.time()
+
+        # 創建並行任務
+        tasks = []
+
+        # 任務1：桌面管理器初始化
+        if self.mode == "desktop":
+            tasks.append(self._init_desktop_manager_async())
+
+        # 任務2：I18N 預載入（如果需要）
+        tasks.append(self._preload_i18n_async())
+
+        # 並行執行所有任務
+        if tasks:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # 檢查結果
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    debug_log(f"並行初始化任務 {i} 失敗: {result}")
+
+        with self._initialization_lock:
+            self._initialization_complete = True
+
+        elapsed = time.time() - start_time
+        debug_log(f"並行初始化完成，耗時: {elapsed:.2f}秒")
 
     def _detect_feedback_mode(self) -> str:
         """檢測回饋模式"""
@@ -125,7 +165,7 @@ class WebUIManager:
         return "auto"
 
     def _init_desktop_manager(self):
-        """初始化桌面管理器（如果可用）"""
+        """初始化桌面管理器（如果可用）- 同步版本"""
         try:
             # 嘗試導入桌面模組
             from ..desktop import ElectronManager
@@ -138,6 +178,46 @@ class WebUIManager:
         except Exception as e:
             debug_log(f"桌面管理器初始化失敗: {e}")
             self.desktop_manager = None
+
+    async def _init_desktop_manager_async(self):
+        """異步初始化桌面管理器"""
+
+        def init_desktop():
+            try:
+                from ..desktop import ElectronManager
+
+                manager = ElectronManager()
+                debug_log("桌面管理器異步初始化成功")
+                return manager
+            except ImportError:
+                debug_log("桌面模組不可用，將在需要時回退到 Web 模式")
+                return None
+            except Exception as e:
+                debug_log(f"桌面管理器異步初始化失敗: {e}")
+                return None
+
+        # 在線程池中執行同步初始化
+        loop = asyncio.get_event_loop()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            self.desktop_manager = await loop.run_in_executor(executor, init_desktop)
+
+    async def _preload_i18n_async(self):
+        """異步預載入 I18N 資源"""
+
+        def preload_i18n():
+            try:
+                # 觸發翻譯載入（如果尚未載入）
+                self.i18n.get_supported_languages()
+                debug_log("I18N 資源預載入完成")
+                return True
+            except Exception as e:
+                debug_log(f"I18N 資源預載入失敗: {e}")
+                return False
+
+        # 在線程池中執行
+        loop = asyncio.get_event_loop()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            await loop.run_in_executor(executor, preload_i18n)
 
     def should_use_desktop_mode(self) -> bool:
         """判斷是否應該使用桌面模式"""
@@ -415,7 +495,7 @@ class WebUIManager:
             debug_log(f"廣播消息失敗: {e}")
 
     def start_server(self):
-        """啟動 Web 伺服器"""
+        """啟動 Web 伺服器（優化版本，支援並行初始化）"""
 
         def run_server_with_retry():
             max_retries = 5
@@ -435,8 +515,20 @@ class WebUIManager:
                         access_log=False,
                     )
 
-                    server = uvicorn.Server(config)
-                    asyncio.run(server.serve())
+                    server_instance = uvicorn.Server(config)
+
+                    # 創建事件循環並啟動服務器
+                    async def serve_with_async_init(server=server_instance):
+                        # 在服務器啟動的同時進行異步初始化
+                        server_task = asyncio.create_task(server.serve())
+                        init_task = asyncio.create_task(self._init_async_components())
+
+                        # 等待兩個任務完成
+                        await asyncio.gather(
+                            server_task, init_task, return_exceptions=True
+                        )
+
+                    asyncio.run(serve_with_async_init())
                     break
 
                 except OSError as e:

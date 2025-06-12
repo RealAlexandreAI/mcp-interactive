@@ -31,7 +31,6 @@
         this.imageHandler = null;
         this.settingsManager = null;
         this.uiManager = null;
-        this.autoRefreshManager = null;
 
         // 應用程式狀態
         this.isInitialized = false;
@@ -183,28 +182,16 @@
                             }
                         });
 
-                        // 9. 初始化自動刷新管理器
-                        self.autoRefreshManager = new window.MCPFeedback.AutoRefreshManager({
-                            autoRefreshEnabled: settings.autoRefreshEnabled,
-                            autoRefreshInterval: settings.autoRefreshInterval,
-                            lastKnownSessionId: self.currentSessionId,
-                            onSessionUpdate: function(sessionData) {
-                                self.handleSessionUpdate(sessionData);
-                            },
-                            onSettingsChange: function() {
-                                self.saveAutoRefreshSettings();
-                            }
-                        });
+
 
                         // 8. 應用設定到 UI
                         self.settingsManager.applyToUI();
 
-                        // 9. 初始化各個管理器
+                        // 8. 初始化各個管理器
                         self.uiManager.initTabs();
                         self.imageHandler.init();
-                        self.autoRefreshManager.init();
 
-                        // 10. 建立 WebSocket 連接
+                        // 9. 建立 WebSocket 連接
                         self.webSocketManager.connect();
 
                         resolve();
@@ -314,10 +301,7 @@
             this.imageHandler.updateSettings(settings);
         }
 
-        // 更新自動刷新管理器設定
-        if (this.autoRefreshManager) {
-            this.autoRefreshManager.updateSettings(settings);
-        }
+
 
         // 更新 UI 管理器佈局模式
         if (this.uiManager && settings.layoutMode) {
@@ -336,9 +320,7 @@
             this.uiManager.updateStatusIndicator();
         }
 
-        if (this.autoRefreshManager) {
-            this.autoRefreshManager.updateAutoRefreshStatus();
-        }
+
     };
 
     /**
@@ -381,15 +363,7 @@
         }
     };
 
-    /**
-     * 保存自動刷新設定
-     */
-    FeedbackApp.prototype.saveAutoRefreshSettings = function() {
-        if (this.autoRefreshManager && this.settingsManager) {
-            const settings = this.autoRefreshManager.getSettings();
-            this.settingsManager.setMultiple(settings);
-        }
-    };
+
 
     /**
      * 處理 WebSocket 開啟
@@ -546,10 +520,7 @@
             // 重置回饋狀態為等待新回饋
             this.uiManager.setFeedbackState(window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_WAITING, newSessionId);
 
-            // 更新自動刷新管理器的會話 ID
-            if (this.autoRefreshManager) {
-                this.autoRefreshManager.setLastKnownSessionId(newSessionId);
-            }
+
 
             // 更新頁面標題
             if (data.session_info.project_directory) {
@@ -926,9 +897,7 @@
             this.imageHandler.cleanup();
         }
 
-        if (this.autoRefreshManager) {
-            this.autoRefreshManager.cleanup();
-        }
+
 
         console.log('✅ 應用程式資源清理完成');
     };

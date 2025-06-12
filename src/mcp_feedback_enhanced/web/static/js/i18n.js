@@ -182,10 +182,7 @@ class I18nManager {
                 window.feedbackApp.uiManager.updateStatusIndicator();
             }
 
-            // 更新自動檢測狀態文字
-            if (window.feedbackApp.autoRefreshManager && typeof window.feedbackApp.autoRefreshManager.updateAutoRefreshStatus === 'function') {
-                window.feedbackApp.autoRefreshManager.updateAutoRefreshStatus();
-            }
+
         }
     }
 

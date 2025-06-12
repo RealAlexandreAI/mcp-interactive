@@ -25,8 +25,6 @@
             language: 'zh-TW',
             imageSizeLimit: 0,
             enableBase64Detail: false,
-            autoRefreshEnabled: false,
-            autoRefreshInterval: 5,
             activeTab: 'combined',
             sessionPanelCollapsed: false
         };
@@ -314,9 +312,6 @@
         
         // 應用圖片設定
         this.applyImageSettings();
-        
-        // 應用自動刷新設定
-        this.applyAutoRefreshSettings();
     };
 
     /**
@@ -379,20 +374,7 @@
         }.bind(this));
     };
 
-    /**
-     * 應用自動刷新設定
-     */
-    SettingsManager.prototype.applyAutoRefreshSettings = function() {
-        const autoRefreshCheckbox = Utils.safeQuerySelector('#autoRefreshEnabled');
-        if (autoRefreshCheckbox) {
-            autoRefreshCheckbox.checked = this.currentSettings.autoRefreshEnabled;
-        }
 
-        const autoRefreshIntervalInput = Utils.safeQuerySelector('#autoRefreshInterval');
-        if (autoRefreshIntervalInput) {
-            autoRefreshIntervalInput.value = this.currentSettings.autoRefreshInterval;
-        }
-    };
 
     /**
      * 設置事件監聽器
@@ -438,23 +420,7 @@
             });
         }
 
-        // 自動刷新設定
-        const autoRefreshCheckbox = Utils.safeQuerySelector('#autoRefreshEnabled');
-        if (autoRefreshCheckbox) {
-            autoRefreshCheckbox.addEventListener('change', function(e) {
-                self.set('autoRefreshEnabled', e.target.checked);
-            });
-        }
 
-        const autoRefreshIntervalInput = Utils.safeQuerySelector('#autoRefreshInterval');
-        if (autoRefreshIntervalInput) {
-            autoRefreshIntervalInput.addEventListener('change', function(e) {
-                const newInterval = parseInt(e.target.value);
-                if (newInterval >= 5 && newInterval <= 300) {
-                    self.set('autoRefreshInterval', newInterval);
-                }
-            });
-        }
     };
 
     // 將 SettingsManager 加入命名空間

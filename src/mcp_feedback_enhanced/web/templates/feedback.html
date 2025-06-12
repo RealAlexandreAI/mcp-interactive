@@ -633,22 +633,8 @@
                 <div class="combined-content">
                     <!-- AI 摘要區域 -->
                     <div class="combined-section">
-                        <div class="section-header-with-controls">
+                        <div class="section-header">
                             <h3 class="combined-section-title" data-i18n="combined.summaryTitle">📋 AI 工作摘要</h3>
-                            <div class="auto-refresh-controls">
-                                <label class="auto-refresh-toggle">
-                                    <input type="checkbox" id="autoRefreshEnabled" />
-                                    <span class="toggle-label" data-i18n="autoRefresh.enable"></span>
-                                </label>
-                                <div class="auto-refresh-interval">
-                                    <input type="number" id="autoRefreshInterval" min="5" max="300" value="5" />
-                                    <span class="interval-unit" data-i18n="autoRefresh.seconds"></span>
-                                </div>
-                                <div class="auto-refresh-status" id="autoRefreshStatus">
-                                    <span class="status-indicator" id="refreshStatusIndicator">⏸️</span>
-                                    <span class="status-text" id="refreshStatusText" data-i18n="autoRefresh.disabled"></span>
-                                </div>
-                            </div>
                         </div>
                         <div class="combined-summary">
                             <div id="combinedSummaryContent" class="text-input" style="min-height: 200px; white-space: pre-wrap !important; cursor: text; padding: 12px; line-height: 1.6; word-wrap: break-word; overflow-wrap: break-word;" data-dynamic-content="aiSummary">{{ summary }}</div>
@@ -903,7 +889,7 @@
     <script src="/static/js/modules/image-handler.js?v=2025010510"></script>
     <script src="/static/js/modules/settings-manager.js?v=2025010510"></script>
     <script src="/static/js/modules/ui-manager.js?v=2025010510"></script>
-    <script src="/static/js/modules/auto-refresh-manager.js?v=2025010510"></script>
+
     <!-- 主應用程式 -->
     <script src="/static/js/app.js?v=2025010510"></script>
     <script>

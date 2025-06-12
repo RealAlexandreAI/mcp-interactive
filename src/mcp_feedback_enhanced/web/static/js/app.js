@@ -142,6 +142,7 @@
 
                         // 6. 初始化會話管理器
                         self.sessionManager = new window.MCPFeedback.SessionManager({
+                            settingsManager: self.settingsManager,
                             onSessionChange: function(sessionData) {
                                 console.log('📋 會話變更:', sessionData);
                             },

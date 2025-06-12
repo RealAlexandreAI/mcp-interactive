@@ -27,7 +27,8 @@
             enableBase64Detail: false,
             autoRefreshEnabled: false,
             autoRefreshInterval: 5,
-            activeTab: 'combined'
+            activeTab: 'combined',
+            sessionPanelCollapsed: false
         };
         
         // 當前設定

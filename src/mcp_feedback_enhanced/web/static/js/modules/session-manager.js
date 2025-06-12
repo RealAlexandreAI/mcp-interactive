@@ -38,12 +38,16 @@
         this.collapsedToggleBtn = null;
         this.mainContent = null;
 
+        // 設定管理器引用
+        this.settingsManager = options.settingsManager || null;
+
         // 回調函數
         this.onSessionChange = options.onSessionChange || null;
         this.onSessionSelect = options.onSessionSelect || null;
 
         this.initializeModules(options);
         this.initializeUI();
+        this.loadPanelState();
 
         console.log('📋 SessionManager (重構版) 初始化完成');
     }
@@ -253,6 +257,9 @@
             // 更新邊緣按鈕圖示和提示
             this.updateToggleButton('▶', '展開面板');
         }
+
+        // 保存面板狀態到設定
+        this.savePanelState();
 
         console.log('📋 會話面板', this.isPanelVisible ? '顯示' : '隱藏');
     };
@@ -470,6 +477,84 @@
     };
 
 
+
+    /**
+     * 載入面板狀態
+     */
+    SessionManager.prototype.loadPanelState = function() {
+        if (!this.settingsManager) {
+            console.log('📋 沒有設定管理器，使用預設面板狀態');
+            return;
+        }
+
+        const isCollapsed = this.settingsManager.get('sessionPanelCollapsed', false);
+        this.isPanelVisible = !isCollapsed;
+
+        console.log('📋 載入面板狀態:', this.isPanelVisible ? '顯示' : '隱藏');
+
+        // 應用面板狀態
+        this.applyPanelState();
+    };
+
+    /**
+     * 保存面板狀態
+     */
+    SessionManager.prototype.savePanelState = function() {
+        if (!this.settingsManager) {
+            console.log('📋 沒有設定管理器，無法保存面板狀態');
+            return;
+        }
+
+        const isCollapsed = !this.isPanelVisible;
+        this.settingsManager.set('sessionPanelCollapsed', isCollapsed);
+
+        console.log('📋 保存面板狀態:', isCollapsed ? '收合' : '展開');
+    };
+
+    /**
+     * 應用面板狀態
+     */
+    SessionManager.prototype.applyPanelState = function() {
+        if (!this.panel) return;
+
+        const DOMUtils = getDOMUtils();
+
+        if (this.isPanelVisible) {
+            // 展開面板
+            this.panel.classList.remove('collapsed');
+            if (this.mainContent) {
+                this.mainContent.classList.remove('panel-collapsed');
+            }
+
+            // 隱藏收合狀態下的展開按鈕
+            const collapsedToggle = DOMUtils ?
+                DOMUtils.safeQuerySelector('#collapsedPanelToggle') :
+                document.querySelector('#collapsedPanelToggle');
+            if (collapsedToggle) {
+                collapsedToggle.style.display = 'none';
+            }
+
+            // 更新邊緣按鈕圖示和提示
+            this.updateToggleButton('◀', '收合面板');
+        } else {
+            // 收合面板
+            this.panel.classList.add('collapsed');
+            if (this.mainContent) {
+                this.mainContent.classList.add('panel-collapsed');
+            }
+
+            // 顯示收合狀態下的展開按鈕
+            const collapsedToggle = DOMUtils ?
+                DOMUtils.safeQuerySelector('#collapsedPanelToggle') :
+                document.querySelector('#collapsedPanelToggle');
+            if (collapsedToggle) {
+                collapsedToggle.style.display = 'block';
+            }
+
+            // 更新邊緣按鈕圖示和提示
+            this.updateToggleButton('▶', '展開面板');
+        }
+    };
 
     /**
      * 更新顯示

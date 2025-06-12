@@ -10,11 +10,12 @@
 
     // 確保命名空間存在
     window.MCPFeedback = window.MCPFeedback || {};
+    window.MCPFeedback.Utils = window.MCPFeedback.Utils || {};
 
     /**
-     * 工具函數模組
+     * 工具函數模組 - 擴展現有的 Utils 物件
      */
-    window.MCPFeedback.Utils = {
+    Object.assign(window.MCPFeedback.Utils, {
         
         /**
          * 格式化檔案大小
@@ -231,7 +232,7 @@
             MESSAGE_WARNING: 'warning',
             MESSAGE_INFO: 'info'
         }
-    };
+    });
 
     console.log('✅ Utils 模組載入完成');
 

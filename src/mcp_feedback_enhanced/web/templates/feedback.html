@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/session-management.css">
     <style>
         /* 僅保留必要的頁面特定樣式和響應式調整 */
 
@@ -362,28 +363,162 @@
     </style>
 </head>
 <body class="layout-{{ layout_mode }}">
-    <div class="container">
-        <!-- ===== 頁面頭部區域 ===== -->
-        <header class="header">
-            <div class="header-content">
-                <div class="header-left">
-                    <h1 class="title" data-i18n="app.title">MCP Feedback Enhanced</h1>
-                    <!-- 倒數計時器顯示 -->
-                    <div id="countdownDisplay" class="countdown-display" style="display: none;">
-                        <span class="countdown-label" data-i18n="timeout.remaining">剩餘時間</span>
-                        <span id="countdownTimer" class="countdown-timer">--:--</span>
-                    </div>
-                </div>
-                <div class="project-info">
-                    <span data-i18n="app.projectDirectory">專案目錄</span>: {{ project_directory }}
+    <!-- ===== 頂部連線監控狀態列 ===== -->
+    <div class="connection-monitor-bar">
+        <!-- 左側：應用標題和專案資訊 -->
+        <div class="app-info-section">
+            <div class="app-title">
+                <h1 data-i18n="app.title">MCP Feedback Enhanced</h1>
+                <!-- 倒數計時器顯示 -->
+                <div id="countdownDisplay" class="countdown-display" style="display: none;">
+                    <span class="countdown-label" data-i18n="timeout.remaining">剩餘時間</span>
+                    <span id="countdownTimer" class="countdown-timer">--:--</span>
                 </div>
             </div>
-        </header>
+            <div class="project-info">
+                <span data-i18n="app.projectDirectory">專案目錄</span>: {{ project_directory }}
+            </div>
+        </div>
+
+        <!-- 中間：連線狀態資訊 -->
+        <div class="connection-status-group">
+            <!-- 主要連線狀態 -->
+            <div class="connection-indicator connecting" id="mainConnectionStatus">
+                <div class="status-icon pulse"></div>
+                <span class="status-text">連接中...</span>
+                <div class="connection-quality">
+                    <div class="latency-indicator">延遲: --ms</div>
+                    <div class="signal-strength">
+                        <div class="signal-bar"></div>
+                        <div class="signal-bar"></div>
+                        <div class="signal-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 連線詳細資訊 -->
+            <div class="connection-details">
+                <span class="connection-time">連線時間: --:--</span>
+                <span class="reconnect-count">重連: 0 次</span>
+            </div>
+
+            <!-- 詳細狀態資訊 -->
+            <div class="detailed-status-info">
+                <div class="websocket-metrics">
+                    <span class="metric">訊息: <span id="messageCount">0</span></span>
+                    <span class="metric">延遲: <span id="latencyDisplay">--ms</span></span>
+                </div>
+                <div class="session-metrics">
+                    <span class="metric">會話: <span id="sessionCount">1</span></span>
+                    <span class="metric">狀態: <span id="sessionStatusText">等待中</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：保留空間以保持佈局平衡 -->
+        <div class="quick-actions">
+            <!-- 移除不必要的按鈕，保持佈局平衡 -->
+        </div>
+    </div>
+
+    <div class="container">
+
 
         <!-- ===== 主內容區域 ===== -->
-        <main class="main-content">
-            <!-- 分頁導航 -->
-            <div class="tabs">
+        <main class="main-content" style="display: flex; gap: 0;">
+            <!-- ===== 左側會話管理面板 ===== -->
+            <div class="session-management-panel" id="sessionPanel">
+                <!-- 面板標題 -->
+                <div class="panel-header">
+                    <h3>會話管理</h3>
+                    <div class="panel-controls">
+                        <button class="btn-icon" id="refreshSessions" title="重新整理">
+                            🔄
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-content">
+                    <!-- 當前活躍會話 -->
+                    <div class="current-session-section">
+                        <h4>當前會話</h4>
+                        <div class="session-card active" id="currentSessionCard">
+                            <div class="session-header">
+                                <div class="session-id">會話 ID: {{ session_id[:8] if session_id else 'loading' }}...</div>
+                                <div class="session-status">
+                                    <span class="status-badge waiting">等待中</span>
+                                </div>
+                            </div>
+                            <div class="session-info">
+                                <div class="session-time">建立時間: --:--:--</div>
+                                <div class="session-project">專案: {{ project_directory }}</div>
+                                <div class="session-summary">AI 摘要: 載入中...</div>
+                            </div>
+                            <div class="session-actions">
+                                <button class="btn-small" id="viewSessionDetails">詳細資訊</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 會話歷史記錄 -->
+                    <div class="session-history-section">
+                        <h4>會話歷史</h4>
+                        <div class="session-list" id="sessionHistoryList">
+                            <div class="no-sessions">暫無歷史會話</div>
+                        </div>
+                    </div>
+
+                    <!-- 會話統計 -->
+                    <div class="session-stats-section">
+                        <h4>統計資訊</h4>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">今日會話</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">--</div>
+                                <div class="stat-label">平均時長</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 邊緣收合/展開按鈕 -->
+                <div class="panel-edge-toggle" id="panelEdgeToggle">
+                    <button class="edge-toggle-btn" id="edgeToggleBtn" title="收合面板">
+                        <span class="toggle-icon">◀</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 收合狀態下的展開按鈕 -->
+            <div class="collapsed-panel-toggle" id="collapsedPanelToggle" style="display: none;">
+                <button class="collapsed-toggle-btn" id="collapsedToggleBtn" title="展開會話面板">
+                    <span class="toggle-icon">▶</span>
+                    <span class="toggle-text">會話</span>
+                </button>
+            </div>
+
+            <!-- ===== 右側主要內容區域 ===== -->
+            <div class="main-content-area" style="flex: 1; min-width: 0;">
+                <!-- 會話狀態條 -->
+                <div class="session-status-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); margin-bottom: 16px; border-radius: 6px;">
+                    <div class="current-session-info">
+                        <span class="session-indicator" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary);">
+                            📋 當前會話: <span id="currentSessionId" style="font-family: monospace; color: var(--accent-color);">{{ session_id[:8] if session_id else 'loading' }}...</span>
+                        </span>
+                        <span class="session-age" style="margin-left: 16px; font-size: 12px; color: var(--text-secondary);">活躍時間: <span id="sessionAge">--</span></span>
+                    </div>
+                    <div class="session-controls">
+                        <button class="btn-link" id="switchSessionBtn" style="display: none; font-size: 12px; color: var(--accent-color); background: none; border: none; cursor: pointer;">
+                            切換會話
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 分頁導航 -->
+                <div class="tabs">
                 <div class="tab-buttons">
                     <!-- 工作區分頁 - 移到最左邊第一個 -->
                     <button class="tab-button hidden" data-tab="combined" data-i18n="tabs.combined">
@@ -732,6 +867,7 @@
                     </div>
                 </div>
             </div>
+            </div> <!-- 關閉 main-content-area -->
         </main>
 
         <!-- 底部操作按鈕 -->
@@ -748,9 +884,22 @@
     <!-- WebSocket 和 JavaScript -->
     <script src="/static/js/i18n.js?v=2025010510"></script>
     <!-- 載入所有模組 -->
+    <!-- 工具模組 -->
+    <script src="/static/js/modules/utils/dom-utils.js?v=2025010510"></script>
+    <script src="/static/js/modules/utils/time-utils.js?v=2025010510"></script>
+    <script src="/static/js/modules/utils/status-utils.js?v=2025010510"></script>
+
+    <!-- 會話管理模組 -->
+    <script src="/static/js/modules/session/session-data-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/session/session-ui-renderer.js?v=2025010510"></script>
+    <script src="/static/js/modules/session/session-details-modal.js?v=2025010510"></script>
+
+    <!-- 其他模組 -->
     <script src="/static/js/modules/utils.js?v=2025010510"></script>
     <script src="/static/js/modules/tab-manager.js?v=2025010510"></script>
     <script src="/static/js/modules/websocket-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/connection-monitor.js?v=2025010510"></script>
+    <script src="/static/js/modules/session-manager.js?v=2025010510"></script>
     <script src="/static/js/modules/image-handler.js?v=2025010510"></script>
     <script src="/static/js/modules/settings-manager.js?v=2025010510"></script>
     <script src="/static/js/modules/ui-manager.js?v=2025010510"></script>
@@ -765,6 +914,8 @@
             // 檢查所有必要的模組是否已載入
             if (!window.MCPFeedback ||
                 !window.MCPFeedback.Utils ||
+                !window.MCPFeedback.ConnectionMonitor ||
+                !window.MCPFeedback.SessionManager ||
                 !window.MCPFeedback.FeedbackApp) {
                 console.error('❌ 模組載入不完整，延遲初始化...');
                 setTimeout(initializeApp, 100);
@@ -782,6 +933,11 @@
 
                 // 初始化應用程式
                 await window.feedbackApp.init();
+
+                // 設置全域引用，讓 SessionManager 可以被 HTML 中的 onclick 調用
+                if (window.feedbackApp.sessionManager) {
+                    window.MCPFeedback.app = window.feedbackApp;
+                }
 
                 console.log('✅ 應用程式初始化完成');
             } catch (error) {

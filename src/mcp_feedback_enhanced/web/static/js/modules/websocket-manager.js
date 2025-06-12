@@ -17,7 +17,7 @@
      */
     function WebSocketManager(options) {
         options = options || {};
-        
+
         this.websocket = null;
         this.isConnected = false;
         this.connectionReady = false;
@@ -26,17 +26,20 @@
         this.reconnectDelay = options.reconnectDelay || Utils.CONSTANTS.DEFAULT_RECONNECT_DELAY;
         this.heartbeatInterval = null;
         this.heartbeatFrequency = options.heartbeatFrequency || Utils.CONSTANTS.DEFAULT_HEARTBEAT_FREQUENCY;
-        
+
         // 事件回調
         this.onOpen = options.onOpen || null;
         this.onMessage = options.onMessage || null;
         this.onClose = options.onClose || null;
         this.onError = options.onError || null;
         this.onConnectionStatusChange = options.onConnectionStatusChange || null;
-        
+
         // 標籤頁管理器引用
         this.tabManager = options.tabManager || null;
-        
+
+        // 連線監控器引用
+        this.connectionMonitor = options.connectionMonitor || null;
+
         // 待處理的提交
         this.pendingSubmission = null;
         this.sessionUpdatePending = false;
@@ -111,6 +114,11 @@
         this.reconnectAttempts = 0;
         this.reconnectDelay = Utils.CONSTANTS.DEFAULT_RECONNECT_DELAY;
 
+        // 通知連線監控器
+        if (this.connectionMonitor) {
+            this.connectionMonitor.startMonitoring();
+        }
+
         // 開始心跳
         this.startHeartbeat();
 
@@ -130,8 +138,13 @@
         try {
             const data = Utils.safeJsonParse(event.data, null);
             if (data) {
+                // 記錄訊息到監控器
+                if (this.connectionMonitor) {
+                    this.connectionMonitor.recordMessage();
+                }
+
                 this.processMessage(data);
-                
+
                 // 調用外部回調
                 if (this.onMessage) {
                     this.onMessage(data);
@@ -152,6 +165,11 @@
 
         // 停止心跳
         this.stopHeartbeat();
+
+        // 通知連線監控器
+        if (this.connectionMonitor) {
+            this.connectionMonitor.stopMonitoring();
+        }
 
         // 處理不同的關閉原因
         if (event.code === 4004) {
@@ -198,7 +216,10 @@
             this.reconnectAttempts++;
             this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
             console.log(this.reconnectDelay / 1000 + '秒後嘗試重連... (第' + this.reconnectAttempts + '次)');
-            
+
+            // 更新狀態為重連中
+            this.updateConnectionStatus('reconnecting', '重連中... (第' + this.reconnectAttempts + '次)');
+
             const self = this;
             setTimeout(function() {
                 console.log('🔄 開始重連 WebSocket... (第' + self.reconnectAttempts + '次)');
@@ -224,6 +245,10 @@
                 break;
             case 'heartbeat_response':
                 this.handleHeartbeatResponse();
+                // 記錄 pong 時間到監控器
+                if (this.connectionMonitor) {
+                    this.connectionMonitor.recordPong();
+                }
                 break;
             default:
                 // 其他訊息類型由外部處理
@@ -293,6 +318,11 @@
         const self = this;
         this.heartbeatInterval = setInterval(function() {
             if (self.websocket && self.websocket.readyState === WebSocket.OPEN) {
+                // 記錄 ping 時間到監控器
+                if (self.connectionMonitor) {
+                    self.connectionMonitor.recordPing();
+                }
+
                 self.send({
                     type: 'heartbeat',
                     tabId: self.tabManager ? self.tabManager.getTabId() : null,

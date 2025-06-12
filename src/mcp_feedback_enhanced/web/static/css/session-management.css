@@ -1,0 +1,850 @@
+/**
+ * 會話管理和連線監控專用樣式
+ * =============================
+ * 
+ * 為 WebSocket 連線狀態顯示器和會話管理功能提供樣式支援
+ */
+
+/* ===== CSS 變數擴展 ===== */
+:root {
+  /* 連線狀態色彩 */
+  --status-connected: #4caf50;
+  --status-connecting: #ff9800;
+  --status-disconnected: #f44336;
+  --status-error: #e91e63;
+  --status-reconnecting: #9c27b0;
+  
+  /* 會話狀態色彩 */
+  --session-active: #2196f3;
+  --session-waiting: #9c27b0;
+  --session-completed: #4caf50;
+  --session-error: #f44336;
+  --session-timeout: #ff5722;
+  
+  /* 面板色彩 - 與主要內容區域統一 */
+  --panel-bg: var(--bg-secondary);
+  --panel-border: var(--border-color);
+  --panel-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --panel-header-bg: var(--bg-tertiary);
+  
+  /* 動畫時間和緩動函數 */
+  --transition-fast: 0.2s;
+  --transition-normal: 0.4s;
+  --transition-slow: 0.6s;
+  --easing-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ===== 頂部連線監控狀態列 ===== */
+.connection-monitor-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel-header-bg);
+  border-bottom: 1px solid var(--panel-border);
+  padding: 12px 20px;
+  font-size: 12px;
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  gap: 20px;
+}
+
+/* 應用資訊區域 */
+.app-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-title h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.countdown-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid var(--warning-color);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--warning-color);
+}
+
+.countdown-timer {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-weight: bold;
+}
+
+.project-info {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+  min-width: 0;
+}
+
+.connection-status-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 2;
+  justify-content: center;
+}
+
+/* 詳細狀態資訊 */
+.detailed-status-info {
+  display: flex;
+  gap: 16px;
+  margin-left: 16px;
+}
+
+.websocket-metrics,
+.session-metrics {
+  display: flex;
+  gap: 8px;
+}
+
+.metric {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.metric span {
+  color: var(--accent-color);
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-weight: 500;
+}
+
+.connection-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid transparent;
+  transition: all var(--transition-normal) ease;
+}
+
+.connection-indicator.connected {
+  background: rgba(76, 175, 80, 0.15);
+  border-color: var(--status-connected);
+  color: var(--status-connected);
+}
+
+.connection-indicator.connecting {
+  background: rgba(255, 152, 0, 0.15);
+  border-color: var(--status-connecting);
+  color: var(--status-connecting);
+}
+
+.connection-indicator.disconnected {
+  background: rgba(244, 67, 54, 0.15);
+  border-color: var(--status-disconnected);
+  color: var(--status-disconnected);
+}
+
+.connection-indicator.reconnecting {
+  background: rgba(156, 39, 176, 0.15);
+  border-color: var(--status-reconnecting);
+  color: var(--status-reconnecting);
+}
+
+.status-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  position: relative;
+}
+
+.status-icon.pulse::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.3;
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.5); opacity: 0.1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.connection-quality {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.latency-indicator {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.signal-strength {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+}
+
+.signal-bar {
+  width: 3px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 1px;
+  transition: background var(--transition-fast) ease;
+}
+
+.signal-bar:nth-child(2) { height: 8px; }
+.signal-bar:nth-child(3) { height: 10px; }
+
+.signal-bar.active {
+  background: currentColor;
+}
+
+.connection-details {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+}
+
+.btn-icon:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--accent-color);
+}
+
+/* ===== 會話管理面板 ===== */
+.session-management-panel {
+  width: 320px;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  backdrop-filter: blur(10px);
+  transition: width var(--transition-slow) var(--easing-smooth),
+              opacity var(--transition-normal) var(--easing-smooth),
+              border-right var(--transition-normal) var(--easing-smooth);
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.session-management-panel.collapsed {
+  width: 0;
+  min-width: 0;
+  border-right: none;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--panel-header-bg);
+  border-bottom: 1px solid var(--panel-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.panel-controls {
+  display: flex;
+  gap: 8px;
+}
+
+/* ===== 邊緣收合按鈕 ===== */
+.panel-edge-toggle {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  z-index: 200;
+}
+
+.edge-toggle-btn {
+  width: 24px;
+  height: 48px;
+  background: var(--panel-header-bg);
+  border: 1px solid var(--panel-border);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal) var(--easing-smooth);
+  backdrop-filter: blur(10px);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.edge-toggle-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 2px 0 12px rgba(0, 122, 204, 0.3);
+}
+
+.edge-toggle-btn .toggle-icon {
+  font-size: 12px;
+  transition: transform var(--transition-normal) var(--easing-bounce);
+}
+
+.edge-toggle-btn:hover .toggle-icon {
+  transform: translateX(2px) scale(1.1);
+}
+
+/* ===== 收合狀態下的展開按鈕 ===== */
+.collapsed-panel-toggle {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 300;
+}
+
+.collapsed-toggle-btn {
+  width: 40px;
+  height: 80px;
+  background: var(--panel-header-bg);
+  border: 1px solid var(--panel-border);
+  border-left: none;
+  border-radius: 0 12px 12px 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all var(--transition-slow) var(--easing-smooth);
+  backdrop-filter: blur(10px);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  animation: slideInFromLeft var(--transition-slow) var(--easing-smooth);
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.collapsed-toggle-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateX(6px) scale(1.05);
+  width: 46px;
+  box-shadow: 4px 0 16px rgba(0, 122, 204, 0.4);
+}
+
+.collapsed-toggle-btn .toggle-icon {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.collapsed-toggle-btn .toggle-text {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+}
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* ===== 會話卡片 ===== */
+.session-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  transition: all var(--transition-fast) ease;
+  cursor: pointer;
+}
+
+.session-card:hover {
+  border-color: var(--accent-color);
+  box-shadow: 0 2px 8px rgba(0, 122, 204, 0.2);
+}
+
+.session-card.active {
+  border-color: var(--session-active);
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.session-id {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.waiting {
+  background: rgba(156, 39, 176, 0.2);
+  color: var(--session-waiting);
+  border: 1px solid var(--session-waiting);
+}
+
+.status-badge.active {
+  background: rgba(33, 150, 243, 0.2);
+  color: var(--session-active);
+  border: 1px solid var(--session-active);
+}
+
+.status-badge.completed {
+  background: rgba(76, 175, 80, 0.2);
+  color: var(--session-completed);
+  border: 1px solid var(--session-completed);
+}
+
+.status-badge.error {
+  background: rgba(244, 67, 54, 0.2);
+  color: var(--session-error);
+  border: 1px solid var(--session-error);
+}
+
+.session-info {
+  margin-bottom: 8px;
+}
+
+.session-time,
+.session-project,
+.session-duration {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.session-summary {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  max-height: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.session-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-small {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+}
+
+.btn-small:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+/* ===== 會話統計 ===== */
+.session-stats-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--accent-color);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== 響應式設計 ===== */
+@media (max-width: 1200px) {
+  .session-management-panel {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 1000;
+    box-shadow: var(--panel-shadow);
+  }
+
+  .session-management-panel.collapsed {
+    width: 0;
+    min-width: 0;
+    transform: translateX(-100%);
+  }
+
+  .panel-edge-toggle {
+    display: none;
+  }
+
+  .collapsed-panel-toggle {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .session-management-panel {
+    width: 100%;
+    height: auto;
+    max-height: 60vh;
+    top: auto;
+    bottom: 0;
+    transform: translateY(100%);
+  }
+  
+  .session-management-panel.collapsed {
+    transform: translateY(100%);
+  }
+  
+  .session-management-panel:not(.collapsed) {
+    transform: translateY(0);
+  }
+  
+  .connection-monitor-bar {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .app-info-section {
+    width: 100%;
+    text-align: center;
+  }
+
+  .app-title {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .app-title h1 {
+    font-size: 16px;
+  }
+
+  .connection-status-group {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .detailed-status-info {
+    margin-left: 0;
+    margin-top: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+/* ===== 載入狀態 ===== */
+.loading-skeleton {
+  background: linear-gradient(90deg, 
+    var(--bg-tertiary) 25%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    var(--bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ===== 無障礙支援 ===== */
+.session-card:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.btn-icon:focus,
+.btn-small:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* ===== 會話詳情彈窗 ===== */
+.session-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  position: relative;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: modalSlideIn var(--transition-normal) var(--easing-smooth);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all var(--transition-fast) ease;
+}
+
+.modal-close:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.detail-row {
+  display: flex;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 80px;
+  margin-right: 12px;
+  font-size: 13px;
+}
+
+.detail-value {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.detail-value.session-id {
+  font-family: 'Consolas', 'Monaco', monospace;
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.detail-value.project-path {
+  font-family: 'Consolas', 'Monaco', monospace;
+  background: var(--bg-tertiary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.detail-value.summary {
+  background: var(--bg-secondary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent-color);
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all var(--transition-fast) ease;
+}
+
+.btn-secondary:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+/* 減少動畫偏好 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

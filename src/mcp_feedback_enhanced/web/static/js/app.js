@@ -3,8 +3,9 @@
  * =================================
  *
  * 模組化重構版本，整合所有功能模組
- * 依賴模組載入順序：utils -> tab-manager -> websocket-manager -> image-handler ->
- *                  settings-manager -> ui-manager -> auto-refresh-manager -> app
+ * 依賴模組載入順序：utils -> tab-manager -> websocket-manager -> connection-monitor ->
+ *                  session-manager -> image-handler -> settings-manager -> ui-manager ->
+ *                  auto-refresh-manager -> app
  */
 
 (function() {
@@ -25,6 +26,8 @@
         // 模組管理器
         this.tabManager = null;
         this.webSocketManager = null;
+        this.connectionMonitor = null;
+        this.sessionManager = null;
         this.imageHandler = null;
         this.settingsManager = null;
         this.uiManager = null;
@@ -127,9 +130,30 @@
                         // 4. 初始化標籤頁管理器
                         self.tabManager = new window.MCPFeedback.TabManager();
 
-                        // 5. 初始化 WebSocket 管理器
+                        // 5. 初始化連線監控器
+                        self.connectionMonitor = new window.MCPFeedback.ConnectionMonitor({
+                            onStatusChange: function(status, message) {
+                                console.log('🔍 連線狀態變更:', status, message);
+                            },
+                            onQualityChange: function(quality, latency) {
+                                console.log('🔍 連線品質變更:', quality, latency + 'ms');
+                            }
+                        });
+
+                        // 6. 初始化會話管理器
+                        self.sessionManager = new window.MCPFeedback.SessionManager({
+                            onSessionChange: function(sessionData) {
+                                console.log('📋 會話變更:', sessionData);
+                            },
+                            onSessionSelect: function(sessionId) {
+                                console.log('📋 會話選擇:', sessionId);
+                            }
+                        });
+
+                        // 7. 初始化 WebSocket 管理器
                         self.webSocketManager = new window.MCPFeedback.WebSocketManager({
                             tabManager: self.tabManager,
+                            connectionMonitor: self.connectionMonitor,
                             onOpen: function() {
                                 self.handleWebSocketOpen();
                             },
@@ -141,10 +165,14 @@
                             },
                             onConnectionStatusChange: function(status, text) {
                                 self.uiManager.updateConnectionStatus(status, text);
+                                // 同時更新連線監控器
+                                if (self.connectionMonitor) {
+                                    self.connectionMonitor.updateConnectionStatus(status, text);
+                                }
                             }
                         });
 
-                        // 6. 初始化圖片處理器
+                        // 8. 初始化圖片處理器
                         self.imageHandler = new window.MCPFeedback.ImageHandler({
                             imageSizeLimit: settings.imageSizeLimit,
                             enableBase64Detail: settings.enableBase64Detail,
@@ -154,7 +182,7 @@
                             }
                         });
 
-                        // 7. 初始化自動刷新管理器
+                        // 9. 初始化自動刷新管理器
                         self.autoRefreshManager = new window.MCPFeedback.AutoRefreshManager({
                             autoRefreshEnabled: settings.autoRefreshEnabled,
                             autoRefreshInterval: settings.autoRefreshInterval,
@@ -453,9 +481,69 @@
             const newSessionId = data.session_info.session_id;
             console.log('📋 會話 ID 更新: ' + this.currentSessionId + ' -> ' + newSessionId);
 
+            // 保存舊會話到歷史記錄（在更新當前會話之前）
+            if (this.currentSessionId && this.sessionManager && this.currentSessionId !== newSessionId) {
+                console.log('📋 嘗試獲取當前會話數據...');
+                // 從 SessionManager 獲取當前會話的完整數據
+                const currentSessionData = this.sessionManager.getCurrentSessionData();
+                console.log('📋 從 currentSession 獲取數據:', this.currentSessionId);
+
+                if (currentSessionData) {
+                    // 計算實際持續時間
+                    const now = Date.now() / 1000;
+                    let duration = 300; // 預設 5 分鐘
+
+                    if (currentSessionData.created_at) {
+                        let createdAt = currentSessionData.created_at;
+                        // 處理時間戳格式
+                        if (createdAt > 1e12) {
+                            createdAt = createdAt / 1000;
+                        }
+                        duration = Math.max(1, Math.round(now - createdAt));
+                    }
+
+                    const oldSessionData = {
+                        session_id: this.currentSessionId,
+                        status: 'completed',
+                        created_at: currentSessionData.created_at || (now - duration),
+                        completed_at: now,
+                        duration: duration,
+                        project_directory: currentSessionData.project_directory,
+                        summary: currentSessionData.summary
+                    };
+
+                    console.log('📋 準備將舊會話加入歷史記錄:', oldSessionData);
+
+                    // 先更新當前會話 ID，再調用 addSessionToHistory
+                    this.currentSessionId = newSessionId;
+
+                    // 更新會話管理器的當前會話（這樣 addSessionToHistory 檢查時就不會認為是當前活躍會話）
+                    if (this.sessionManager) {
+                        this.sessionManager.updateCurrentSession(data.session_info);
+                    }
+
+                    // 現在可以安全地將舊會話加入歷史記錄
+                    this.sessionManager.addSessionToHistory(oldSessionData);
+                } else {
+                    console.log('⚠️ 無法獲取當前會話數據，跳過歷史記錄保存');
+                    // 仍然需要更新當前會話 ID
+                    this.currentSessionId = newSessionId;
+                    // 更新會話管理器
+                    if (this.sessionManager) {
+                        this.sessionManager.updateCurrentSession(data.session_info);
+                    }
+                }
+            } else {
+                // 沒有舊會話或會話 ID 相同，直接更新
+                this.currentSessionId = newSessionId;
+                // 更新會話管理器
+                if (this.sessionManager) {
+                    this.sessionManager.updateCurrentSession(data.session_info);
+                }
+            }
+
             // 重置回饋狀態為等待新回饋
             this.uiManager.setFeedbackState(window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_WAITING, newSessionId);
-            this.currentSessionId = newSessionId;
 
             // 更新自動刷新管理器的會話 ID
             if (this.autoRefreshManager) {
@@ -483,6 +571,11 @@
      */
     FeedbackApp.prototype.handleStatusUpdate = function(statusInfo) {
         console.log('處理狀態更新:', statusInfo);
+
+        // 更新 SessionManager 的狀態資訊
+        if (this.sessionManager && this.sessionManager.updateStatusInfo) {
+            this.sessionManager.updateStatusInfo(statusInfo);
+        }
 
         // 更新頁面標題顯示會話信息
         if (statusInfo.project_directory) {
@@ -818,6 +911,14 @@
 
         if (this.webSocketManager) {
             this.webSocketManager.close();
+        }
+
+        if (this.connectionMonitor) {
+            this.connectionMonitor.cleanup();
+        }
+
+        if (this.sessionManager) {
+            this.sessionManager.cleanup();
         }
 
         if (this.imageHandler) {

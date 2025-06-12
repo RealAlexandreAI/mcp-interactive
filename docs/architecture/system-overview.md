@@ -4,68 +4,158 @@
 
 MCP Feedback Enhanced 採用**單一活躍會話 + 持久化 Web UI**的創新架構設計，實現 AI 助手與用戶之間的高效、無縫交互體驗。
 
+### 核心設計理念
+
+- **Web-Only 架構**：完全基於 Web 技術，已移除所有 Electron 桌面應用功能
+- **四層架構設計**：清晰的層次分離，便於維護和擴展
+- **智能環境檢測**：自動識別本地、SSH Remote、WSL 環境並優化配置
+- **單一活躍會話**：替代傳統多會話管理，提升性能和用戶體驗
+- **模組化設計**：每層職責明確，支援獨立開發和測試
+
+### 技術棧概覽
+
+**後端技術**：
+- Python 3.11+ (核心語言)
+- FastMCP 2.0+ (MCP 協議實現)
+- FastAPI 0.115+ (Web 框架)
+- uvicorn 0.30+ (ASGI 服務器)
+- WebSocket (實時通信)
+
+**前端技術**：
+- HTML5 + CSS3 (現代化 UI)
+- JavaScript ES6+ (模組化架構)
+- WebSocket API (雙向通信)
+- 響應式設計 (多設備支援)
+
+**開發工具**：
+- pytest + pytest-asyncio (測試框架)
+- Ruff + mypy (代碼品質)
+- pre-commit (提交檢查)
+- uv (依賴管理)
+
 ### 系統整體架構圖
 
 ```mermaid
 graph TB
     subgraph "AI 助手環境"
-        AI[AI 助手<br/>Claude/GPT等]
+        AI[AI 助手<br/>Cursor/Claude/Windsurf/Augment]
     end
 
-    subgraph "MCP Feedback Enhanced"
-        subgraph "MCP 服務層"
-            MCP[MCP Server<br/>server.py]
-            TOOL[interactive_feedback<br/>工具]
+    subgraph "MCP Feedback Enhanced - 四層架構"
+        subgraph "第一層：MCP 服務層"
+            SERVER[server.py<br/>MCP 服務器]
+            TOOL[interactive_feedback<br/>核心工具]
+            I18N[i18n.py<br/>國際化支援]
+            DEBUG[debug.py<br/>統一調試]
         end
 
-        subgraph "Web UI 管理層"
-            WM[WebUIManager<br/>單例模式]
-            SESSION[WebFeedbackSession<br/>會話管理]
+        subgraph "第二層：Web UI 管理層"
+            MANAGER[WebUIManager<br/>單例管理器]
+            SESSION[WebFeedbackSession<br/>會話模型]
+            MODELS[數據模型<br/>FeedbackResult/SessionStatus]
         end
 
-        subgraph "Web 服務層"
-            API[FastAPI<br/>HTTP/WebSocket]
+        subgraph "第三層：Web 服務層"
+            FASTAPI[FastAPI 應用<br/>main.py]
             ROUTES[路由處理<br/>main_routes.py]
+            WS[WebSocket 通信<br/>實時雙向通信]
         end
 
-        subgraph "前端交互層"
-            UI[Web UI<br/>HTML/JS]
-            WS[WebSocket<br/>實時通信]
+        subgraph "第四層：前端交互層"
+            HTML[HTML 模板<br/>feedback.html/index.html]
+            JS[JavaScript 模組<br/>app.js + 功能模組]
+            CSS[樣式系統<br/>響應式設計]
         end
 
         subgraph "工具層"
-            ENV[環境檢測]
-            BROWSER[智能瀏覽器開啟]
-            RESOURCE[資源管理]
+            UTILS[工具模組<br/>error_handler/memory_monitor]
+            BROWSER[瀏覽器控制<br/>智能開啟]
+            NETWORK[網路工具<br/>埠管理]
+            CLEANUP[資源管理<br/>會話清理]
         end
     end
 
     subgraph "用戶環境"
-        USER[用戶瀏覽器]
-        FILES[專案文件]
+        BROWSER_UI[Web 瀏覽器]
+        USER[用戶互動<br/>文字/圖片/命令]
     end
 
-    AI -->|調用 MCP 工具| MCP
-    MCP --> TOOL
-    TOOL --> WM
-    WM --> SESSION
-    WM --> API
-    API --> ROUTES
-    ROUTES --> UI
-    UI --> WS
-    WS --> USER
+    subgraph "運行環境"
+        LOCAL[本地環境]
+        SSH[SSH Remote]
+        WSL[WSL 環境]
+    end
 
-    ENV --> MCP
-    BROWSER --> USER
-    RESOURCE --> SESSION
+    AI -->|MCP 協議| SERVER
+    SERVER --> TOOL
+    TOOL --> MANAGER
+    MANAGER --> SESSION
+    MANAGER --> FASTAPI
+    FASTAPI --> ROUTES
+    ROUTES --> HTML
+    HTML --> JS
+    JS --> WS
+    WS -->|HTTP/WebSocket| BROWSER_UI
+    BROWSER_UI --> USER
+
+    I18N --> ROUTES
+    DEBUG --> SERVER
+    UTILS --> MANAGER
+    BROWSER --> FASTAPI
+    NETWORK --> FASTAPI
+    CLEANUP --> SESSION
+
+    LOCAL -.->|環境檢測| MANAGER
+    SSH -.->|環境檢測| MANAGER
+    WSL -.->|環境檢測| MANAGER
 
     USER -->|回饋提交| WS
-    FILES -->|專案內容| TOOL
+    MODELS --> SESSION
 ```
 
 ## 🎯 核心設計理念
 
-### 1. 單一活躍會話模式
+### 1. Web-Only 架構優勢
+
+**完全移除桌面應用依賴**：
+- 無需安裝 Electron 或其他桌面應用框架
+- 減少系統資源佔用和安全風險
+- 支援所有具備現代瀏覽器的環境
+- 簡化部署和維護流程
+
+**跨平台統一體驗**：
+- Windows、macOS、Linux 完全一致的用戶介面
+- SSH Remote 和 WSL 環境無縫支援
+- 響應式設計適應不同螢幕尺寸
+- 無需平台特定的配置或調整
+
+### 2. 四層架構設計
+
+**第一層 - MCP 服務層**：
+- 實現 MCP 協議標準
+- 提供 `interactive_feedback` 核心工具
+- 統一的國際化和調試支援
+- 錯誤處理和日誌記錄
+
+**第二層 - Web UI 管理層**：
+- 單例模式的 WebUIManager
+- 會話生命週期管理
+- 數據模型和狀態管理
+- 瀏覽器智能控制
+
+**第三層 - Web 服務層**：
+- FastAPI 高性能 Web 框架
+- RESTful API 和 WebSocket 支援
+- 路由處理和中間件
+- 靜態資源服務
+
+**第四層 - 前端交互層**：
+- 模組化 JavaScript 架構
+- 響應式 HTML/CSS 設計
+- 實時 WebSocket 通信
+- 豐富的用戶交互功能
+
+### 3. 單一活躍會話模式
 ```mermaid
 stateDiagram-v2
     [*] --> NoSession: 系統啟動
@@ -81,11 +171,33 @@ stateDiagram-v2
     end note
 ```
 
-### 2. 持久化 Web UI 架構
-- **瀏覽器標籤頁保持**: 避免重複開啟瀏覽器
-- **WebSocket 連接復用**: 減少連接建立開銷
-- **狀態無縫切換**: 從 SUBMITTED → WAITING
-- **內容局部更新**: 只更新必要的 UI 元素
+### 4. 持久化 Web UI 架構
+
+**智能會話管理**：
+- **瀏覽器標籤頁保持**: 避免重複開啟瀏覽器視窗
+- **WebSocket 連接復用**: 減少連接建立開銷和延遲
+- **狀態無縫切換**: 從 SUBMITTED → WAITING 自動轉換
+- **內容局部更新**: 只更新必要的 UI 元素，保持用戶操作狀態
+
+**會話持久性**：
+- 支援 AI 助手多次循環調用
+- 會話狀態在調用間保持
+- 自動超時清理機制
+- 記憶體使用優化
+
+### 5. 國際化與本地化
+
+**多語言支援**：
+- 繁體中文、簡體中文、英文
+- 系統語言自動檢測
+- 用戶偏好設定保存
+- 動態語言切換
+
+**本地化特性**：
+- 文化適應的日期時間格式
+- 本地化的錯誤訊息
+- 地區特定的 UI 佈局
+- 字體和排版優化
 
 ### 3. 智能環境檢測
 ```mermaid
@@ -106,7 +218,9 @@ flowchart TD
 
 ## 🔧 技術亮點
 
-### 1. 創新的會話管理
+### 1. 創新的會話管理架構
+
+**單一活躍會話設計**：
 ```python
 # 傳統多會話設計 (已棄用)
 self.sessions: Dict[str, WebFeedbackSession] = {}
@@ -116,27 +230,113 @@ self.current_session: Optional[WebFeedbackSession] = None
 self.global_active_tabs: Dict[str, dict] = {}  # 全局標籤頁狀態
 ```
 
-### 2. 智能瀏覽器開啟機制
+**會話生命週期管理**：
+- 自動會話創建和清理
+- 超時檢測和資源回收
+- 狀態持久化和恢復
+- 併發安全的會話操作
+
+### 2. 智能環境檢測與適配
+
+**環境自動識別**：
+- 本地開發環境檢測
+- SSH Remote 環境識別
+- WSL 子系統檢測
+- 容器化環境支援
+
+**瀏覽器智能開啟**：
 - **活躍標籤頁檢測**: 避免重複開啟瀏覽器視窗
 - **跨平台支援**: Windows, macOS, Linux 自動適配
 - **環境感知**: SSH/WSL 環境特殊處理
+- **錯誤恢復**: 開啟失敗時的備用方案
 
-### 3. 實時狀態同步
-- **WebSocket 雙向通信**: 前後端狀態實時同步
+### 3. 高性能實時通信
+
+**WebSocket 雙向通信**：
+- 前後端狀態實時同步
+- 低延遲消息傳遞
+- 自動重連機制
+- 心跳檢測保持連接
+
+**狀態管理優化**：
 - **會話更新通知**: 立即推送會話變更
-- **錯誤處理機制**: 連接斷線自動重連
+- **增量更新**: 只傳輸變更的數據
+- **狀態快照**: 支援狀態回滾和恢復
+- **錯誤處理**: 連接斷線自動重連
 
-## 📊 性能特性
+### 4. 模組化前端架構
+
+**JavaScript 模組系統**：
+```javascript
+// 模組化載入順序
+utils → tab-manager → websocket-manager →
+image-handler → settings-manager → ui-manager →
+auto-refresh-manager → app
+```
+
+**功能模組分離**：
+- 標籤頁管理 (tab-manager.js)
+- WebSocket 通信 (websocket-manager.js)
+- 圖片處理 (image-handler.js)
+- 設定管理 (settings-manager.js)
+- UI 控制 (ui-manager.js)
+- 自動刷新 (auto-refresh-manager.js)
+
+## 📊 性能特性與優化
 
 ### 資源使用優化
-- **內存佔用**: 單一會話模式減少 60% 內存使用
+
+**記憶體管理**：
+- **單一會話模式**: 相比傳統多會話減少 60% 記憶體使用
+- **智能垃圾回收**: 自動清理過期會話和臨時資源
+- **記憶體監控**: 實時監控記憶體使用情況
+- **資源池化**: 重用常用對象減少分配開銷
+
+**網路性能**：
 - **連接復用**: WebSocket 連接保持，減少建立開銷
-- **智能清理**: 自動資源回收和會話超時處理
+- **數據壓縮**: 自動壓縮大型數據傳輸
+- **批量操作**: 合併多個小請求減少網路往返
+- **快取策略**: 靜態資源和翻譯文件快取
+
+**啟動性能**：
+- **延遲載入**: 按需載入 JavaScript 模組
+- **預載入優化**: 關鍵資源優先載入
+- **並行初始化**: 多個組件並行啟動
+- **快速響應**: 首屏渲染時間 < 500ms
 
 ### 用戶體驗提升
+
+**交互響應性**：
 - **零等待切換**: 會話更新無需重新載入頁面
+- **即時反饋**: 用戶操作立即響應
+- **平滑動畫**: CSS3 動畫提升視覺體驗
+- **鍵盤快捷鍵**: 提升操作效率
+
+**連續工作流程**：
 - **連續交互**: 支援 AI 助手多次循環調用
-- **視覺反饋**: 實時狀態指示和進度顯示
+- **狀態保持**: 用戶輸入和設定在會話間保持
+- **自動聚焦**: 新會話自動聚焦到輸入框
+- **智能預填**: 根據上下文預填常用內容
+
+**視覺與反饋**：
+- **實時狀態指示**: 連接狀態、處理進度即時顯示
+- **進度條**: 長時間操作顯示進度
+- **錯誤提示**: 友善的錯誤訊息和解決建議
+- **成功確認**: 操作完成的明確視覺反饋
+
+### 可靠性保證
+
+**錯誤處理**：
+- **優雅降級**: 功能失效時提供備用方案
+- **自動重試**: 網路錯誤自動重試機制
+- **錯誤恢復**: 從錯誤狀態自動恢復
+- **日誌記錄**: 詳細的錯誤日誌便於調試
+
+**穩定性措施**：
+- **超時保護**: 防止長時間無響應
+- **資源限制**: 防止資源耗盡
+- **併發控制**: 安全的多執行緒操作
+- **數據驗證**: 嚴格的輸入驗證和清理
 
 ## 🔄 核心工作流程
 
@@ -173,6 +373,70 @@ graph LR
     style E fill:#e8f5e8
 ```
 
+## 🔍 安全性考量
+
+### 數據安全
+
+**輸入驗證**：
+- 嚴格的參數類型檢查
+- SQL 注入防護
+- XSS 攻擊防護
+- 文件上傳安全檢查
+
+**網路安全**：
+- 本地綁定 (127.0.0.1) 減少攻擊面
+- WebSocket 連接驗證
+- CORS 政策控制
+- 安全標頭設定
+
+**資源保護**：
+- 文件系統訪問限制
+- 記憶體使用限制
+- 執行時間限制
+- 臨時文件安全清理
+
+## 🚀 部署與維護
+
+### 環境需求
+
+**最低系統需求**：
+- Python 3.11 或更高版本
+- 512MB 可用記憶體
+- 現代瀏覽器 (Chrome 90+, Firefox 88+, Safari 14+)
+- 網路連接 (本地環境可離線運行)
+
+**推薦配置**：
+- Python 3.12
+- 1GB 可用記憶體
+- SSD 儲存
+- 穩定的網路連接
+
+### 維護特性
+
+**自動化維護**：
+- 自動日誌輪轉
+- 定期資源清理
+- 健康狀態檢查
+- 性能指標收集
+
+**監控與診斷**：
+- 詳細的調試日誌
+- 性能指標追蹤
+- 錯誤統計分析
+- 系統資源監控
+
 ---
 
-**下一步**: 查看 [組件詳細說明](./component-details.md) 了解各組件的具體實現
+## 📚 相關文檔
+
+- **[組件詳細說明](./component-details.md)** - 深入了解各層組件的具體實現
+- **[交互流程文檔](./interaction-flows.md)** - 詳細的用戶交互和系統流程
+- **[API 參考文檔](./api-reference.md)** - 完整的 API 端點和參數說明
+- **[部署指南](./deployment-guide.md)** - 環境配置和部署最佳實踐
+
+---
+
+**版本**: 2.3.0
+**最後更新**: 2024年12月
+**維護者**: Minidoracat
+**架構類型**: Web-Only 四層架構

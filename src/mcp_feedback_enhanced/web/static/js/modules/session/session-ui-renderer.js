@@ -349,21 +349,35 @@
      */
     SessionUIRenderer.prototype.renderStats = function(stats) {
         console.log('🎨 渲染統計資訊:', stats);
+        console.log('🎨 統計元素狀態:', {
+            todayCount: !!this.statsElements.todayCount,
+            averageDuration: !!this.statsElements.averageDuration,
+            totalSessions: !!this.statsElements.totalSessions
+        });
 
         // 更新今日會話數
         if (this.statsElements.todayCount) {
             DOMUtils.safeSetTextContent(this.statsElements.todayCount, stats.todayCount.toString());
+            console.log('🎨 已更新今日會話數:', stats.todayCount);
+        } else {
+            console.warn('🎨 找不到今日會話數元素 (.stat-today-count)');
         }
 
         // 更新平均時長
         if (this.statsElements.averageDuration) {
             const durationText = TimeUtils.formatDuration(stats.averageDuration);
             DOMUtils.safeSetTextContent(this.statsElements.averageDuration, durationText);
+            console.log('🎨 已更新平均時長:', durationText);
+        } else {
+            console.warn('🎨 找不到平均時長元素 (.stat-average-duration)');
         }
 
         // 更新總會話數
         if (this.statsElements.totalSessions) {
             DOMUtils.safeSetTextContent(this.statsElements.totalSessions, stats.totalSessions.toString());
+            console.log('🎨 已更新總會話數:', stats.totalSessions);
+        } else {
+            console.warn('🎨 找不到總會話數元素 (.stat-total-sessions)');
         }
     };
 

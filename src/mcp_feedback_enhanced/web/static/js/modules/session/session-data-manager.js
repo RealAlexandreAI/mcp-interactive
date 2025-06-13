@@ -38,6 +38,9 @@
         this.onHistoryChange = options.onHistoryChange || null;
         this.onStatsChange = options.onStatsChange || null;
 
+        // 初始化統計資訊
+        this.updateStats();
+
         console.log('📊 SessionDataManager 初始化完成');
     }
 

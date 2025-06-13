@@ -2,7 +2,8 @@
     "app": {
         "title": "MCP Interactive Feedback System",
         "subtitle": "AI Assistant Interactive Feedback Platform",
-        "projectDirectory": "Project Directory"
+        "projectDirectory": "Project Directory",
+        "updateFailed": "Failed to update content, please manually refresh the page to view new AI work summary"
     },
     "tabs": {
         "feedback": "💬 Feedback",
@@ -32,7 +33,15 @@
             "submit": "Ctrl+Enter to submit (Cmd+Enter on Mac, numpad supported)",
             "clear": "Ctrl+Delete to clear (Cmd+Delete on Mac)",
             "paste": "Ctrl+V to paste images (Cmd+V on Mac)"
-        }
+        },
+        "submitSuccess": "Feedback submitted successfully!",
+        "submittedWaiting": "Feedback submitted, waiting for next MCP call...",
+        "waitingForUser": "Waiting for user feedback...",
+        "alreadySubmitted": "Feedback already submitted, please wait for next MCP call",
+        "processingFeedback": "Processing, please wait",
+        "connectingMessage": "WebSocket connecting, feedback will be submitted automatically when connection is ready...",
+        "invalidState": "Current state does not allow submission",
+        "sendFailed": "Send failed, please retry"
     },
     "summary": {
         "title": "📋 AI Work Summary",
@@ -55,7 +64,11 @@
         "running": "Running...",
         "completed": "Completed",
         "error": "Execution Error",
-        "history": "Command History"
+        "history": "Command History",
+        "notConnected": "WebSocket not connected, cannot execute command",
+        "emptyCommand": "Please enter a command",
+        "sendFailed": "Failed to send command",
+        "executing": "Executing..."
     },
     "command": {
         "title": "⚡ Command Execution",
@@ -178,6 +191,69 @@
         "checking": "Checking",
         "detected": "Detected",
         "error": "Failed"
+    },
+    "sessionManagement": {
+        "title": "Session Management",
+        "currentSession": "Current Session",
+        "sessionHistory": "Session History",
+        "statistics": "Statistics",
+        "sessionId": "Session ID",
+        "status": "Status",
+        "activeTime": "Active Time",
+        "switchSession": "Switch Session",
+        "viewDetails": "View Details",
+        "refresh": "Refresh",
+        "noHistory": "No session history",
+        "todaySessions": "Today's Sessions",
+        "averageDuration": "Average Duration",
+        "createdTime": "Created Time",
+        "project": "Project",
+        "aiSummary": "AI Summary",
+        "noSummary": "No summary",
+        "loading": "Loading...",
+        "collapsePanel": "Collapse Panel",
+        "expandPanel": "Expand Panel",
+        "sessionPanel": "Session",
+        "sessionDetails": {
+            "title": "Session Details",
+            "close": "Close",
+            "duration": "Duration",
+            "projectDirectory": "Project Directory",
+            "summary": "Summary",
+            "noSummary": "No summary available",
+            "unknown": "Unknown"
+        }
+    },
+    "connectionMonitor": {
+        "connecting": "Connecting...",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "reconnecting": "Reconnecting... (attempt {attempt})",
+        "connectionFailed": "Connection failed",
+        "connectionError": "Connection error",
+        "noActiveSession": "No active session",
+        "maxReconnectReached": "WebSocket connection failed, please refresh the page to retry",
+        "latency": "Latency",
+        "connectionTime": "Connection Time",
+        "reconnectCount": "Reconnects",
+        "messageCount": "Messages",
+        "sessionCount": "Sessions",
+        "statusText": "Status",
+        "waiting": "Waiting",
+        "times": "times",
+        "quality": {
+            "excellent": "Excellent",
+            "good": "Good",
+            "fair": "Fair",
+            "poor": "Poor",
+            "unknown": "Unknown"
+        },
+        "metrics": {
+            "messages": "Messages",
+            "latencyMs": "Latency",
+            "sessions": "Sessions",
+            "reconnects": "Reconnects"
+        }
     },
 
     "dynamic": {

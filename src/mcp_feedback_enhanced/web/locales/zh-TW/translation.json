@@ -7,7 +7,8 @@
         "author": "作者：Fábio Ferreira (原作者) / Minidoracat (增強版)",
         "authorLink": "GitHub: Minidoracat",
         "credits": "⭐ 如果這個專案對您有幫助，請在 GitHub 上給我們一個星星！\n\n本增強版本由 Minidoracat 開發和維護，大幅擴展了專案功能，新增了 Web UI 介面、圖片支援、多語言能力以及許多其他改進功能。\n\n同時感謝 sanshao85 的 mcp-feedback-collector 專案提供的 UI 設計靈感。\n\n開源協作讓技術變得更美好！",
-        "projectDirectory": "專案目錄"
+        "projectDirectory": "專案目錄",
+        "updateFailed": "更新內容失敗，請手動刷新頁面以查看新的 AI 工作摘要"
     },
     "tabs": {
         "feedback": "💬 回饋",
@@ -37,7 +38,15 @@
             "submit": "Ctrl+Enter 提交 (Mac 用 Cmd+Enter，支援數字鍵盤)",
             "clear": "Ctrl+Delete 清除 (Mac 用 Cmd+Delete)",
             "paste": "Ctrl+V 貼上圖片 (Mac 用 Cmd+V)"
-        }
+        },
+        "submitSuccess": "回饋提交成功！",
+        "submittedWaiting": "已送出反饋，等待下次 MCP 調用...",
+        "waitingForUser": "等待用戶回饋...",
+        "alreadySubmitted": "回饋已提交，請等待下次 MCP 調用",
+        "processingFeedback": "正在處理中，請稍候",
+        "connectingMessage": "WebSocket 連接中，回饋將在連接就緒後自動提交...",
+        "invalidState": "當前狀態不允許提交",
+        "sendFailed": "發送失敗，請重試"
     },
     "summary": {
         "title": "📋 AI 工作摘要",
@@ -60,7 +69,11 @@
         "running": "執行中...",
         "completed": "執行完成",
         "error": "執行錯誤",
-        "history": "命令歷史"
+        "history": "命令歷史",
+        "notConnected": "WebSocket 未連接，無法執行命令",
+        "emptyCommand": "請輸入命令",
+        "sendFailed": "發送命令失敗",
+        "executing": "正在執行..."
     },
     "command": {
         "title": "⚡ 命令執行",
@@ -183,6 +196,69 @@
         "checking": "檢查中",
         "detected": "已檢測",
         "error": "失敗"
+    },
+    "sessionManagement": {
+        "title": "會話管理",
+        "currentSession": "當前會話",
+        "sessionHistory": "會話歷史",
+        "statistics": "統計資訊",
+        "sessionId": "會話 ID",
+        "status": "狀態",
+        "activeTime": "活躍時間",
+        "switchSession": "切換會話",
+        "viewDetails": "詳細資訊",
+        "refresh": "重新整理",
+        "noHistory": "暫無歷史會話",
+        "todaySessions": "今日會話",
+        "averageDuration": "平均時長",
+        "createdTime": "建立時間",
+        "project": "專案",
+        "aiSummary": "AI 摘要",
+        "loading": "載入中...",
+        "collapsePanel": "收合面板",
+        "expandPanel": "展開面板",
+        "sessionPanel": "會話",
+        "sessionDetails": {
+            "title": "會話詳細資訊",
+            "close": "關閉",
+            "duration": "持續時間",
+            "projectDirectory": "專案目錄",
+            "summary": "摘要",
+            "noSummary": "暫無摘要",
+            "unknown": "未知"
+        },
+        "noSummary": "無摘要"
+    },
+    "connectionMonitor": {
+        "connecting": "連接中...",
+        "connected": "已連接",
+        "disconnected": "已斷線",
+        "reconnecting": "重連中... (第{attempt}次)",
+        "connectionFailed": "連接失敗",
+        "connectionError": "連接錯誤",
+        "noActiveSession": "沒有活躍會話",
+        "maxReconnectReached": "WebSocket 連接失敗，請刷新頁面重試",
+        "latency": "延遲",
+        "connectionTime": "連線時間",
+        "reconnectCount": "重連",
+        "messageCount": "訊息",
+        "sessionCount": "會話",
+        "statusText": "狀態",
+        "waiting": "等待中",
+        "times": "次",
+        "quality": {
+            "excellent": "優秀",
+            "good": "良好",
+            "fair": "一般",
+            "poor": "較差",
+            "unknown": "未知"
+        },
+        "metrics": {
+            "messages": "訊息",
+            "latencyMs": "延遲",
+            "sessions": "會話",
+            "reconnects": "重連"
+        }
     },
 
     "dynamic": {

@@ -17,34 +17,79 @@
      */
     const StatusUtils = {
         /**
-         * 會話狀態映射
+         * 獲取會話狀態文字（使用 i18n）
          */
-        SESSION_STATUS_MAP: {
-            'waiting': '等待回饋',
-            'waiting_for_feedback': '等待回饋',
-            'active': '進行中',
-            'feedback_submitted': '已提交回饋',
-            'completed': '已完成',
-            'timeout': '已逾時',
-            'error': '錯誤',
-            'expired': '已過期',
-            'connecting': '連接中',
-            'connected': '已連接',
-            'disconnected': '已斷開',
-            'processing': '處理中',
-            'ready': '就緒',
-            'closed': '已關閉'
+        getSessionStatusText: function(status) {
+            if (!window.i18nManager) {
+                // 回退到硬編碼文字
+                const fallbackMap = {
+                    'waiting': '等待回饋',
+                    'waiting_for_feedback': '等待回饋',
+                    'active': '進行中',
+                    'feedback_submitted': '已提交回饋',
+                    'completed': '已完成',
+                    'timeout': '已逾時',
+                    'error': '錯誤',
+                    'expired': '已過期',
+                    'connecting': '連接中',
+                    'connected': '已連接',
+                    'disconnected': '已斷開',
+                    'processing': '處理中',
+                    'ready': '就緒',
+                    'closed': '已關閉'
+                };
+                return fallbackMap[status] || status;
+            }
+
+            // 使用 i18n 翻譯
+            const i18nKeyMap = {
+                'waiting': 'connectionMonitor.waiting',
+                'waiting_for_feedback': 'connectionMonitor.waiting',
+                'active': 'status.processing.title',
+                'feedback_submitted': 'status.submitted.title',
+                'completed': 'status.submitted.title',
+                'timeout': 'session.timeout',
+                'error': 'status.error',
+                'expired': 'session.timeout',
+                'connecting': 'connectionMonitor.connecting',
+                'connected': 'connectionMonitor.connected',
+                'disconnected': 'connectionMonitor.disconnected',
+                'processing': 'status.processing.title',
+                'ready': 'connectionMonitor.connected',
+                'closed': 'connectionMonitor.disconnected'
+            };
+
+            const i18nKey = i18nKeyMap[status];
+            return i18nKey ? window.i18nManager.t(i18nKey) : status;
         },
 
         /**
-         * 連線狀態映射
+         * 獲取連線狀態文字（使用 i18n）
          */
-        CONNECTION_STATUS_MAP: {
-            'connecting': '連接中',
-            'connected': '已連接',
-            'disconnected': '已斷開',
-            'reconnecting': '重連中',
-            'error': '連接錯誤'
+        getConnectionStatusText: function(status) {
+            if (!window.i18nManager) {
+                // 回退到硬編碼文字
+                const fallbackMap = {
+                    'connecting': '連接中',
+                    'connected': '已連接',
+                    'disconnected': '已斷開',
+                    'reconnecting': '重連中',
+                    'error': '連接錯誤'
+                };
+                return fallbackMap[status] || status;
+            }
+
+            // 使用 i18n 翻譯
+            const i18nKeyMap = {
+                'connecting': 'connectionMonitor.connecting',
+                'connected': 'connectionMonitor.connected',
+                'disconnected': 'connectionMonitor.disconnected',
+                'reconnecting': 'connectionMonitor.reconnecting',
+                'error': 'status.error'
+            };
+
+            const i18nKey = i18nKeyMap[status];
+            return i18nKey ? window.i18nManager.t(i18nKey) : status;
         },
 
         /**
@@ -69,21 +114,56 @@
         },
 
         /**
-         * 連線品質等級
+         * 獲取連線品質標籤（使用 i18n）
          */
-        CONNECTION_QUALITY_LEVELS: {
-            'excellent': { threshold: 50, label: '優秀', color: '#4caf50' },
-            'good': { threshold: 100, label: '良好', color: '#8bc34a' },
-            'fair': { threshold: 200, label: '一般', color: '#ff9800' },
-            'poor': { threshold: Infinity, label: '較差', color: '#f44336' }
+        getConnectionQualityLabel: function(level) {
+            if (!window.i18nManager) {
+                // 回退到硬編碼文字
+                const fallbackLabels = {
+                    'excellent': '優秀',
+                    'good': '良好',
+                    'fair': '一般',
+                    'poor': '較差',
+                    'unknown': '未知'
+                };
+                return fallbackLabels[level] || level;
+            }
+
+            const i18nKey = `connectionMonitor.quality.${level}`;
+            return window.i18nManager.t(i18nKey);
         },
 
         /**
-         * 獲取狀態文字
+         * 連線品質等級
+         */
+        CONNECTION_QUALITY_LEVELS: {
+            'excellent': { threshold: 50, color: '#4caf50' },
+            'good': { threshold: 100, color: '#8bc34a' },
+            'fair': { threshold: 200, color: '#ff9800' },
+            'poor': { threshold: Infinity, color: '#f44336' }
+        },
+
+        /**
+         * 獲取狀態文字（統一入口，優先使用新方法）
          */
         getStatusText: function(status) {
-            if (!status) return '未知';
-            return this.SESSION_STATUS_MAP[status] || this.CONNECTION_STATUS_MAP[status] || status;
+            if (!status) {
+                return window.i18nManager ? window.i18nManager.t('sessionManagement.sessionDetails.unknown') : '未知';
+            }
+
+            // 優先嘗試會話狀態
+            const sessionText = this.getSessionStatusText(status);
+            if (sessionText !== status) {
+                return sessionText;
+            }
+
+            // 然後嘗試連線狀態
+            const connectionText = this.getConnectionStatusText(status);
+            if (connectionText !== status) {
+                return connectionText;
+            }
+
+            return status;
         },
 
         /**
@@ -99,20 +179,28 @@
          */
         calculateConnectionQuality: function(latency) {
             if (typeof latency !== 'number' || latency < 0) {
-                return { level: 'unknown', label: '未知', color: '#757575' };
+                return {
+                    level: 'unknown',
+                    label: this.getConnectionQualityLabel('unknown'),
+                    color: '#757575'
+                };
             }
 
             for (const [level, config] of Object.entries(this.CONNECTION_QUALITY_LEVELS)) {
                 if (latency < config.threshold) {
                     return {
                         level: level,
-                        label: config.label,
+                        label: this.getConnectionQualityLabel(level),
                         color: config.color
                     };
                 }
             }
 
-            return { level: 'poor', label: '較差', color: '#f44336' };
+            return {
+                level: 'poor',
+                label: this.getConnectionQualityLabel('poor'),
+                color: '#f44336'
+            };
         },
 
         /**

@@ -434,10 +434,12 @@
         this.uiManager.setLastSubmissionTime(Date.now());
 
         // 顯示成功訊息
-        window.MCPFeedback.Utils.showMessage(data.message || '回饋提交成功！', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS);
+        const successMessage = window.i18nManager ? window.i18nManager.t('feedback.submitSuccess') : '回饋提交成功！';
+        window.MCPFeedback.Utils.showMessage(data.message || successMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS);
 
         // 更新 AI 摘要區域顯示「已送出反饋」狀態
-        this.updateSummaryStatus('已送出反饋，等待下次 MCP 調用...');
+        const submittedMessage = window.i18nManager ? window.i18nManager.t('feedback.submittedWaiting') : '已送出反饋，等待下次 MCP 調用...';
+        this.updateSummaryStatus(submittedMessage);
 
         console.log('反饋已提交，頁面保持開啟狀態');
     };
@@ -562,7 +564,8 @@
         switch (statusInfo.status) {
             case 'feedback_submitted':
                 this.uiManager.setFeedbackState(window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_SUBMITTED, sessionId);
-                this.updateSummaryStatus('已送出反饋，等待下次 MCP 調用...');
+                const submittedMessage = window.i18nManager ? window.i18nManager.t('feedback.submittedWaiting') : '已送出反饋，等待下次 MCP 調用...';
+                this.updateSummaryStatus(submittedMessage);
                 break;
 
             case 'active':
@@ -575,7 +578,8 @@
                 }
 
                 if (statusInfo.status === 'waiting') {
-                    this.updateSummaryStatus('等待用戶回饋...');
+                    const waitingMessage = window.i18nManager ? window.i18nManager.t('feedback.waitingForUser') : '等待用戶回饋...';
+                    this.updateSummaryStatus(waitingMessage);
                 }
                 break;
         }
@@ -620,18 +624,22 @@
         const feedbackState = this.uiManager ? this.uiManager.getFeedbackState() : null;
 
         if (feedbackState === window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_SUBMITTED) {
-            window.MCPFeedback.Utils.showMessage('回饋已提交，請等待下次 MCP 調用', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING);
+            const submittedWarning = window.i18nManager ? window.i18nManager.t('feedback.alreadySubmitted') : '回饋已提交，請等待下次 MCP 調用';
+            window.MCPFeedback.Utils.showMessage(submittedWarning, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING);
         } else if (feedbackState === window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_PROCESSING) {
-            window.MCPFeedback.Utils.showMessage('正在處理中，請稍候', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING);
+            const processingWarning = window.i18nManager ? window.i18nManager.t('feedback.processingFeedback') : '正在處理中，請稍候';
+            window.MCPFeedback.Utils.showMessage(processingWarning, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING);
         } else if (!this.webSocketManager || !this.webSocketManager.isReady()) {
             // 收集回饋數據，等待連接就緒後提交
             const feedbackData = this.collectFeedbackData();
             if (feedbackData) {
                 this.pendingSubmission = feedbackData;
-                window.MCPFeedback.Utils.showMessage('WebSocket 連接中，回饋將在連接就緒後自動提交...', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_INFO);
+                const connectingMessage = window.i18nManager ? window.i18nManager.t('feedback.connectingMessage') : 'WebSocket 連接中，回饋將在連接就緒後自動提交...';
+                window.MCPFeedback.Utils.showMessage(connectingMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_INFO);
             }
         } else {
-            window.MCPFeedback.Utils.showMessage('當前狀態不允許提交: ' + feedbackState, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING);
+            const invalidStateMessage = window.i18nManager ? window.i18nManager.t('feedback.invalidState') : '當前狀態不允許提交';
+            window.MCPFeedback.Utils.showMessage(invalidStateMessage + ': ' + feedbackState, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING);
         }
     };
 
@@ -698,7 +706,8 @@
 
         } catch (error) {
             console.error('❌ 發送回饋失敗:', error);
-            window.MCPFeedback.Utils.showMessage('發送失敗，請重試', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_ERROR);
+            const sendFailedMessage = window.i18nManager ? window.i18nManager.t('feedback.sendFailed') : '發送失敗，請重試';
+            window.MCPFeedback.Utils.showMessage(sendFailedMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_ERROR);
 
             // 恢復到等待狀態
             if (this.uiManager) {
@@ -742,12 +751,14 @@
         const command = commandInput ? commandInput.value.trim() : '';
 
         if (!command) {
-            this.appendCommandOutput('⚠️ 請輸入命令\n');
+            const emptyCommandMessage = window.i18nManager ? window.i18nManager.t('commands.emptyCommand') : '請輸入命令';
+            this.appendCommandOutput('⚠️ ' + emptyCommandMessage + '\n');
             return;
         }
 
         if (!this.webSocketManager || !this.webSocketManager.isConnected) {
-            this.appendCommandOutput('❌ WebSocket 未連接，無法執行命令\n');
+            const notConnectedMessage = window.i18nManager ? window.i18nManager.t('commands.notConnected') : 'WebSocket 未連接，無法執行命令';
+            this.appendCommandOutput('❌ ' + notConnectedMessage + '\n');
             return;
         }
 
@@ -764,13 +775,16 @@
             if (success) {
                 // 清空輸入框
                 commandInput.value = '';
-                this.appendCommandOutput('[正在執行...]\n');
+                const executingMessage = window.i18nManager ? window.i18nManager.t('commands.executing') : '正在執行...';
+                this.appendCommandOutput('[' + executingMessage + ']\n');
             } else {
-                this.appendCommandOutput('❌ 發送命令失敗\n');
+                const sendFailedMessage = window.i18nManager ? window.i18nManager.t('commands.sendFailed') : '發送命令失敗';
+                this.appendCommandOutput('❌ ' + sendFailedMessage + '\n');
             }
 
         } catch (error) {
-            this.appendCommandOutput('❌ 發送命令失敗: ' + error.message + '\n');
+            const sendFailedMessage = window.i18nManager ? window.i18nManager.t('commands.sendFailed') : '發送命令失敗';
+            this.appendCommandOutput('❌ ' + sendFailedMessage + ': ' + error.message + '\n');
         }
     };
 
@@ -867,7 +881,8 @@
             })
             .catch(function(error) {
                 console.error('❌ 局部更新失敗:', error);
-                window.MCPFeedback.Utils.showMessage('更新內容失敗，請手動刷新頁面以查看新的 AI 工作摘要', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING);
+                const updateFailedMessage = window.i18nManager ? window.i18nManager.t('app.updateFailed') : '更新內容失敗，請手動刷新頁面以查看新的 AI 工作摘要';
+                window.MCPFeedback.Utils.showMessage(updateFailedMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING);
             });
     };
 

@@ -321,8 +321,8 @@
 
             default:
                 icon = '⏳';
-                title = '等待回饋';
-                message = '請提供您的回饋意見';
+                title = window.i18nManager ? window.i18nManager.t('status.waiting.title') : '等待回饋';
+                message = window.i18nManager ? window.i18nManager.t('status.waiting.message') : '請提供您的回饋意見';
                 status = 'waiting';
         }
 
@@ -410,7 +410,8 @@
 
         submitButtons.forEach(function(button) {
             button.disabled = false;
-            button.textContent = button.getAttribute('data-original-text') || '提交回饋';
+            const defaultText = window.i18nManager ? window.i18nManager.t('buttons.submit') : '提交回饋';
+            button.textContent = button.getAttribute('data-original-text') || defaultText;
         });
 
         console.log('✅ 回饋表單重置完成');

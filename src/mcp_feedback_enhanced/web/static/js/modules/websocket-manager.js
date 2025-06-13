@@ -60,7 +60,8 @@
         const wsUrl = protocol + '//' + host + '/ws';
 
         console.log('嘗試連接 WebSocket:', wsUrl);
-        this.updateConnectionStatus('connecting', '連接中...');
+        const connectingMessage = window.i18nManager ? window.i18nManager.t('connectionMonitor.connecting') : '連接中...';
+        this.updateConnectionStatus('connecting', connectingMessage);
 
         try {
             // 如果已有連接，先關閉
@@ -74,7 +75,8 @@
 
         } catch (error) {
             console.error('WebSocket 連接失敗:', error);
-            this.updateConnectionStatus('error', '連接失敗');
+            const connectionFailedMessage = window.i18nManager ? window.i18nManager.t('connectionMonitor.connectionFailed') : '連接失敗';
+            this.updateConnectionStatus('error', connectionFailedMessage);
         }
     };
 
@@ -107,7 +109,8 @@
     WebSocketManager.prototype.handleOpen = function() {
         this.isConnected = true;
         this.connectionReady = false; // 等待連接確認
-        this.updateConnectionStatus('connected', '已連接');
+        const connectedMessage = window.i18nManager ? window.i18nManager.t('connectionMonitor.connected') : '已連接';
+        this.updateConnectionStatus('connected', connectedMessage);
         console.log('WebSocket 連接已建立');
 
         // 重置重連計數器和延遲
@@ -173,9 +176,11 @@
 
         // 處理不同的關閉原因
         if (event.code === 4004) {
-            this.updateConnectionStatus('disconnected', '沒有活躍會話');
+            const noActiveSessionMessage = window.i18nManager ? window.i18nManager.t('connectionMonitor.noActiveSession') : '沒有活躍會話';
+            this.updateConnectionStatus('disconnected', noActiveSessionMessage);
         } else {
-            this.updateConnectionStatus('disconnected', '已斷開');
+            const disconnectedMessage = window.i18nManager ? window.i18nManager.t('connectionMonitor.disconnected') : '已斷開';
+            this.updateConnectionStatus('disconnected', disconnectedMessage);
             this.handleReconnection(event);
         }
 
@@ -190,8 +195,9 @@
      */
     WebSocketManager.prototype.handleError = function(error) {
         console.error('WebSocket 錯誤:', error);
-        this.updateConnectionStatus('error', '連接錯誤');
-        
+        const connectionErrorMessage = window.i18nManager ? window.i18nManager.t('connectionMonitor.connectionError') : '連接錯誤';
+        this.updateConnectionStatus('error', connectionErrorMessage);
+
         // 調用外部回調
         if (this.onError) {
             this.onError(error);
@@ -218,7 +224,9 @@
             console.log(this.reconnectDelay / 1000 + '秒後嘗試重連... (第' + this.reconnectAttempts + '次)');
 
             // 更新狀態為重連中
-            this.updateConnectionStatus('reconnecting', '重連中... (第' + this.reconnectAttempts + '次)');
+            const reconnectingTemplate = window.i18nManager ? window.i18nManager.t('connectionMonitor.reconnecting') : '重連中... (第{attempt}次)';
+            const reconnectingMessage = reconnectingTemplate.replace('{attempt}', this.reconnectAttempts);
+            this.updateConnectionStatus('reconnecting', reconnectingMessage);
 
             const self = this;
             setTimeout(function() {
@@ -227,7 +235,8 @@
             }, this.reconnectDelay);
         } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
             console.log('❌ 達到最大重連次數，停止重連');
-            Utils.showMessage('WebSocket 連接失敗，請刷新頁面重試', Utils.CONSTANTS.MESSAGE_ERROR);
+            const maxReconnectMessage = window.i18nManager ? window.i18nManager.t('connectionMonitor.maxReconnectReached') : 'WebSocket 連接失敗，請刷新頁面重試';
+            Utils.showMessage(maxReconnectMessage, Utils.CONSTANTS.MESSAGE_ERROR);
         }
     };
 

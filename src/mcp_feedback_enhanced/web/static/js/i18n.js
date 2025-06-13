@@ -171,6 +171,12 @@ class I18nManager {
         // 只更新終端歡迎信息，不要覆蓋 AI 摘要
         this.updateTerminalWelcome();
 
+        // 更新會話管理相關的動態內容
+        this.updateSessionManagementContent();
+
+        // 更新連線監控相關的動態內容
+        this.updateConnectionMonitorContent();
+
         // 更新應用程式中的動態狀態文字（使用新的模組化架構）
         if (window.feedbackApp && window.feedbackApp.isInitialized) {
             // 更新 UI 狀態
@@ -195,6 +201,52 @@ class I18nManager {
                 const sessionId = window.feedbackApp.currentSessionId || window.feedbackApp.sessionId || 'unknown';
                 const welcomeMessage = welcomeTemplate.replace('{sessionId}', sessionId);
                 commandOutput.textContent = welcomeMessage;
+            }
+        }
+    }
+
+    updateSessionManagementContent() {
+        // 更新會話管理面板中的動態文字
+        if (window.feedbackApp && window.feedbackApp.sessionManager) {
+            // 觸發會話管理器重新渲染，這會使用最新的翻譯
+            if (typeof window.feedbackApp.sessionManager.updateDisplay === 'function') {
+                window.feedbackApp.sessionManager.updateDisplay();
+            }
+        }
+
+        // 更新狀態徽章文字
+        const statusBadges = document.querySelectorAll('.status-badge');
+        statusBadges.forEach(badge => {
+            const statusClass = Array.from(badge.classList).find(cls =>
+                ['waiting', 'active', 'completed', 'error', 'connecting', 'connected', 'disconnected'].includes(cls)
+            );
+            if (statusClass && window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.Status) {
+                badge.textContent = window.MCPFeedback.Utils.Status.getStatusText(statusClass);
+            }
+        });
+    }
+
+    updateConnectionMonitorContent() {
+        // 更新連線監控器中的動態文字
+        if (window.feedbackApp && window.feedbackApp.connectionMonitor) {
+            // 觸發連線監控器重新更新顯示
+            if (typeof window.feedbackApp.connectionMonitor.updateDisplay === 'function') {
+                window.feedbackApp.connectionMonitor.updateDisplay();
+            }
+        }
+
+        // 更新連線狀態文字
+        const statusText = document.querySelector('.status-text');
+        if (statusText && window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.Status) {
+            // 從元素的類名或數據屬性中獲取狀態
+            const indicator = statusText.closest('.connection-indicator');
+            if (indicator) {
+                const statusClass = Array.from(indicator.classList).find(cls =>
+                    ['connecting', 'connected', 'disconnected', 'reconnecting'].includes(cls)
+                );
+                if (statusClass) {
+                    statusText.textContent = window.MCPFeedback.Utils.Status.getConnectionStatusText(statusClass);
+                }
             }
         }
     }

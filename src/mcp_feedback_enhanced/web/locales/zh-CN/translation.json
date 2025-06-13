@@ -2,7 +2,8 @@
     "app": {
         "title": "MCP 交互反馈系统",
         "subtitle": "AI 助手交互反馈平台",
-        "projectDirectory": "项目目录"
+        "projectDirectory": "项目目录",
+        "updateFailed": "更新内容失败，请手动刷新页面以查看新的 AI 工作摘要"
     },
     "tabs": {
         "feedback": "💬 反馈",
@@ -32,7 +33,15 @@
             "submit": "Ctrl+Enter 提交 (Mac 用 Cmd+Enter，支持数字键盘)",
             "clear": "Ctrl+Delete 清除 (Mac 用 Cmd+Delete)",
             "paste": "Ctrl+V 粘贴图片 (Mac 用 Cmd+V)"
-        }
+        },
+        "submitSuccess": "反馈提交成功！",
+        "submittedWaiting": "已送出反馈，等待下次 MCP 调用...",
+        "waitingForUser": "等待用户反馈...",
+        "alreadySubmitted": "反馈已提交，请等待下次 MCP 调用",
+        "processingFeedback": "正在处理中，请稍候",
+        "connectingMessage": "WebSocket 连接中，反馈将在连接就绪后自动提交...",
+        "invalidState": "当前状态不允许提交",
+        "sendFailed": "发送失败，请重试"
     },
     "summary": {
         "title": "📋 AI 工作摘要",
@@ -55,7 +64,11 @@
         "running": "执行中...",
         "completed": "执行完成",
         "error": "执行错误",
-        "history": "命令历史"
+        "history": "命令历史",
+        "notConnected": "WebSocket 未连接，无法执行命令",
+        "emptyCommand": "请输入命令",
+        "sendFailed": "发送命令失败",
+        "executing": "正在执行..."
     },
     "command": {
         "title": "⚡ 命令执行",
@@ -178,6 +191,69 @@
         "checking": "检查中",
         "detected": "已检测",
         "error": "失败"
+    },
+    "sessionManagement": {
+        "title": "会话管理",
+        "currentSession": "当前会话",
+        "sessionHistory": "会话历史",
+        "statistics": "统计信息",
+        "sessionId": "会话 ID",
+        "status": "状态",
+        "activeTime": "活跃时间",
+        "switchSession": "切换会话",
+        "viewDetails": "详细信息",
+        "refresh": "重新整理",
+        "noHistory": "暂无历史会话",
+        "todaySessions": "今日会话",
+        "averageDuration": "平均时长",
+        "createdTime": "建立时间",
+        "project": "项目",
+        "aiSummary": "AI 总结",
+        "noSummary": "无总结",
+        "loading": "加载中...",
+        "collapsePanel": "收合面板",
+        "expandPanel": "展开面板",
+        "sessionPanel": "会话",
+        "sessionDetails": {
+            "title": "会话详细信息",
+            "close": "关闭",
+            "duration": "持续时间",
+            "projectDirectory": "项目目录",
+            "summary": "总结",
+            "noSummary": "暂无总结",
+            "unknown": "未知"
+        }
+    },
+    "connectionMonitor": {
+        "connecting": "连接中...",
+        "connected": "已连接",
+        "disconnected": "已断线",
+        "reconnecting": "重连中... (第{attempt}次)",
+        "connectionFailed": "连接失败",
+        "connectionError": "连接错误",
+        "noActiveSession": "没有活跃会话",
+        "maxReconnectReached": "WebSocket 连接失败，请刷新页面重试",
+        "latency": "延迟",
+        "connectionTime": "连线时间",
+        "reconnectCount": "重连",
+        "messageCount": "消息",
+        "sessionCount": "会话",
+        "statusText": "状态",
+        "waiting": "等待中",
+        "times": "次",
+        "quality": {
+            "excellent": "优秀",
+            "good": "良好",
+            "fair": "一般",
+            "poor": "较差",
+            "unknown": "未知"
+        },
+        "metrics": {
+            "messages": "消息",
+            "latencyMs": "延迟",
+            "sessions": "会话",
+            "reconnects": "重连"
+        }
     },
 
     "dynamic": {

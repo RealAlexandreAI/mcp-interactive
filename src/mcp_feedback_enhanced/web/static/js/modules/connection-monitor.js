@@ -101,16 +101,19 @@
      */
     ConnectionMonitor.prototype.updateConnectionStatus = function(status, message) {
         console.log('🔍 連線狀態更新:', status, message);
-        
+
         // 更新狀態顯示
         if (this.statusText) {
-            this.statusText.textContent = message || status;
+            // 使用 i18n 翻譯或提供的訊息
+            const displayText = message || (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.Status ?
+                window.MCPFeedback.Utils.Status.getConnectionStatusText(status) : status);
+            this.statusText.textContent = displayText;
         }
-        
+
         // 更新狀態圖示
         if (this.statusIcon) {
             this.statusIcon.className = 'status-icon';
-            
+
             switch (status) {
                 case 'connecting':
                 case 'reconnecting':
@@ -123,7 +126,7 @@
                     this.statusIcon.classList.remove('pulse');
             }
         }
-        
+
         // 更新連線指示器樣式
         const indicator = Utils.safeQuerySelector('.connection-indicator');
         if (indicator) {
@@ -263,10 +266,11 @@
     ConnectionMonitor.prototype.updateDisplay = function() {
         // 更新延遲顯示
         if (this.latencyDisplay) {
+            const latencyLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.latency') : '延遲';
             if (this.currentLatency > 0) {
-                this.latencyDisplay.textContent = '延遲: ' + this.currentLatency + 'ms';
+                this.latencyDisplay.textContent = latencyLabel + ': ' + this.currentLatency + 'ms';
             } else {
-                this.latencyDisplay.textContent = '延遲: --ms';
+                this.latencyDisplay.textContent = latencyLabel + ': --ms';
             }
         }
         
@@ -283,14 +287,17 @@
             const duration = Math.floor((Date.now() - this.connectionStartTime) / 1000);
             const minutes = Math.floor(duration / 60);
             const seconds = duration % 60;
-            this.connectionTimeDisplay.textContent = '連線時間: ' + 
-                String(minutes).padStart(2, '0') + ':' + 
+            const connectionTimeLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.connectionTime') : '連線時間';
+            this.connectionTimeDisplay.textContent = connectionTimeLabel + ': ' +
+                String(minutes).padStart(2, '0') + ':' +
                 String(seconds).padStart(2, '0');
         }
         
         // 更新重連次數
         if (this.reconnectCountDisplay) {
-            this.reconnectCountDisplay.textContent = '重連: ' + this.reconnectCount + ' 次';
+            const reconnectLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.reconnectCount') : '重連';
+            const timesLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.times') : '次';
+            this.reconnectCountDisplay.textContent = reconnectLabel + ': ' + this.reconnectCount + ' ' + timesLabel;
         }
         
         // 更新訊息計數

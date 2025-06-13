@@ -96,8 +96,8 @@
             statusColor: statusColor,
             createdTime: createdTime,
             duration: duration,
-            projectDirectory: sessionData.project_directory || '未知',
-            summary: sessionData.summary || '暫無摘要'
+            projectDirectory: sessionData.project_directory || (window.i18nManager ? window.i18nManager.t('sessionManagement.sessionDetails.unknown') : '未知'),
+            summary: sessionData.summary || (window.i18nManager ? window.i18nManager.t('sessionManagement.sessionDetails.noSummary') : '暫無摘要')
         };
     };
 
@@ -125,42 +125,48 @@
      * 創建彈窗 HTML
      */
     SessionDetailsModal.prototype.createModalHTML = function(details) {
+        const i18n = window.i18nManager;
+        const title = i18n ? i18n.t('sessionManagement.sessionDetails.title') : '會話詳細資訊';
+        const closeLabel = i18n ? i18n.t('sessionManagement.sessionDetails.close') : '關閉';
+        const sessionIdLabel = i18n ? i18n.t('sessionManagement.sessionId') : '會話 ID';
+        const statusLabel = i18n ? i18n.t('sessionManagement.status') : '狀態';
+
         return `
             <div class="session-details-modal" id="sessionDetailsModal">
                 <div class="modal-backdrop"></div>
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>會話詳細資訊</h3>
-                        <button class="modal-close" id="closeSessionDetails" aria-label="關閉">&times;</button>
+                        <h3>${title}</h3>
+                        <button class="modal-close" id="closeSessionDetails" aria-label="${closeLabel}">&times;</button>
                     </div>
                     <div class="modal-body">
                         <div class="detail-row">
-                            <span class="detail-label">會話 ID:</span>
+                            <span class="detail-label">${sessionIdLabel}:</span>
                             <span class="detail-value session-id" title="${details.sessionId}">${details.sessionId}</span>
                         </div>
                         <div class="detail-row">
-                            <span class="detail-label">狀態:</span>
+                            <span class="detail-label">${statusLabel}:</span>
                             <span class="detail-value" style="color: ${details.statusColor};">${details.status}</span>
                         </div>
                         <div class="detail-row">
-                            <span class="detail-label">建立時間:</span>
+                            <span class="detail-label">${i18n ? i18n.t('sessionManagement.createdTime') : '建立時間'}:</span>
                             <span class="detail-value">${details.createdTime}</span>
                         </div>
                         <div class="detail-row">
-                            <span class="detail-label">持續時間:</span>
+                            <span class="detail-label">${i18n ? i18n.t('sessionManagement.sessionDetails.duration') : '持續時間'}:</span>
                             <span class="detail-value">${details.duration}</span>
                         </div>
                         <div class="detail-row">
-                            <span class="detail-label">專案目錄:</span>
+                            <span class="detail-label">${i18n ? i18n.t('sessionManagement.sessionDetails.projectDirectory') : '專案目錄'}:</span>
                             <span class="detail-value project-path" title="${details.projectDirectory}">${details.projectDirectory}</span>
                         </div>
                         <div class="detail-row">
-                            <span class="detail-label">AI 摘要:</span>
+                            <span class="detail-label">${i18n ? i18n.t('sessionManagement.aiSummary') : 'AI 摘要'}:</span>
                             <div class="detail-value summary">${this.escapeHtml(details.summary)}</div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn-secondary" id="closeSessionDetailsBtn">關閉</button>
+                        <button class="btn-secondary" id="closeSessionDetailsBtn">${closeLabel}</button>
                     </div>
                 </div>
             </div>

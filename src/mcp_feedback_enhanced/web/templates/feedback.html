@@ -385,9 +385,9 @@
             <!-- 主要連線狀態 -->
             <div class="connection-indicator connecting" id="mainConnectionStatus">
                 <div class="status-icon pulse"></div>
-                <span class="status-text">連接中...</span>
+                <span class="status-text" data-i18n="connectionMonitor.connecting">連接中...</span>
                 <div class="connection-quality">
-                    <div class="latency-indicator">延遲: --ms</div>
+                    <div class="latency-indicator"><span data-i18n="connectionMonitor.latency">延遲</span>: --ms</div>
                     <div class="signal-strength">
                         <div class="signal-bar"></div>
                         <div class="signal-bar"></div>
@@ -398,19 +398,19 @@
 
             <!-- 連線詳細資訊 -->
             <div class="connection-details">
-                <span class="connection-time">連線時間: --:--</span>
-                <span class="reconnect-count">重連: 0 次</span>
+                <span class="connection-time"><span data-i18n="connectionMonitor.connectionTime">連線時間</span>: --:--</span>
+                <span class="reconnect-count"><span data-i18n="connectionMonitor.reconnectCount">重連</span>: 0 <span data-i18n="connectionMonitor.times">次</span></span>
             </div>
 
             <!-- 詳細狀態資訊 -->
             <div class="detailed-status-info">
                 <div class="websocket-metrics">
-                    <span class="metric">訊息: <span id="messageCount">0</span></span>
-                    <span class="metric">延遲: <span id="latencyDisplay">--ms</span></span>
+                    <span class="metric"><span data-i18n="connectionMonitor.metrics.messages">訊息</span>: <span id="messageCount">0</span></span>
+                    <span class="metric"><span data-i18n="connectionMonitor.metrics.latencyMs">延遲</span>: <span id="latencyDisplay">--ms</span></span>
                 </div>
                 <div class="session-metrics">
-                    <span class="metric">會話: <span id="sessionCount">1</span></span>
-                    <span class="metric">狀態: <span id="sessionStatusText">等待中</span></span>
+                    <span class="metric"><span data-i18n="connectionMonitor.metrics.sessions">會話</span>: <span id="sessionCount">1</span></span>
+                    <span class="metric"><span data-i18n="connectionMonitor.statusText">狀態</span>: <span id="sessionStatusText" data-i18n="connectionMonitor.waiting">等待中</span></span>
                 </div>
             </div>
         </div>
@@ -430,9 +430,9 @@
             <div class="session-management-panel" id="sessionPanel">
                 <!-- 面板標題 -->
                 <div class="panel-header">
-                    <h3>會話管理</h3>
+                    <h3 data-i18n="sessionManagement.title">會話管理</h3>
                     <div class="panel-controls">
-                        <button class="btn-icon" id="refreshSessions" title="重新整理">
+                        <button class="btn-icon" id="refreshSessions" data-i18n-title="sessionManagement.refresh" title="重新整理">
                             🔄
                         </button>
                     </div>
@@ -441,44 +441,44 @@
                 <div class="panel-content">
                     <!-- 當前活躍會話 -->
                     <div class="current-session-section">
-                        <h4>當前會話</h4>
+                        <h4 data-i18n="sessionManagement.currentSession">當前會話</h4>
                         <div class="session-card active" id="currentSessionCard">
                             <div class="session-header">
-                                <div class="session-id">會話 ID: {{ session_id[:8] if session_id else 'loading' }}...</div>
+                                <div class="session-id"><span data-i18n="sessionManagement.sessionId">會話 ID</span>: {{ session_id[:8] if session_id else 'loading' }}...</div>
                                 <div class="session-status">
-                                    <span class="status-badge waiting">等待中</span>
+                                    <span class="status-badge waiting" data-i18n="connectionMonitor.waiting">等待中</span>
                                 </div>
                             </div>
                             <div class="session-info">
-                                <div class="session-time">建立時間: --:--:--</div>
-                                <div class="session-project">專案: {{ project_directory }}</div>
-                                <div class="session-summary">AI 摘要: 載入中...</div>
+                                <div class="session-time"><span data-i18n="sessionManagement.createdTime">建立時間</span>: --:--:--</div>
+                                <div class="session-project"><span data-i18n="sessionManagement.project">專案</span>: {{ project_directory }}</div>
+                                <div class="session-summary"><span data-i18n="sessionManagement.aiSummary">AI 摘要</span>: <span data-i18n="sessionManagement.loading">載入中...</span></div>
                             </div>
                             <div class="session-actions">
-                                <button class="btn-small" id="viewSessionDetails">詳細資訊</button>
+                                <button class="btn-small" id="viewSessionDetails" data-i18n="sessionManagement.viewDetails">詳細資訊</button>
                             </div>
                         </div>
                     </div>
 
                     <!-- 會話歷史記錄 -->
                     <div class="session-history-section">
-                        <h4>會話歷史</h4>
+                        <h4 data-i18n="sessionManagement.sessionHistory">會話歷史</h4>
                         <div class="session-list" id="sessionHistoryList">
-                            <div class="no-sessions">暫無歷史會話</div>
+                            <div class="no-sessions" data-i18n="sessionManagement.noHistory">暫無歷史會話</div>
                         </div>
                     </div>
 
                     <!-- 會話統計 -->
                     <div class="session-stats-section">
-                        <h4>統計資訊</h4>
+                        <h4 data-i18n="sessionManagement.statistics">統計資訊</h4>
                         <div class="stats-grid">
                             <div class="stat-item">
                                 <div class="stat-value">0</div>
-                                <div class="stat-label">今日會話</div>
+                                <div class="stat-label" data-i18n="sessionManagement.todaySessions">今日會話</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-value">--</div>
-                                <div class="stat-label">平均時長</div>
+                                <div class="stat-label" data-i18n="sessionManagement.averageDuration">平均時長</div>
                             </div>
                         </div>
                     </div>
@@ -486,7 +486,7 @@
 
                 <!-- 邊緣收合/展開按鈕 -->
                 <div class="panel-edge-toggle" id="panelEdgeToggle">
-                    <button class="edge-toggle-btn" id="edgeToggleBtn" title="收合面板">
+                    <button class="edge-toggle-btn" id="edgeToggleBtn" data-i18n-title="sessionManagement.collapsePanel" title="收合面板">
                         <span class="toggle-icon">◀</span>
                     </button>
                 </div>
@@ -494,9 +494,9 @@
 
             <!-- 收合狀態下的展開按鈕 -->
             <div class="collapsed-panel-toggle" id="collapsedPanelToggle" style="display: none;">
-                <button class="collapsed-toggle-btn" id="collapsedToggleBtn" title="展開會話面板">
+                <button class="collapsed-toggle-btn" id="collapsedToggleBtn" data-i18n-title="sessionManagement.expandPanel" title="展開會話面板">
                     <span class="toggle-icon">▶</span>
-                    <span class="toggle-text">會話</span>
+                    <span class="toggle-text" data-i18n="sessionManagement.sessionPanel">會話</span>
                 </button>
             </div>
 
@@ -506,12 +506,12 @@
                 <div class="session-status-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); margin-bottom: 16px; border-radius: 6px;">
                     <div class="current-session-info">
                         <span class="session-indicator" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary);">
-                            📋 當前會話: <span id="currentSessionId" style="font-family: monospace; color: var(--accent-color);">{{ session_id[:8] if session_id else 'loading' }}...</span>
+                            📋 <span data-i18n="sessionManagement.currentSession">當前會話</span>: <span id="currentSessionId" style="font-family: monospace; color: var(--accent-color);">{{ session_id[:8] if session_id else 'loading' }}...</span>
                         </span>
-                        <span class="session-age" style="margin-left: 16px; font-size: 12px; color: var(--text-secondary);">活躍時間: <span id="sessionAge">--</span></span>
+                        <span class="session-age" style="margin-left: 16px; font-size: 12px; color: var(--text-secondary);"><span data-i18n="sessionManagement.activeTime">活躍時間</span>: <span id="sessionAge">--</span></span>
                     </div>
                     <div class="session-controls">
-                        <button class="btn-link" id="switchSessionBtn" style="display: none; font-size: 12px; color: var(--accent-color); background: none; border: none; cursor: pointer;">
+                        <button class="btn-link" id="switchSessionBtn" style="display: none; font-size: 12px; color: var(--accent-color); background: none; border: none; cursor: pointer;" data-i18n="sessionManagement.switchSession">
                             切換會話
                         </button>
                     </div>

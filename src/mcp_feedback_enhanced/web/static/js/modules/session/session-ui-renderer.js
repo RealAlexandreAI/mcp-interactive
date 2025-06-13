@@ -102,10 +102,11 @@
     SessionUIRenderer.prototype.updateSessionId = function(sessionData) {
         const sessionIdElement = this.currentSessionCard.querySelector('.session-id');
         if (sessionIdElement && sessionData.session_id) {
-            const displayId = this.showFullSessionId ? 
-                sessionData.session_id : 
+            const displayId = this.showFullSessionId ?
+                sessionData.session_id :
                 sessionData.session_id.substring(0, 8) + '...';
-            DOMUtils.safeSetTextContent(sessionIdElement, '會話 ID: ' + displayId);
+            const sessionIdLabel = window.i18nManager ? window.i18nManager.t('sessionManagement.sessionId') : '會話 ID';
+            DOMUtils.safeSetTextContent(sessionIdElement, sessionIdLabel + ': ' + displayId);
         }
     };
 
@@ -130,7 +131,8 @@
         const timeElement = this.currentSessionCard.querySelector('.session-time');
         if (timeElement && sessionData.created_at) {
             const timeText = TimeUtils.formatTimestamp(sessionData.created_at, { format: 'time' });
-            DOMUtils.safeSetTextContent(timeElement, '建立時間: ' + timeText);
+            const createdTimeLabel = window.i18nManager ? window.i18nManager.t('sessionManagement.createdTime') : '建立時間';
+            DOMUtils.safeSetTextContent(timeElement, createdTimeLabel + ': ' + timeText);
         }
     };
 
@@ -141,7 +143,8 @@
         const projectElement = this.currentSessionCard.querySelector('.session-project');
         if (projectElement) {
             const projectDir = sessionData.project_directory || './';
-            DOMUtils.safeSetTextContent(projectElement, '專案: ' + projectDir);
+            const projectLabel = window.i18nManager ? window.i18nManager.t('sessionManagement.project') : '專案';
+            DOMUtils.safeSetTextContent(projectElement, projectLabel + ': ' + projectDir);
         }
     };
 
@@ -151,8 +154,10 @@
     SessionUIRenderer.prototype.updateSummary = function(sessionData) {
         const summaryElement = this.currentSessionCard.querySelector('.session-summary');
         if (summaryElement) {
-            const summary = sessionData.summary || '無摘要';
-            DOMUtils.safeSetTextContent(summaryElement, 'AI 摘要: ' + summary);
+            const noSummaryText = window.i18nManager ? window.i18nManager.t('sessionManagement.noSummary') : '無摘要';
+            const summary = sessionData.summary || noSummaryText;
+            const summaryLabel = window.i18nManager ? window.i18nManager.t('sessionManagement.aiSummary') : 'AI 摘要';
+            DOMUtils.safeSetTextContent(summaryElement, summaryLabel + ': ' + summary);
         }
     };
 
@@ -205,9 +210,10 @@
      * 渲染空歷史狀態
      */
     SessionUIRenderer.prototype.renderEmptyHistory = function() {
+        const noHistoryText = window.i18nManager ? window.i18nManager.t('sessionManagement.noHistory') : '暫無歷史會話';
         const emptyElement = DOMUtils.createElement('div', {
             className: 'no-sessions',
-            textContent: '暫無歷史會話'
+            textContent: noHistoryText
         });
         this.historyList.appendChild(emptyElement);
     };
@@ -242,9 +248,10 @@
         const header = DOMUtils.createElement('div', { className: 'session-header' });
 
         // 會話 ID
+        const sessionIdLabel = window.i18nManager ? window.i18nManager.t('sessionManagement.sessionId') : '會話 ID';
         const sessionId = DOMUtils.createElement('div', {
             className: 'session-id',
-            textContent: '會話 ID: ' + (sessionData.session_id || '').substring(0, 8) + '...'
+            textContent: sessionIdLabel + ': ' + (sessionData.session_id || '').substring(0, 8) + '...'
         });
 
         // 狀態徽章
@@ -268,13 +275,17 @@
         const info = DOMUtils.createElement('div', { className: 'session-info' });
 
         // 時間資訊
-        const timeText = sessionData.created_at ? 
-            TimeUtils.formatTimestamp(sessionData.created_at, { format: 'time' }) : 
+        const timeText = sessionData.created_at ?
+            TimeUtils.formatTimestamp(sessionData.created_at, { format: 'time' }) :
             '--:--:--';
-        
+
+        const timeLabel = isHistory ?
+            (window.i18nManager ? window.i18nManager.t('sessionManagement.sessionDetails.duration') : '完成時間') :
+            (window.i18nManager ? window.i18nManager.t('sessionManagement.createdTime') : '建立時間');
+
         const timeElement = DOMUtils.createElement('div', {
             className: 'session-time',
-            textContent: (isHistory ? '完成時間' : '建立時間') + ': ' + timeText
+            textContent: timeLabel + ': ' + timeText
         });
 
         info.appendChild(timeElement);
@@ -282,9 +293,10 @@
         // 歷史會話顯示持續時間
         if (isHistory) {
             const duration = this.calculateDisplayDuration(sessionData);
+            const durationLabel = window.i18nManager ? window.i18nManager.t('sessionManagement.sessionDetails.duration') : '持續時間';
             const durationElement = DOMUtils.createElement('div', {
                 className: 'session-duration',
-                textContent: '持續時間: ' + duration
+                textContent: durationLabel + ': ' + duration
             });
             info.appendChild(durationElement);
         }
@@ -304,7 +316,7 @@
         } else if (sessionData.created_at) {
             return TimeUtils.estimateSessionDuration(sessionData);
         }
-        return '未知';
+        return window.i18nManager ? window.i18nManager.t('sessionManagement.sessionDetails.unknown') : '未知';
     };
 
     /**
@@ -313,9 +325,13 @@
     SessionUIRenderer.prototype.createSessionActions = function(sessionData, isHistory) {
         const actions = DOMUtils.createElement('div', { className: 'session-actions' });
 
+        const buttonText = isHistory ?
+            (window.i18nManager ? window.i18nManager.t('sessionManagement.viewDetails') : '查看') :
+            (window.i18nManager ? window.i18nManager.t('sessionManagement.viewDetails') : '詳細資訊');
+
         const button = DOMUtils.createElement('button', {
             className: 'btn-small',
-            textContent: isHistory ? '查看' : '詳細資訊'
+            textContent: buttonText
         });
 
         // 添加點擊事件

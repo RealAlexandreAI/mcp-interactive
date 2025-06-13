@@ -49,7 +49,7 @@
             const container = document.querySelector(selector);
             if (container) {
                 this.containers.push(container);
-                this.createButtons(container, index);
+                this.bindExistingButtons(container, index);
                 successCount++;
             } else {
                 console.warn('⚠️ 找不到提示詞按鈕容器:', selector);
@@ -64,46 +64,42 @@
             this.updateButtonStates();
 
             this.isInitialized = true;
-            console.log('✅ PromptInputButtons 初始化完成，成功創建', successCount, '組按鈕');
+            console.log('✅ PromptInputButtons 初始化完成，成功綁定', successCount, '組按鈕');
             return true;
         }
 
-        console.error('❌ 沒有成功創建任何提示詞按鈕');
+        console.error('❌ 沒有成功綁定任何提示詞按鈕');
         return false;
     };
 
     /**
-     * 創建按鈕
+     * 綁定已存在的按鈕
      */
-    PromptInputButtons.prototype.createButtons = function(container, index) {
-        const buttonsHtml = `
-            <div class="prompt-input-buttons">
-                <button type="button" class="prompt-input-btn select-prompt-btn" data-container-index="${index}">
-                    <span>📝</span>
-                    <span class="button-text"></span>
-                </button>
-                <button type="button" class="prompt-input-btn last-prompt-btn" data-container-index="${index}">
-                    <span>🔄</span>
-                    <span class="button-text"></span>
-                </button>
-            </div>
-        `;
-
-        // 在 input-group 的 label 後面插入按鈕
+    PromptInputButtons.prototype.bindExistingButtons = function(container, index) {
+        // 查找已存在的按鈕容器
         const inputGroup = container.closest('.input-group') || container;
-        const label = inputGroup.querySelector('.input-label');
+        const buttonContainer = inputGroup.querySelector('.prompt-input-buttons');
 
-        if (label) {
-            label.insertAdjacentHTML('afterend', buttonsHtml);
-        } else {
-            inputGroup.insertAdjacentHTML('afterbegin', buttonsHtml);
+        if (!buttonContainer) {
+            console.warn('⚠️ 找不到提示詞按鈕容器:', container);
+            return;
         }
 
         // 獲取按鈕引用
-        const buttonContainer = inputGroup.querySelector('.prompt-input-buttons');
-        if (buttonContainer) {
-            this.selectButtons.push(buttonContainer.querySelector('.select-prompt-btn'));
-            this.lastUsedButtons.push(buttonContainer.querySelector('.last-prompt-btn'));
+        const selectBtn = buttonContainer.querySelector('.select-prompt-btn');
+        const lastUsedBtn = buttonContainer.querySelector('.last-prompt-btn');
+
+        if (selectBtn && lastUsedBtn) {
+            // 設置正確的 data-container-index
+            selectBtn.setAttribute('data-container-index', index);
+            lastUsedBtn.setAttribute('data-container-index', index);
+
+            this.selectButtons.push(selectBtn);
+            this.lastUsedButtons.push(lastUsedBtn);
+
+            console.log('✅ 成功綁定提示詞按鈕，容器索引:', index);
+        } else {
+            console.warn('⚠️ 找不到提示詞按鈕元素:', container);
         }
 
         // 更新按鈕文字

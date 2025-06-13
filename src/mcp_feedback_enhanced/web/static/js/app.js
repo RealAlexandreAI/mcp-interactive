@@ -428,8 +428,8 @@
 
             // 初始化輸入按鈕到所有回饋輸入區域
             const inputContainers = [
-                '#feedbackText',           // 回饋分頁
-                '#combinedFeedbackText'    // 工作區分頁
+                '#feedbackText',           // 回饋分頁的 textarea
+                '#combinedFeedbackText'    // 工作區分頁的 textarea
             ];
             this.promptInputButtons.init(inputContainers);
 
@@ -1268,13 +1268,9 @@
      */
     FeedbackApp.prototype.showCountdownDisplay = function() {
         const countdownDisplay = document.getElementById('countdownDisplay');
-        const countdownDisplayCombined = document.getElementById('countdownDisplayCombined');
 
         if (countdownDisplay) {
             countdownDisplay.style.display = 'flex';
-        }
-        if (countdownDisplayCombined) {
-            countdownDisplayCombined.style.display = 'flex';
         }
     };
 
@@ -1283,13 +1279,9 @@
      */
     FeedbackApp.prototype.hideCountdownDisplay = function() {
         const countdownDisplay = document.getElementById('countdownDisplay');
-        const countdownDisplayCombined = document.getElementById('countdownDisplayCombined');
 
         if (countdownDisplay) {
             countdownDisplay.style.display = 'none';
-        }
-        if (countdownDisplayCombined) {
-            countdownDisplayCombined.style.display = 'none';
         }
     };
 
@@ -1298,11 +1290,10 @@
      */
     FeedbackApp.prototype.updateCountdownDisplay = function(remainingSeconds) {
         const countdownTimer = document.getElementById('countdownTimer');
-        const countdownTimerCombined = document.getElementById('countdownTimerCombined');
 
         const formattedTime = window.MCPFeedback.Utils.Time.formatAutoSubmitCountdown(remainingSeconds);
 
-        // 更新主要倒數計時器
+        // 更新倒數計時器
         if (countdownTimer) {
             countdownTimer.textContent = formattedTime;
 
@@ -1312,19 +1303,6 @@
                 countdownTimer.classList.add('danger');
             } else if (remainingSeconds <= 30) {
                 countdownTimer.classList.add('warning');
-            }
-        }
-
-        // 更新工作區倒數計時器
-        if (countdownTimerCombined) {
-            countdownTimerCombined.textContent = formattedTime;
-
-            // 根據剩餘時間調整樣式
-            countdownTimerCombined.className = 'countdown-timer';
-            if (remainingSeconds <= 10) {
-                countdownTimerCombined.classList.add('danger');
-            } else if (remainingSeconds <= 30) {
-                countdownTimerCombined.classList.add('warning');
             }
         }
     };

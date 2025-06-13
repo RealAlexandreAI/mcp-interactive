@@ -241,6 +241,9 @@
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 .btn-icon {

@@ -378,6 +378,12 @@
 
         <!-- 中間：連線狀態資訊 -->
         <div class="connection-status-group">
+            <!-- 倒數計時器顯示 -->
+            <div id="countdownDisplay" class="countdown-display" style="display: none;">
+                <span class="countdown-label" data-i18n="autoSubmit.countdownLabel">提交倒數</span>
+                <span id="countdownTimer" class="countdown-timer">--:--</span>
+            </div>
+
             <!-- 主要連線狀態 -->
             <div class="connection-indicator connecting" id="mainConnectionStatus">
                 <div class="status-icon pulse"></div>
@@ -411,9 +417,9 @@
             </div>
         </div>
 
-        <!-- 右側：保留空間以保持佈局平衡 -->
+        <!-- 右側：快速操作 -->
         <div class="quick-actions">
-            <!-- 移除不必要的按鈕，保持佈局平衡 -->
+            <!-- 保留空間以保持佈局平衡 -->
         </div>
     </div>
 
@@ -555,14 +561,20 @@
                 {% include 'components/status-indicator.html' %}
 
                 <div class="input-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
-                        <!-- 倒數計時器顯示 -->
-                        <div id="countdownDisplay" class="countdown-display" style="display: none;">
-                            <span class="countdown-label" data-i18n="autoSubmit.countdownLabel">提交倒數</span>
-                            <span id="countdownTimer" class="countdown-timer">--:--</span>
-                        </div>
+                    <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
+
+                    <!-- 提示詞按鈕 -->
+                    <div class="prompt-input-buttons" id="feedbackPromptButtons">
+                        <button type="button" class="prompt-input-btn select-prompt-btn" data-container-index="0">
+                            <span>📝</span>
+                            <span class="button-text" data-i18n="prompts.buttons.selectPrompt">Templates</span>
+                        </button>
+                        <button type="button" class="prompt-input-btn last-prompt-btn" data-container-index="0">
+                            <span>🔄</span>
+                            <span class="button-text" data-i18n="prompts.buttons.useLastPrompt">Last Used</span>
+                        </button>
                     </div>
+
                     <textarea
                         id="feedbackText"
                         class="text-input"
@@ -657,14 +669,20 @@
                         {% include 'components/status-indicator.html' %}
 
                         <div class="input-group">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
-                                <!-- 倒數計時器顯示 -->
-                                <div id="countdownDisplayCombined" class="countdown-display" style="display: none;">
-                                    <span class="countdown-label" data-i18n="autoSubmit.countdownLabel">提交倒數</span>
-                                    <span id="countdownTimerCombined" class="countdown-timer">--:--</span>
-                                </div>
+                            <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
+
+                            <!-- 提示詞按鈕 -->
+                            <div class="prompt-input-buttons" id="combinedPromptButtons">
+                                <button type="button" class="prompt-input-btn select-prompt-btn" data-container-index="1">
+                                    <span>📝</span>
+                                    <span class="button-text" data-i18n="prompts.buttons.selectPrompt">Templates</span>
+                                </button>
+                                <button type="button" class="prompt-input-btn last-prompt-btn" data-container-index="1">
+                                    <span>🔄</span>
+                                    <span class="button-text" data-i18n="prompts.buttons.useLastPrompt">Last Used</span>
+                                </button>
                             </div>
+
                             <textarea
                                 id="combinedFeedbackText"
                                 class="text-input"

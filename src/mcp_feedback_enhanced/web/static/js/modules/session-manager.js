@@ -58,20 +58,7 @@
     SessionManager.prototype.initializeModules = function(options) {
         const self = this;
 
-        // 初始化數據管理器
-        this.dataManager = new window.MCPFeedback.Session.DataManager({
-            onSessionChange: function(sessionData) {
-                self.handleSessionChange(sessionData);
-            },
-            onHistoryChange: function(history) {
-                self.handleHistoryChange(history);
-            },
-            onStatsChange: function(stats) {
-                self.handleStatsChange(stats);
-            }
-        });
-
-        // 初始化 UI 渲染器
+        // 先初始化 UI 渲染器（避免數據管理器回調時 UI 組件尚未準備好）
         this.uiRenderer = new window.MCPFeedback.Session.UIRenderer({
             showFullSessionId: options.showFullSessionId || false,
             enableAnimations: options.enableAnimations !== false
@@ -82,6 +69,19 @@
             enableEscapeClose: options.enableEscapeClose !== false,
             enableBackdropClose: options.enableBackdropClose !== false,
             showFullSessionId: options.showFullSessionId || false
+        });
+
+        // 最後初始化數據管理器（確保 UI 組件已準備好接收回調）
+        this.dataManager = new window.MCPFeedback.Session.DataManager({
+            onSessionChange: function(sessionData) {
+                self.handleSessionChange(sessionData);
+            },
+            onHistoryChange: function(history) {
+                self.handleHistoryChange(history);
+            },
+            onStatsChange: function(stats) {
+                self.handleStatsChange(stats);
+            }
         });
     };
 

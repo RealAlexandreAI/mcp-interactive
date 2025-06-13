@@ -177,6 +177,9 @@ class I18nManager {
         // 更新連線監控相關的動態內容
         this.updateConnectionMonitorContent();
 
+        // 更新提示詞按鈕文字
+        this.updatePromptInputButtons();
+
         // 更新應用程式中的動態狀態文字（使用新的模組化架構）
         if (window.feedbackApp && window.feedbackApp.isInitialized) {
             // 更新 UI 狀態
@@ -247,6 +250,16 @@ class I18nManager {
                 if (statusClass) {
                     statusText.textContent = window.MCPFeedback.Utils.Status.getConnectionStatusText(statusClass);
                 }
+            }
+        }
+    }
+
+    updatePromptInputButtons() {
+        // 更新提示詞輸入按鈕的文字
+        if (window.feedbackApp && window.feedbackApp.promptInputButtons) {
+            // 觸發提示詞按鈕更新文字
+            if (typeof window.feedbackApp.promptInputButtons.updateButtonTexts === 'function') {
+                window.feedbackApp.promptInputButtons.updateButtonTexts();
             }
         }
     }

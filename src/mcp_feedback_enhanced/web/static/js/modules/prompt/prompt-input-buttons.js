@@ -60,7 +60,7 @@
             // 設置事件監聽器
             this.setupEventListeners();
 
-            // 更新按鈕狀態
+            // 更新按鈕狀態和文字
             this.updateButtonStates();
 
             this.isInitialized = true;
@@ -80,11 +80,11 @@
             <div class="prompt-input-buttons">
                 <button type="button" class="prompt-input-btn select-prompt-btn" data-container-index="${index}">
                     <span>📝</span>
-                    <span data-i18n="prompts.buttons.selectPrompt">選擇常用提示詞</span>
+                    <span class="button-text"></span>
                 </button>
                 <button type="button" class="prompt-input-btn last-prompt-btn" data-container-index="${index}">
                     <span>🔄</span>
-                    <span data-i18n="prompts.buttons.useLastPrompt">使用上次提示詞</span>
+                    <span class="button-text"></span>
                 </button>
             </div>
         `;
@@ -92,7 +92,7 @@
         // 在 input-group 的 label 後面插入按鈕
         const inputGroup = container.closest('.input-group') || container;
         const label = inputGroup.querySelector('.input-label');
-        
+
         if (label) {
             label.insertAdjacentHTML('afterend', buttonsHtml);
         } else {
@@ -105,6 +105,9 @@
             this.selectButtons.push(buttonContainer.querySelector('.select-prompt-btn'));
             this.lastUsedButtons.push(buttonContainer.querySelector('.last-prompt-btn'));
         }
+
+        // 更新按鈕文字
+        this.updateButtonTexts();
     };
 
     /**
@@ -286,6 +289,37 @@
     };
 
     /**
+     * 更新按鈕文字
+     */
+    PromptInputButtons.prototype.updateButtonTexts = function() {
+        // 更新選擇提示詞按鈕文字
+        this.selectButtons.forEach(function(button) {
+            if (button) {
+                const textSpan = button.querySelector('.button-text');
+                if (textSpan) {
+                    const text = window.i18nManager ?
+                        window.i18nManager.t('prompts.buttons.selectPrompt', '常用提示') :
+                        '常用提示';
+                    textSpan.textContent = text;
+                }
+            }
+        });
+
+        // 更新使用上次提示詞按鈕文字
+        this.lastUsedButtons.forEach(function(button) {
+            if (button) {
+                const textSpan = button.querySelector('.button-text');
+                if (textSpan) {
+                    const text = window.i18nManager ?
+                        window.i18nManager.t('prompts.buttons.useLastPrompt', '上次提示') :
+                        '上次提示';
+                    textSpan.textContent = text;
+                }
+            }
+        });
+    };
+
+    /**
      * 更新按鈕狀態
      */
     PromptInputButtons.prototype.updateButtonStates = function() {
@@ -300,7 +334,7 @@
         this.selectButtons.forEach(function(button) {
             if (button) {
                 button.disabled = prompts.length === 0;
-                
+
                 if (prompts.length === 0) {
                     button.title = '尚無常用提示詞';
                 } else {
@@ -313,7 +347,7 @@
         this.lastUsedButtons.forEach(function(button) {
             if (button) {
                 button.disabled = !lastPrompt;
-                
+
                 if (!lastPrompt) {
                     button.title = '尚無最近使用的提示詞';
                 } else {
@@ -321,6 +355,9 @@
                 }
             }
         });
+
+        // 同時更新按鈕文字（以防語言切換）
+        this.updateButtonTexts();
     };
 
     /**

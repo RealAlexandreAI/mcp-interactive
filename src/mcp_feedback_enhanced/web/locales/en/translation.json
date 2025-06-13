@@ -143,7 +143,7 @@
             "message": "Submitting your feedback..."
         },
         "submitted": {
-            "title": "Feedback Submitted",
+            "title": "Submitted",
             "message": "Waiting for next MCP call"
         }
     },
@@ -278,13 +278,16 @@
             "deleteSuccess": "Prompt deleted successfully"
         },
         "buttons": {
-            "selectPrompt": "Select Prompt Template",
-            "useLastPrompt": "Use Last Prompt",
+            "selectPrompt": "Templates",
+            "useLastPrompt": "Last Used",
             "noPrompts": "No prompt templates available, please add one in settings first",
             "noLastPrompt": "No recently used prompt available",
             "lastPromptApplied": "Last used prompt applied successfully",
             "promptNotFound": "Prompt not found",
             "promptApplied": "Prompt applied: "
+        },
+        "select": {
+            "title": "Select Prompt Template"
         },
         "modal": {
             "addTitle": "Add New Prompt",

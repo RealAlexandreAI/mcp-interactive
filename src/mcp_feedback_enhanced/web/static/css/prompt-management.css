@@ -321,7 +321,7 @@
 }
 
 .prompt-input-btn {
-    padding: 6px 12px;
+    padding: 6px 10px;
     font-size: 12px;
     border-radius: 4px;
     border: 1px solid var(--border-color);
@@ -332,6 +332,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    white-space: nowrap;
+    min-width: fit-content;
 }
 
 .prompt-input-btn:hover {
@@ -395,11 +397,14 @@
     }
     
     .prompt-input-buttons {
-        flex-direction: column;
+        flex-wrap: wrap;
+        gap: 6px;
     }
-    
+
     .prompt-input-btn {
         justify-content: center;
+        flex: 1;
+        min-width: 80px;
     }
 }
 

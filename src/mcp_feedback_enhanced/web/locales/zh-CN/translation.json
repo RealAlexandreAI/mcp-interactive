@@ -278,13 +278,16 @@
             "deleteSuccess": "提示词已删除"
         },
         "buttons": {
-            "selectPrompt": "选择常用提示词",
-            "useLastPrompt": "使用上次提示词",
+            "selectPrompt": "常用提示",
+            "useLastPrompt": "上次提示",
             "noPrompts": "尚无常用提示词，请先在设置中新增",
             "noLastPrompt": "尚无最近使用的提示词",
             "lastPromptApplied": "已套用上次使用的提示词",
             "promptNotFound": "找不到指定的提示词",
             "promptApplied": "已套用提示词："
+        },
+        "select": {
+            "title": "选择常用提示词"
         },
         "modal": {
             "addTitle": "新增提示词",

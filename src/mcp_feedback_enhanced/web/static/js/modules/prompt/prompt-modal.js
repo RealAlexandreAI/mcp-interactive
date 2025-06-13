@@ -85,7 +85,7 @@
 
         const modalData = {
             type: 'select',
-            title: this.t('prompts.buttons.selectPrompt', '選擇常用提示詞'),
+            title: this.t('prompts.select.title', '選擇常用提示詞'),
             prompts: prompts
         };
 

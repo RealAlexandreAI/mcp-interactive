@@ -440,7 +440,9 @@
         // 更新下拉選單選項
         const languageSelect = Utils.safeQuerySelector('#settingsLanguageSelect');
         if (languageSelect) {
+            console.log(`🔧 SettingsManager.applyLanguageSettings: 設置 select.value = ${this.currentSettings.language}`);
             languageSelect.value = this.currentSettings.language;
+            console.log(`🔧 SettingsManager.applyLanguageSettings: 實際 select.value = ${languageSelect.value}`);
         }
 
         // 更新語言選項顯示（兼容舊版卡片式選擇器）
@@ -568,6 +570,7 @@
         if (languageSelect) {
             languageSelect.addEventListener('change', function(e) {
                 const lang = e.target.value;
+                console.log(`🔄 SettingsManager select change event: ${lang}`);
                 self.set('language', lang);
             });
         }

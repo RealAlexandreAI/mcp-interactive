@@ -270,15 +270,19 @@ class I18nManager {
         if (selector) {
             // 設置當前值
             selector.value = this.currentLanguage;
+            console.log(`🔧 setupLanguageSelectors: 設置 select.value = ${this.currentLanguage}`);
 
-            // 移除舊的事件監聽器（避免重複綁定）
-            const newSelector = selector.cloneNode(true);
-            selector.parentNode.replaceChild(newSelector, selector);
+            // 移除舊的事件監聽器（如果存在）
+            if (selector._i18nChangeHandler) {
+                selector.removeEventListener('change', selector._i18nChangeHandler);
+            }
 
-            // 添加事件監聽器
-            newSelector.addEventListener('change', (e) => {
+            // 添加新的事件監聽器
+            selector._i18nChangeHandler = (e) => {
+                console.log(`🔄 i18n select change event: ${e.target.value}`);
                 this.setLanguage(e.target.value);
-            });
+            };
+            selector.addEventListener('change', selector._i18nChangeHandler);
         }
 
         // 新版現代化語言選擇器

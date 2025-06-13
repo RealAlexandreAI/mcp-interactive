@@ -232,6 +232,114 @@
         },
 
         /**
+         * 創建自動提交倒計時器
+         */
+        createAutoSubmitCountdown: function(timeoutSeconds, onTick, onComplete, options) {
+            options = options || {};
+            const interval = options.interval || 1000;
+
+            let remainingTime = timeoutSeconds;
+            let timer = null;
+            let isPaused = false;
+            let isCompleted = false;
+
+            const countdownManager = {
+                start: function() {
+                    if (timer || isCompleted) return;
+
+                    timer = setInterval(function() {
+                        if (isPaused || isCompleted) return;
+
+                        remainingTime--;
+
+                        if (onTick) {
+                            onTick(remainingTime, false);
+                        }
+
+                        if (remainingTime <= 0) {
+                            isCompleted = true;
+                            clearInterval(timer);
+                            timer = null;
+
+                            if (onComplete) {
+                                onComplete();
+                            }
+                        }
+                    }, interval);
+
+                    // 立即觸發第一次 tick
+                    if (onTick) {
+                        onTick(remainingTime, false);
+                    }
+
+                    return this;
+                },
+
+                pause: function() {
+                    isPaused = true;
+                    return this;
+                },
+
+                resume: function() {
+                    isPaused = false;
+                    return this;
+                },
+
+                stop: function() {
+                    if (timer) {
+                        clearInterval(timer);
+                        timer = null;
+                    }
+                    isCompleted = true;
+                    return this;
+                },
+
+                reset: function(newTimeoutSeconds) {
+                    this.stop();
+                    remainingTime = newTimeoutSeconds || timeoutSeconds;
+                    isPaused = false;
+                    isCompleted = false;
+                    return this;
+                },
+
+                getRemainingTime: function() {
+                    return remainingTime;
+                },
+
+                isPaused: function() {
+                    return isPaused;
+                },
+
+                isCompleted: function() {
+                    return isCompleted;
+                },
+
+                isRunning: function() {
+                    return timer !== null && !isPaused && !isCompleted;
+                }
+            };
+
+            return countdownManager;
+        },
+
+        /**
+         * 格式化自動提交倒計時顯示
+         */
+        formatAutoSubmitCountdown: function(remainingSeconds) {
+            if (remainingSeconds <= 0) return '00:00';
+
+            const hours = Math.floor(remainingSeconds / 3600);
+            const minutes = Math.floor((remainingSeconds % 3600) / 60);
+            const seconds = Math.floor(remainingSeconds % 60);
+
+            if (hours > 0) {
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            } else {
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        },
+
+        /**
          * 檢查時間戳是否是今天
          */
         isToday: function(timestamp) {

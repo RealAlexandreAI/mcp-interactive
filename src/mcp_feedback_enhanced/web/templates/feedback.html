@@ -370,11 +370,6 @@
         <div class="app-info-section">
             <div class="app-title">
                 <h1 data-i18n="app.title">MCP Feedback Enhanced</h1>
-                <!-- 倒數計時器顯示 -->
-                <div id="countdownDisplay" class="countdown-display" style="display: none;">
-                    <span class="countdown-label" data-i18n="timeout.remaining">剩餘時間</span>
-                    <span id="countdownTimer" class="countdown-timer">--:--</span>
-                </div>
             </div>
             <div class="project-info">
                 <span data-i18n="app.projectDirectory">專案目錄</span>: {{ project_directory }}
@@ -560,7 +555,14 @@
                 {% include 'components/status-indicator.html' %}
 
                 <div class="input-group">
-                    <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
+                        <!-- 倒數計時器顯示 -->
+                        <div id="countdownDisplay" class="countdown-display" style="display: none;">
+                            <span class="countdown-label" data-i18n="autoSubmit.countdownLabel">提交倒數</span>
+                            <span id="countdownTimer" class="countdown-timer">--:--</span>
+                        </div>
+                    </div>
                     <textarea
                         id="feedbackText"
                         class="text-input"
@@ -655,7 +657,14 @@
                         {% include 'components/status-indicator.html' %}
 
                         <div class="input-group">
-                            <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
+                                <!-- 倒數計時器顯示 -->
+                                <div id="countdownDisplayCombined" class="countdown-display" style="display: none;">
+                                    <span class="countdown-label" data-i18n="autoSubmit.countdownLabel">提交倒數</span>
+                                    <span id="countdownTimerCombined" class="countdown-timer">--:--</span>
+                                </div>
+                            </div>
                             <textarea
                                 id="combinedFeedbackText"
                                 class="text-input"
@@ -778,6 +787,69 @@
                                     <input type="checkbox" id="settingsEnableBase64Detail" class="toggle-input">
                                     <span class="toggle-slider"></span>
                                 </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 自動定時提交設定卡片 -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title" data-i18n="autoSubmit.title">⏰ 自動定時提交</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="autoSubmit.enable">啟用自動提交</div>
+                                <div class="setting-description" data-i18n="autoSubmit.enableDesc">
+                                    啟用後將在指定時間自動提交選定的提示詞內容
+                                </div>
+                            </div>
+                            <div class="setting-control">
+                                <button type="button" id="autoSubmitToggle" class="toggle-btn" aria-label="切換自動提交">
+                                    <span class="toggle-slider"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="autoSubmit.timeout">倒數時間（秒）</div>
+                                <div class="setting-description" data-i18n="autoSubmit.timeoutDesc">
+                                    設定自動提交的倒數時間，範圍：1-86400 秒
+                                </div>
+                            </div>
+                            <div class="setting-control">
+                                <input type="number" id="autoSubmitTimeout" min="1" max="86400" value="30"
+                                       class="form-input" style="width: 120px;">
+                                <span class="input-suffix" data-i18n="autoSubmit.seconds">秒</span>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="autoSubmit.prompt">自動提交提示詞</div>
+                                <div class="setting-description" data-i18n="autoSubmit.promptDesc">
+                                    選擇要自動提交的提示詞內容
+                                </div>
+                            </div>
+                            <div class="setting-control">
+                                <select id="autoSubmitPromptSelect" class="form-select" style="width: 200px;">
+                                    <option value="" data-i18n="autoSubmit.selectPrompt">請選擇提示詞</option>
+                                    <!-- 提示詞選項將動態載入 -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="autoSubmit.status">目前狀態</div>
+                            </div>
+                            <div class="setting-control">
+                                <button type="button" id="autoSubmitStatus" class="auto-submit-status-btn" disabled>
+                                    <span>⏸️</span>
+                                    <span class="button-text" data-i18n="autoSubmit.disabled">已停用</span>
+                                </button>
                             </div>
                         </div>
                     </div>

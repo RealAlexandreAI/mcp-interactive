@@ -38,6 +38,9 @@
         this.promptSettingsUI = null;
         this.promptInputButtons = null;
 
+        // 自動提交管理器
+        this.autoSubmitManager = null;
+
         // 應用程式狀態
         this.isInitialized = false;
         this.pendingSubmission = null;
@@ -112,6 +115,9 @@
                     },
                     onLanguageChange: function(language) {
                         self.handleLanguageChange(language);
+                    },
+                    onAutoSubmitStateChange: function(enabled, settings) {
+                        self.handleAutoSubmitStateChange(enabled, settings);
                     }
                 });
 
@@ -191,14 +197,22 @@
                         // 9. 初始化提示詞管理器
                         self.initializePromptManagers();
 
-                        // 10. 應用設定到 UI
+                        // 10. 初始化自動提交管理器
+                        self.initializeAutoSubmitManager();
+
+                        // 11. 應用設定到 UI
                         self.settingsManager.applyToUI();
 
-                        // 11. 初始化各個管理器
+                        // 12. 初始化各個管理器
                         self.uiManager.initTabs();
                         self.imageHandler.init();
 
-                        // 12. 建立 WebSocket 連接
+                        // 13. 檢查並啟動自動提交（如果條件滿足）
+                        setTimeout(function() {
+                            self.checkAndStartAutoSubmit();
+                        }, 500); // 延遲 500ms 確保所有初始化完成
+
+                        // 14. 建立 WebSocket 連接
                         self.webSocketManager.connect();
 
                         resolve();
@@ -582,7 +596,11 @@
             // 重置回饋狀態為等待新回饋
             this.uiManager.setFeedbackState(window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_WAITING, newSessionId);
 
-
+            // 檢查並啟動自動提交（如果條件滿足）
+            const self = this;
+            setTimeout(function() {
+                self.checkAndStartAutoSubmit();
+            }, 200); // 延遲確保狀態更新完成
 
             // 更新頁面標題
             if (data.session_info.project_directory) {
@@ -640,6 +658,12 @@
                 if (statusInfo.status === 'waiting') {
                     const waitingMessage = window.i18nManager ? window.i18nManager.t('feedback.waitingForUser') : '等待用戶回饋...';
                     this.updateSummaryStatus(waitingMessage);
+
+                    // 檢查並啟動自動提交（如果條件滿足）
+                    const self = this;
+                    setTimeout(function() {
+                        self.checkAndStartAutoSubmit();
+                    }, 100); // 短暫延遲確保狀態更新完成
                 }
                 break;
         }
@@ -984,10 +1008,299 @@
     };
 
     /**
+     * 初始化自動提交管理器
+     */
+    FeedbackApp.prototype.initializeAutoSubmitManager = function() {
+        console.log('⏰ 初始化自動提交管理器...');
+
+        try {
+            const self = this;
+
+            // 創建自動提交管理器
+            this.autoSubmitManager = {
+                countdown: null,
+                isEnabled: false,
+                currentPromptId: null,
+
+                // 啟動自動提交
+                start: function(timeoutSeconds, promptId) {
+                    this.stop(); // 先停止現有的倒數計時
+
+                    this.isEnabled = true;
+                    this.currentPromptId = promptId;
+
+                    // 顯示倒數計時器
+                    self.showCountdownDisplay();
+
+                    // 創建倒數計時器
+                    this.countdown = window.MCPFeedback.Utils.Time.createAutoSubmitCountdown(
+                        timeoutSeconds,
+                        function(remainingTime, isCompleted) {
+                            // 更新倒數計時顯示
+                            self.updateCountdownDisplay(remainingTime);
+                        },
+                        function() {
+                            // 時間到，自動提交
+                            self.performAutoSubmit();
+                        }
+                    );
+
+                    this.countdown.start();
+                    console.log('⏰ 自動提交倒數計時已啟動:', timeoutSeconds + '秒');
+                },
+
+                // 停止自動提交
+                stop: function() {
+                    if (this.countdown) {
+                        this.countdown.stop();
+                        this.countdown = null;
+                    }
+
+                    this.isEnabled = false;
+                    this.currentPromptId = null;
+
+                    // 隱藏倒數計時器
+                    self.hideCountdownDisplay();
+
+                    console.log('⏸️ 自動提交倒數計時已停止');
+                }
+            };
+
+            console.log('✅ 自動提交管理器初始化完成');
+
+        } catch (error) {
+            console.error('❌ 自動提交管理器初始化失敗:', error);
+        }
+    };
+
+    /**
+     * 檢查並啟動自動提交（如果條件滿足）
+     */
+    FeedbackApp.prototype.checkAndStartAutoSubmit = function() {
+        console.log('🔍 檢查自動提交條件...');
+
+        if (!this.autoSubmitManager || !this.settingsManager) {
+            console.log('⚠️ 自動提交管理器或設定管理器未初始化');
+            return;
+        }
+
+        // 檢查自動提交是否已啟用
+        const autoSubmitEnabled = this.settingsManager.get('autoSubmitEnabled');
+        const autoSubmitPromptId = this.settingsManager.get('autoSubmitPromptId');
+        const autoSubmitTimeout = this.settingsManager.get('autoSubmitTimeout');
+
+        console.log('🔍 自動提交設定檢查:', {
+            enabled: autoSubmitEnabled,
+            promptId: autoSubmitPromptId,
+            timeout: autoSubmitTimeout
+        });
+
+        // 檢查當前狀態是否為等待回饋
+        const currentState = this.uiManager ? this.uiManager.getFeedbackState() : null;
+        const isWaitingForFeedback = currentState === window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_WAITING;
+
+        console.log('🔍 當前回饋狀態:', currentState, '是否等待回饋:', isWaitingForFeedback);
+
+        // 如果所有條件都滿足，啟動自動提交
+        if (autoSubmitEnabled && autoSubmitPromptId && autoSubmitTimeout && isWaitingForFeedback) {
+            console.log('✅ 自動提交條件滿足，啟動倒數計時器');
+            this.autoSubmitManager.start(autoSubmitTimeout, autoSubmitPromptId);
+            this.updateAutoSubmitStatus('enabled', autoSubmitTimeout);
+        } else {
+            console.log('❌ 自動提交條件不滿足，停止倒數計時器');
+            this.autoSubmitManager.stop();
+            this.updateAutoSubmitStatus('disabled');
+        }
+    };
+
+    /**
+     * 處理自動提交狀態變更
+     */
+    FeedbackApp.prototype.handleAutoSubmitStateChange = function(enabled, settings) {
+        console.log('⏰ 處理自動提交狀態變更:', enabled, settings);
+
+        if (!this.autoSubmitManager) {
+            console.warn('⚠️ 自動提交管理器未初始化');
+            return;
+        }
+
+        if (enabled && settings.promptId && settings.timeout) {
+            // 檢查當前狀態是否適合啟動自動提交
+            const currentState = this.uiManager ? this.uiManager.getFeedbackState() : null;
+            const isWaitingForFeedback = currentState === window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_WAITING;
+
+            if (isWaitingForFeedback) {
+                // 啟動自動提交
+                this.autoSubmitManager.start(settings.timeout, settings.promptId);
+                this.updateAutoSubmitStatus('enabled', settings.timeout);
+                console.log('⏰ 自動提交已啟動（設定變更觸發）');
+            } else {
+                // 只更新狀態顯示，不啟動倒數計時器
+                this.updateAutoSubmitStatus('enabled', settings.timeout);
+                console.log('⏰ 自動提交設定已啟用，等待適當時機啟動');
+            }
+        } else {
+            // 停止自動提交
+            this.autoSubmitManager.stop();
+            this.updateAutoSubmitStatus('disabled');
+            console.log('⏸️ 自動提交已停用（設定變更觸發）');
+        }
+    };
+
+    /**
+     * 執行自動提交
+     */
+    FeedbackApp.prototype.performAutoSubmit = function() {
+        console.log('⏰ 執行自動提交...');
+
+        if (!this.autoSubmitManager || !this.promptManager) {
+            console.error('❌ 自動提交管理器或提示詞管理器未初始化');
+            return;
+        }
+
+        const promptId = this.autoSubmitManager.currentPromptId;
+        const prompt = this.promptManager.getPromptById(promptId);
+
+        if (!prompt) {
+            console.error('❌ 找不到自動提交提示詞:', promptId);
+            window.MCPFeedback.Utils.showMessage('自動提交失敗：找不到指定的提示詞', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_ERROR);
+            return;
+        }
+
+        // 設定提示詞內容到回饋輸入框
+        const feedbackInputs = [
+            window.MCPFeedback.Utils.safeQuerySelector('#feedbackText'),
+            window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText')
+        ].filter(function(input) { return input !== null; });
+
+        feedbackInputs.forEach(function(input) {
+            input.value = prompt.content;
+        });
+
+        // 顯示自動提交訊息
+        const message = window.i18nManager ?
+            window.i18nManager.t('autoSubmit.executing', '正在執行自動提交...') :
+            '正在執行自動提交...';
+        window.MCPFeedback.Utils.showMessage(message, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_INFO);
+
+        // 執行提交
+        this.submitFeedback();
+
+        // 更新提示詞使用記錄
+        this.promptManager.usePrompt(promptId);
+
+        // 停止自動提交
+        this.autoSubmitManager.stop();
+    };
+
+    /**
+     * 顯示倒數計時器
+     */
+    FeedbackApp.prototype.showCountdownDisplay = function() {
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        const countdownDisplayCombined = document.getElementById('countdownDisplayCombined');
+
+        if (countdownDisplay) {
+            countdownDisplay.style.display = 'flex';
+        }
+        if (countdownDisplayCombined) {
+            countdownDisplayCombined.style.display = 'flex';
+        }
+    };
+
+    /**
+     * 隱藏倒數計時器
+     */
+    FeedbackApp.prototype.hideCountdownDisplay = function() {
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        const countdownDisplayCombined = document.getElementById('countdownDisplayCombined');
+
+        if (countdownDisplay) {
+            countdownDisplay.style.display = 'none';
+        }
+        if (countdownDisplayCombined) {
+            countdownDisplayCombined.style.display = 'none';
+        }
+    };
+
+    /**
+     * 更新倒數計時顯示
+     */
+    FeedbackApp.prototype.updateCountdownDisplay = function(remainingSeconds) {
+        const countdownTimer = document.getElementById('countdownTimer');
+        const countdownTimerCombined = document.getElementById('countdownTimerCombined');
+
+        const formattedTime = window.MCPFeedback.Utils.Time.formatAutoSubmitCountdown(remainingSeconds);
+
+        // 更新主要倒數計時器
+        if (countdownTimer) {
+            countdownTimer.textContent = formattedTime;
+
+            // 根據剩餘時間調整樣式
+            countdownTimer.className = 'countdown-timer';
+            if (remainingSeconds <= 10) {
+                countdownTimer.classList.add('danger');
+            } else if (remainingSeconds <= 30) {
+                countdownTimer.classList.add('warning');
+            }
+        }
+
+        // 更新工作區倒數計時器
+        if (countdownTimerCombined) {
+            countdownTimerCombined.textContent = formattedTime;
+
+            // 根據剩餘時間調整樣式
+            countdownTimerCombined.className = 'countdown-timer';
+            if (remainingSeconds <= 10) {
+                countdownTimerCombined.classList.add('danger');
+            } else if (remainingSeconds <= 30) {
+                countdownTimerCombined.classList.add('warning');
+            }
+        }
+    };
+
+    /**
+     * 更新自動提交狀態顯示
+     */
+    FeedbackApp.prototype.updateAutoSubmitStatus = function(status, timeout) {
+        const statusElement = document.getElementById('autoSubmitStatus');
+        if (!statusElement) return;
+
+        const statusIcon = statusElement.querySelector('span:first-child');
+        const statusText = statusElement.querySelector('.button-text');
+
+        if (status === 'enabled') {
+            // 直接設定 HTML 內容，就像提示詞按鈕一樣
+            if (statusIcon) statusIcon.innerHTML = '⏰';
+            if (statusText) {
+                const enabledText = window.i18nManager ?
+                    window.i18nManager.t('autoSubmit.enabled', '已啟用') :
+                    '已啟用';
+                statusText.textContent = `${enabledText} (${timeout}秒)`;
+            }
+            statusElement.className = 'auto-submit-status-btn enabled';
+        } else {
+            // 直接設定 HTML 內容，就像提示詞按鈕一樣
+            if (statusIcon) statusIcon.innerHTML = '⏸️';
+            if (statusText) {
+                const disabledText = window.i18nManager ?
+                    window.i18nManager.t('autoSubmit.disabled', '已停用') :
+                    '已停用';
+                statusText.textContent = disabledText;
+            }
+            statusElement.className = 'auto-submit-status-btn disabled';
+        }
+    };
+
+    /**
      * 清理資源
      */
     FeedbackApp.prototype.cleanup = function() {
         console.log('🧹 清理應用程式資源...');
+
+        if (this.autoSubmitManager) {
+            this.autoSubmitManager.stop();
+        }
 
         if (this.tabManager) {
             this.tabManager.cleanup();

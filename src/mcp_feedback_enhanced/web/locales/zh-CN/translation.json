@@ -272,6 +272,11 @@
             "emptyHint": "点击上方「新增提示词」按钮开始建立您的第一个提示词模板",
             "created": "建立于",
             "lastUsed": "最近使用",
+            "autoSubmit": "自动提交",
+            "setAutoSubmit": "设定为自动提交",
+            "cancelAutoSubmit": "取消自动提交",
+            "autoSubmitSet": "已设定为自动提交提示词：",
+            "autoSubmitCancelled": "已取消自动提交设定",
             "notFound": "找不到指定的提示词",
             "addSuccess": "提示词已新增",
             "updateSuccess": "提示词已更新",
@@ -335,5 +340,21 @@
         },
         "sizeLimitExceeded": "图片 {filename} 大小为 {size}，超过 {limit} 限制！",
         "sizeLimitExceededAdvice": "建议使用图片编辑软件压缩后再上传，或调整图片大小限制设置。"
+    },
+    "autoSubmit": {
+        "title": "自动定时提交",
+        "enable": "启用自动提交",
+        "enableDesc": "启用后将在指定时间自动提交选定的提示词内容",
+        "timeout": "倒数时间（秒）",
+        "timeoutDesc": "设定自动提交的倒数时间，范围：1-86400 秒",
+        "seconds": "秒",
+        "prompt": "自动提交提示词",
+        "promptDesc": "选择要自动提交的提示词内容",
+        "selectPrompt": "请选择提示词",
+        "status": "当前状态",
+        "enabled": "已启用",
+        "disabled": "已停用",
+        "executing": "正在执行自动提交...",
+        "countdownLabel": "提交倒数"
     }
 }

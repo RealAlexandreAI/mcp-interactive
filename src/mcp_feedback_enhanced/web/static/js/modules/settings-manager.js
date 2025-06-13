@@ -26,7 +26,11 @@
             imageSizeLimit: 0,
             enableBase64Detail: false,
             activeTab: 'combined',
-            sessionPanelCollapsed: false
+            sessionPanelCollapsed: false,
+            // 自動定時提交設定
+            autoSubmitEnabled: false,
+            autoSubmitTimeout: 30,
+            autoSubmitPromptId: null
         };
         
         // 當前設定
@@ -35,6 +39,7 @@
         // 回調函數
         this.onSettingsChange = options.onSettingsChange || null;
         this.onLanguageChange = options.onLanguageChange || null;
+        this.onAutoSubmitStateChange = options.onAutoSubmitStateChange || null;
     }
 
     /**
@@ -273,19 +278,96 @@
      */
     SettingsManager.prototype.resetSettings = function() {
         console.log('重置所有設定');
-        
+
         // 清除 localStorage
         if (Utils.isLocalStorageSupported()) {
             localStorage.removeItem('mcp-feedback-settings');
         }
-        
+
         // 重置為預設值
         this.currentSettings = Utils.deepClone(this.defaultSettings);
-        
+
         // 保存重置後的設定
         this.saveSettings();
-        
+
         return this.currentSettings;
+    };
+
+    /**
+     * 驗證自動提交設定
+     */
+    SettingsManager.prototype.validateAutoSubmitSettings = function(settings) {
+        const errors = [];
+
+        // 驗證超時時間
+        if (settings.autoSubmitTimeout !== undefined) {
+            const timeout = parseInt(settings.autoSubmitTimeout);
+            if (isNaN(timeout) || timeout < 1) {
+                errors.push('自動提交時間必須大於等於 1 秒');
+            } else if (timeout > 86400) { // 24 小時
+                errors.push('自動提交時間不能超過 24 小時');
+            }
+        }
+
+        // 驗證提示詞 ID
+        if (settings.autoSubmitEnabled && !settings.autoSubmitPromptId) {
+            errors.push('啟用自動提交時必須選擇一個提示詞');
+        }
+
+        return errors;
+    };
+
+    /**
+     * 設定自動提交功能
+     */
+    SettingsManager.prototype.setAutoSubmitSettings = function(enabled, timeout, promptId) {
+        const newSettings = {
+            autoSubmitEnabled: Boolean(enabled),
+            autoSubmitTimeout: parseInt(timeout) || 30,
+            autoSubmitPromptId: promptId || null
+        };
+
+        // 驗證設定
+        const errors = this.validateAutoSubmitSettings(newSettings);
+        if (errors.length > 0) {
+            throw new Error(errors.join('; '));
+        }
+
+        // 如果停用自動提交，清除提示詞 ID
+        if (!newSettings.autoSubmitEnabled) {
+            newSettings.autoSubmitPromptId = null;
+        }
+
+        // 更新設定
+        this.set('autoSubmitEnabled', newSettings.autoSubmitEnabled);
+        this.set('autoSubmitTimeout', newSettings.autoSubmitTimeout);
+        this.set('autoSubmitPromptId', newSettings.autoSubmitPromptId);
+
+        console.log('自動提交設定已更新:', newSettings);
+        return newSettings;
+    };
+
+    /**
+     * 獲取自動提交設定
+     */
+    SettingsManager.prototype.getAutoSubmitSettings = function() {
+        return {
+            enabled: this.get('autoSubmitEnabled'),
+            timeout: this.get('autoSubmitTimeout'),
+            promptId: this.get('autoSubmitPromptId')
+        };
+    };
+
+    /**
+     * 觸發自動提交狀態變更事件
+     */
+    SettingsManager.prototype.triggerAutoSubmitStateChange = function(enabled) {
+        if (this.onAutoSubmitStateChange) {
+            const settings = this.getAutoSubmitSettings();
+            this.onAutoSubmitStateChange(enabled, settings);
+        }
+
+        console.log('自動提交狀態變更:', enabled ? '啟用' : '停用');
     };
 
     /**
@@ -312,6 +394,9 @@
         
         // 應用圖片設定
         this.applyImageSettings();
+
+        // 應用自動提交設定
+        this.applyAutoSubmitSettingsToUI();
     };
 
     /**
@@ -387,6 +472,71 @@
         });
     };
 
+    /**
+     * 應用自動提交設定到 UI
+     */
+    SettingsManager.prototype.applyAutoSubmitSettingsToUI = function() {
+        // 更新自動提交啟用開關
+        const autoSubmitToggle = Utils.safeQuerySelector('#autoSubmitToggle');
+        if (autoSubmitToggle) {
+            autoSubmitToggle.classList.toggle('active', this.currentSettings.autoSubmitEnabled);
+        }
+
+        // 更新自動提交超時時間輸入框
+        const autoSubmitTimeoutInput = Utils.safeQuerySelector('#autoSubmitTimeout');
+        if (autoSubmitTimeoutInput) {
+            autoSubmitTimeoutInput.value = this.currentSettings.autoSubmitTimeout;
+        }
+
+        // 更新自動提交提示詞選擇下拉選單
+        const autoSubmitPromptSelect = Utils.safeQuerySelector('#autoSubmitPromptSelect');
+        if (autoSubmitPromptSelect) {
+            autoSubmitPromptSelect.value = this.currentSettings.autoSubmitPromptId || '';
+        }
+
+        // 更新自動提交狀態顯示
+        this.updateAutoSubmitStatusDisplay();
+
+        console.log('自動提交設定已應用到 UI:', {
+            enabled: this.currentSettings.autoSubmitEnabled,
+            timeout: this.currentSettings.autoSubmitTimeout,
+            promptId: this.currentSettings.autoSubmitPromptId
+        });
+    };
+
+    /**
+     * 更新自動提交狀態顯示
+     */
+    SettingsManager.prototype.updateAutoSubmitStatusDisplay = function() {
+        const statusElement = Utils.safeQuerySelector('#autoSubmitStatus');
+        if (!statusElement) return;
+
+        const statusIcon = statusElement.querySelector('span:first-child');
+        const statusText = statusElement.querySelector('.button-text');
+
+        if (this.currentSettings.autoSubmitEnabled && this.currentSettings.autoSubmitPromptId) {
+            // 直接設定 HTML 內容，就像提示詞按鈕一樣
+            if (statusIcon) statusIcon.innerHTML = '⏰';
+            if (statusText) {
+                const enabledText = window.i18nManager ?
+                    window.i18nManager.t('autoSubmit.enabled', '已啟用') :
+                    '已啟用';
+                statusText.textContent = `${enabledText} (${this.currentSettings.autoSubmitTimeout}秒)`;
+            }
+            statusElement.className = 'auto-submit-status-btn enabled';
+        } else {
+            // 直接設定 HTML 內容，就像提示詞按鈕一樣
+            if (statusIcon) statusIcon.innerHTML = '⏸️';
+            if (statusText) {
+                const disabledText = window.i18nManager ?
+                    window.i18nManager.t('autoSubmit.disabled', '已停用') :
+                    '已停用';
+                statusText.textContent = disabledText;
+            }
+            statusElement.className = 'auto-submit-status-btn disabled';
+        }
+    };
+
 
 
     /**
@@ -448,6 +598,83 @@
                 const value = e.target.checked;
                 self.set('enableBase64Detail', value);
                 console.log('Base64 相容模式已更新:', value);
+            });
+        }
+
+        // 自動提交功能啟用開關
+        const autoSubmitToggle = Utils.safeQuerySelector('#autoSubmitToggle');
+        if (autoSubmitToggle) {
+            autoSubmitToggle.addEventListener('click', function() {
+                const newValue = !self.get('autoSubmitEnabled');
+                const currentPromptId = self.get('autoSubmitPromptId');
+
+                console.log('自動提交開關點擊:', {
+                    newValue: newValue,
+                    currentPromptId: currentPromptId
+                });
+
+                try {
+                    // 如果要啟用自動提交，檢查是否已選擇提示詞
+                    if (newValue && (!currentPromptId || currentPromptId === '')) {
+                        Utils.showMessage('請先選擇一個提示詞作為自動提交內容', Utils.CONSTANTS.MESSAGE_WARNING);
+                        return;
+                    }
+
+                    self.set('autoSubmitEnabled', newValue);
+                    autoSubmitToggle.classList.toggle('active', newValue);
+
+                    console.log('自動提交狀態已更新:', newValue);
+
+                    // 觸發自動提交狀態變更事件
+                    self.triggerAutoSubmitStateChange(newValue);
+                } catch (error) {
+                    Utils.showMessage(error.message, Utils.CONSTANTS.MESSAGE_ERROR);
+                }
+            });
+        }
+
+        // 自動提交超時時間設定
+        const autoSubmitTimeoutInput = Utils.safeQuerySelector('#autoSubmitTimeout');
+        if (autoSubmitTimeoutInput) {
+            autoSubmitTimeoutInput.addEventListener('change', function(e) {
+                const timeout = parseInt(e.target.value);
+                try {
+                    self.setAutoSubmitSettings(
+                        self.get('autoSubmitEnabled'),
+                        timeout,
+                        self.get('autoSubmitPromptId')
+                    );
+                } catch (error) {
+                    Utils.showMessage(error.message, Utils.CONSTANTS.MESSAGE_ERROR);
+                    // 恢復原值
+                    e.target.value = self.get('autoSubmitTimeout');
+                }
+            });
+        }
+
+        // 自動提交提示詞選擇
+        const autoSubmitPromptSelect = Utils.safeQuerySelector('#autoSubmitPromptSelect');
+        if (autoSubmitPromptSelect) {
+            autoSubmitPromptSelect.addEventListener('change', function(e) {
+                const promptId = e.target.value || null;
+                console.log('自動提交提示詞選擇變更:', promptId);
+
+                try {
+                    // 如果選擇了空值，清除自動提交設定
+                    if (!promptId || promptId === '') {
+                        self.set('autoSubmitPromptId', null);
+                        self.set('autoSubmitEnabled', false);
+                        console.log('清除自動提交設定');
+                    } else {
+                        // 設定新的自動提交提示詞
+                        self.set('autoSubmitPromptId', promptId);
+                        console.log('設定自動提交提示詞 ID:', promptId);
+                    }
+                } catch (error) {
+                    Utils.showMessage(error.message, Utils.CONSTANTS.MESSAGE_ERROR);
+                    // 恢復原值
+                    e.target.value = self.get('autoSubmitPromptId') || '';
+                }
             });
         }
 

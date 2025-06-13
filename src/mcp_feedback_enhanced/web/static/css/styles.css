@@ -423,6 +423,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 4px 8px;
+    flex-shrink: 0;
 }
 
 .countdown-label {
@@ -1370,5 +1371,209 @@ textarea:-ms-input-placeholder,
     font-family: inherit !important;
     color: var(--text-secondary) !important;
     opacity: 0.7 !important;
+}
+
+/* ===== 自動提交功能樣式 ===== */
+
+/* 自動提交狀態按鈕 */
+.auto-submit-status-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    cursor: default;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    min-width: fit-content;
+}
+
+.auto-submit-status-btn.enabled {
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+.auto-submit-status-btn.disabled {
+    background: rgba(158, 158, 158, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.auto-submit-status-btn span:first-child {
+    font-size: 14px;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", "EmojiSymbols", sans-serif;
+    line-height: 1;
+    display: inline-block;
+    vertical-align: middle;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.auto-submit-status-btn .button-text {
+    font-size: 12px;
+}
+
+/* 自動提交設定控制項 */
+.setting-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-input {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    padding: 8px 12px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.form-select {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.form-select:hover {
+    border-color: var(--accent-color);
+}
+
+.input-suffix {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-left: 4px;
+}
+
+/* 自動提交切換按鈕 */
+.toggle-btn {
+    position: relative;
+    width: 50px;
+    height: 24px;
+    background: var(--border-color);
+    border: none;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.toggle-btn.active {
+    background: var(--accent-color);
+}
+
+.toggle-btn .toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-btn.active .toggle-slider {
+    transform: translateX(26px);
+}
+
+.toggle-btn:hover {
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.toggle-btn:focus {
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.4);
+}
+
+/* 自動提交提示詞樣式 */
+.auto-submit-prompt {
+    border-left: 4px solid var(--accent-color) !important;
+    background: rgba(0, 122, 204, 0.05) !important;
+}
+
+.auto-submit-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+.auto-submit-status {
+    color: var(--accent-color);
+    font-weight: 500;
+    font-size: 12px;
+}
+
+/* 提示詞操作按鈕樣式 */
+.prompt-action-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    margin-left: 4px;
+}
+
+.prompt-action-btn:hover {
+    border-color: var(--accent-color);
+    background: rgba(0, 122, 204, 0.1);
+}
+
+.prompt-action-btn.auto-submit-btn {
+    font-size: 14px;
+    padding: 4px 8px;
+}
+
+.prompt-action-btn.auto-submit-btn.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+}
+
+.prompt-action-btn.edit-btn:hover {
+    border-color: var(--warning-color);
+    background: rgba(255, 152, 0, 0.1);
+    color: var(--warning-color);
+}
+
+.prompt-action-btn.delete-btn:hover {
+    border-color: var(--error-color);
+    background: rgba(244, 67, 54, 0.1);
+    color: var(--error-color);
 }
 

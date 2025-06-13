@@ -272,6 +272,11 @@
             "emptyHint": "Click the 'Add New Prompt' button above to create your first prompt template",
             "created": "Created",
             "lastUsed": "Last Used",
+            "autoSubmit": "Auto Submit",
+            "setAutoSubmit": "Set as Auto Submit",
+            "cancelAutoSubmit": "Cancel Auto Submit",
+            "autoSubmitSet": "Set as auto submit prompt: ",
+            "autoSubmitCancelled": "Auto submit setting cancelled",
             "notFound": "Prompt not found",
             "addSuccess": "Prompt added successfully",
             "updateSuccess": "Prompt updated successfully",
@@ -335,5 +340,21 @@
         },
         "sizeLimitExceeded": "Image {filename} size is {size}, exceeds {limit} limit!",
         "sizeLimitExceededAdvice": "Consider compressing the image with editing software before uploading, or adjust the image size limit settings."
+    },
+    "autoSubmit": {
+        "title": "Auto Timed Submit",
+        "enable": "Enable Auto Submit",
+        "enableDesc": "When enabled, automatically submit selected prompt content after specified time",
+        "timeout": "Countdown Time (seconds)",
+        "timeoutDesc": "Set countdown time for auto submit, range: 1-86400 seconds",
+        "seconds": "seconds",
+        "prompt": "Auto Submit Prompt",
+        "promptDesc": "Select prompt content for auto submission",
+        "selectPrompt": "Please select a prompt",
+        "status": "Current Status",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "executing": "Executing auto submit...",
+        "countdownLabel": "Submit Countdown"
     }
 }

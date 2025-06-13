@@ -179,7 +179,8 @@
             name: name.trim(),
             content: content.trim(),
             createdAt: new Date().toISOString(),
-            lastUsedAt: null
+            lastUsedAt: null,
+            isAutoSubmit: false  // 新增：自動提交標記
         };
 
         this.currentPromptSettings.prompts.push(prompt);
@@ -302,12 +303,16 @@
     };
 
     /**
-     * 獲取按使用時間排序的提示詞列表
+     * 獲取按使用時間排序的提示詞列表（自動提交提示詞排在最前面）
      */
     PromptManager.prototype.getPromptsSortedByUsage = function() {
         const prompts = [...this.currentPromptSettings.prompts];
         return prompts.sort((a, b) => {
-            // 最近使用的排在前面
+            // 自動提交提示詞優先排序
+            if (a.isAutoSubmit && !b.isAutoSubmit) return -1;
+            if (!a.isAutoSubmit && b.isAutoSubmit) return 1;
+
+            // 其次按最近使用時間排序
             if (!a.lastUsedAt && !b.lastUsedAt) {
                 return new Date(b.createdAt) - new Date(a.createdAt);
             }
@@ -315,6 +320,54 @@
             if (!b.lastUsedAt) return -1;
             return new Date(b.lastUsedAt) - new Date(a.lastUsedAt);
         });
+    };
+
+    /**
+     * 設定提示詞為自動提交
+     */
+    PromptManager.prototype.setAutoSubmitPrompt = function(id) {
+        // 先清除所有提示詞的自動提交標記
+        this.currentPromptSettings.prompts.forEach(prompt => {
+            prompt.isAutoSubmit = false;
+        });
+
+        // 設定指定提示詞為自動提交
+        const prompt = this.getPromptById(id);
+        if (!prompt) {
+            throw new Error('找不到指定的提示詞');
+        }
+
+        prompt.isAutoSubmit = true;
+        this.saveToSettings();
+
+        // 觸發回調
+        this.triggerPromptsChangeCallbacks();
+
+        console.log('✅ 設定自動提交提示詞:', prompt.name);
+        return prompt;
+    };
+
+    /**
+     * 清除自動提交提示詞
+     */
+    PromptManager.prototype.clearAutoSubmitPrompt = function() {
+        this.currentPromptSettings.prompts.forEach(prompt => {
+            prompt.isAutoSubmit = false;
+        });
+
+        this.saveToSettings();
+
+        // 觸發回調
+        this.triggerPromptsChangeCallbacks();
+
+        console.log('🔄 已清除自動提交提示詞');
+    };
+
+    /**
+     * 獲取自動提交提示詞
+     */
+    PromptManager.prototype.getAutoSubmitPrompt = function() {
+        return this.currentPromptSettings.prompts.find(prompt => prompt.isAutoSubmit) || null;
     };
 
     /**

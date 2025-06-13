@@ -141,6 +141,9 @@
 
         // 更新翻譯
         this.updateTranslations();
+
+        // 更新自動提交下拉選單
+        this.updateAutoSubmitSelect();
     };
 
     /**
@@ -167,18 +170,29 @@
         const createdDate = this.formatDate(prompt.createdAt);
         const lastUsedDate = prompt.lastUsedAt ? this.formatDate(prompt.lastUsedAt) : null;
         const truncatedContent = this.truncateText(prompt.content, 80);
+        const isAutoSubmit = prompt.isAutoSubmit || false;
 
         return `
-            <div class="prompt-settings-item" data-prompt-id="${prompt.id}">
+            <div class="prompt-settings-item ${isAutoSubmit ? 'auto-submit-prompt' : ''}" data-prompt-id="${prompt.id}">
                 <div class="prompt-settings-info">
-                    <div class="prompt-settings-name">${Utils.escapeHtml(prompt.name)}</div>
+                    <div class="prompt-settings-name">
+                        ${isAutoSubmit ? '<span class="auto-submit-badge" title="自動提交提示詞">⏰</span>' : ''}
+                        ${Utils.escapeHtml(prompt.name)}
+                    </div>
                     <div class="prompt-settings-content">${Utils.escapeHtml(truncatedContent)}</div>
                     <div class="prompt-settings-meta">
                         <span data-i18n="prompts.management.created">建立於</span>: ${createdDate}
                         ${lastUsedDate ? `| <span data-i18n="prompts.management.lastUsed">最近使用</span>: ${lastUsedDate}` : ''}
+                        ${isAutoSubmit ? `| <span class="auto-submit-status" data-i18n="prompts.management.autoSubmit">自動提交</span>` : ''}
                     </div>
                 </div>
                 <div class="prompt-settings-actions">
+                    <button type="button" class="prompt-action-btn auto-submit-btn ${isAutoSubmit ? 'active' : ''}"
+                            data-prompt-id="${prompt.id}"
+                            title="${isAutoSubmit ? '取消自動提交' : '設定為自動提交'}"
+                            data-i18n="${isAutoSubmit ? 'prompts.management.cancelAutoSubmit' : 'prompts.management.setAutoSubmit'}">
+                        ${isAutoSubmit ? '⏸️' : '⏰'}
+                    </button>
                     <button type="button" class="prompt-action-btn edit-btn" data-prompt-id="${prompt.id}" data-i18n="prompts.management.edit">
                         編輯
                     </button>
@@ -213,6 +227,16 @@
                 e.stopPropagation();
                 const promptId = button.getAttribute('data-prompt-id');
                 self.handleDeletePrompt(promptId);
+            });
+        });
+
+        // 自動提交按鈕事件
+        const autoSubmitButtons = this.promptList.querySelectorAll('.auto-submit-btn');
+        autoSubmitButtons.forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const promptId = button.getAttribute('data-prompt-id');
+                self.handleToggleAutoSubmit(promptId);
             });
         });
     };
@@ -276,6 +300,84 @@
     };
 
     /**
+     * 處理自動提交切換
+     */
+    PromptSettingsUI.prototype.handleToggleAutoSubmit = function(promptId) {
+        if (!this.promptManager) {
+            console.error('❌ PromptManager 未設定');
+            return;
+        }
+
+        const prompt = this.promptManager.getPromptById(promptId);
+        if (!prompt) {
+            this.showError(this.t('prompts.management.notFound', '找不到指定的提示詞'));
+            return;
+        }
+
+        try {
+            if (prompt.isAutoSubmit) {
+                // 取消自動提交
+                this.promptManager.clearAutoSubmitPrompt();
+                this.showSuccess(this.t('prompts.management.autoSubmitCancelled', '已取消自動提交設定'));
+
+                // 更新設定管理器中的自動提交提示詞 ID
+                if (window.MCPFeedback && window.MCPFeedback.settingsManager) {
+                    window.MCPFeedback.settingsManager.set('autoSubmitPromptId', null);
+                }
+            } else {
+                // 設定為自動提交
+                this.promptManager.setAutoSubmitPrompt(promptId);
+                this.showSuccess(this.t('prompts.management.autoSubmitSet', '已設定為自動提交提示詞：') + prompt.name);
+
+                // 更新設定管理器中的自動提交提示詞 ID
+                if (window.MCPFeedback && window.MCPFeedback.settingsManager) {
+                    window.MCPFeedback.settingsManager.set('autoSubmitPromptId', promptId);
+                }
+            }
+
+            // 更新自動提交下拉選單
+            this.updateAutoSubmitSelect();
+        } catch (error) {
+            this.showError(error.message);
+        }
+    };
+
+    /**
+     * 更新自動提交下拉選單
+     */
+    PromptSettingsUI.prototype.updateAutoSubmitSelect = function() {
+        const autoSubmitSelect = document.getElementById('autoSubmitPromptSelect');
+        if (!autoSubmitSelect || !this.promptManager) {
+            return;
+        }
+
+        // 清空現有選項（保留第一個預設選項）
+        while (autoSubmitSelect.children.length > 1) {
+            autoSubmitSelect.removeChild(autoSubmitSelect.lastChild);
+        }
+
+        // 新增所有提示詞選項
+        const prompts = this.promptManager.getAllPrompts();
+        let autoSubmitPromptId = null;
+
+        prompts.forEach(function(prompt) {
+            const option = document.createElement('option');
+            option.value = prompt.id;
+            option.textContent = prompt.name;
+            if (prompt.isAutoSubmit) {
+                option.selected = true;
+                autoSubmitPromptId = prompt.id;
+            }
+            autoSubmitSelect.appendChild(option);
+        });
+
+        // 同步更新設定管理器中的自動提交提示詞 ID
+        if (autoSubmitPromptId && window.MCPFeedback && window.MCPFeedback.settingsManager) {
+            window.MCPFeedback.settingsManager.set('autoSubmitPromptId', autoSubmitPromptId);
+        }
+    };
+
+    /**
      * 處理提示詞保存
      */
     PromptSettingsUI.prototype.handlePromptSave = function(promptData, type) {
@@ -292,6 +394,9 @@
                 this.promptManager.updatePrompt(promptData.id, promptData.name, promptData.content);
                 this.showSuccess(this.t('prompts.management.updateSuccess', '提示詞已更新'));
             }
+
+            // 更新自動提交下拉選單
+            this.updateAutoSubmitSelect();
         } catch (error) {
             throw error; // 重新拋出錯誤，讓彈窗處理
         }

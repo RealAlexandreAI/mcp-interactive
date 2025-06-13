@@ -61,14 +61,12 @@
     SessionDetailsModal.prototype.formatSessionDetails = function(sessionData) {
         console.log('🔍 格式化會話詳情:', sessionData);
 
-        // 處理會話 ID
-        const sessionId = this.showFullSessionId ? 
-            (sessionData.session_id || '未知') : 
-            (sessionData.session_id || '未知').substring(0, 16) + '...';
+        // 處理會話 ID - 顯示完整 session ID
+        const sessionId = sessionData.session_id || '未知';
 
         // 處理建立時間
-        const createdTime = sessionData.created_at ? 
-            TimeUtils.formatTimestamp(sessionData.created_at) : 
+        const createdTime = sessionData.created_at ?
+            TimeUtils.formatTimestamp(sessionData.created_at) :
             '未知';
 
         // 處理持續時間

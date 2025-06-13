@@ -169,11 +169,10 @@
 
         console.log('🎨 更新會話狀態列:', sessionData);
 
-        // 更新當前會話 ID
+        // 更新當前會話 ID - 顯示完整 session ID
         const currentSessionElement = document.getElementById('currentSessionId');
         if (currentSessionElement && sessionData.session_id) {
-            const shortId = sessionData.session_id.substring(0, 8) + '...';
-            DOMUtils.safeSetTextContent(currentSessionElement, shortId);
+            DOMUtils.safeSetTextContent(currentSessionElement, sessionData.session_id);
         }
 
         // 立即更新活躍時間（定時器會持續更新）

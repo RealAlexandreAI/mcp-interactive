@@ -320,6 +320,7 @@
         "settings": {
             "title": "图片设置",
             "sizeLimit": "图片大小限制",
+            "sizeLimitDesc": "设定上传图片的最大文件大小限制",
             "sizeLimitOptions": {
                 "unlimited": "无限制",
                 "1mb": "1MB",

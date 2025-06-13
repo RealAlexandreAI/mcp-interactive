@@ -320,6 +320,7 @@
         "settings": {
             "title": "Image Settings",
             "sizeLimit": "Image Size Limit",
+            "sizeLimitDesc": "Set the maximum file size limit for uploaded images",
             "sizeLimitOptions": {
                 "unlimited": "Unlimited",
                 "1mb": "1MB",

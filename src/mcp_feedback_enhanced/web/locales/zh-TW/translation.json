@@ -325,6 +325,7 @@
         "settings": {
             "title": "圖片設定",
             "sizeLimit": "圖片大小限制",
+            "sizeLimitDesc": "設定上傳圖片的最大檔案大小限制",
             "sizeLimitOptions": {
                 "unlimited": "無限制",
                 "1mb": "1MB",

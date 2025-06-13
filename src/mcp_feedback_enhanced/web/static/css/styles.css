@@ -554,6 +554,100 @@ body {
     line-height: 1.4;
 }
 
+.settings-card .setting-warning {
+    font-size: 12px;
+    color: var(--warning-color);
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* 圖片大小限制選擇器樣式 */
+.image-size-limit-selector {
+    display: flex;
+    align-items: center;
+}
+
+.image-size-limit-select {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 120px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.image-size-limit-select:hover {
+    border-color: var(--accent-color);
+    background: var(--bg-tertiary);
+}
+
+.image-size-limit-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+/* Base64 切換器容器樣式 */
+.base64-toggle-container {
+    display: flex;
+    align-items: center;
+}
+
+/* 現代化切換開關樣式 */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.toggle-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--border-color);
+    border-radius: 24px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.toggle-slider:before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-input:checked + .toggle-slider {
+    background: var(--accent-color);
+}
+
+.toggle-input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.toggle-switch:hover .toggle-slider {
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
 /* 佈局模式選擇器 */
 .layout-mode-selector {
     display: flex;
@@ -1102,106 +1196,9 @@ body {
     transform: scale(1.1);
 }
 
-/* 圖片設定區域樣式 */
-.image-settings-details {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    margin-bottom: 8px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
 
-.image-settings-details:hover {
-    border-color: rgba(0, 122, 204, 0.5);
-    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.1);
-}
 
-.image-settings-summary {
-    padding: 8px 12px;
-    background: var(--bg-secondary);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-primary);
-    border: none;
-    outline: none;
-    transition: all 0.3s ease;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-    user-select: none;
-}
 
-.image-settings-summary:hover {
-    background: var(--surface-color);
-    color: var(--accent-color);
-}
-
-.image-settings-summary::-webkit-details-marker {
-    display: none;
-}
-
-/* 箭頭指示器 */
-.image-settings-summary::after {
-    content: '▼';
-    font-size: 10px;
-    color: var(--text-secondary);
-    transition: all 0.3s ease;
-    transform-origin: center;
-    display: inline-block;
-    margin-left: auto;
-}
-
-.image-settings-summary:hover::after {
-    color: var(--accent-color);
-}
-
-/* 展開狀態的箭頭 */
-.image-settings-details[open] .image-settings-summary::after {
-    transform: rotate(180deg);
-    color: var(--accent-color);
-}
-
-/* 展開狀態的 summary 樣式 */
-.image-settings-details[open] .image-settings-summary {
-    background: var(--surface-color);
-    color: var(--accent-color);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.image-settings-content {
-    padding: 12px;
-    background: var(--bg-tertiary);
-    animation: slideDown 0.3s ease-out;
-}
-
-/* 展開內容的滑入動畫 */
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* 圖片設定行 */
-.image-setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    gap: 12px;
-}
-
-.image-setting-row:last-child {
-    margin-bottom: 0;
-}
 
 .image-setting-label {
     font-size: 12px;

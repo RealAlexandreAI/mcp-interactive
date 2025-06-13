@@ -743,6 +743,46 @@
                     </div>
                 </div>
 
+                <!-- 圖片設定卡片 -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title" data-i18n="images.settings.title">🖼️ 圖片設定</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="images.settings.sizeLimit">圖片大小限制</div>
+                                <div class="setting-description" data-i18n="images.settings.sizeLimitDesc">
+                                    設定上傳圖片的最大檔案大小限制
+                                </div>
+                            </div>
+                            <div class="image-size-limit-selector">
+                                <select id="settingsImageSizeLimit" class="image-size-limit-select">
+                                    <option value="0" data-i18n="images.settings.sizeLimitOptions.unlimited">無限制</option>
+                                    <option value="1048576" data-i18n="images.settings.sizeLimitOptions.1mb">1MB</option>
+                                    <option value="3145728" data-i18n="images.settings.sizeLimitOptions.3mb">3MB</option>
+                                    <option value="5242880" data-i18n="images.settings.sizeLimitOptions.5mb">5MB</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="images.settings.base64Detail">Base64 相容模式</div>
+                                <div class="setting-description" data-i18n="images.settings.base64DetailHelp">
+                                    啟用後會在文字中包含完整的 Base64 圖片資料，提升與某些 AI 模型的相容性
+                                </div>
+                                <div class="setting-warning" data-i18n="images.settings.base64Warning">⚠️ 會增加傳輸量</div>
+                            </div>
+                            <div class="base64-toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="settingsEnableBase64Detail" class="toggle-input">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 提示詞管理卡片 -->
                 <div class="settings-card">
                     <div class="settings-card-header">
@@ -894,6 +934,7 @@
     <script src="/static/js/modules/websocket-manager.js?v=2025010510"></script>
     <script src="/static/js/modules/connection-monitor.js?v=2025010510"></script>
     <script src="/static/js/modules/session-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/file-upload-manager.js?v=2025010510"></script>
     <script src="/static/js/modules/image-handler.js?v=2025010510"></script>
     <script src="/static/js/modules/settings-manager.js?v=2025010510"></script>
     <script src="/static/js/modules/ui-manager.js?v=2025010510"></script>

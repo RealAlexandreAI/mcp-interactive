@@ -65,6 +65,9 @@ graph TB
             HTML[HTML 模板<br/>feedback.html/index.html]
             JS[JavaScript 模組<br/>app.js + 功能模組]
             CSS[樣式系統<br/>響應式設計]
+            PROMPT[提示詞管理<br/>PromptManager + UI 組件]
+            SESSION_MGR[會話管理<br/>SessionManager + 歷史追蹤]
+            AUTO_SUBMIT[自動提交<br/>AutoSubmitManager + 倒數計時]
         end
 
         subgraph "工具層"
@@ -97,6 +100,14 @@ graph TB
     JS --> WS
     WS -->|HTTP/WebSocket| BROWSER_UI
     BROWSER_UI --> USER
+
+    %% 新功能模組連接
+    JS --> PROMPT
+    JS --> SESSION_MGR
+    JS --> AUTO_SUBMIT
+    PROMPT --> WS
+    SESSION_MGR --> WS
+    AUTO_SUBMIT --> WS
 
     I18N --> ROUTES
     DEBUG --> SERVER
@@ -154,6 +165,9 @@ graph TB
 - 響應式 HTML/CSS 設計
 - 實時 WebSocket 通信
 - 豐富的用戶交互功能
+- **提示詞管理系統**：常用提示詞的 CRUD 操作和快速選擇
+- **會話管理功能**：會話歷史追蹤和統計分析
+- **自動提交機制**：倒數計時器和自動回饋提交
 
 ### 3. 單一活躍會話模式
 ```mermaid
@@ -281,6 +295,18 @@ auto-refresh-manager → app
 - 設定管理 (settings-manager.js)
 - UI 控制 (ui-manager.js)
 - 自動刷新 (auto-refresh-manager.js)
+- **提示詞管理模組群組**：
+  - prompt-manager.js (核心管理器)
+  - prompt-modal.js (編輯彈窗)
+  - prompt-settings-ui.js (設定界面)
+  - prompt-input-buttons.js (快速選擇按鈕)
+- **會話管理模組群組**：
+  - session-manager.js (會話控制器)
+  - session-data-manager.js (數據管理器)
+  - session-utils.js (工具函數)
+- **自動提交功能**：
+  - 整合在 app.js 中的 AutoSubmitManager
+  - 與提示詞管理和設定管理的深度整合
 
 ## 📊 性能特性與優化
 
@@ -436,7 +462,8 @@ graph LR
 
 ---
 
-**版本**: 2.3.0
-**最後更新**: 2024年12月
+**版本**: 2.4.0
+**最後更新**: 2025年6月
 **維護者**: Minidoracat
 **架構類型**: Web-Only 四層架構
+**新功能**: 提示詞管理、自動提交、會話管理、語系切換優化

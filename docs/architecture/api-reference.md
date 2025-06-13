@@ -92,6 +92,68 @@ except EnvironmentError as e:
 
 **響應**: `200 OK` 或 `404 Not Found`
 
+#### GET /api/translations
+獲取多語言翻譯資源。
+
+**響應**: `200 OK`
+```json
+{
+    "zh-TW": {
+        "app": {
+            "title": "MCP Feedback Enhanced"
+        }
+    },
+    "en": {
+        "app": {
+            "title": "MCP Feedback Enhanced"
+        }
+    },
+    "zh-CN": {
+        "app": {
+            "title": "MCP Feedback Enhanced"
+        }
+    }
+}
+```
+
+#### GET /api/session-status
+獲取當前會話狀態。
+
+**響應**: `200 OK`
+```json
+{
+    "has_session": true,
+    "status": "active",
+    "session_info": {
+        "project_directory": "./my-project",
+        "summary": "代碼審查完成",
+        "feedback_completed": false
+    }
+}
+```
+
+#### GET /api/current-session
+獲取當前會話詳細信息。
+
+**響應**: `200 OK`
+```json
+{
+    "session_id": "550e8400-e29b-41d4-a716-446655440000",
+    "project_directory": "./my-project",
+    "summary": "代碼審查完成",
+    "feedback_completed": false,
+    "command_logs": "",
+    "images_count": 0
+}
+```
+
+**錯誤響應**: `404 Not Found`
+```json
+{
+    "error": "沒有活躍會話"
+}
+```
+
 ### WebSocket API
 
 #### 連接端點
@@ -160,6 +222,71 @@ ws://localhost:{port}/ws
 }
 ```
 
+#### prompt_management
+提示詞管理操作。
+
+```json
+{
+    "type": "prompt_management",
+    "data": {
+        "action": "add|update|delete|use",
+        "prompt": {
+            "id": "prompt_1_1703123456789",
+            "name": "代碼審查提示",
+            "content": "請檢查這段代碼的邏輯正確性和性能優化建議。",
+            "isAutoSubmit": false
+        }
+    }
+}
+```
+
+**字段說明**:
+- `action`: 操作類型（add=新增, update=更新, delete=刪除, use=使用）
+- `prompt.id`: 提示詞唯一標識符
+- `prompt.name`: 提示詞名稱
+- `prompt.content`: 提示詞內容
+- `prompt.isAutoSubmit`: 是否為自動提交提示詞
+
+#### auto_submit_control
+自動提交功能控制。
+
+```json
+{
+    "type": "auto_submit_control",
+    "data": {
+        "action": "start|stop|update_settings",
+        "settings": {
+            "enabled": true,
+            "timeout": 30,
+            "promptId": "prompt_1_1703123456789"
+        }
+    }
+}
+```
+
+**字段說明**:
+- `action`: 控制動作（start=啟動, stop=停止, update_settings=更新設定）
+- `settings.enabled`: 是否啟用自動提交
+- `settings.timeout`: 自動提交倒數時間（秒）
+- `settings.promptId`: 自動提交使用的提示詞 ID
+
+#### session_management
+會話管理操作。
+
+```json
+{
+    "type": "session_management",
+    "data": {
+        "action": "get_history|get_stats|clear_history",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440000"
+    }
+}
+```
+
+**字段說明**:
+- `action`: 管理動作（get_history=獲取歷史, get_stats=獲取統計, clear_history=清除歷史）
+- `sessionId`: 會話 ID（可選）
+
 ### 📥 服務器 → 客戶端訊息
 
 #### connection_established
@@ -214,6 +341,52 @@ WebSocket 連接建立確認。
         "status": "FEEDBACK_PROCESSING",
         "message": "正在處理您的回饋...",
         "progress": 50
+    }
+}
+```
+
+#### auto_submit_status
+自動提交狀態更新。
+
+```json
+{
+    "type": "auto_submit_status",
+    "data": {
+        "enabled": true,
+        "countdown": 25,
+        "promptId": "prompt_1_1703123456789",
+        "promptName": "代碼審查提示"
+    }
+}
+```
+
+**字段說明**:
+- `enabled`: 自動提交是否啟用
+- `countdown`: 剩餘倒數時間（秒）
+- `promptId`: 當前自動提交提示詞 ID
+- `promptName`: 當前自動提交提示詞名稱
+
+#### session_history
+會話歷史數據。
+
+```json
+{
+    "type": "session_history",
+    "data": {
+        "sessions": [
+            {
+                "session_id": "session-1",
+                "summary": "代碼審查完成",
+                "status": "completed",
+                "created_at": "2024-12-13T10:30:00Z",
+                "feedback_length": 150
+            }
+        ],
+        "stats": {
+            "total": 10,
+            "completed": 8,
+            "average_feedback_length": 120
+        }
     }
 }
 ```
@@ -289,6 +462,95 @@ def add_websocket(self, websocket: WebSocket) -> None
 
 添加 WebSocket 連接到會話。
 
+### PromptManager API
+
+#### addPrompt()
+```python
+def addPrompt(self, name: str, content: str) -> dict
+```
+
+新增提示詞到管理器。
+
+**參數**:
+- `name`: 提示詞名稱（必須唯一）
+- `content`: 提示詞內容
+
+**返回值**: 新建的提示詞對象
+
+#### updatePrompt()
+```python
+def updatePrompt(self, id: str, name: str, content: str) -> dict
+```
+
+更新現有提示詞。
+
+#### deletePrompt()
+```python
+def deletePrompt(self, id: str) -> bool
+```
+
+刪除指定提示詞。
+
+#### usePrompt()
+```python
+def usePrompt(self, id: str) -> dict
+```
+
+使用提示詞（更新最近使用記錄）。
+
+#### getPromptsSortedByUsage()
+```python
+def getPromptsSortedByUsage(self) -> List[dict]
+```
+
+獲取按使用頻率排序的提示詞列表，自動提交提示詞優先顯示。
+
+### SessionManager API
+
+#### getCurrentSession()
+```python
+def getCurrentSession(self) -> dict
+```
+
+獲取當前活躍會話信息。
+
+#### getSessionHistory()
+```python
+def getSessionHistory(self) -> List[dict]
+```
+
+獲取會話歷史記錄。
+
+#### getSessionStats()
+```python
+def getSessionStats(self) -> dict
+```
+
+獲取會話統計信息。
+
+### AutoSubmitManager API
+
+#### start()
+```python
+def start(self, timeoutSeconds: int, promptId: str) -> None
+```
+
+啟動自動提交倒數計時器。
+
+#### stop()
+```python
+def stop(self) -> None
+```
+
+停止自動提交倒數計時器。
+
+#### updateSettings()
+```python
+def updateSettings(self, enabled: bool, timeout: int, promptId: str) -> None
+```
+
+更新自動提交設定。
+
 ## 📊 狀態碼和錯誤碼
 
 ### HTTP 狀態碼
@@ -316,6 +578,23 @@ class SessionStatus:
     ERROR = "ERROR"
 ```
 
+### 提示詞狀態
+```python
+class PromptStatus:
+    ACTIVE = "active"           # 活躍提示詞
+    AUTO_SUBMIT = "auto_submit" # 自動提交提示詞
+    ARCHIVED = "archived"       # 已歸檔提示詞
+```
+
+### 自動提交狀態
+```python
+class AutoSubmitStatus:
+    DISABLED = "disabled"       # 已停用
+    ENABLED = "enabled"         # 已啟用
+    COUNTDOWN = "countdown"     # 倒數計時中
+    COMPLETED = "completed"     # 已完成提交
+```
+
 ## 🔒 安全考慮
 
 ### 輸入驗證
@@ -323,6 +602,9 @@ class SessionStatus:
 - 圖片大小限制：單張最大 5MB
 - 圖片數量限制：最多 10 張
 - 支援的圖片格式：PNG, JPEG, GIF, WebP
+- 提示詞名稱長度限制：最大 100 字符
+- 提示詞內容長度限制：最大 5,000 字符
+- 提示詞數量限制：最多 50 個
 
 ### 資源保護
 - WebSocket 連接數限制：每會話最多 5 個連接
@@ -351,8 +633,9 @@ app.add_middleware(
 
 ---
 
-**版本**: 2.3.0
-**最後更新**: 2024年12月
+**版本**: 2.4.0
+**最後更新**: 2025年6月
 **維護者**: Minidoracat
 **API 版本**: v1
 **協議支援**: MCP 2.0+, WebSocket, HTTP/1.1
+**新功能**: 自動提交、提示詞管理、會話管理、語系切換優化

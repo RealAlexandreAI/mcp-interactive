@@ -473,6 +473,127 @@ function handleSessionUpdated(data) {
 }
 ```
 
+## 🚀 新功能交互流程
+
+### 自動提交功能流程
+
+```mermaid
+sequenceDiagram
+    participant User as 用戶
+    participant UI as 前端界面
+    participant ASM as AutoSubmitManager
+    participant PM as PromptManager
+    participant WS as WebSocket
+
+    Note over User,WS: 🔧 設定自動提交
+    User->>UI: 開啟設定頁籤
+    UI->>PM: 獲取提示詞列表
+    PM-->>UI: 返回提示詞（自動提交優先）
+    User->>UI: 選擇提示詞並設定倒數時間
+    UI->>ASM: updateSettings(enabled, timeout, promptId)
+    ASM->>WS: 保存設定到服務器
+
+    Note over User,WS: ⏰ 自動提交執行
+    WS->>UI: session_updated（AI 新調用）
+    UI->>ASM: checkAutoSubmitConditions()
+    ASM->>ASM: 檢查設定和狀態
+    alt 條件滿足
+        ASM->>ASM: start(timeout, promptId)
+        ASM->>UI: 顯示倒數計時器
+        loop 每秒更新
+            ASM->>UI: updateCountdownDisplay(remaining)
+        end
+        ASM->>PM: getPromptById(promptId)
+        PM-->>ASM: 返回提示詞內容
+        ASM->>UI: 填入提示詞到輸入框
+        ASM->>WS: submit_feedback（自動提交）
+    else 條件不滿足
+        ASM->>UI: 隱藏倒數計時器
+    end
+```
+
+### 提示詞管理流程
+
+```mermaid
+sequenceDiagram
+    participant User as 用戶
+    participant UI as 設定界面
+    participant PM as PromptManager
+    participant Modal as PromptModal
+    participant Storage as LocalStorage
+
+    Note over User,Storage: 📝 新增提示詞
+    User->>UI: 點擊「新增提示詞」
+    UI->>Modal: showAddModal()
+    Modal->>User: 顯示編輯表單
+    User->>Modal: 輸入名稱和內容
+    Modal->>PM: addPrompt(name, content)
+    PM->>PM: 驗證數據和唯一性
+    PM->>Storage: 保存到 localStorage
+    PM->>UI: 觸發 onPromptsChange 回調
+    UI->>UI: refreshPromptList()
+
+    Note over User,Storage: ✏️ 編輯提示詞
+    User->>UI: 點擊編輯按鈕
+    UI->>Modal: showEditModal(prompt)
+    Modal->>User: 顯示預填表單
+    User->>Modal: 修改內容
+    Modal->>PM: updatePrompt(id, name, content)
+    PM->>Storage: 更新 localStorage
+    PM->>UI: 觸發回調更新界面
+
+    Note over User,Storage: 🎯 使用提示詞
+    User->>UI: 在輸入區點擊提示詞按鈕
+    UI->>PM: getPromptsSortedByUsage()
+    PM-->>UI: 返回排序後列表
+    UI->>Modal: showSelectModal(prompts)
+    User->>Modal: 選擇提示詞
+    Modal->>PM: usePrompt(id)
+    PM->>Storage: 更新使用記錄
+    Modal->>UI: 填入提示詞內容
+```
+
+### 會話管理流程
+
+```mermaid
+sequenceDiagram
+    participant AI as AI 助手
+    participant Server as MCP 服務器
+    participant SM as SessionManager
+    participant SDM as SessionDataManager
+    participant UI as 前端界面
+
+    Note over AI,UI: 📊 會話生命週期管理
+    AI->>Server: interactive_feedback()
+    Server->>SM: createSession()
+    SM->>SDM: addCurrentSession()
+    SDM->>UI: 更新會話顯示
+
+    Note over AI,UI: 📝 用戶回饋處理
+    UI->>Server: submit_feedback
+    Server->>SM: processFeedback()
+    SM->>SDM: updateSessionStatus()
+    SDM->>SDM: 記錄回饋數據
+    SM->>AI: 返回回饋結果
+
+    Note over AI,UI: 📚 會話歷史管理
+    SM->>SDM: addSessionToHistory()
+    SDM->>SDM: 檢查完成狀態
+    alt 會話已完成
+        SDM->>SDM: 加入歷史記錄
+        SDM->>SDM: updateStats()
+        SDM->>UI: 觸發 onHistoryChange
+    else 會話未完成
+        SDM->>SDM: 跳過歷史記錄
+    end
+
+    Note over AI,UI: 🔍 歷史查詢
+    UI->>SDM: getSessionHistory()
+    SDM-->>UI: 返回歷史列表
+    UI->>SDM: getSessionStats()
+    SDM-->>UI: 返回統計數據
+```
+
 ## 📊 狀態同步機制
 
 ### WebSocket 訊息類型
@@ -484,12 +605,17 @@ graph LR
         SU[session_updated<br/>會話更新]
         FR[feedback_received<br/>回饋確認]
         ST[status_update<br/>狀態更新]
+        ASS[auto_submit_status<br/>自動提交狀態]
+        SH[session_history<br/>會話歷史]
     end
 
     subgraph "客戶端 → 服務器"
         SF[submit_feedback<br/>提交回饋]
         HB[heartbeat<br/>心跳檢測]
         LS[language_switch<br/>語言切換]
+        PM[prompt_management<br/>提示詞管理]
+        ASC[auto_submit_control<br/>自動提交控制]
+        SM[session_management<br/>會話管理]
     end
 ```
 
@@ -498,15 +624,34 @@ graph LR
 ```mermaid
 stateDiagram-v2
     [*] --> WAITING: 會話創建/更新
-    WAITING --> FEEDBACK_PROCESSING: 用戶提交回饋
+    WAITING --> AUTO_SUBMIT_READY: 自動提交條件滿足
+    AUTO_SUBMIT_READY --> AUTO_SUBMIT_COUNTDOWN: 啟動倒數計時
+    AUTO_SUBMIT_COUNTDOWN --> FEEDBACK_PROCESSING: 自動提交執行
+    WAITING --> FEEDBACK_PROCESSING: 用戶手動提交回饋
     FEEDBACK_PROCESSING --> FEEDBACK_SUBMITTED: 處理完成
     FEEDBACK_SUBMITTED --> WAITING: 新會話更新
     FEEDBACK_SUBMITTED --> [*]: 會話結束
 
+    AUTO_SUBMIT_COUNTDOWN --> WAITING: 用戶取消自動提交
     WAITING --> ERROR: 連接錯誤
     FEEDBACK_PROCESSING --> ERROR: 處理錯誤
+    AUTO_SUBMIT_COUNTDOWN --> ERROR: 自動提交錯誤
     ERROR --> WAITING: 錯誤恢復
     ERROR --> [*]: 致命錯誤
+
+    note right of AUTO_SUBMIT_READY
+        檢查自動提交設定：
+        - 功能已啟用
+        - 已選擇提示詞
+        - 當前狀態為等待回饋
+    end note
+
+    note right of AUTO_SUBMIT_COUNTDOWN
+        倒數計時狀態：
+        - 顯示剩餘時間
+        - 允許用戶取消
+        - 時間到自動提交
+    end note
 ```
 
 ## 🛡️ 錯誤處理和恢復

@@ -40,6 +40,8 @@ graph TB
         JS[static/js/<br/>JavaScript 模組<br/>ES6+ 架構]
         CSS[static/css/<br/>樣式系統<br/>響應式設計]
         LOCALES[locales/<br/>翻譯文件<br/>JSON 格式]
+        PROMPT_MODULES[prompt/<br/>提示詞管理模組<br/>CRUD 操作]
+        SESSION_MODULES[session/<br/>會話管理模組<br/>歷史追蹤]
     end
 
     subgraph "工具層 - 核心工具"
@@ -66,6 +68,12 @@ graph TB
     JS -->|WebSocket| WS
     WS -->|回傳數據| SESSION
 
+    %% 新功能模組
+    JS -->|載入模組| PROMPT_MODULES
+    JS -->|載入模組| SESSION_MODULES
+    PROMPT_MODULES -->|提示詞管理| WS
+    SESSION_MODULES -->|會話追蹤| WS
+
     %% 支援服務
     I18N -->|翻譯服務| ROUTES
     I18N -->|語言包| LOCALES
@@ -91,7 +99,7 @@ graph TB
     class SERVER,TOOL,I18N,DEBUG layer1
     class MANAGER,SESSION,MODELS layer2
     class MAIN,ROUTES,WS layer3
-    class HTML,JS,CSS,LOCALES layer4
+    class HTML,JS,CSS,LOCALES,PROMPT_MODULES,SESSION_MODULES layer4
     class ERROR,MEMORY,RESOURCE,BROWSER,PORT,COMPRESS,CLEANUP tools
 ```
 
@@ -551,6 +559,72 @@ async def websocket_endpoint(websocket: WebSocket):
 ```
 
 ## 🎨 第四層：前端交互層
+
+### 新功能模組架構
+
+#### 提示詞管理模組群組 (prompt/)
+
+**模組結構**：
+```mermaid
+graph TB
+    subgraph "提示詞管理模組"
+        PM[prompt-manager.js<br/>核心管理器<br/>CRUD 操作]
+        PMO[prompt-modal.js<br/>彈窗組件<br/>編輯界面]
+        PSU[prompt-settings-ui.js<br/>設定頁面<br/>列表管理]
+        PIB[prompt-input-buttons.js<br/>輸入按鈕<br/>快速選擇]
+    end
+
+    PM -->|提供數據| PMO
+    PM -->|提供數據| PSU
+    PM -->|提供數據| PIB
+    PMO -->|編輯操作| PM
+    PSU -->|管理操作| PM
+    PIB -->|使用操作| PM
+```
+
+**核心功能**：
+- **PromptManager**: 提示詞的增刪改查、排序、自動提交標記
+- **PromptModal**: 新增/編輯提示詞的彈窗界面
+- **PromptSettingsUI**: 設定頁籤中的提示詞管理界面
+- **PromptInputButtons**: 回饋輸入區的快速選擇按鈕
+
+#### 會話管理模組群組 (session/)
+
+**模組結構**：
+```mermaid
+graph TB
+    subgraph "會話管理模組"
+        SM[session-manager.js<br/>會話控制器<br/>狀態管理]
+        SDM[session-data-manager.js<br/>數據管理器<br/>歷史記錄]
+        SU[session-utils.js<br/>工具函數<br/>狀態判斷]
+    end
+
+    SM -->|數據操作| SDM
+    SM -->|工具函數| SU
+    SDM -->|狀態回調| SM
+```
+
+**核心功能**：
+- **SessionManager**: 當前會話的狀態管理和控制
+- **SessionDataManager**: 會話歷史記錄和統計數據管理
+- **SessionUtils**: 會話狀態判斷和工具函數
+
+#### 自動提交功能整合
+
+**整合架構**：
+```mermaid
+graph LR
+    subgraph "自動提交功能"
+        ASM[AutoSubmitManager<br/>倒數計時器<br/>狀態控制]
+        PM[PromptManager<br/>提示詞選擇<br/>自動標記]
+        SM[SettingsManager<br/>設定存儲<br/>配置管理]
+    end
+
+    ASM -->|選擇提示詞| PM
+    ASM -->|保存設定| SM
+    PM -->|提供提示詞| ASM
+    SM -->|載入設定| ASM
+```
 
 ### templates/ - HTML 模板系統
 

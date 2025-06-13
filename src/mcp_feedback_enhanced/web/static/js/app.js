@@ -38,6 +38,10 @@
         this.promptSettingsUI = null;
         this.promptInputButtons = null;
 
+        // 音效管理器
+        this.audioManager = null;
+        this.audioSettingsUI = null;
+
         // 自動提交管理器
         this.autoSubmitManager = null;
 
@@ -197,7 +201,10 @@
                         // 9. 初始化提示詞管理器
                         self.initializePromptManagers();
 
-                        // 10. 初始化自動提交管理器
+                        // 10. 初始化音效管理器
+                        self.initializeAudioManagers();
+
+                        // 11. 初始化自動提交管理器
                         self.initializeAutoSubmitManager();
 
                         // 11. 應用設定到 UI
@@ -441,6 +448,43 @@
     };
 
     /**
+     * 初始化音效管理器
+     */
+    FeedbackApp.prototype.initializeAudioManagers = function() {
+        console.log('🔊 初始化音效管理器...');
+
+        try {
+            // 檢查音效模組是否已載入
+            if (!window.MCPFeedback.AudioManager) {
+                console.warn('⚠️ 音效模組未載入，跳過初始化');
+                return;
+            }
+
+            // 1. 初始化音效管理器
+            this.audioManager = new window.MCPFeedback.AudioManager({
+                settingsManager: this.settingsManager,
+                onSettingsChange: function(settings) {
+                    console.log('🔊 音效設定已變更:', settings);
+                }
+            });
+            this.audioManager.initialize();
+
+            // 2. 初始化音效設定 UI
+            this.audioSettingsUI = new window.MCPFeedback.AudioSettingsUI({
+                container: document.querySelector('#audioManagementContainer'),
+                audioManager: this.audioManager,
+                t: window.i18nManager ? window.i18nManager.t.bind(window.i18nManager) : function(key, defaultValue) { return defaultValue || key; }
+            });
+            this.audioSettingsUI.initialize();
+
+            console.log('✅ 音效管理器初始化完成');
+
+        } catch (error) {
+            console.error('❌ 音效管理器初始化失敗:', error);
+        }
+    };
+
+    /**
      * 處理 WebSocket 開啟
      */
     FeedbackApp.prototype.handleWebSocketOpen = function() {
@@ -524,6 +568,11 @@
      */
     FeedbackApp.prototype.handleSessionUpdated = function(data) {
         console.log('🔄 處理會話更新:', data.session_info);
+
+        // 播放音效通知
+        if (this.audioManager) {
+            this.audioManager.playNotification();
+        }
 
         // 顯示更新通知
         window.MCPFeedback.Utils.showMessage(data.message || '會話已更新，正在局部更新內容...', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS);

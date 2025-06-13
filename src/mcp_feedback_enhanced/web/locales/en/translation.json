@@ -356,5 +356,40 @@
         "disabled": "Disabled",
         "executing": "Executing auto submit...",
         "countdownLabel": "Submit Countdown"
+    },
+    "audio": {
+        "notification": {
+            "title": "Audio Notification Settings",
+            "description": "Configure audio notifications for session updates",
+            "enabled": "Enable Audio Notifications",
+            "volume": "Volume",
+            "selectAudio": "Select Audio",
+            "testPlay": "Test Play",
+            "uploadCustom": "Upload Custom Audio",
+            "chooseFile": "Choose File",
+            "supportedFormats": "Supports MP3, WAV, OGG formats",
+            "customAudios": "Custom Audio Files",
+            "defaultBeep": "Classic Beep",
+            "notificationDing": "Notification Ding",
+            "softChime": "Soft Chime",
+            "default": "Default",
+            "customAudio": "Custom Audio",
+            "noCustomAudios": "No custom audio files uploaded yet",
+            "created": "Created",
+            "format": "Format",
+            "enterAudioName": "Enter Audio Name",
+            "audioName": "Audio Name",
+            "audioNamePlaceholder": "Please enter audio name...",
+            "audioNameHint": "Leave empty to use default filename",
+            "nameRequired": "Audio name cannot be empty",
+            "uploading": "Uploading...",
+            "uploadSuccess": "Audio uploaded successfully: ",
+            "deleteConfirm": "Are you sure you want to delete audio \"{name}\"?",
+            "deleteSuccess": "Audio deleted",
+            "enabledChanged": "Audio notification settings updated",
+            "audioSelected": "Audio selected",
+            "testPlaying": "Playing test audio",
+            "audioNotFound": "Selected audio not found"
+        }
     }
 }

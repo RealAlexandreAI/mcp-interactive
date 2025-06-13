@@ -361,5 +361,40 @@
         "disabled": "已停用",
         "executing": "正在執行自動提交...",
         "countdownLabel": "提交倒數"
+    },
+    "audio": {
+        "notification": {
+            "title": "音效通知設定",
+            "description": "設定會話更新時的音效通知",
+            "enabled": "啟用音效通知",
+            "volume": "音量",
+            "selectAudio": "選擇音效",
+            "testPlay": "測試播放",
+            "uploadCustom": "上傳自訂音效",
+            "chooseFile": "選擇檔案",
+            "supportedFormats": "支援 MP3、WAV、OGG 格式",
+            "customAudios": "自訂音效",
+            "defaultBeep": "經典提示音",
+            "notificationDing": "通知鈴聲",
+            "softChime": "輕柔鐘聲",
+            "default": "預設",
+            "customAudio": "自訂音效",
+            "noCustomAudios": "尚未上傳任何自訂音效",
+            "created": "建立於",
+            "format": "格式",
+            "enterAudioName": "輸入音效名稱",
+            "audioName": "音效名稱",
+            "audioNamePlaceholder": "請輸入音效名稱...",
+            "audioNameHint": "留空將使用預設檔案名稱",
+            "nameRequired": "音效名稱不能為空",
+            "uploading": "上傳中...",
+            "uploadSuccess": "音效上傳成功: ",
+            "deleteConfirm": "確定要刪除音效 \"{name}\" 嗎？",
+            "deleteSuccess": "音效已刪除",
+            "enabledChanged": "音效通知設定已更新",
+            "audioSelected": "音效已選擇",
+            "testPlaying": "正在播放測試音效",
+            "audioNotFound": "找不到選擇的音效"
+        }
     }
 }

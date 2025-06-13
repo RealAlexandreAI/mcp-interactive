@@ -164,6 +164,9 @@ class I18nManager {
         // 更新動態內容
         this.updateDynamicContent();
 
+        // 更新音效選擇器翻譯
+        this.updateAudioSelectTranslations();
+
         console.log('翻譯已應用:', this.currentLanguage);
     }
 
@@ -306,6 +309,15 @@ class I18nManager {
                 };
                 option.addEventListener('click', option._languageClickHandler);
             });
+        }
+    }
+
+    updateAudioSelectTranslations() {
+        // 更新音效選擇器的翻譯
+        if (window.feedbackApp && window.feedbackApp.audioSettingsUI) {
+            if (typeof window.feedbackApp.audioSettingsUI.updateAudioSelectTranslations === 'function') {
+                window.feedbackApp.audioSettingsUI.updateAudioSelectTranslations();
+            }
         }
     }
 

@@ -30,7 +30,12 @@
             // 自動定時提交設定
             autoSubmitEnabled: false,
             autoSubmitTimeout: 30,
-            autoSubmitPromptId: null
+            autoSubmitPromptId: null,
+            // 音效通知設定
+            audioNotificationEnabled: false,
+            audioNotificationVolume: 50,
+            selectedAudioId: 'default-beep',
+            customAudios: []
         };
         
         // 當前設定

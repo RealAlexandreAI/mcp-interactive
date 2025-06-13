@@ -356,5 +356,40 @@
         "disabled": "已停用",
         "executing": "正在执行自动提交...",
         "countdownLabel": "提交倒数"
+    },
+    "audio": {
+        "notification": {
+            "title": "音效通知设定",
+            "description": "设定会话更新时的音效通知",
+            "enabled": "启用音效通知",
+            "volume": "音量",
+            "selectAudio": "选择音效",
+            "testPlay": "测试播放",
+            "uploadCustom": "上传自定义音效",
+            "chooseFile": "选择文件",
+            "supportedFormats": "支持 MP3、WAV、OGG 格式",
+            "customAudios": "自定义音效",
+            "defaultBeep": "经典提示音",
+            "notificationDing": "通知铃声",
+            "softChime": "轻柔钟声",
+            "default": "默认",
+            "customAudio": "自定义音效",
+            "noCustomAudios": "尚未上传任何自定义音效",
+            "created": "创建于",
+            "format": "格式",
+            "enterAudioName": "输入音效名称",
+            "audioName": "音效名称",
+            "audioNamePlaceholder": "请输入音效名称...",
+            "audioNameHint": "留空将使用默认文件名称",
+            "nameRequired": "音效名称不能为空",
+            "uploading": "上传中...",
+            "uploadSuccess": "音效上传成功: ",
+            "deleteConfirm": "确定要删除音效 \"{name}\" 吗？",
+            "deleteSuccess": "音效已删除",
+            "enabledChanged": "音效通知设定已更新",
+            "audioSelected": "音效已选择",
+            "testPlaying": "正在播放测试音效",
+            "audioNotFound": "找不到选择的音效"
+        }
     }
 }

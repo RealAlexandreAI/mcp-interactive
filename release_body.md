@@ -1,7 +1,7 @@
-# Release v2.3.0 - System Stability & Resource Management Enhancement
+# Release v2.4.2 - Web-Only Architecture Refactoring & Smart Feature Enhancement
 
 ## 🌟 Key Highlights
-This version focuses on improving system stability and user experience, particularly solving the browser launch issue in Cursor SSH Remote environments.
+
 
 ## 🌐 Detailed Release Notes
 
@@ -23,7 +23,7 @@ This version focuses on improving system stability and user experience, particul
 uvx mcp-feedback-enhanced@latest
 
 # This specific version / 此特定版本
-uvx mcp-feedback-enhanced@v2.3.0
+uvx mcp-feedback-enhanced@v2.4.2
 ```
 
 ## 🔗 Links

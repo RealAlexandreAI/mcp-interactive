@@ -415,7 +415,8 @@
             // 3. 初始化設定頁籤 UI
             this.promptSettingsUI = new window.MCPFeedback.Prompt.PromptSettingsUI({
                 promptManager: this.promptManager,
-                promptModal: this.promptModal
+                promptModal: this.promptModal,
+                settingsManager: this.settingsManager
             });
             this.promptSettingsUI.init('#promptManagementContainer');
 
@@ -574,7 +575,7 @@
                     }
 
                     // 現在可以安全地將舊會話加入歷史記錄
-                    this.sessionManager.addSessionToHistory(oldSessionData);
+                    this.sessionManager.dataManager.addSessionToHistory(oldSessionData);
                 } else {
                     console.log('⚠️ 無法獲取當前會話數據，跳過歷史記錄保存');
                     // 仍然需要更新當前會話 ID
@@ -1079,8 +1080,8 @@
     FeedbackApp.prototype.checkAndStartAutoSubmit = function() {
         console.log('🔍 檢查自動提交條件...');
 
-        if (!this.autoSubmitManager || !this.settingsManager) {
-            console.log('⚠️ 自動提交管理器或設定管理器未初始化');
+        if (!this.autoSubmitManager || !this.settingsManager || !this.promptManager) {
+            console.log('⚠️ 自動提交管理器、設定管理器或提示詞管理器未初始化');
             return;
         }
 
@@ -1095,6 +1096,23 @@
             timeout: autoSubmitTimeout
         });
 
+        // 雙重檢查：設定中的 promptId 和提示詞的 isAutoSubmit 狀態
+        let validAutoSubmitPrompt = null;
+        if (autoSubmitPromptId) {
+            const prompt = this.promptManager.getPromptById(autoSubmitPromptId);
+            if (prompt && prompt.isAutoSubmit) {
+                validAutoSubmitPrompt = prompt;
+            } else {
+                console.log('⚠️ 自動提交提示詞驗證失敗:', {
+                    promptExists: !!prompt,
+                    isAutoSubmit: prompt ? prompt.isAutoSubmit : false
+                });
+                // 清空無效的自動提交設定
+                this.settingsManager.set('autoSubmitPromptId', null);
+                this.settingsManager.set('autoSubmitEnabled', false);
+            }
+        }
+
         // 檢查當前狀態是否為等待回饋
         const currentState = this.uiManager ? this.uiManager.getFeedbackState() : null;
         const isWaitingForFeedback = currentState === window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_WAITING;
@@ -1102,7 +1120,7 @@
         console.log('🔍 當前回饋狀態:', currentState, '是否等待回饋:', isWaitingForFeedback);
 
         // 如果所有條件都滿足，啟動自動提交
-        if (autoSubmitEnabled && autoSubmitPromptId && autoSubmitTimeout && isWaitingForFeedback) {
+        if (autoSubmitEnabled && validAutoSubmitPrompt && autoSubmitTimeout && isWaitingForFeedback) {
             console.log('✅ 自動提交條件滿足，啟動倒數計時器');
             this.autoSubmitManager.start(autoSubmitTimeout, autoSubmitPromptId);
             this.updateAutoSubmitStatus('enabled', autoSubmitTimeout);
@@ -1153,17 +1171,37 @@
     FeedbackApp.prototype.performAutoSubmit = function() {
         console.log('⏰ 執行自動提交...');
 
-        if (!this.autoSubmitManager || !this.promptManager) {
-            console.error('❌ 自動提交管理器或提示詞管理器未初始化');
+        if (!this.autoSubmitManager || !this.promptManager || !this.settingsManager) {
+            console.error('❌ 自動提交管理器、提示詞管理器或設定管理器未初始化');
+            this.autoSubmitManager && this.autoSubmitManager.stop();
             return;
         }
 
         const promptId = this.autoSubmitManager.currentPromptId;
+        const autoSubmitPromptId = this.settingsManager.get('autoSubmitPromptId');
+
+        // 雙重檢查：確保 promptId 有效且與設定一致
+        if (!promptId || !autoSubmitPromptId || promptId !== autoSubmitPromptId) {
+            console.error('❌ 自動提交提示詞 ID 不一致或為空:', {
+                currentPromptId: promptId,
+                settingsPromptId: autoSubmitPromptId
+            });
+            this.pauseAutoSubmit('提示詞 ID 不一致');
+            return;
+        }
+
         const prompt = this.promptManager.getPromptById(promptId);
 
         if (!prompt) {
             console.error('❌ 找不到自動提交提示詞:', promptId);
-            window.MCPFeedback.Utils.showMessage('自動提交失敗：找不到指定的提示詞', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_ERROR);
+            this.pauseAutoSubmit('找不到指定的提示詞');
+            return;
+        }
+
+        // 檢查提示詞的 isAutoSubmit 狀態
+        if (!prompt.isAutoSubmit) {
+            console.error('❌ 提示詞不是自動提交狀態:', prompt.name);
+            this.pauseAutoSubmit('提示詞不是自動提交狀態');
             return;
         }
 
@@ -1191,6 +1229,38 @@
 
         // 停止自動提交
         this.autoSubmitManager.stop();
+    };
+
+    /**
+     * 暫停自動提交功能（當檢查失敗時）
+     */
+    FeedbackApp.prototype.pauseAutoSubmit = function(reason) {
+        console.error('⏸️ 暫停自動提交功能，原因:', reason);
+
+        // 停止倒數計時器
+        if (this.autoSubmitManager) {
+            this.autoSubmitManager.stop();
+        }
+
+        // 清空自動提交設定
+        if (this.settingsManager) {
+            this.settingsManager.set('autoSubmitEnabled', false);
+            this.settingsManager.set('autoSubmitPromptId', null);
+        }
+
+        // 清空所有提示詞的自動提交標記
+        if (this.promptManager) {
+            this.promptManager.clearAutoSubmitPrompt();
+        }
+
+        // 更新 UI 狀態
+        this.updateAutoSubmitStatus('disabled');
+
+        // 顯示錯誤訊息
+        const message = window.i18nManager ?
+            window.i18nManager.t('autoSubmit.paused', '自動提交已暫停：') + reason :
+            '自動提交已暫停：' + reason;
+        window.MCPFeedback.Utils.showMessage(message, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_ERROR);
     };
 
     /**

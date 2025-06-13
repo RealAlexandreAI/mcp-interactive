@@ -23,6 +23,7 @@
         // 依賴注入
         this.promptManager = options.promptManager || null;
         this.promptModal = options.promptModal || null;
+        this.settingsManager = options.settingsManager || null;
 
         // UI 元素
         this.container = null;
@@ -320,23 +321,40 @@
                 this.promptManager.clearAutoSubmitPrompt();
                 this.showSuccess(this.t('prompts.management.autoSubmitCancelled', '已取消自動提交設定'));
 
-                // 更新設定管理器中的自動提交提示詞 ID
-                if (window.MCPFeedback && window.MCPFeedback.settingsManager) {
-                    window.MCPFeedback.settingsManager.set('autoSubmitPromptId', null);
+                // 清空設定管理器中的自動提交設定
+                if (this.settingsManager) {
+                    this.settingsManager.set('autoSubmitPromptId', null);
+                    this.settingsManager.set('autoSubmitEnabled', false);
+                    console.log('🔄 已清空自動提交設定');
+                } else {
+                    console.warn('⚠️ settingsManager 未設定，無法清空自動提交設定');
                 }
             } else {
                 // 設定為自動提交
                 this.promptManager.setAutoSubmitPrompt(promptId);
                 this.showSuccess(this.t('prompts.management.autoSubmitSet', '已設定為自動提交提示詞：') + prompt.name);
 
-                // 更新設定管理器中的自動提交提示詞 ID
-                if (window.MCPFeedback && window.MCPFeedback.settingsManager) {
-                    window.MCPFeedback.settingsManager.set('autoSubmitPromptId', promptId);
+                // 更新設定管理器中的自動提交設定
+                if (this.settingsManager) {
+                    console.log('🔧 設定前的 autoSubmitPromptId:', this.settingsManager.get('autoSubmitPromptId'));
+                    this.settingsManager.set('autoSubmitPromptId', promptId);
+                    this.settingsManager.set('autoSubmitEnabled', true);
+                    console.log('✅ 已設定自動提交提示詞 ID:', promptId);
+                    console.log('🔧 設定後的 autoSubmitPromptId:', this.settingsManager.get('autoSubmitPromptId'));
+                } else {
+                    console.warn('⚠️ settingsManager 未設定，無法更新自動提交設定');
                 }
             }
 
             // 更新自動提交下拉選單
             this.updateAutoSubmitSelect();
+
+            // 觸發自動提交狀態變更事件
+            if (this.settingsManager && this.settingsManager.triggerAutoSubmitStateChange) {
+                this.settingsManager.triggerAutoSubmitStateChange(prompt.isAutoSubmit);
+            } else {
+                console.warn('⚠️ settingsManager 或 triggerAutoSubmitStateChange 方法未設定');
+            }
         } catch (error) {
             this.showError(error.message);
         }
@@ -346,8 +364,10 @@
      * 更新自動提交下拉選單
      */
     PromptSettingsUI.prototype.updateAutoSubmitSelect = function() {
+        console.log('🔄 updateAutoSubmitSelect 開始執行');
         const autoSubmitSelect = document.getElementById('autoSubmitPromptSelect');
         if (!autoSubmitSelect || !this.promptManager) {
+            console.log('❌ updateAutoSubmitSelect: 缺少必要元素');
             return;
         }
 
@@ -359,6 +379,7 @@
         // 新增所有提示詞選項
         const prompts = this.promptManager.getAllPrompts();
         let autoSubmitPromptId = null;
+        console.log('🔄 updateAutoSubmitSelect 檢查提示詞:', prompts.map(p => ({id: p.id, name: p.name, isAutoSubmit: p.isAutoSubmit})));
 
         prompts.forEach(function(prompt) {
             const option = document.createElement('option');
@@ -367,13 +388,26 @@
             if (prompt.isAutoSubmit) {
                 option.selected = true;
                 autoSubmitPromptId = prompt.id;
+                console.log('🔄 找到自動提交提示詞:', prompt.name, prompt.id);
             }
             autoSubmitSelect.appendChild(option);
         });
 
         // 同步更新設定管理器中的自動提交提示詞 ID
-        if (autoSubmitPromptId && window.MCPFeedback && window.MCPFeedback.settingsManager) {
-            window.MCPFeedback.settingsManager.set('autoSubmitPromptId', autoSubmitPromptId);
+        if (this.settingsManager) {
+            console.log('🔄 updateAutoSubmitSelect 設定前:', this.settingsManager.get('autoSubmitPromptId'));
+            if (autoSubmitPromptId) {
+                this.settingsManager.set('autoSubmitPromptId', autoSubmitPromptId);
+                this.settingsManager.set('autoSubmitEnabled', true);
+                console.log('🔄 updateAutoSubmitSelect 同步設定:', autoSubmitPromptId);
+            } else {
+                this.settingsManager.set('autoSubmitPromptId', null);
+                this.settingsManager.set('autoSubmitEnabled', false);
+                console.log('🔄 updateAutoSubmitSelect 清空設定');
+            }
+            console.log('🔄 updateAutoSubmitSelect 設定後:', this.settingsManager.get('autoSubmitPromptId'));
+        } else {
+            console.warn('⚠️ updateAutoSubmitSelect: settingsManager 未設定，無法同步設定');
         }
     };
 

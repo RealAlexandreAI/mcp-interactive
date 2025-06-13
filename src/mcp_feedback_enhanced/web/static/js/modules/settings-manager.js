@@ -364,6 +364,11 @@
     SettingsManager.prototype.triggerAutoSubmitStateChange = function(enabled) {
         if (this.onAutoSubmitStateChange) {
             const settings = this.getAutoSubmitSettings();
+            console.log('🔍 triggerAutoSubmitStateChange 調試:', {
+                enabled: enabled,
+                settings: settings,
+                currentSettings: this.currentSettings
+            });
             this.onAutoSubmitStateChange(enabled, settings);
         }
 

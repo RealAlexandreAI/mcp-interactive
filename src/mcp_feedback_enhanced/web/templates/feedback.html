@@ -732,21 +732,12 @@
                                     選擇界面顯示語言
                                 </div>
                             </div>
-                            <div class="language-selector-modern">
-                                <div class="language-options">
-                                    <div class="language-option" data-lang="zh-TW">
-                                        <div class="language-flag">🌏</div>
-                                        <div class="language-name">繁體中文</div>
-                                    </div>
-                                    <div class="language-option" data-lang="zh-CN">
-                                        <div class="language-flag">🌍</div>
-                                        <div class="language-name">简体中文</div>
-                                    </div>
-                                    <div class="language-option" data-lang="en">
-                                        <div class="language-flag">🌎</div>
-                                        <div class="language-name">English</div>
-                                    </div>
-                                </div>
+                            <div class="language-selector-dropdown">
+                                <select id="settingsLanguageSelect" class="language-setting-select">
+                                    <option value="zh-TW" data-i18n="languages.zh-TW">繁體中文</option>
+                                    <option value="zh-CN" data-i18n="languages.zh-CN">简体中文</option>
+                                    <option value="en" data-i18n="languages.en">English</option>
+                                </select>
                             </div>
                         </div>
                     </div>

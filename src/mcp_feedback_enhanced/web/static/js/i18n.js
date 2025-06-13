@@ -265,14 +265,18 @@ class I18nManager {
     }
 
     setupLanguageSelectors() {
-        // 舊版下拉選擇器（兼容性保留）
+        // 設定頁籤的下拉選擇器
         const selector = document.getElementById('settingsLanguageSelect');
         if (selector) {
             // 設置當前值
             selector.value = this.currentLanguage;
-            
+
+            // 移除舊的事件監聽器（避免重複綁定）
+            const newSelector = selector.cloneNode(true);
+            selector.parentNode.replaceChild(newSelector, selector);
+
             // 添加事件監聽器
-            selector.addEventListener('change', (e) => {
+            newSelector.addEventListener('change', (e) => {
                 this.setLanguage(e.target.value);
             });
         }

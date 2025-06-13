@@ -617,7 +617,7 @@ body {
     background: rgba(0, 122, 204, 0.15);
 }
 
-/* 語言選擇器現代化樣式 */
+/* 語言選擇器現代化樣式 - 保留用於兼容性 */
 .language-selector-modern {
     display: flex;
     align-items: center;
@@ -666,6 +666,35 @@ body {
 
 .language-option.active .language-name {
     color: white;
+}
+
+/* 語言選擇器下拉選單樣式 */
+.language-selector-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.language-setting-select {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 140px;
+    transition: border-color 0.3s ease;
+    cursor: pointer;
+}
+
+.language-setting-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.language-setting-select:hover {
+    border-color: var(--accent-color);
 }
 
 /* 表單元素樣式 */

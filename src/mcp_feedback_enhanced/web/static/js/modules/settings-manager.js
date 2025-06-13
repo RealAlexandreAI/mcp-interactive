@@ -351,8 +351,14 @@
                 window.i18nManager.setLanguage(this.currentSettings.language);
             }
         }
-        
-        // 更新語言選項顯示
+
+        // 更新下拉選單選項
+        const languageSelect = Utils.safeQuerySelector('#settingsLanguageSelect');
+        if (languageSelect) {
+            languageSelect.value = this.currentSettings.language;
+        }
+
+        // 更新語言選項顯示（兼容舊版卡片式選擇器）
         const languageOptions = document.querySelectorAll('.language-option');
         languageOptions.forEach(function(option) {
             option.classList.toggle('active', option.getAttribute('data-lang') === this.currentSettings.language);
@@ -400,7 +406,16 @@
             });
         }
 
-        // 語言切換
+        // 語言切換 - 支援下拉選單
+        const languageSelect = Utils.safeQuerySelector('#settingsLanguageSelect');
+        if (languageSelect) {
+            languageSelect.addEventListener('change', function(e) {
+                const lang = e.target.value;
+                self.set('language', lang);
+            });
+        }
+
+        // 語言切換 - 兼容舊版卡片式選擇器
         const languageOptions = document.querySelectorAll('.language-option');
         languageOptions.forEach(function(option) {
             option.addEventListener('click', function() {

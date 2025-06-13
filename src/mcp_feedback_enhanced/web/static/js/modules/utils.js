@@ -205,6 +205,21 @@
         },
 
         /**
+         * HTML 轉義函數
+         * @param {string} text - 要轉義的文字
+         * @returns {string} 轉義後的文字
+         */
+        escapeHtml: function(text) {
+            if (typeof text !== 'string') {
+                return text;
+            }
+
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        },
+
+        /**
          * 常數定義
          */
         CONSTANTS: {

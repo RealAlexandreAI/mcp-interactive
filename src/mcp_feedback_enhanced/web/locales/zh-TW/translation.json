@@ -265,6 +265,44 @@
         "aiSummary": "測試 Web UI 功能\n\n🎯 **功能測試項目：**\n- Web UI 服務器啟動和運行\n- WebSocket 即時通訊\n- 回饋提交功能\n- 圖片上傳和預覽\n- 命令執行功能\n- 智能 Ctrl+V 圖片貼上\n- 多語言介面功能\n\n📋 **測試步驟：**\n1. 測試圖片上傳（拖拽、選擇檔案、剪貼簿）\n2. 在文字框內按 Ctrl+V 測試智能貼上\n3. 嘗試切換語言（繁中/簡中/英文）\n4. 測試命令執行功能\n5. 提交回饋和圖片\n\n請測試這些功能並提供回饋！",
         "terminalWelcome": "歡迎使用互動回饋終端\n========================================\n專案目錄: {sessionId}\n輸入命令後按 Enter 或點擊執行按鈕\n支援的命令: ls, dir, pwd, cat, type 等\n\n$ "
     },
+    "prompts": {
+        "management": {
+            "title": "常用提示詞管理",
+            "description": "管理您的常用提示詞模板，可在回饋輸入時快速選用",
+            "addNew": "新增提示詞",
+            "edit": "編輯",
+            "delete": "刪除",
+            "confirmDelete": "確定要刪除此提示詞嗎？",
+            "emptyState": "尚未建立任何常用提示詞",
+            "emptyHint": "點擊上方「新增提示詞」按鈕開始建立您的第一個提示詞模板",
+            "created": "建立於",
+            "lastUsed": "最近使用",
+            "notFound": "找不到指定的提示詞",
+            "addSuccess": "提示詞已新增",
+            "updateSuccess": "提示詞已更新",
+            "deleteSuccess": "提示詞已刪除"
+        },
+        "buttons": {
+            "selectPrompt": "選擇常用提示詞",
+            "useLastPrompt": "使用上次提示詞",
+            "noPrompts": "尚無常用提示詞，請先在設定中新增",
+            "noLastPrompt": "尚無最近使用的提示詞",
+            "lastPromptApplied": "已套用上次使用的提示詞",
+            "promptNotFound": "找不到指定的提示詞",
+            "promptApplied": "已套用提示詞："
+        },
+        "modal": {
+            "addTitle": "新增提示詞",
+            "editTitle": "編輯提示詞",
+            "nameLabel": "提示詞名稱",
+            "contentLabel": "提示詞內容",
+            "namePlaceholder": "請輸入提示詞名稱...",
+            "contentPlaceholder": "請輸入提示詞內容...",
+            "save": "儲存",
+            "cancel": "取消",
+            "emptyFields": "請填寫所有必填欄位"
+        }
+    },
     "about": {
         "title": "ℹ️ 關於",
         "description": "一個強大的 MCP 伺服器，為 AI 輔助開發工具提供人在回路的互動回饋功能。支援 Web UI 介面，並具備圖片上傳、命令執行、多語言等豐富功能。",

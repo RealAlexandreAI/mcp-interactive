@@ -32,6 +32,12 @@
         this.settingsManager = null;
         this.uiManager = null;
 
+        // 提示詞管理器
+        this.promptManager = null;
+        this.promptModal = null;
+        this.promptSettingsUI = null;
+        this.promptInputButtons = null;
+
         // 應用程式狀態
         this.isInitialized = false;
         this.pendingSubmission = null;
@@ -182,16 +188,17 @@
                             }
                         });
 
+                        // 9. 初始化提示詞管理器
+                        self.initializePromptManagers();
 
-
-                        // 8. 應用設定到 UI
+                        // 10. 應用設定到 UI
                         self.settingsManager.applyToUI();
 
-                        // 8. 初始化各個管理器
+                        // 11. 初始化各個管理器
                         self.uiManager.initTabs();
                         self.imageHandler.init();
 
-                        // 9. 建立 WebSocket 連接
+                        // 12. 建立 WebSocket 連接
                         self.webSocketManager.connect();
 
                         resolve();
@@ -369,7 +376,54 @@
         }
     };
 
+    /**
+     * 初始化提示詞管理器
+     */
+    FeedbackApp.prototype.initializePromptManagers = function() {
+        console.log('📝 初始化提示詞管理器...');
 
+        try {
+            // 檢查提示詞模組是否已載入
+            if (!window.MCPFeedback.Prompt) {
+                console.warn('⚠️ 提示詞模組未載入，跳過初始化');
+                return;
+            }
+
+            // 1. 初始化提示詞管理器
+            this.promptManager = new window.MCPFeedback.Prompt.PromptManager({
+                settingsManager: this.settingsManager
+            });
+            this.promptManager.init();
+
+            // 2. 初始化提示詞彈窗
+            this.promptModal = new window.MCPFeedback.Prompt.PromptModal();
+
+            // 3. 初始化設定頁籤 UI
+            this.promptSettingsUI = new window.MCPFeedback.Prompt.PromptSettingsUI({
+                promptManager: this.promptManager,
+                promptModal: this.promptModal
+            });
+            this.promptSettingsUI.init('#promptManagementContainer');
+
+            // 4. 初始化輸入按鈕
+            this.promptInputButtons = new window.MCPFeedback.Prompt.PromptInputButtons({
+                promptManager: this.promptManager,
+                promptModal: this.promptModal
+            });
+
+            // 初始化輸入按鈕到所有回饋輸入區域
+            const inputContainers = [
+                '#feedbackText',           // 回饋分頁
+                '#combinedFeedbackText'    // 工作區分頁
+            ];
+            this.promptInputButtons.init(inputContainers);
+
+            console.log('✅ 提示詞管理器初始化完成');
+
+        } catch (error) {
+            console.error('❌ 提示詞管理器初始化失敗:', error);
+        }
+    };
 
     /**
      * 處理 WebSocket 開啟

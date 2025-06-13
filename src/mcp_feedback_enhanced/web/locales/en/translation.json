@@ -260,6 +260,44 @@
         "aiSummary": "Test Web UI Functionality\n\n🎯 **Test Items:**\n- Web UI server startup and operation\n- WebSocket real-time communication\n- Feedback submission functionality\n- Image upload and preview\n- Command execution functionality\n- Smart Ctrl+V image pasting\n- Multi-language interface functionality\n\n📋 **Test Steps:**\n1. Test image upload (drag-drop, file selection, clipboard)\n2. Press Ctrl+V in text box to test smart pasting\n3. Try switching languages (Traditional Chinese/Simplified Chinese/English)\n4. Test command execution functionality\n5. Submit feedback and images\n\nPlease test these features and provide feedback!",
         "terminalWelcome": "Welcome to Interactive Feedback Terminal\n========================================\nProject Directory: {sessionId}\nEnter commands and press Enter or click Execute button\nSupported commands: ls, dir, pwd, cat, type, etc.\n\n$ "
     },
+    "prompts": {
+        "management": {
+            "title": "Prompt Templates Management",
+            "description": "Manage your frequently used prompt templates for quick selection during feedback input",
+            "addNew": "Add New Prompt",
+            "edit": "Edit",
+            "delete": "Delete",
+            "confirmDelete": "Are you sure you want to delete this prompt?",
+            "emptyState": "No prompt templates created yet",
+            "emptyHint": "Click the 'Add New Prompt' button above to create your first prompt template",
+            "created": "Created",
+            "lastUsed": "Last Used",
+            "notFound": "Prompt not found",
+            "addSuccess": "Prompt added successfully",
+            "updateSuccess": "Prompt updated successfully",
+            "deleteSuccess": "Prompt deleted successfully"
+        },
+        "buttons": {
+            "selectPrompt": "Select Prompt Template",
+            "useLastPrompt": "Use Last Prompt",
+            "noPrompts": "No prompt templates available, please add one in settings first",
+            "noLastPrompt": "No recently used prompt available",
+            "lastPromptApplied": "Last used prompt applied successfully",
+            "promptNotFound": "Prompt not found",
+            "promptApplied": "Prompt applied: "
+        },
+        "modal": {
+            "addTitle": "Add New Prompt",
+            "editTitle": "Edit Prompt",
+            "nameLabel": "Prompt Name",
+            "contentLabel": "Prompt Content",
+            "namePlaceholder": "Enter prompt name...",
+            "contentPlaceholder": "Enter prompt content...",
+            "save": "Save",
+            "cancel": "Cancel",
+            "emptyFields": "Please fill in all required fields"
+        }
+    },
     "about": {
         "title": "ℹ️ About",
         "description": "A powerful MCP server that provides human-in-the-loop interactive feedback functionality for AI-assisted development tools. Supports Web UI interface, with rich features including image upload, command execution, multi-language support, and more.",

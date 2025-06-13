@@ -8,34 +8,66 @@
 
 ## 🎯 核心概念
 
-這是一個 [MCP 伺服器](https://modelcontextprotocol.io/)，建立**回饋導向的開發工作流程**，完美適配本地、**SSH 遠端開發環境**與 **WSL (Windows Subsystem for Linux) 環境**。透過引導 AI 與用戶確認而非進行推測性操作，可將多次工具調用合併為單次回饋導向請求，大幅節省平台成本並提升開發效率。
+這是一個 [MCP 伺服器](https://modelcontextprotocol.io/)，建立**回饋導向的開發工作流程**，採用**純 Web UI 架構**，完美適配本地、**SSH 遠端開發環境**與 **WSL (Windows Subsystem for Linux) 環境**。透過引導 AI 與用戶確認而非進行推測性操作，可將多次工具調用合併為單次回饋導向請求，大幅節省平台成本並提升開發效率。
+
+**🌐 Web-Only 架構優勢：**
+- 🚀 **簡化部署**：無需 GUI 依賴，安裝更輕量
+- 🌍 **跨平台相容**：支援所有作業系統和環境
+- 🔧 **維護簡單**：統一的 Web 介面，降低複雜度
+- 📦 **體積精簡**：移除重型 GUI 庫，安裝包大幅縮小
 
 **支援平台：** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
 ### 🔄 工作流程
-1. **AI 調用** → `mcp-feedback-enhanced`
-2. **環境檢測** → 自動選擇合適介面
-3. **用戶互動** → 命令執行、文字回饋、圖片上傳
-4. **回饋傳遞** → 資訊返回 AI
-5. **流程繼續** → 根據回饋調整或結束
+1. **AI 調用** → `mcp-feedback-enhanced` 工具
+2. **Web UI 啟動** → 自動開啟瀏覽器介面（純 Web 架構）
+3. **智能互動** → 提示詞選擇、文字輸入、圖片上傳、自動提交
+4. **即時回饋** → WebSocket 連線即時傳遞資訊給 AI
+5. **會話追蹤** → 自動記錄會話歷史與統計
+6. **流程繼續** → AI 根據回饋調整行為或結束任務
 
 ## 🌟 主要功能
 
-### 🌐 Web UI 介面系統
-- **Web UI**：適用於所有環境的現代化界面，全新架構
+### 🌐 純 Web UI 架構系統
+- **Web-Only 設計**：完全移除桌面 GUI 依賴，採用純 Web 介面
 - **通用相容性**：支援本地、SSH Remote 和 WSL 環境
 - **自動適配**：智能環境檢測與最佳配置
+- **輕量部署**：無需複雜的 GUI 環境配置
 
-### 🎨 現代化界面設計（v2.1.0）
-- **模組化架構**：Web UI 採用模組化設計
-- **集中管理**：資料夾結構重新組織，維護更容易
-- **現代化主題**：改進的視覺設計和用戶體驗
-- **響應式布局**：適應不同螢幕尺寸和視窗大小
+### 📝 智能提示詞管理系統（v2.4.0 新功能）
+- **CRUD 操作**：新增、編輯、刪除、使用常用提示詞
+- **使用統計**：追蹤使用頻率並智能排序
+- **快速應用**：一鍵選擇和應用提示詞
+- **自動提交整合**：支援自動提交標記和優先顯示
+
+### ⏰ 自動定時提交功能（v2.4.0 新功能）
+- **彈性計時**：可設定 1-86400 秒的倒數計時器
+- **視覺化顯示**：即時倒數顯示和狀態指示
+- **深度整合**：與提示詞管理系統無縫配合
+- **完整控制**：支援暫停、恢復、取消操作
+
+### 📊 會話管理與追蹤（v2.4.0 新功能）
+- **即時狀態**：當前會話狀態即時顯示
+- **歷史記錄**：完整的會話歷史和統計分析
+- **數據統計**：今日會話數量和平均時長統計
+- **詳情管理**：會話詳情查看和管理功能
+
+### 🔗 連線監控系統（v2.4.0 新功能）
+- **即時監控**：WebSocket 連線狀態即時監控
+- **品質指示**：延遲測量和連線品質指示
+- **自動重連**：智能重連機制和錯誤處理
+- **詳細統計**：完整的連線統計資訊
+
+### 🎨 現代化界面設計
+- **模組化架構**：JavaScript 完全模組化重構
+- **響應式設計**：適配不同螢幕尺寸和視窗大小
+- **統一風格**：一致的設計語言和視覺體驗
+- **會話面板**：新增左側會話管理面板，支援收合/展開
 
 ### 🖼️ 圖片支援
 - **格式支援**：PNG、JPG、JPEG、GIF、BMP、WebP
 - **上傳方式**：拖拽檔案 + 剪貼板粘貼（Ctrl+V）
-- **自動處理**：智能壓縮確保符合 1MB 限制
+- **無限制上傳**：支援任意大小的圖片檔案，自動智能處理
 
 ### 🌏 多語言
 - **三語支援**：繁體中文、英文、簡體中文
@@ -57,17 +89,27 @@
 
 ## 🌐 介面預覽
 
-### Web UI 介面（現代版）
+### Web UI 介面（v2.4.0 - Web-Only 架構）
+
 <div align="center">
-  <img src="docs/zh-TW/images/web1.png" width="400" alt="Web UI 主介面" />
-  <img src="docs/zh-TW/images/web2.png" width="400" alt="Web UI 設定介面" />
+  <img src="docs/zh-TW/images/web1.jpeg" width="400" alt="Web UI 主介面 - 提示詞管理與自動提交" />
 </div>
 
-*Web UI 介面 - 現代化架構，適合所有環境*
+<details>
+<summary>📱 點擊查看完整介面截圖</summary>
+
+<div align="center">
+  <img src="docs/zh-TW/images/web2.jpeg" width="800" alt="Web UI 完整介面 - 會話管理與設定" />
+</div>
+
+</details>
+
+*Web UI 介面 - 純 Web 架構，支援提示詞管理、自動提交、會話追蹤等智能功能*
 
 **快捷鍵支援**
 - `Ctrl+Enter`（Windows/Linux）/ `Cmd+Enter`（macOS）：提交回饋（主鍵盤與數字鍵盤皆支援）
 - `Ctrl+V`（Windows/Linux）/ `Cmd+V`（macOS）：直接粘貼剪貼板圖片
+- `Ctrl+I`（Windows/Linux）/ `Cmd+I`（macOS）：快速聚焦輸入框 (感謝 @penn201500)
 
 ## 🚀 快速開始
 
@@ -141,7 +183,6 @@ uvx mcp-feedback-enhanced@latest version       # 檢查版本
 
 # 介面測試
 uvx mcp-feedback-enhanced@latest test --web    # 測試 Web UI (自動持續運行)
-uvx mcp-feedback-enhanced@latest test --enhanced # 增強測試套件
 
 # 調試模式
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
@@ -156,34 +197,40 @@ uv sync
 
 **本地測試方式**
 ```bash
-# 方式一：標準測試（推薦）
-uv run python -m mcp_feedback_enhanced test
+# 功能測試
+uv run python -m mcp_feedback_enhanced test              # 標準功能測試
+uvx --with-editable . mcp-feedback-enhanced test --web   # Web UI 測試 (持續運行)
 
-# 方式二：完整測試套件（macOS 和 windows 通用開發環境）
-uvx --with-editable . mcp-feedback-enhanced test
+# 單元測試
+make test                                                # 運行所有單元測試
+make test-fast                                          # 快速測試 (跳過慢速測試)
+make test-cov                                           # 測試並生成覆蓋率報告
 
-# 方式三：介面測試
-uvx --with-editable . mcp-feedback-enhanced test --web    # 測試 Web UI (自動持續運行)
-uvx --with-editable . mcp-feedback-enhanced test --enhanced # 增強測試套件
+# 代碼品質檢查
+make check                                              # 完整代碼品質檢查
+make quick-check                                        # 快速檢查並自動修復
 ```
 
 **測試說明**
-- **標準測試**：執行完整的功能檢查，適合日常開發驗證
-- **完整測試**：包含所有組件的深度測試，適合發布前驗證
-- **Web UI 測試**：啟動 Web 服務器並保持運行，便於完整測試 Web 功能
-- **增強測試**：完整的測試套件，包含進階場景
+- **功能測試**：測試 MCP 工具的完整功能流程
+- **單元測試**：測試各個模組的獨立功能
+- **覆蓋率測試**：生成 HTML 覆蓋率報告到 `htmlcov/` 目錄
+- **品質檢查**：包含 linting、格式化、類型檢查
+
 
 ## 🆕 版本更新記錄
 
 📋 **完整版本更新記錄：** [RELEASE_NOTES/CHANGELOG.zh-TW.md](RELEASE_NOTES/CHANGELOG.zh-TW.md)
 
-### 最新版本亮點（v2.3.0）
-- 🌐 **SSH Remote 環境支援**: 解決 Cursor SSH Remote 無法啟動瀏覽器的問題，提供清晰的使用指引
-- 🛡️ **錯誤提示改善**: 當發生錯誤時，提供更友善的錯誤訊息和解決建議
-- 🧹 **自動清理功能**: 自動清理臨時文件和過期會話，保持系統整潔
-- 📊 **記憶體監控**: 監控記憶體使用情況，防止系統資源不足
-- 🔧 **連線穩定性**: 改善 Web UI 的連線穩定性和錯誤處理
-- 🎯 **自動聚焦輸入框**: 回饋視窗開啟時自動聚焦到輸入框，提升用戶體驗 (感謝 @penn201500)
+### 最新版本亮點（v2.4.0）
+- 🏗️ **Web-Only 架構重構**: 完全移除 PyQt6 GUI 依賴，轉為純 Web UI 架構，大幅簡化部署
+- 📝 **智能提示詞管理**: 新增完整的提示詞 CRUD 系統，支援使用統計和智能排序
+- ⏰ **自動定時提交**: 可設定倒數計時器，與提示詞管理深度整合
+- 📊 **會話管理系統**: 即時會話狀態、歷史記錄和統計分析功能
+- 🔗 **連線監控增強**: WebSocket 連線狀態監控、延遲測量和自動重連
+- 🎨 **UI/UX 全面優化**: 新增會話面板、響應式設計、統一視覺風格
+- 🌐 **多語言系統增強**: 優化語言切換機制，提升本地化覆蓋率
+- 🛠️ **技術架構升級**: JavaScript 模組化重構，採用現代化開發模式
 
 ## 🐛 常見問題
 
@@ -201,6 +248,26 @@ A: 請確認 MCP 工具狀態為綠燈。**解決方法**：反覆開關 MCP 工
 A: **解決方法**：完全關閉並重新啟動 VS Code 或 Cursor，重新開啟專案。
 
 ### 🔧 一般問題
+**Q: 如何使用舊版 GUI 介面？**
+A: v2.4.0 版本已完全移除 PyQt6 GUI 依賴，轉為純 Web UI 架構。如需使用舊版 GUI，請指定 v2.3.0 或更早版本：
+```bash
+# 使用 v2.3.0（最後支援 GUI 的版本）
+uvx mcp-feedback-enhanced@2.3.0
+
+# 或在 MCP 配置中指定版本
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
+      "command": "uvx",
+      "args": ["mcp-feedback-enhanced@2.3.0"],
+      "timeout": 600,
+      "autoApprove": ["interactive_feedback"]
+    }
+  }
+}
+```
+**注意**：舊版本不包含 v2.4.0 的新功能（提示詞管理、自動提交、會話管理等）。
+
 **Q: 出現 "Unexpected token 'D'" 錯誤**
 A: 調試輸出干擾。設置 `MCP_DEBUG=false` 或移除該環境變數。
 
@@ -211,7 +278,7 @@ A: 已在 v2.0.3 修復。更新到最新版本：`uvx mcp-feedback-enhanced@lat
 A: 已在 v2.1.1 修復。進入「⚙️ 設定」分頁，勾選「總是在主螢幕中心顯示視窗」即可解決。特別適用於 T 字型螢幕排列等複雜多螢幕配置。
 
 **Q: 圖片上傳失敗**
-A: 檢查檔案大小（≤1MB）和格式（PNG/JPG/GIF/BMP/WebP）。
+A: 檢查檔案格式（PNG/JPG/JPEG/GIF/BMP/WebP）。系統支援任意大小的圖片檔案。
 
 **Q: Web UI 無法啟動**
 A: 檢查防火牆設定或嘗試使用不同的端口。

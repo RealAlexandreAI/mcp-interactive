@@ -2,6 +2,95 @@
 
 This document records all version updates for **MCP Feedback Enhanced**.
 
+## [v2.4.0] - Web-Only Architecture Refactoring & Smart Feature Enhancement
+
+### 🌟 Version Highlights
+This version underwent major architectural refactoring, **completely removing PyQt6 GUI dependencies** and transitioning to a pure Web UI architecture, dramatically simplifying deployment and maintenance. Additionally, multiple smart features were added, including prompt management, auto-submit, session management, and more, comprehensively enhancing user experience and work efficiency.
+
+### 🔄 Major Architectural Changes
+- 🏗️ **Complete PyQt6 GUI Removal**: Thoroughly removed desktop application dependencies, simplifying installation and deployment processes
+- 🌐 **Pure Web UI Architecture**: Unified use of Web interface, supporting all platforms and environments
+- 📦 **Dramatically Simplified Dependencies**: Removed PyQt6, related GUI libraries and other heavy dependencies, significantly reducing installation package size
+- 🚀 **Simpler Deployment**: No need to consider GUI environment configuration, suitable for all development environments
+
+### ✨ Brand New Features
+- 📝 **Smart Prompt Management System**:
+  - CRUD operations for common prompts (Create, Edit, Delete, Use)
+  - Usage frequency statistics and intelligent sorting
+  - Quick selection and one-click application functionality
+  - Support for auto-submit marking and priority display
+- ⏰ **Auto-Timed Submit Feature**:
+  - Configurable countdown timer from 1-86400 seconds
+  - Visual countdown display and status indicators
+  - Deep integration with prompt management system
+  - Support for pause, resume, and cancel operations
+- 📊 **Session Management & Tracking**:
+  - Real-time current session status display
+  - Session history records and statistical analysis
+  - Today's session count and average duration statistics
+  - Session detail viewing and management functions
+- 🔗 **Connection Monitoring System**:
+  - Real-time WebSocket connection status monitoring
+  - Latency measurement and connection quality indicators
+  - Auto-reconnection mechanism and error handling
+  - Detailed connection statistical information
+- ⌨️ **Enhanced Shortcuts**: Added Ctrl+I quick focus input box feature (Thanks @penn201500)
+
+### 🚀 Feature Improvements
+- 🎨 **Comprehensive UI/UX Optimization**:
+  - Added left session management panel with collapse/expand support
+  - Top connection status bar with real-time system status display
+  - Responsive design adapting to different screen sizes
+  - Unified design language and visual style
+- 🌐 **Enhanced Multi-language System**:
+  - Optimized language switching mechanism with instant switching support
+  - Added extensive translation text, improving localization coverage
+  - Improved language selector UI with dropdown design
+  - Fixed display issues during language switching
+- 🖼️ **Image Settings Integration**:
+  - Moved image settings from workspace to settings tab
+  - Unified settings management interface
+  - Improved organization and layout of setting items
+- 📱 **Interface Layout Optimization**:
+  - Adjusted layout to accommodate multi-language display requirements
+  - Optimized button styles and spacing
+  - Improved visual design of form elements
+  - Enhanced accessibility and usability
+
+### 🐛 Bug Fixes
+- 🔧 **Session Management Fixes**:
+  - Fixed session statistics information not updating correctly
+  - Fixed session count calculation errors
+  - Improved session state tracking mechanism
+- 🎯 **Prompt Feature Fixes**:
+  - Fixed common prompt management unable to correctly set auto-submit
+  - Improved prompt selection and application logic
+- 🌐 **Localization Switch Fixes**:
+  - Fixed partial text not updating during language switching
+  - Improved multi-language text loading mechanism
+- 🏗️ **Architecture Stability Fixes**:
+  - Fixed session management initialization issues
+  - Improved error handling and resource cleanup
+  - Optimized module loading order and dependencies
+
+### 🛠️ Technical Improvements
+- 📦 **Modular Architecture**:
+  - Complete JavaScript code modular refactoring
+  - Adopted ES6+ syntax and modern development patterns
+  - Clear module separation and responsibility division
+- 📊 **Performance Enhancement**:
+  - Optimized WebSocket communication efficiency
+  - Improved frontend resource loading speed
+  - Reduced memory usage and CPU load
+
+### 📚 Documentation Updates
+- 📖 **Architecture Documentation Update**: Updated system architecture description to reflect Web-Only design
+- 🔧 **Installation Guide Simplification**: Removed GUI-related installation steps and dependency descriptions
+- 🖼️ **Screenshot Updates**: Updated all interface screenshots to showcase new Web UI design
+- 📋 **Enhanced API Documentation**: Added API descriptions for new features like prompt management and auto-submit
+
+---
+
 ## [v2.3.0] - System Stability & Resource Management Enhancement
 
 ### 🌟 Highlights
@@ -179,6 +268,13 @@ This version focuses on improving system stability and user experience, particul
 | 📁 | File Structure |
 | ⌨️ | Shortcuts |
 | 🖼️ | Image Features |
+| 📝 | Prompt Management |
+| ⏰ | Auto-Submit |
+| 📊 | Session Management |
+| 🔗 | Connection Monitoring |
+| 🏗️ | Architecture Changes |
+| 🛠️ | Technical Improvements |
+| 📚 | Documentation Updates |
 
 ---
 

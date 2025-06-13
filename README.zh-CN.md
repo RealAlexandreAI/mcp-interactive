@@ -8,34 +8,66 @@
 
 ## 🎯 核心概念
 
-这是一个 [MCP 服务器](https://modelcontextprotocol.io/)，建立**反馈导向的开发工作流程**，完美适配本地、**SSH Remote 环境**（Cursor SSH Remote、VS Code Remote SSH）与 **WSL (Windows Subsystem for Linux) 环境**。通过引导 AI 与用户确认而非进行推测性操作，可将多次工具调用合并为单次反馈导向请求，大幅节省平台成本并提升开发效率。
+这是一个 [MCP 服务器](https://modelcontextprotocol.io/)，建立**反馈导向的开发工作流程**，采用**纯 Web UI 架构**，完美适配本地、**SSH Remote 环境**（Cursor SSH Remote、VS Code Remote SSH）与 **WSL (Windows Subsystem for Linux) 环境**。通过引导 AI 与用户确认而非进行推测性操作，可将多次工具调用合并为单次反馈导向请求，大幅节省平台成本并提升开发效率。
+
+**🌐 Web-Only 架构优势：**
+- 🚀 **简化部署**：无需 GUI 依赖，安装更轻量
+- 🌍 **跨平台兼容**：支持所有操作系统和环境
+- 🔧 **维护简单**：统一的 Web 界面，降低复杂度
+- 📦 **体积精简**：移除重型 GUI 库，安装包大幅缩小
 
 **支持平台：** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
 ### 🔄 工作流程
-1. **AI 调用** → `mcp-feedback-enhanced`
-2. **环境检测** → 自动选择合适界面
-3. **用户交互** → 命令执行、文字反馈、图片上传
-4. **反馈传递** → 信息返回 AI
-5. **流程继续** → 根据反馈调整或结束
+1. **AI 调用** → `mcp-feedback-enhanced` 工具
+2. **Web UI 启动** → 自动打开浏览器界面（纯 Web 架构）
+3. **智能交互** → 提示词选择、文字输入、图片上传、自动提交
+4. **即时反馈** → WebSocket 连接即时传递信息给 AI
+5. **会话追踪** → 自动记录会话历史与统计
+6. **流程继续** → AI 根据反馈调整行为或结束任务
 
 ## 🌟 主要功能
 
-### 🌐 Web UI 界面系统
-- **Web UI**：适用于所有环境的现代化界面，全新架构
+### 🌐 纯 Web UI 架构系统
+- **Web-Only 设计**：完全移除桌面 GUI 依赖，采用纯 Web 界面
 - **通用兼容性**：支持本地、SSH Remote 和 WSL 环境
 - **自动适配**：智能环境检测与最佳配置
+- **轻量部署**：无需复杂的 GUI 环境配置
 
-### 🎨 现代化界面设计（v2.1.0）
-- **模块化架构**：Web UI 采用模块化设计
-- **集中管理**：文件夹结构重新组织，维护更容易
-- **现代化主题**：改进的视觉设计和用户体验
-- **响应式布局**：适应不同屏幕尺寸和窗口大小
+### 📝 智能提示词管理系统（v2.4.0 新功能）
+- **CRUD 操作**：新增、编辑、删除、使用常用提示词
+- **使用统计**：追踪使用频率并智能排序
+- **快速应用**：一键选择和应用提示词
+- **自动提交整合**：支持自动提交标记和优先显示
+
+### ⏰ 自动定时提交功能（v2.4.0 新功能）
+- **弹性计时**：可设定 1-86400 秒的倒数计时器
+- **视觉化显示**：即时倒数显示和状态指示
+- **深度整合**：与提示词管理系统无缝配合
+- **完整控制**：支持暂停、恢复、取消操作
+
+### 📊 会话管理与追踪（v2.4.0 新功能）
+- **即时状态**：当前会话状态即时显示
+- **历史记录**：完整的会话历史和统计分析
+- **数据统计**：今日会话数量和平均时长统计
+- **详情管理**：会话详情查看和管理功能
+
+### 🔗 连接监控系统（v2.4.0 新功能）
+- **即时监控**：WebSocket 连接状态即时监控
+- **品质指示**：延迟测量和连接品质指示
+- **自动重连**：智能重连机制和错误处理
+- **详细统计**：完整的连接统计信息
+
+### 🎨 现代化界面设计
+- **模块化架构**：JavaScript 完全模块化重构
+- **响应式设计**：适配不同屏幕尺寸和窗口大小
+- **统一风格**：一致的设计语言和视觉体验
+- **会话面板**：新增左侧会话管理面板，支持收合/展开
 
 ### 🖼️ 图片支持
 - **格式支持**：PNG、JPG、JPEG、GIF、BMP、WebP
 - **上传方式**：拖拽文件 + 剪贴板粘贴（Ctrl+V）
-- **自动处理**：智能压缩确保符合 1MB 限制
+- **无限制上传**：支持任意大小的图片文件，自动智能处理
 
 ### 🌏 多语言
 - **三语支持**：简体中文、英文、繁体中文
@@ -57,17 +89,27 @@
 
 ## 🌐 界面预览
 
-### Web UI 界面（现代版）
+### Web UI 界面（v2.4.0 - Web-Only 架构）
+
 <div align="center">
-  <img src="docs/zh-CN/images/web1.png" width="400" alt="Web UI 主界面" />
-  <img src="docs/zh-CN/images/web2.png" width="400" alt="Web UI 设置界面" />
+  <img src="docs/zh-CN/images/web1.jpeg" width="400" alt="Web UI 主界面 - 提示词管理与自动提交" />
 </div>
 
-*Web UI 界面 - 现代化架构，适合所有环境*
+<details>
+<summary>📱 点击查看完整界面截图</summary>
+
+<div align="center">
+  <img src="docs/zh-CN/images/web2.jpeg" width="800" alt="Web UI 完整界面 - 会话管理与设置" />
+</div>
+
+</details>
+
+*Web UI 界面 - 纯 Web 架构，支持提示词管理、自动提交、会话追踪等智能功能*
 
 **快捷键支持**
 - `Ctrl+Enter`（Windows/Linux）/ `Cmd+Enter`（macOS）：提交反馈（主键盘与数字键盘皆支持）
 - `Ctrl+V`（Windows/Linux）/ `Cmd+V`（macOS）：直接粘贴剪贴板图片
+- `Ctrl+I`（Windows/Linux）/ `Cmd+I`（macOS）：快速聚焦输入框 (感谢 @penn201500)
 
 ## 🚀 快速开始
 
@@ -141,7 +183,6 @@ uvx mcp-feedback-enhanced@latest version       # 检查版本
 
 # 界面测试
 uvx mcp-feedback-enhanced@latest test --web    # 测试 Web UI (自动持续运行)
-uvx mcp-feedback-enhanced@latest test --enhanced # 增强测试套件
 
 # 调试模式
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
@@ -156,34 +197,39 @@ uv sync
 
 **本地测试方式**
 ```bash
-# 方式一：标准测试（推荐）
-uv run python -m mcp_feedback_enhanced test
+# 功能测试
+uv run python -m mcp_feedback_enhanced test              # 标准功能测试
+uvx --with-editable . mcp-feedback-enhanced test --web   # Web UI 测试 (持续运行)
 
-# 方式二：完整测试套件（macOS 和 Windows 通用开发环境）
-uvx --with-editable . mcp-feedback-enhanced test
+# 单元测试
+make test                                                # 运行所有单元测试
+make test-fast                                          # 快速测试 (跳过慢速测试)
+make test-cov                                           # 测试并生成覆盖率报告
 
-# 方式三：界面测试
-uvx --with-editable . mcp-feedback-enhanced test --web    # 测试 Web UI (自动持续运行)
-uvx --with-editable . mcp-feedback-enhanced test --enhanced # 增强测试套件
+# 代码质量检查
+make check                                              # 完整代码质量检查
+make quick-check                                        # 快速检查并自动修复
 ```
 
 **测试说明**
-- **标准测试**：执行完整的功能检查，适合日常开发验证
-- **完整测试**：包含所有组件的深度测试，适合发布前验证
-- **Web UI 测试**：启动 Web 服务器并保持运行，便于完整测试 Web 功能
-- **增强测试**：完整的测试套件，包含进阶场景
+- **功能测试**：测试 MCP 工具的完整功能流程
+- **单元测试**：测试各个模块的独立功能
+- **覆盖率测试**：生成 HTML 覆盖率报告到 `htmlcov/` 目录
+- **质量检查**：包含 linting、格式化、类型检查
 
 ## 🆕 版本更新记录
 
 📋 **完整版本更新记录：** [RELEASE_NOTES/CHANGELOG.zh-CN.md](RELEASE_NOTES/CHANGELOG.zh-CN.md)
 
-### 最新版本亮点（v2.3.0）
-- 🌐 **SSH Remote 环境支持**: 解决 Cursor SSH Remote 无法启动浏览器的问题，提供清晰的使用指引
-- 🛡️ **错误提示改善**: 当发生错误时，提供更友善的错误信息和解决建议
-- 🧹 **自动清理功能**: 自动清理临时文件和过期会话，保持系统整洁
-- 📊 **内存监控**: 监控内存使用情况，防止系统资源不足
-- 🔧 **连接稳定性**: 改善 Web UI 的连接稳定性和错误处理
-- 🎯 **自动聚焦输入框**: 反馈窗口开启时自动聚焦到输入框，提升用户体验 (感谢 @penn201500)
+### 最新版本亮点（v2.4.0）
+- 🏗️ **Web-Only 架构重构**: 完全移除 PyQt6 GUI 依赖，转为纯 Web UI 架构，大幅简化部署
+- 📝 **智能提示词管理**: 新增完整的提示词 CRUD 系统，支持使用统计和智能排序
+- ⏰ **自动定时提交**: 可设定倒数计时器，与提示词管理深度整合
+- 📊 **会话管理系统**: 即时会话状态、历史记录和统计分析功能
+- 🔗 **连接监控增强**: WebSocket 连接状态监控、延迟测量和自动重连
+- 🎨 **UI/UX 全面优化**: 新增会话面板、响应式设计、统一视觉风格
+- 🌐 **多语言系统增强**: 优化语言切换机制，提升本地化覆盖率
+- 🛠️ **技术架构升级**: JavaScript 模块化重构，采用现代化开发模式
 
 ## 🐛 常见问题
 
@@ -201,6 +247,26 @@ A: 请确认 MCP 工具状态为绿灯。**解决方法**：反复开关 MCP 工
 A: **解决方法**：完全关闭并重新启动 VS Code 或 Cursor，重新打开项目。
 
 ### 🔧 一般问题
+**Q: 如何使用旧版 GUI 界面？**
+A: v2.4.0 版本已完全移除 PyQt6 GUI 依赖，转为纯 Web UI 架构。如需使用旧版 GUI，请指定 v2.3.0 或更早版本：
+```bash
+# 使用 v2.3.0（最后支持 GUI 的版本）
+uvx mcp-feedback-enhanced@2.3.0
+
+# 或在 MCP 配置中指定版本
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
+      "command": "uvx",
+      "args": ["mcp-feedback-enhanced@2.3.0"],
+      "timeout": 600,
+      "autoApprove": ["interactive_feedback"]
+    }
+  }
+}
+```
+**注意**：旧版本不包含 v2.4.0 的新功能（提示词管理、自动提交、会话管理等）。
+
 **Q: 出现 "Unexpected token 'D'" 错误**
 A: 调试输出干扰。设置 `MCP_DEBUG=false` 或移除该环境变量。
 
@@ -211,7 +277,7 @@ A: 已在 v2.0.3 修复。更新到最新版本：`uvx mcp-feedback-enhanced@lat
 A: 已在 v2.1.1 修复。进入「⚙️ 设置」标签页，勾选「总是在主屏幕中心显示窗口」即可解决。特别适用于 T 字型屏幕排列等复杂多屏幕配置。
 
 **Q: 图片上传失败**
-A: 检查文件大小（≤1MB）和格式（PNG/JPG/GIF/BMP/WebP）。
+A: 检查文件格式（PNG/JPG/JPEG/GIF/BMP/WebP）。系统支持任意大小的图片文件。
 
 **Q: Web UI 无法启动**
 A: 检查防火墙设置或尝试使用不同的端口。

@@ -8,34 +8,66 @@
 
 ## 🎯 Core Concept
 
-This is an [MCP server](https://modelcontextprotocol.io/) that establishes **feedback-oriented development workflows**, perfectly adapting to local, **SSH Remote environments** (Cursor SSH Remote, VS Code Remote SSH), and **WSL (Windows Subsystem for Linux) environments**. By guiding AI to confirm with users rather than making speculative operations, it can consolidate multiple tool calls into a single feedback-oriented request, dramatically reducing platform costs and improving development efficiency.
+This is an [MCP server](https://modelcontextprotocol.io/) that establishes **feedback-oriented development workflows**, adopting a **pure Web UI architecture**, perfectly adapting to local, **SSH Remote environments** (Cursor SSH Remote, VS Code Remote SSH), and **WSL (Windows Subsystem for Linux) environments**. By guiding AI to confirm with users rather than making speculative operations, it can consolidate multiple tool calls into a single feedback-oriented request, dramatically reducing platform costs and improving development efficiency.
+
+**🌐 Web-Only Architecture Advantages:**
+- 🚀 **Simplified Deployment**: No GUI dependencies, lighter installation
+- 🌍 **Cross-Platform Compatibility**: Supports all operating systems and environments
+- 🔧 **Easy Maintenance**: Unified Web interface, reduced complexity
+- 📦 **Compact Size**: Removed heavy GUI libraries, significantly smaller installation package
 
 **Supported Platforms:** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
 ### 🔄 Workflow
-1. **AI Call** → `mcp-feedback-enhanced`
-2. **Environment Detection** → Auto-select appropriate interface
-3. **User Interaction** → Command execution, text feedback, image upload
-4. **Feedback Delivery** → Information returns to AI
-5. **Process Continuation** → Adjust or end based on feedback
+1. **AI Call** → `mcp-feedback-enhanced` tool
+2. **Web UI Launch** → Auto-open browser interface (pure Web architecture)
+3. **Smart Interaction** → Prompt selection, text input, image upload, auto-submit
+4. **Real-time Feedback** → WebSocket connection delivers information to AI instantly
+5. **Session Tracking** → Auto-record session history and statistics
+6. **Process Continuation** → AI adjusts behavior or ends task based on feedback
 
 ## 🌟 Key Features
 
-### 🌐 Web UI Interface System
-- **Web UI**: Modern interface for all environments, brand new architecture
+### 🌐 Pure Web UI Architecture System
+- **Web-Only Design**: Completely removed desktop GUI dependencies, adopting pure Web interface
 - **Universal Compatibility**: Supports local, SSH Remote, and WSL environments
 - **Auto Adaptation**: Intelligent environment detection and optimal configuration
+- **Lightweight Deployment**: No complex GUI environment configuration required
 
-### 🎨 Modern Interface Design (v2.1.0)
-- **Modular Architecture**: Web UI adopts modular design
-- **Centralized Management**: Reorganized folder structure for easier maintenance
-- **Modern Themes**: Improved visual design and user experience
-- **Responsive Layout**: Adapts to different screen sizes and window dimensions
+### 📝 Smart Prompt Management System (v2.4.0 New Feature)
+- **CRUD Operations**: Create, edit, delete, and use common prompts
+- **Usage Statistics**: Track usage frequency with intelligent sorting
+- **Quick Application**: One-click selection and application of prompts
+- **Auto-Submit Integration**: Support auto-submit marking and priority display
+
+### ⏰ Auto-Timed Submit Feature (v2.4.0 New Feature)
+- **Flexible Timing**: Configurable countdown timer from 1-86400 seconds
+- **Visual Display**: Real-time countdown display and status indicators
+- **Deep Integration**: Seamless integration with prompt management system
+- **Complete Control**: Support pause, resume, and cancel operations
+
+### 📊 Session Management & Tracking (v2.4.0 New Feature)
+- **Real-time Status**: Current session status display in real-time
+- **History Records**: Complete session history and statistical analysis
+- **Data Statistics**: Today's session count and average duration statistics
+- **Detail Management**: Session detail viewing and management functions
+
+### 🔗 Connection Monitoring System (v2.4.0 New Feature)
+- **Real-time Monitoring**: WebSocket connection status monitoring in real-time
+- **Quality Indicators**: Latency measurement and connection quality indicators
+- **Auto Reconnection**: Smart reconnection mechanism and error handling
+- **Detailed Statistics**: Complete connection statistical information
+
+### 🎨 Modern Interface Design
+- **Modular Architecture**: JavaScript completely modularized refactoring
+- **Responsive Design**: Adapts to different screen sizes and window dimensions
+- **Unified Style**: Consistent design language and visual experience
+- **Session Panel**: New left session management panel with collapse/expand support
 
 ### 🖼️ Image Support
 - **Format Support**: PNG, JPG, JPEG, GIF, BMP, WebP
 - **Upload Methods**: Drag & drop files + clipboard paste (Ctrl+V)
-- **Auto Processing**: Smart compression to ensure 1MB limit compliance
+- **Unlimited Upload**: Support image files of any size with automatic smart processing
 
 ### 🌏 Multi-language
 - **Three Languages**: English, Traditional Chinese, Simplified Chinese
@@ -55,20 +87,30 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 - **MCP Integration Optimization**: Improved integration with MCP system for more stable connection experience
 - **Detailed Documentation**: [SSH Remote Environment Usage Guide](docs/en/ssh-remote/browser-launch-issues.md)
 - 🎯 **Auto-focus Input Box**: Automatically focus on feedback input box when window opens, improving user experience (Thanks @penn201500)
-  
+
 ## 🌐 Interface Preview
 
-### Web UI Interface (Modern Version)
+### Web UI Interface (v2.4.0 - Web-Only Architecture)
+
 <div align="center">
-  <img src="docs/en/images/web1.png" width="400" alt="Web UI Main Interface" />
-  <img src="docs/en/images/web2.png" width="400" alt="Web UI Settings Interface" />
+  <img src="docs/en/images/web1.jpeg" width="400" alt="Web UI Main Interface - Prompt Management & Auto-Submit" />
 </div>
 
-*Web UI Interface - Modern architecture, suitable for all environments*
+<details>
+<summary>📱 Click to view complete interface screenshots</summary>
+
+<div align="center">
+  <img src="docs/en/images/web2.jpeg" width="800" alt="Web UI Complete Interface - Session Management & Settings" />
+</div>
+
+</details>
+
+*Web UI Interface - Pure Web architecture, supporting prompt management, auto-submit, session tracking and other smart features*
 
 **Keyboard Shortcuts**
 - `Ctrl+Enter` (Windows/Linux) / `Cmd+Enter` (macOS): Submit feedback (supports both main keyboard and numpad)
 - `Ctrl+V` (Windows/Linux) / `Cmd+V` (macOS): Directly paste clipboard images
+- `Ctrl+I` (Windows/Linux) / `Cmd+I` (macOS): Quick focus input box (Thanks @penn201500)
 
 ## 🚀 Quick Start
 
@@ -157,33 +199,39 @@ uv sync
 
 **Local Testing Methods**
 ```bash
-# Method 1: Standard test (recommended)
-uv run python -m mcp_feedback_enhanced test
+# Functional Testing
+uv run python -m mcp_feedback_enhanced test              # Standard functional testing
+uvx --with-editable . mcp-feedback-enhanced test --web   # Web UI testing (continuous running)
 
-# Method 2: Complete test suite (macOS and Windows dev environment)
-uvx --with-editable . mcp-feedback-enhanced test
+# Unit Testing
+make test                                                # Run all unit tests
+make test-fast                                          # Fast testing (skip slow tests)
+make test-cov                                           # Testing with coverage report
 
-# Method 3: Interface testing
-uvx --with-editable . mcp-feedback-enhanced test --web    # Test Web UI (auto continuous running)
-uvx --with-editable . mcp-feedback-enhanced test --enhanced # Enhanced test suite
+# Code Quality Checks
+make check                                              # Complete code quality checks
+make quick-check                                        # Quick check with auto-fix
 ```
 
 **Testing Descriptions**
-- **Standard Test**: Complete functionality check, suitable for daily development verification
-- **Complete Test**: Deep testing of all components, suitable for pre-release verification
-- **Web UI Test**: Start Web server and keep running for complete Web functionality testing
-- **Enhanced Test**: Comprehensive test suite with advanced scenarios
+- **Functional Testing**: Test complete MCP tool functionality workflow
+- **Unit Testing**: Test individual module functionality
+- **Coverage Testing**: Generate HTML coverage report to `htmlcov/` directory
+- **Quality Checks**: Include linting, formatting, type checking
 
 ## 🆕 Version History
 
 📋 **Complete Version History:** [RELEASE_NOTES/CHANGELOG.en.md](RELEASE_NOTES/CHANGELOG.en.md)
 
-### Latest Version Highlights (v2.3.0)
-- 🌐 **SSH Remote Environment Support**: Solved Cursor SSH Remote browser launch issues with clear usage guidance
-- 🛡️ **Error Message Improvements**: Provides more user-friendly error messages and solution suggestions when errors occur
-- 🧹 **Auto-cleanup Features**: Automatically cleans temporary files and expired sessions to keep the system tidy
-- 📊 **Memory Monitoring**: Monitors memory usage to prevent system resource shortage
-- 🔧 **Connection Stability**: Improved Web UI connection stability and error handling
+### Latest Version Highlights (v2.4.0)
+- 🏗️ **Web-Only Architecture Refactoring**: Completely removed PyQt6 GUI dependencies, transitioned to pure Web UI architecture, dramatically simplifying deployment
+- 📝 **Smart Prompt Management**: Added complete prompt CRUD system with usage statistics and intelligent sorting
+- ⏰ **Auto-Timed Submit**: Configurable countdown timer with deep integration with prompt management system
+- 📊 **Session Management System**: Real-time session status, history records, and statistical analysis features
+- 🔗 **Enhanced Connection Monitoring**: WebSocket connection status monitoring, latency measurement, and auto-reconnection
+- 🎨 **Comprehensive UI/UX Optimization**: New session panel, responsive design, unified visual style
+- 🌐 **Enhanced Multi-language System**: Optimized language switching mechanism, improved localization coverage
+- 🛠️ **Technical Architecture Upgrade**: JavaScript modular refactoring, adopting modern development patterns
 
 ## 🐛 Common Issues
 
@@ -201,6 +249,26 @@ A: Please confirm the MCP tool status shows green light. **Solution**: Toggle th
 A: **Solution**: Completely close and restart VS Code or Cursor, then reopen the project.
 
 ### 🔧 General Issues
+**Q: How to use the legacy GUI interface?**
+A: v2.4.0 has completely removed PyQt6 GUI dependencies and transitioned to a pure Web UI architecture. To use the legacy GUI, please specify v2.3.0 or earlier versions:
+```bash
+# Use v2.3.0 (last version supporting GUI)
+uvx mcp-feedback-enhanced@2.3.0
+
+# Or specify version in MCP configuration
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
+      "command": "uvx",
+      "args": ["mcp-feedback-enhanced@2.3.0"],
+      "timeout": 600,
+      "autoApprove": ["interactive_feedback"]
+    }
+  }
+}
+```
+**Note**: Legacy versions do not include v2.4.0 new features (prompt management, auto-submit, session management, etc.).
+
 **Q: Getting "Unexpected token 'D'" error**
 A: Debug output interference. Set `MCP_DEBUG=false` or remove the environment variable.
 
@@ -211,7 +279,7 @@ A: Fixed in v2.0.3. Update to latest version: `uvx mcp-feedback-enhanced@latest`
 A: Fixed in v2.1.1. Go to "⚙️ Settings" tab, check "Always show window at primary screen center" to resolve. Especially useful for T-shaped screen arrangements and other complex multi-monitor configurations.
 
 **Q: Image upload fails**
-A: Check file size (≤1MB) and format (PNG/JPG/GIF/BMP/WebP).
+A: Check file format (PNG/JPG/JPEG/GIF/BMP/WebP). System supports image files of any size.
 
 **Q: Web UI won't start**
 A: Check firewall settings or try using a different port.

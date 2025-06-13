@@ -2,7 +2,7 @@
 
 This document records all version updates for **MCP Feedback Enhanced**.
 
-## [v2.4.0] - Web-Only Architecture Refactoring & Smart Feature Enhancement
+## [v2.4.2] - Web-Only Architecture Refactoring & Smart Feature Enhancement
 
 ### 🌟 Version Highlights
 This version underwent major architectural refactoring, **completely removing PyQt6 GUI dependencies** and transitioning to a pure Web UI architecture, dramatically simplifying deployment and maintenance. Additionally, multiple smart features were added, including prompt management, auto-submit, session management, and more, comprehensively enhancing user experience and work efficiency.

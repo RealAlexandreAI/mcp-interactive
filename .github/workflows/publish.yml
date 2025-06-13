@@ -4,14 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: 'Version bump type'
-        required: true
+        description: 'Version bump type (ignored if custom_version is provided)'
+        required: false
         default: 'patch'
         type: choice
         options:
         - patch    # 2.0.0 -> 2.0.1 (bug fixes, security patches, documentation updates)
         - minor    # 2.0.0 -> 2.1.0 (new features, enhancements, backward-compatible changes)
         - major    # 2.0.0 -> 3.0.0 (breaking changes, architecture refactoring, API changes)
+      custom_version:
+        description: 'Custom version number (e.g., 2.5.0) - overrides version_type if provided'
+        required: false
+        type: string
 
 jobs:
   release:
@@ -57,11 +61,35 @@ jobs:
         echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "Current version: $CURRENT_VERSION"
 
-    - name: Bump version
+    - name: Determine new version
       id: bump_version
       run: |
-        uv run bump2version --allow-dirty ${{ github.event.inputs.version_type }}
-        NEW_VERSION=$(grep '^version =' pyproject.toml | cut -d'"' -f2)
+        CUSTOM_VERSION="${{ github.event.inputs.custom_version }}"
+
+        if [ -n "$CUSTOM_VERSION" ]; then
+          echo "🎯 Using custom version: $CUSTOM_VERSION"
+
+          # Validate version format (basic semver check)
+          if [[ ! "$CUSTOM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Error: Custom version must be in format X.Y.Z (e.g., 2.5.0)"
+            exit 1
+          fi
+
+          # Update version in pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"$CUSTOM_VERSION\"/" pyproject.toml
+
+          # Update version in .bumpversion.cfg
+          sed -i "s/^current_version = .*/current_version = $CUSTOM_VERSION/" .bumpversion.cfg
+
+          NEW_VERSION="$CUSTOM_VERSION"
+          echo "✅ Set custom version: $NEW_VERSION"
+        else
+          echo "🔄 Using automatic version bump: ${{ github.event.inputs.version_type }}"
+          uv run bump2version --allow-dirty ${{ github.event.inputs.version_type }}
+          NEW_VERSION=$(grep '^version =' pyproject.toml | cut -d'"' -f2)
+          echo "✅ Bumped version to: $NEW_VERSION"
+        fi
+
         echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
         echo "New version: $NEW_VERSION"
 
@@ -230,11 +258,21 @@ jobs:
 
     - name: Commit version bump
       run: |
+        CUSTOM_VERSION="${{ github.event.inputs.custom_version }}"
+        VERSION_METHOD=""
+
+        if [ -n "$CUSTOM_VERSION" ]; then
+          VERSION_METHOD="Custom version specified: $CUSTOM_VERSION"
+        else
+          VERSION_METHOD="Auto-bumped (${{ github.event.inputs.version_type }})"
+        fi
+
         git add .
         git commit -m "🔖 Release v${{ steps.bump_version.outputs.new }}
 
         - Updated version to ${{ steps.bump_version.outputs.new }}
-        - Auto-generated release from simplified workflow"
+        - $VERSION_METHOD
+        - Auto-generated release from workflow"
         git tag "v${{ steps.bump_version.outputs.new }}"
 
     - name: Build package

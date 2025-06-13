@@ -260,6 +260,12 @@
                     self.submitFeedback();
                 }
 
+                // Ctrl+I 聚焦輸入框
+                if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                    e.preventDefault();
+                    self.focusInput();
+                }
+
                 // Esc 取消
                 if (e.key === 'Escape') {
                     self.cancelFeedback();
@@ -741,6 +747,43 @@
     FeedbackApp.prototype.cancelFeedback = function() {
         console.log('❌ 取消回饋');
         this.clearFeedback();
+    };
+
+    /**
+     * 聚焦到輸入框 (Ctrl+I 快捷鍵)
+     */
+    FeedbackApp.prototype.focusInput = function() {
+        console.log('🎯 執行聚焦輸入框...');
+
+        // 根據當前佈局模式選擇正確的輸入框
+        let targetInput = null;
+        const layoutMode = this.settingsManager ? this.settingsManager.get('layoutMode') : 'combined-vertical';
+
+        if (layoutMode.startsWith('combined')) {
+            // 工作區模式：聚焦合併模式的輸入框
+            targetInput = window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText');
+        } else {
+            // 分離模式：聚焦回饋分頁的輸入框
+            targetInput = window.MCPFeedback.Utils.safeQuerySelector('#feedbackText');
+
+            // 如果不在當前可見的分頁，先切換到回饋分頁
+            if (this.uiManager && this.uiManager.getCurrentTab() !== 'feedback') {
+                this.uiManager.switchTab('feedback');
+            }
+        }
+
+        if (targetInput) {
+            // 聚焦並滾動到可見區域
+            targetInput.focus();
+            targetInput.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            console.log('✅ 已聚焦到輸入框');
+        } else {
+            console.warn('⚠️ 未找到目標輸入框');
+        }
     };
 
     /**

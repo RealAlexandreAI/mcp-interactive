@@ -19,7 +19,7 @@
         "description": "Please provide your feedback on the AI assistant's work. You can enter text feedback and upload related images.",
         "textLabel": "Text Feedback",
         "placeholder": "Please enter your feedback here...",
-        "detailedPlaceholder": "Please enter your feedback here...\n\n💡 Tips:\n• Press Ctrl+Enter/Cmd+Enter (numpad supported) for quick submit\n• Press Ctrl+V/Cmd+V to paste clipboard images directly",
+        "detailedPlaceholder": "Please enter your feedback here...\n\n💡 Tips:\n• Press Ctrl+Enter/Cmd+Enter (numpad supported) for quick submit\n• Press Ctrl+I/Cmd+I to focus input box\n• Press Ctrl+V/Cmd+V to paste clipboard images directly",
         "imageLabel": "Image Attachments (Optional)",
         "imageUploadText": "📎 Click to select images or drag and drop images here\nSupports PNG, JPG, JPEG, GIF, BMP, WebP formats",
         "submit": "✅ Submit Feedback",

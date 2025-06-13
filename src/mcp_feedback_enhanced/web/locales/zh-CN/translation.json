@@ -19,7 +19,7 @@
         "description": "请提供您对 AI 工作成果的反馈意见。您可以输入文字反馈并上传相关图片。",
         "textLabel": "文字反馈",
         "placeholder": "请在这里输入您的反馈...",
-        "detailedPlaceholder": "请在这里输入您的反馈...\n\n💡 小提示：\n• 按 Ctrl+Enter/Cmd+Enter (支持数字键盘) 可快速提交\n• 按 Ctrl+V/Cmd+V 可直接粘贴剪贴板图片",
+        "detailedPlaceholder": "请在这里输入您的反馈...\n\n💡 小提示：\n• 按 Ctrl+Enter/Cmd+Enter (支持数字键盘) 可快速提交\n• 按 Ctrl+I/Cmd+I 可聚焦输入框\n• 按 Ctrl+V/Cmd+V 可直接粘贴剪贴板图片",
         "imageLabel": "图片附件（可选）",
         "imageUploadText": "📎 点击选择图片或拖放图片到此处\n支持 PNG、JPG、JPEG、GIF、BMP、WebP 等格式",
         "submit": "✅ 提交反馈",

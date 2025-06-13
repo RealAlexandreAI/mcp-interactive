@@ -24,7 +24,7 @@
         "description": "請提供您對 AI 工作成果的回饋意見。您可以輸入文字回饋並上傳相關圖片。",
         "textLabel": "文字回饋",
         "placeholder": "請在這裡輸入您的回饋...",
-        "detailedPlaceholder": "請在這裡輸入您的回饋...\n\n💡 小提示：\n• 按 Ctrl+Enter/Cmd+Enter (支援數字鍵盤) 可快速提交\n• 按 Ctrl+V/Cmd+V 可直接貼上剪貼板圖片",
+        "detailedPlaceholder": "請在這裡輸入您的回饋...\n\n💡 小提示：\n• 按 Ctrl+Enter/Cmd+Enter (支援數字鍵盤) 可快速提交\n• 按 Ctrl+I/Cmd+I 可聚焦輸入框\n• 按 Ctrl+V/Cmd+V 可直接貼上剪貼板圖片",
         "imageLabel": "圖片附件（可選）",
         "imageUploadText": "📎 點擊選擇圖片或拖放圖片到此處\n支援 PNG、JPG、JPEG、GIF、BMP、WebP 等格式",
         "submit": "✅ 提交回饋",

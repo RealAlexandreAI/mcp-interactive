@@ -1304,3 +1304,45 @@ h3.combined-section-title {
     margin: 0;
 }
 
+/* Placeholder 文本換行修復 - 全局樣式 */
+textarea::placeholder,
+#feedbackText::placeholder,
+#combinedFeedbackText::placeholder {
+    white-space: pre-line !important;
+    line-height: 1.4 !important;
+    font-family: inherit !important;
+    color: var(--text-secondary) !important;
+    opacity: 0.7 !important;
+}
+
+/* 跨瀏覽器兼容的 placeholder 樣式 */
+textarea::-webkit-input-placeholder,
+#feedbackText::-webkit-input-placeholder,
+#combinedFeedbackText::-webkit-input-placeholder {
+    white-space: pre-line !important;
+    line-height: 1.4 !important;
+    font-family: inherit !important;
+    color: var(--text-secondary) !important;
+    opacity: 0.7 !important;
+}
+
+textarea::-moz-placeholder,
+#feedbackText::-moz-placeholder,
+#combinedFeedbackText::-moz-placeholder {
+    white-space: pre-line !important;
+    line-height: 1.4 !important;
+    font-family: inherit !important;
+    color: var(--text-secondary) !important;
+    opacity: 0.7 !important;
+}
+
+textarea:-ms-input-placeholder,
+#feedbackText:-ms-input-placeholder,
+#combinedFeedbackText:-ms-input-placeholder {
+    white-space: pre-line !important;
+    line-height: 1.4 !important;
+    font-family: inherit !important;
+    color: var(--text-secondary) !important;
+    opacity: 0.7 !important;
+}
+

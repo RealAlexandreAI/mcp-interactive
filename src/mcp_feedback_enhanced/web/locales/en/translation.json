@@ -16,6 +16,7 @@
         "summary": "📋 AI Summary",
         "commands": "⚡ Commands",
         "command": "⚡ Commands",
+        "sessions": "📋 Session Management",
         "settings": "⚙️ Settings",
         "combined": "📝 Workspace",
         "about": "ℹ️ About"
@@ -205,6 +206,7 @@
     },
     "sessionManagement": {
         "title": "Session Management",
+        "description": "Manage current and historical session records, view session statistics.",
         "currentSession": "Current Session",
         "sessionHistory": "Session History",
         "statistics": "Statistics",

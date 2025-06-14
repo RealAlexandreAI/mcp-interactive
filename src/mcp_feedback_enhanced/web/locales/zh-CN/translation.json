@@ -16,6 +16,7 @@
         "summary": "📋 AI 总结",
         "commands": "⚡ 命令",
         "command": "⚡ 命令",
+        "sessions": "📋 会话管理",
         "settings": "⚙️ 设置",
         "combined": "📝 工作区",
         "about": "ℹ️ 关于"
@@ -205,6 +206,7 @@
     },
     "sessionManagement": {
         "title": "会话管理",
+        "description": "管理当前会话和历史会话记录，查看会话统计信息。",
         "currentSession": "当前会话",
         "sessionHistory": "会话历史",
         "statistics": "统计信息",

@@ -476,83 +476,9 @@
 
 
         <!-- ===== 主內容區域 ===== -->
-        <main class="main-content" style="display: flex; gap: 0;">
-            <!-- ===== 左側會話管理面板 ===== -->
-            <div class="session-management-panel" id="sessionPanel">
-                <!-- 面板標題 -->
-                <div class="panel-header">
-                    <h3 data-i18n="sessionManagement.title">會話管理</h3>
-                    <div class="panel-controls">
-                        <button class="btn-icon" id="refreshSessions" data-i18n-title="sessionManagement.refresh" title="重新整理">
-                            🔄
-                        </button>
-                    </div>
-                </div>
-
-                <div class="panel-content">
-                    <!-- 當前活躍會話 -->
-                    <div class="current-session-section">
-                        <h4 data-i18n="sessionManagement.currentSession">當前會話</h4>
-                        <div class="session-card active" id="currentSessionCard">
-                            <div class="session-header">
-                                <div class="session-id"><span data-i18n="sessionManagement.sessionId">會話 ID</span>: {{ session_id[:8] if session_id else 'loading' }}...</div>
-                                <div class="session-status">
-                                    <span class="status-badge waiting" data-i18n="connectionMonitor.waiting">等待中</span>
-                                </div>
-                            </div>
-                            <div class="session-info">
-                                <div class="session-time"><span data-i18n="sessionManagement.createdTime">建立時間</span>: --:--:--</div>
-                                <div class="session-project"><span data-i18n="sessionManagement.project">專案</span>: {{ project_directory }}</div>
-                                <div class="session-summary"><span data-i18n="sessionManagement.aiSummary">AI 摘要</span>: <span data-i18n="sessionManagement.loading">載入中...</span></div>
-                            </div>
-                            <div class="session-actions">
-                                <button class="btn-small" id="viewSessionDetails" data-i18n="sessionManagement.viewDetails">詳細資訊</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 會話歷史記錄 -->
-                    <div class="session-history-section">
-                        <h4 data-i18n="sessionManagement.sessionHistory">會話歷史</h4>
-                        <div class="session-list" id="sessionHistoryList">
-                            <div class="no-sessions" data-i18n="sessionManagement.noHistory">暫無歷史會話</div>
-                        </div>
-                    </div>
-
-                    <!-- 會話統計 -->
-                    <div class="session-stats-section">
-                        <h4 data-i18n="sessionManagement.statistics">統計資訊</h4>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-value stat-today-count">0</div>
-                                <div class="stat-label" data-i18n="sessionManagement.todaySessions">今日會話</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value stat-average-duration">--</div>
-                                <div class="stat-label" data-i18n="sessionManagement.todayAverageDuration">今日平均時長</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 邊緣收合/展開按鈕 -->
-                <div class="panel-edge-toggle" id="panelEdgeToggle">
-                    <button class="edge-toggle-btn" id="edgeToggleBtn" data-i18n-title="sessionManagement.collapsePanel" title="收合面板">
-                        <span class="toggle-icon">◀</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 收合狀態下的展開按鈕 -->
-            <div class="collapsed-panel-toggle" id="collapsedPanelToggle" style="display: none;">
-                <button class="collapsed-toggle-btn" id="collapsedToggleBtn" data-i18n-title="sessionManagement.expandPanel" title="展開會話面板">
-                    <span class="toggle-icon">▶</span>
-                    <span class="toggle-text" data-i18n="sessionManagement.sessionPanel">會話</span>
-                </button>
-            </div>
-
-            <!-- ===== 右側主要內容區域 ===== -->
-            <div class="main-content-area" style="flex: 1; min-width: 0;">
+        <main class="main-content">
+            <!-- ===== 主要內容區域 ===== -->
+            <div class="main-content-area">
 
                 <!-- 分頁導航 -->
                 <div class="tabs">
@@ -569,6 +495,9 @@
                     </button>
                     <button class="tab-button" data-tab="command" data-i18n="tabs.command">
                         ⚡ 命令
+                    </button>
+                    <button class="tab-button" data-tab="sessions" data-i18n="tabs.sessions">
+                        📋 會話管理
                     </button>
                     <button class="tab-button" data-tab="settings" data-i18n="tabs.settings">
                         ⚙️ 設定
@@ -731,6 +660,69 @@
                         {% set id_prefix = "combined" %}
                         {% set min_height = "100px" %}
                         {% include 'components/image-upload.html' %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 會話管理分頁 ===== -->
+            <div id="tab-sessions" class="tab-content">
+                <div class="section-description" data-i18n="sessionManagement.description">
+                    管理當前會話和歷史會話記錄，查看會話統計資訊。
+                </div>
+
+                <!-- 面板標題和控制 -->
+                <div class="session-panel-header">
+                    <h3 data-i18n="sessionManagement.title">會話管理</h3>
+                    <div class="panel-controls">
+                        <button class="btn-icon" id="refreshSessions" data-i18n-title="sessionManagement.refresh" title="重新整理">
+                            🔄
+                        </button>
+                    </div>
+                </div>
+
+                <div class="session-panel-content">
+                    <!-- 當前活躍會話 -->
+                    <div class="current-session-section">
+                        <h4 data-i18n="sessionManagement.currentSession">當前會話</h4>
+                        <div class="session-card active" id="currentSessionCard">
+                            <div class="session-header">
+                                <div class="session-id"><span data-i18n="sessionManagement.sessionId">會話 ID</span>: {{ session_id[:8] if session_id else 'loading' }}...</div>
+                                <div class="session-status">
+                                    <span class="status-badge waiting" data-i18n="connectionMonitor.waiting">等待中</span>
+                                </div>
+                            </div>
+                            <div class="session-info">
+                                <div class="session-time"><span data-i18n="sessionManagement.createdTime">建立時間</span>: --:--:--</div>
+                                <div class="session-project"><span data-i18n="sessionManagement.project">專案</span>: {{ project_directory }}</div>
+                                <div class="session-summary"><span data-i18n="sessionManagement.aiSummary">AI 摘要</span>: <span data-i18n="sessionManagement.loading">載入中...</span></div>
+                            </div>
+                            <div class="session-actions">
+                                <button class="btn-small" id="viewSessionDetails" data-i18n="sessionManagement.viewDetails">詳細資訊</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 會話歷史記錄 -->
+                    <div class="session-history-section">
+                        <h4 data-i18n="sessionManagement.sessionHistory">會話歷史</h4>
+                        <div class="session-list" id="sessionHistoryList">
+                            <div class="no-sessions" data-i18n="sessionManagement.noHistory">暫無歷史會話</div>
+                        </div>
+                    </div>
+
+                    <!-- 會話統計 -->
+                    <div class="session-stats-section">
+                        <h4 data-i18n="sessionManagement.statistics">統計資訊</h4>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value stat-today-count">0</div>
+                                <div class="stat-label" data-i18n="sessionManagement.todaySessions">今日會話</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value stat-average-duration">--</div>
+                                <div class="stat-label" data-i18n="sessionManagement.todayAverageDuration">今日平均時長</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

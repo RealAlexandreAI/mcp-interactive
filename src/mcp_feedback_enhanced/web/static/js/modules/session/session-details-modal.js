@@ -318,10 +318,8 @@
     SessionDetailsModal.prototype.showModal = function() {
         if (!this.currentModal) return;
 
-        // 添加顯示類觸發動畫
-        requestAnimationFrame(() => {
-            DOMUtils.safeAddClass(this.currentModal, 'show');
-        });
+        // 彈窗已經通過 CSS 動畫自動顯示，無需額外處理
+        console.log('🔍 會話詳情彈窗已顯示');
     };
 
     /**
@@ -336,16 +334,9 @@
             this.keydownHandler = null;
         }
 
-        // 添加關閉動畫
-        DOMUtils.safeAddClass(this.currentModal, 'hide');
-
-        // 延遲移除元素
-        setTimeout(() => {
-            if (this.currentModal) {
-                DOMUtils.safeRemoveElement(this.currentModal);
-                this.currentModal = null;
-            }
-        }, 300); // 與 CSS 動畫時間一致
+        // 立即移除元素，無延遲
+        DOMUtils.safeRemoveElement(this.currentModal);
+        this.currentModal = null;
     };
 
     /**

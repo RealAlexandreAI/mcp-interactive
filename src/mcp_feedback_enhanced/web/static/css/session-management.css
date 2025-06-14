@@ -539,6 +539,40 @@
   border-color: var(--accent-color);
 }
 
+/* 匯出按鈕樣式 */
+.btn-export {
+  background: var(--bg-primary) !important;
+  border-color: var(--success-color) !important;
+  color: var(--success-color) !important;
+}
+
+.btn-export:hover {
+  background: var(--success-color) !important;
+  color: white !important;
+  border-color: var(--success-color) !important;
+}
+
+/* 會話歷史管理按鈕樣式 */
+#exportSessionHistoryBtn {
+  background: var(--success-color);
+  border-color: var(--success-color);
+  color: white;
+}
+
+#exportSessionHistoryBtn:hover {
+  background: var(--success-color-dark, #28a745);
+  border-color: var(--success-color-dark, #28a745);
+}
+
+#clearSessionHistoryBtn {
+  background: var(--bg-primary);
+}
+
+#clearSessionHistoryBtn:hover {
+  background: var(--error-color);
+  color: white;
+}
+
 /* ===== 會話統計 ===== */
 .session-stats-section {
   margin-top: 16px;

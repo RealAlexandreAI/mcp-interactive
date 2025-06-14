@@ -328,19 +328,39 @@
             (window.i18nManager ? window.i18nManager.t('sessionManagement.viewDetails') : '查看') :
             (window.i18nManager ? window.i18nManager.t('sessionManagement.viewDetails') : '詳細資訊');
 
-        const button = DOMUtils.createElement('button', {
+        const viewButton = DOMUtils.createElement('button', {
             className: 'btn-small',
             textContent: buttonText
         });
 
-        // 添加點擊事件
-        DOMUtils.addEventListener(button, 'click', function() {
+        // 添加查看詳情點擊事件
+        DOMUtils.addEventListener(viewButton, 'click', function() {
             if (window.MCPFeedback && window.MCPFeedback.SessionManager) {
                 window.MCPFeedback.SessionManager.viewSessionDetails(sessionData.session_id);
             }
         });
 
-        actions.appendChild(button);
+        actions.appendChild(viewButton);
+
+        // 如果是歷史會話，新增匯出按鈕
+        if (isHistory) {
+            const exportButton = DOMUtils.createElement('button', {
+                className: 'btn-small btn-export',
+                textContent: window.i18nManager ? window.i18nManager.t('sessionHistory.management.exportSingle') : '匯出',
+                style: 'margin-left: 4px; font-size: 11px; padding: 2px 6px;'
+            });
+
+            // 添加匯出點擊事件
+            DOMUtils.addEventListener(exportButton, 'click', function(e) {
+                e.stopPropagation(); // 防止觸發父元素事件
+                if (window.MCPFeedback && window.MCPFeedback.SessionManager) {
+                    window.MCPFeedback.SessionManager.exportSingleSession(sessionData.session_id);
+                }
+            });
+
+            actions.appendChild(exportButton);
+        }
+
         return actions;
     };
 

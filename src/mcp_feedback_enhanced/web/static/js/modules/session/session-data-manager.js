@@ -33,12 +33,18 @@
             totalSessions: 0
         };
 
+        // localStorage 相關設定
+        this.localStorageKey = 'mcp-session-history';
+        this.settingsManager = options.settingsManager || null;
+
         // 回調函數
         this.onSessionChange = options.onSessionChange || null;
         this.onHistoryChange = options.onHistoryChange || null;
         this.onStatsChange = options.onStatsChange || null;
 
-        // 初始化統計資訊
+        // 初始化：載入歷史記錄並清理過期資料
+        this.loadFromLocalStorage();
+        this.cleanupExpiredSessions();
         this.updateStats();
 
         console.log('📊 SessionDataManager 初始化完成');
@@ -196,6 +202,9 @@
             return false;
         }
 
+        // 新增儲存時間戳記
+        sessionData.saved_at = TimeUtils.getCurrentTimestamp();
+
         // 避免重複新增
         const existingIndex = this.sessionHistory.findIndex(s => s.session_id === sessionData.session_id);
         if (existingIndex !== -1) {
@@ -208,6 +217,9 @@
         if (this.sessionHistory.length > 10) {
             this.sessionHistory = this.sessionHistory.slice(0, 10);
         }
+
+        // 保存到 localStorage
+        this.saveToLocalStorage();
 
         this.updateStats();
 
@@ -295,6 +307,10 @@
      */
     SessionDataManager.prototype.clearHistory = function() {
         this.sessionHistory = [];
+
+        // 清空 localStorage
+        this.clearLocalStorage();
+
         this.updateStats();
         if (this.onHistoryChange) {
             this.onHistoryChange(this.sessionHistory);
@@ -356,6 +372,191 @@
         }
 
         return '暫無摘要';
+    };
+
+    /**
+     * 從 localStorage 載入會話歷史
+     */
+    SessionDataManager.prototype.loadFromLocalStorage = function() {
+        if (!window.localStorage) {
+            console.warn('📊 localStorage 不可用');
+            return;
+        }
+
+        try {
+            const stored = localStorage.getItem(this.localStorageKey);
+            if (stored) {
+                const data = JSON.parse(stored);
+                if (data && Array.isArray(data.sessions)) {
+                    this.sessionHistory = data.sessions;
+                    console.log('📊 從 localStorage 載入', this.sessionHistory.length, '個會話');
+                }
+            }
+        } catch (error) {
+            console.error('📊 從 localStorage 載入會話歷史失敗:', error);
+        }
+    };
+
+    /**
+     * 保存會話歷史到 localStorage
+     */
+    SessionDataManager.prototype.saveToLocalStorage = function() {
+        if (!window.localStorage) {
+            console.warn('📊 localStorage 不可用');
+            return;
+        }
+
+        try {
+            const data = {
+                sessions: this.sessionHistory,
+                lastCleanup: TimeUtils.getCurrentTimestamp()
+            };
+            localStorage.setItem(this.localStorageKey, JSON.stringify(data));
+            console.log('📊 已保存', this.sessionHistory.length, '個會話到 localStorage');
+        } catch (error) {
+            console.error('📊 保存會話歷史到 localStorage 失敗:', error);
+        }
+    };
+
+    /**
+     * 清空 localStorage 中的會話歷史
+     */
+    SessionDataManager.prototype.clearLocalStorage = function() {
+        if (!window.localStorage) {
+            return;
+        }
+
+        try {
+            localStorage.removeItem(this.localStorageKey);
+            console.log('📊 已清空 localStorage 中的會話歷史');
+        } catch (error) {
+            console.error('📊 清空 localStorage 失敗:', error);
+        }
+    };
+
+    /**
+     * 清理過期的會話
+     */
+    SessionDataManager.prototype.cleanupExpiredSessions = function() {
+        if (!this.settingsManager) {
+            return;
+        }
+
+        const retentionHours = this.settingsManager.get('sessionHistoryRetentionHours', 72);
+        const retentionMs = retentionHours * 60 * 60 * 1000;
+        const now = TimeUtils.getCurrentTimestamp();
+
+        const originalCount = this.sessionHistory.length;
+        this.sessionHistory = this.sessionHistory.filter(function(session) {
+            const sessionAge = now - (session.saved_at || session.completed_at || session.created_at || 0);
+            return sessionAge < retentionMs;
+        });
+
+        const cleanedCount = originalCount - this.sessionHistory.length;
+        if (cleanedCount > 0) {
+            console.log('📊 清理了', cleanedCount, '個過期會話');
+            this.saveToLocalStorage();
+        }
+    };
+
+    /**
+     * 檢查會話是否過期
+     */
+    SessionDataManager.prototype.isSessionExpired = function(session) {
+        if (!this.settingsManager) {
+            return false;
+        }
+
+        const retentionHours = this.settingsManager.get('sessionHistoryRetentionHours', 72);
+        const retentionMs = retentionHours * 60 * 60 * 1000;
+        const now = TimeUtils.getCurrentTimestamp();
+        const sessionTime = session.saved_at || session.completed_at || session.created_at || 0;
+
+        return (now - sessionTime) > retentionMs;
+    };
+
+    /**
+     * 匯出會話歷史
+     */
+    SessionDataManager.prototype.exportSessionHistory = function() {
+        const exportData = {
+            exportedAt: new Date().toISOString(),
+            totalSessions: this.sessionHistory.length,
+            sessions: this.sessionHistory.map(function(session) {
+                return {
+                    session_id: session.session_id,
+                    created_at: session.created_at,
+                    completed_at: session.completed_at,
+                    duration: session.duration,
+                    status: session.status,
+                    project_directory: session.project_directory,
+                    ai_summary: session.summary || session.ai_summary,
+                    saved_at: session.saved_at
+                };
+            })
+        };
+
+        const filename = 'session-history-' + new Date().toISOString().split('T')[0] + '.json';
+        this.downloadJSON(exportData, filename);
+
+        console.log('📊 匯出了', this.sessionHistory.length, '個會話');
+        return filename;
+    };
+
+    /**
+     * 匯出單一會話
+     */
+    SessionDataManager.prototype.exportSingleSession = function(sessionId) {
+        const session = this.sessionHistory.find(function(s) {
+            return s.session_id === sessionId;
+        });
+
+        if (!session) {
+            console.error('📊 找不到會話:', sessionId);
+            return null;
+        }
+
+        const exportData = {
+            exportedAt: new Date().toISOString(),
+            session: {
+                session_id: session.session_id,
+                created_at: session.created_at,
+                completed_at: session.completed_at,
+                duration: session.duration,
+                status: session.status,
+                project_directory: session.project_directory,
+                ai_summary: session.summary || session.ai_summary,
+                saved_at: session.saved_at
+            }
+        };
+
+        const shortId = sessionId.substring(0, 8);
+        const filename = 'session-' + shortId + '-' + new Date().toISOString().split('T')[0] + '.json';
+        this.downloadJSON(exportData, filename);
+
+        console.log('📊 匯出會話:', sessionId);
+        return filename;
+    };
+
+    /**
+     * 下載 JSON 檔案
+     */
+    SessionDataManager.prototype.downloadJSON = function(data, filename) {
+        try {
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('📊 下載檔案失敗:', error);
+        }
     };
 
     /**

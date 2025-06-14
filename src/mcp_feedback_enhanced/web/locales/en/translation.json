@@ -224,6 +224,28 @@
             "unknown": "Unknown"
         }
     },
+    "sessionHistory": {
+        "management": {
+            "title": "Session History Management",
+            "retentionPeriod": "Retention Period",
+            "retentionHours": "hours",
+            "export": "Export",
+            "clear": "Clear",
+            "exportAll": "Export All",
+            "exportSingle": "Export This Session",
+            "confirmClear": "Are you sure you want to clear all session history?",
+            "exportSuccess": "Session history exported successfully",
+            "clearSuccess": "Session history cleared successfully",
+            "description": "Manage locally stored session history records, including retention period settings and data export functionality"
+        },
+        "retention": {
+            "24hours": "24 hours",
+            "72hours": "72 hours",
+            "168hours": "7 days",
+            "720hours": "30 days",
+            "custom": "Custom"
+        }
+    },
     "connectionMonitor": {
         "connecting": "Connecting...",
         "connected": "Connected",

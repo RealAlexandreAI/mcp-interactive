@@ -884,6 +884,48 @@
                     </div>
                 </div>
 
+                <!-- 會話歷史管理卡片 -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title" data-i18n="sessionHistory.management.title">📚 會話歷史管理</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="sessionHistory.management.retentionPeriod">保存期限</div>
+                                <div class="setting-description" data-i18n="sessionHistory.management.description">
+                                    管理本地儲存的會話歷史記錄，包括保存期限設定和資料匯出功能
+                                </div>
+                            </div>
+                            <div class="setting-control">
+                                <select id="sessionHistoryRetentionHours" class="form-select" style="width: 150px;">
+                                    <option value="24" data-i18n="sessionHistory.retention.24hours">24 小時</option>
+                                    <option value="72" data-i18n="sessionHistory.retention.72hours">72 小時</option>
+                                    <option value="168" data-i18n="sessionHistory.retention.168hours">7 天</option>
+                                    <option value="720" data-i18n="sessionHistory.retention.720hours">30 天</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="setting-item" style="border-bottom: none;">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="sessionHistory.management.export">資料管理</div>
+                                <div class="setting-description">
+                                    匯出或清空本地儲存的會話歷史記錄
+                                </div>
+                            </div>
+                            <div class="setting-control" style="display: flex; gap: 8px;">
+                                <button id="exportSessionHistoryBtn" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">
+                                    <span data-i18n="sessionHistory.management.exportAll">匯出全部</span>
+                                </button>
+                                <button id="clearSessionHistoryBtn" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; color: var(--error-color); border-color: var(--error-color);">
+                                    <span data-i18n="sessionHistory.management.clear">清空</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 提示詞管理卡片 -->
                 <div class="settings-card">
                     <div class="settings-card-header">

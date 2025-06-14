@@ -35,7 +35,9 @@
             audioNotificationEnabled: false,
             audioNotificationVolume: 50,
             selectedAudioId: 'default-beep',
-            customAudios: []
+            customAudios: [],
+            // 會話歷史設定
+            sessionHistoryRetentionHours: 72
         };
         
         // 當前設定
@@ -407,6 +409,9 @@
 
         // 應用自動提交設定
         this.applyAutoSubmitSettingsToUI();
+
+        // 應用會話歷史設定
+        this.applySessionHistorySettings();
     };
 
     /**
@@ -549,7 +554,20 @@
         }
     };
 
+    /**
+     * 應用會話歷史設定
+     */
+    SettingsManager.prototype.applySessionHistorySettings = function() {
+        // 更新會話歷史保存期限選擇器
+        const sessionHistoryRetentionSelect = Utils.safeQuerySelector('#sessionHistoryRetentionHours');
+        if (sessionHistoryRetentionSelect) {
+            sessionHistoryRetentionSelect.value = this.currentSettings.sessionHistoryRetentionHours.toString();
+        }
 
+        console.log('會話歷史設定已應用到 UI:', {
+            retentionHours: this.currentSettings.sessionHistoryRetentionHours
+        });
+    };
 
     /**
      * 設置事件監聽器
@@ -727,6 +745,44 @@
                     Utils.showMessage(error.message, Utils.CONSTANTS.MESSAGE_ERROR);
                     // 恢復原值
                     e.target.value = self.get('autoSubmitPromptId') || '';
+                }
+            });
+        }
+
+        // 會話歷史保存期限設定
+        const sessionHistoryRetentionSelect = Utils.safeQuerySelector('#sessionHistoryRetentionHours');
+        if (sessionHistoryRetentionSelect) {
+            sessionHistoryRetentionSelect.addEventListener('change', function(e) {
+                const hours = parseInt(e.target.value);
+                self.set('sessionHistoryRetentionHours', hours);
+                console.log('會話歷史保存期限已更新:', hours, '小時');
+
+                // 觸發清理過期會話
+                if (window.MCPFeedback && window.MCPFeedback.app && window.MCPFeedback.app.sessionManager) {
+                    const sessionManager = window.MCPFeedback.app.sessionManager;
+                    if (sessionManager.dataManager && sessionManager.dataManager.cleanupExpiredSessions) {
+                        sessionManager.dataManager.cleanupExpiredSessions();
+                    }
+                }
+            });
+        }
+
+        // 會話歷史匯出按鈕
+        const exportHistoryBtn = Utils.safeQuerySelector('#exportSessionHistoryBtn');
+        if (exportHistoryBtn) {
+            exportHistoryBtn.addEventListener('click', function() {
+                if (window.MCPFeedback && window.MCPFeedback.SessionManager) {
+                    window.MCPFeedback.SessionManager.exportSessionHistory();
+                }
+            });
+        }
+
+        // 會話歷史清空按鈕
+        const clearHistoryBtn = Utils.safeQuerySelector('#clearSessionHistoryBtn');
+        if (clearHistoryBtn) {
+            clearHistoryBtn.addEventListener('click', function() {
+                if (window.MCPFeedback && window.MCPFeedback.SessionManager) {
+                    window.MCPFeedback.SessionManager.clearSessionHistory();
                 }
             });
         }

@@ -224,6 +224,28 @@
             "unknown": "未知"
         }
     },
+    "sessionHistory": {
+        "management": {
+            "title": "会话历史管理",
+            "retentionPeriod": "保存期限",
+            "retentionHours": "小时",
+            "export": "导出",
+            "clear": "清空",
+            "exportAll": "导出全部",
+            "exportSingle": "导出此会话",
+            "confirmClear": "确定要清空所有会话历史吗？",
+            "exportSuccess": "会话历史已导出",
+            "clearSuccess": "会话历史已清空",
+            "description": "管理本地存储的会话历史记录，包括保存期限设定和数据导出功能"
+        },
+        "retention": {
+            "24hours": "24 小时",
+            "72hours": "72 小时",
+            "168hours": "7 天",
+            "720hours": "30 天",
+            "custom": "自定义"
+        }
+    },
     "connectionMonitor": {
         "connecting": "连接中...",
         "connected": "已连接",

@@ -229,6 +229,28 @@
         },
         "noSummary": "無摘要"
     },
+    "sessionHistory": {
+        "management": {
+            "title": "會話歷史管理",
+            "retentionPeriod": "保存期限",
+            "retentionHours": "小時",
+            "export": "匯出",
+            "clear": "清空",
+            "exportAll": "匯出全部",
+            "exportSingle": "匯出此會話",
+            "confirmClear": "確定要清空所有會話歷史嗎？",
+            "exportSuccess": "會話歷史已匯出",
+            "clearSuccess": "會話歷史已清空",
+            "description": "管理本地儲存的會話歷史記錄，包括保存期限設定和資料匯出功能"
+        },
+        "retention": {
+            "24hours": "24 小時",
+            "72hours": "72 小時",
+            "168hours": "7 天",
+            "720hours": "30 天",
+            "custom": "自訂"
+        }
+    },
     "connectionMonitor": {
         "connecting": "連接中...",
         "connected": "已連接",

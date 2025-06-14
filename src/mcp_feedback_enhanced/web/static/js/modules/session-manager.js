@@ -73,6 +73,7 @@
 
         // 最後初始化數據管理器（確保 UI 組件已準備好接收回調）
         this.dataManager = new window.MCPFeedback.Session.DataManager({
+            settingsManager: this.settingsManager,
             onSessionChange: function(sessionData) {
                 self.handleSessionChange(sessionData);
             },
@@ -570,6 +571,97 @@
     };
 
     /**
+     * 匯出會話歷史
+     */
+    SessionManager.prototype.exportSessionHistory = function() {
+        if (!this.dataManager) {
+            console.error('📋 DataManager 未初始化');
+            return;
+        }
+
+        try {
+            const filename = this.dataManager.exportSessionHistory();
+
+            // 顯示成功訊息
+            if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                const message = window.i18nManager ?
+                    window.i18nManager.t('sessionHistory.management.exportSuccess') :
+                    '會話歷史已匯出';
+                window.MCPFeedback.Utils.showMessage(message + ': ' + filename, 'success');
+            }
+        } catch (error) {
+            console.error('📋 匯出會話歷史失敗:', error);
+            if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                window.MCPFeedback.Utils.showMessage('匯出失敗: ' + error.message, 'error');
+            }
+        }
+    };
+
+    /**
+     * 匯出單一會話
+     */
+    SessionManager.prototype.exportSingleSession = function(sessionId) {
+        if (!this.dataManager) {
+            console.error('📋 DataManager 未初始化');
+            return;
+        }
+
+        try {
+            const filename = this.dataManager.exportSingleSession(sessionId);
+            if (filename) {
+                // 顯示成功訊息
+                if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                    const message = window.i18nManager ?
+                        window.i18nManager.t('sessionHistory.management.exportSuccess') :
+                        '會話已匯出';
+                    window.MCPFeedback.Utils.showMessage(message + ': ' + filename, 'success');
+                }
+            }
+        } catch (error) {
+            console.error('📋 匯出單一會話失敗:', error);
+            if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                window.MCPFeedback.Utils.showMessage('匯出失敗: ' + error.message, 'error');
+            }
+        }
+    };
+
+    /**
+     * 清空會話歷史
+     */
+    SessionManager.prototype.clearSessionHistory = function() {
+        if (!this.dataManager) {
+            console.error('📋 DataManager 未初始化');
+            return;
+        }
+
+        // 確認對話框
+        const confirmMessage = window.i18nManager ?
+            window.i18nManager.t('sessionHistory.management.confirmClear') :
+            '確定要清空所有會話歷史嗎？';
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            this.dataManager.clearHistory();
+
+            // 顯示成功訊息
+            if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                const message = window.i18nManager ?
+                    window.i18nManager.t('sessionHistory.management.clearSuccess') :
+                    '會話歷史已清空';
+                window.MCPFeedback.Utils.showMessage(message, 'success');
+            }
+        } catch (error) {
+            console.error('📋 清空會話歷史失敗:', error);
+            if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                window.MCPFeedback.Utils.showMessage('清空失敗: ' + error.message, 'error');
+            }
+        }
+    };
+
+    /**
      * 清理資源
      */
     SessionManager.prototype.cleanup = function() {
@@ -615,6 +707,33 @@
             if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
                 window.MCPFeedback.Utils.showMessage('會話管理器未初始化', 'error');
             }
+        }
+    };
+
+    // 全域匯出會話歷史方法
+    window.MCPFeedback.SessionManager.exportSessionHistory = function() {
+        if (window.MCPFeedback && window.MCPFeedback.app && window.MCPFeedback.app.sessionManager) {
+            window.MCPFeedback.app.sessionManager.exportSessionHistory();
+        } else {
+            console.warn('找不到 SessionManager 實例');
+        }
+    };
+
+    // 全域匯出單一會話方法
+    window.MCPFeedback.SessionManager.exportSingleSession = function(sessionId) {
+        if (window.MCPFeedback && window.MCPFeedback.app && window.MCPFeedback.app.sessionManager) {
+            window.MCPFeedback.app.sessionManager.exportSingleSession(sessionId);
+        } else {
+            console.warn('找不到 SessionManager 實例');
+        }
+    };
+
+    // 全域清空會話歷史方法
+    window.MCPFeedback.SessionManager.clearSessionHistory = function() {
+        if (window.MCPFeedback && window.MCPFeedback.app && window.MCPFeedback.app.sessionManager) {
+            window.MCPFeedback.app.sessionManager.clearSessionHistory();
+        } else {
+            console.warn('找不到 SessionManager 實例');
         }
     };
 

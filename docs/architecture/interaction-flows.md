@@ -553,7 +553,7 @@ sequenceDiagram
     Modal->>UI: 填入提示詞內容
 ```
 
-### 會話管理流程
+### 會話管理流程（v2.4.3 重構增強）
 
 ```mermaid
 sequenceDiagram
@@ -561,52 +561,148 @@ sequenceDiagram
     participant Server as MCP 服務器
     participant SM as SessionManager
     participant SDM as SessionDataManager
+    participant SUR as SessionUIRenderer
     participant UI as 前端界面
 
-    Note over AI,UI: 📊 會話生命週期管理
+    Note over AI,UI: 📊 會話生命週期管理（v2.4.3 重構）
     AI->>Server: interactive_feedback()
     Server->>SM: createSession()
     SM->>SDM: addCurrentSession()
-    SDM->>UI: 更新會話顯示
+    SDM->>SUR: renderCurrentSession()
+    SUR->>UI: 更新會話顯示（頁籤化設計）
 
     Note over AI,UI: 📝 用戶回饋處理
     UI->>Server: submit_feedback
     Server->>SM: processFeedback()
     SM->>SDM: updateSessionStatus()
-    SDM->>SDM: 記錄回饋數據
+    SDM->>SDM: 記錄回饋數據（本地存儲）
     SM->>AI: 返回回饋結果
 
-    Note over AI,UI: 📚 會話歷史管理
+    Note over AI,UI: 📚 會話歷史管理（v2.4.3 增強）
     SM->>SDM: addSessionToHistory()
     SDM->>SDM: 檢查完成狀態
     alt 會話已完成
-        SDM->>SDM: 加入歷史記錄
+        SDM->>SDM: 加入歷史記錄（localStorage）
         SDM->>SDM: updateStats()
-        SDM->>UI: 觸發 onHistoryChange
+        SDM->>SUR: renderSessionHistory()
+        SUR->>UI: 觸發 onHistoryChange
     else 會話未完成
         SDM->>SDM: 跳過歷史記錄
     end
 
-    Note over AI,UI: 🔍 歷史查詢
+    Note over AI,UI: 🔍 歷史查詢與管理
     UI->>SDM: getSessionHistory()
-    SDM-->>UI: 返回歷史列表
+    SDM-->>UI: 返回歷史列表（72小時內）
     UI->>SDM: getSessionStats()
     SDM-->>UI: 返回統計數據
+    UI->>SDM: exportSessionHistory()
+    SDM-->>UI: 返回匯出數據
+    UI->>SDM: cleanupExpiredSessions()
+    SDM->>SDM: 清理過期會話
+```
+
+### 音效通知系統流程（v2.4.3 新增）
+
+```mermaid
+sequenceDiagram
+    participant WS as WebSocket
+    participant AM as AudioManager
+    participant ASU as AudioSettingsUI
+    participant AUDIO as Web Audio API
+    participant User as 用戶
+
+    Note over WS,User: 🔊 音效通知觸發流程
+    WS->>AM: session_updated 事件
+    AM->>AM: checkNotificationEnabled()
+    alt 音效通知已啟用
+        AM->>AM: getSelectedAudio()
+        AM->>AUDIO: 創建 Audio 物件
+        AM->>AUDIO: 設定音量和來源
+        AUDIO->>User: 播放通知音效
+        AM->>AM: logPlaybackSuccess()
+    else 音效通知已停用
+        AM->>AM: logSkippedNotification()
+    end
+
+    Note over WS,User: 🎵 音效設定管理
+    User->>ASU: 開啟音效設定
+    ASU->>AM: getAudioSettings()
+    AM-->>ASU: 返回當前設定
+    ASU->>User: 顯示設定界面
+
+    User->>ASU: 調整音量
+    ASU->>AM: updateVolume(volume)
+    AM->>AM: saveSettings()
+
+    User->>ASU: 選擇音效
+    ASU->>AM: selectAudio(audioId)
+    AM->>AM: saveSettings()
+
+    User->>ASU: 測試播放
+    ASU->>AM: testPlayAudio(audioId)
+    AM->>AUDIO: 播放測試音效
+    AUDIO->>User: 播放音效
+
+    Note over WS,User: 📁 自訂音效管理
+    User->>ASU: 上傳自訂音效
+    ASU->>ASU: validateAudioFile()
+    ASU->>AM: addCustomAudio(file)
+    AM->>AM: convertToBase64()
+    AM->>AM: saveToLocalStorage()
+    ASU->>User: 顯示上傳成功
+```
+
+### 智能記憶功能流程（v2.4.3 新增）
+
+```mermaid
+sequenceDiagram
+    participant User as 用戶
+    participant TEXTAREA as 輸入框
+    participant THM as TextareaHeightManager
+    participant RO as ResizeObserver
+    participant SM as SettingsManager
+
+    Note over User,SM: 📏 輸入框高度記憶
+    User->>TEXTAREA: 調整輸入框高度
+    TEXTAREA->>RO: 觸發尺寸變化事件
+    RO->>THM: handleResize(element)
+    THM->>THM: debounce(500ms)
+    THM->>SM: saveHeight(elementId, height)
+    SM->>SM: 保存到 localStorage
+
+    Note over User,SM: 🔄 高度恢復
+    User->>User: 重新載入頁面
+    THM->>SM: loadHeight(elementId)
+    SM-->>THM: 返回保存的高度
+    THM->>TEXTAREA: 應用保存的高度
+    TEXTAREA->>User: 顯示恢復的高度
+
+    Note over User,SM: 📋 一鍵複製功能
+    User->>User: 點擊專案路徑
+    User->>User: 觸發複製事件
+    User->>User: 複製到剪貼簿
+    User->>User: 顯示複製成功提示
+
+    User->>User: 點擊會話ID
+    User->>User: 觸發複製事件
+    User->>User: 複製到剪貼簿
+    User->>User: 顯示複製成功提示（多語言）
 ```
 
 ## 📊 狀態同步機制
 
-### WebSocket 訊息類型
+### WebSocket 訊息類型（v2.4.3 擴展）
 
 ```mermaid
 graph LR
     subgraph "服務器 → 客戶端"
         CE[connection_established<br/>連接建立]
-        SU[session_updated<br/>會話更新]
+        SU[session_updated<br/>會話更新<br/>🔊 觸發音效通知]
         FR[feedback_received<br/>回饋確認]
         ST[status_update<br/>狀態更新]
         ASS[auto_submit_status<br/>自動提交狀態]
-        SH[session_history<br/>會話歷史]
+        SH[session_history<br/>會話歷史<br/>📚 v2.4.3 增強]
+        AN[audio_notification<br/>音效通知<br/>🔊 v2.4.3 新增]
     end
 
     subgraph "客戶端 → 服務器"
@@ -615,7 +711,9 @@ graph LR
         LS[language_switch<br/>語言切換]
         PM[prompt_management<br/>提示詞管理]
         ASC[auto_submit_control<br/>自動提交控制]
-        SM[session_management<br/>會話管理]
+        SM[session_management<br/>會話管理<br/>📋 v2.4.3 重構]
+        AM[audio_management<br/>音效管理<br/>🎵 v2.4.3 新增]
+        HM[height_management<br/>高度管理<br/>📏 v2.4.3 新增]
     end
 ```
 
@@ -742,8 +840,9 @@ async def wait_for_feedback(self, timeout: int = 600):
 
 ---
 
-**版本**: 2.3.0
-**最後更新**: 2024年12月
+**版本**: 2.4.3
+**最後更新**: 2025年6月14日
 **維護者**: Minidoracat
 **架構類型**: Web-Only 四層架構
 **核心特性**: 持久化會話、智能環境適配、無縫狀態切換
+**v2.4.3 新功能**: 音效通知系統、會話管理重構、智能記憶功能

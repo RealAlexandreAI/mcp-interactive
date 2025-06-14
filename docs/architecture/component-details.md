@@ -588,26 +588,106 @@ graph TB
 - **PromptSettingsUI**: 設定頁籤中的提示詞管理界面
 - **PromptInputButtons**: 回饋輸入區的快速選擇按鈕
 
-#### 會話管理模組群組 (session/)
+#### 會話管理模組群組 (session/) - v2.4.3 重構增強
 
 **模組結構**：
 ```mermaid
 graph TB
-    subgraph "會話管理模組"
+    subgraph "會話管理模組（v2.4.3 重構）"
         SM[session-manager.js<br/>會話控制器<br/>狀態管理]
-        SDM[session-data-manager.js<br/>數據管理器<br/>歷史記錄]
-        SU[session-utils.js<br/>工具函數<br/>狀態判斷]
+        SDM[session-data-manager.js<br/>數據管理器<br/>本地存儲增強]
+        SUR[session-ui-renderer.js<br/>UI 渲染器<br/>頁籤化設計]
+        SDM_MODAL[session-details-modal.js<br/>詳情彈窗<br/>會話詳細資訊]
     end
 
     SM -->|數據操作| SDM
-    SM -->|工具函數| SU
+    SM -->|UI 渲染| SUR
+    SM -->|詳情顯示| SDM_MODAL
     SDM -->|狀態回調| SM
+    SUR -->|用戶操作| SM
+    SDM_MODAL -->|查看操作| SM
 ```
+
+**v2.4.3 重構亮點**：
+- **從側邊欄遷移到頁籤**: 解決瀏覽器相容性問題
+- **本地歷史存儲**: 支援 72 小時可配置保存期限
+- **隱私控制**: 三級用戶訊息記錄設定（完整/基本/停用）
+- **數據管理**: 匯出和清理功能
+- **UI 重新設計**: 專門的渲染器和詳情彈窗
 
 **核心功能**：
 - **SessionManager**: 當前會話的狀態管理和控制
-- **SessionDataManager**: 會話歷史記錄和統計數據管理
-- **SessionUtils**: 會話狀態判斷和工具函數
+- **SessionDataManager**: 會話歷史記錄、統計數據和本地存儲管理
+- **SessionUIRenderer**: 專門的 UI 渲染器，負責會話列表和狀態顯示
+- **SessionDetailsModal**: 會話詳情彈窗，提供完整的會話資訊查看
+
+#### 音效通知模組群組 (audio/) - v2.4.3 新增
+
+**模組結構**：
+```mermaid
+graph TB
+    subgraph "音效通知系統（v2.4.3 新增）"
+        AM[audio-manager.js<br/>音效管理器<br/>播放控制]
+        ASU[audio-settings-ui.js<br/>設定界面<br/>音效配置]
+        DA[DefaultAudios<br/>內建音效<br/>Base64 編碼]
+        CA[CustomAudios<br/>自訂音效<br/>用戶上傳]
+    end
+
+    subgraph "Web Audio API"
+        AUDIO[Audio 物件]
+        BASE64[Base64 音效數據]
+    end
+
+    AM -->|管理界面| ASU
+    AM -->|內建音效| DA
+    AM -->|自訂音效| CA
+    AM -->|播放控制| AUDIO
+    AUDIO -->|數據來源| BASE64
+    ASU -->|設定保存| SettingsManager
+```
+
+**核心功能**：
+- **AudioManager**: 音效播放控制、音量管理、音效選擇
+- **AudioSettingsUI**: 音效設定界面、上傳管理、測試播放
+- **內建音效**: 經典提示音、通知鈴聲、輕柔鐘聲
+- **自訂音效**: 支援 MP3、WAV、OGG 格式上傳和管理
+
+**技術特性**：
+- **Web Audio API**: 使用原生 Audio 物件進行播放
+- **Base64 存儲**: 音效文件以 Base64 格式存儲在 localStorage
+- **音量控制**: 0-100% 可調節音量
+- **瀏覽器相容性**: 處理自動播放政策限制
+
+#### 智能記憶功能 - v2.4.3 新增
+
+**輸入框高度管理**：
+```mermaid
+graph TB
+    subgraph "高度管理系統"
+        THM[TextareaHeightManager<br/>高度管理器]
+        RO[ResizeObserver<br/>尺寸監控]
+        DEBOUNCE[防抖機制<br/>500ms 延遲]
+    end
+
+    subgraph "存儲機制"
+        SETTINGS[SettingsManager]
+        HEIGHT_KEY[combinedFeedbackTextHeight]
+    end
+
+    TEXTAREA[combinedFeedbackText] --> RO
+    RO --> THM
+    THM --> DEBOUNCE
+    DEBOUNCE --> SETTINGS
+    SETTINGS --> HEIGHT_KEY
+
+    THM -->|恢復高度| TEXTAREA
+```
+
+**一鍵複製功能**：
+- **專案路徑複製**: 點擊路徑文字即可複製到剪貼簿
+- **會話ID複製**: 點擊會話ID即可複製
+- **複製反饋**: 視覺提示複製成功狀態
+- **國際化支援**: 複製提示支援多語言
 
 #### 自動提交功能整合
 
@@ -882,6 +962,110 @@ class ImageHandler {
 - **錯誤處理**: 優雅的錯誤恢復機制
 - **性能優化**: 延遲載入和資源快取
 - **無障礙支援**: 鍵盤導航和螢幕閱讀器支援
+
+### static/css/ - 樣式系統（v2.4.3 擴展）
+
+**樣式文件結構**：
+```
+static/css/
+├── styles.css                  # 主樣式文件
+├── prompt-management.css       # 提示詞管理樣式
+├── session-management.css      # 會話管理樣式
+└── audio-management.css        # 音效管理樣式（v2.4.3 新增）
+```
+
+**v2.4.3 新增樣式特性**：
+
+**audio-management.css - 音效管理樣式**：
+```css
+/* 音效管理區塊樣式 */
+.audio-management-section {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+/* 音效設定控制項 */
+.audio-setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* 音量控制滑桿 */
+.audio-volume-slider {
+    width: 120px;
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    outline: none;
+}
+
+/* 自訂音效列表 */
+.audio-custom-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+```
+
+**session-management.css - 會話管理樣式增強**：
+```css
+/* v2.4.3 頁籤化設計 */
+.session-tab-content {
+    padding: 20px;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+/* 會話卡片樣式 */
+.session-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.session-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.1);
+}
+
+/* 一鍵複製按鈕樣式 */
+.copy-button {
+    background: transparent;
+    border: none;
+    color: var(--accent-color);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.copy-button:hover {
+    background: var(--bg-tertiary);
+}
+```
+
+**響應式設計增強**：
+- **移動設備優化**: 音效控制項在小螢幕下垂直排列
+- **觸控友好**: 按鈕和滑桿適配觸控操作
+- **視覺反饋**: 懸停和點擊狀態的視覺提示
+- **深色主題**: 完整的深色主題支援
 
 ## 🛠️ 工具層組件
 
@@ -1181,8 +1365,9 @@ tests/
 
 ---
 
-**版本**: 2.3.0
-**最後更新**: 2024年12月
+**版本**: 2.4.3
+**最後更新**: 2025年6月14日
 **維護者**: Minidoracat
 **架構類型**: Web-Only 四層架構
-**技術棧**: Python 3.11+, FastAPI, FastMCP, WebSocket
+**v2.4.3 新功能**: 音效通知系統、會話管理重構、智能記憶功能
+**技術棧**: Python 3.11+, FastAPI, FastMCP, WebSocket, Web Audio API

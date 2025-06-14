@@ -25,6 +25,9 @@ MCP Feedback Enhanced 採用**單一活躍會話 + 持久化 Web UI**的創新�
 - HTML5 + CSS3 (現代化 UI)
 - JavaScript ES6+ (模組化架構)
 - WebSocket API (雙向通信)
+- Web Audio API (音效通知系統)
+- localStorage API (本地數據存儲)
+- ResizeObserver API (元素尺寸監控)
 - 響應式設計 (多設備支援)
 
 **開發工具**：
@@ -66,8 +69,10 @@ graph TB
             JS[JavaScript 模組<br/>app.js + 功能模組]
             CSS[樣式系統<br/>響應式設計]
             PROMPT[提示詞管理<br/>PromptManager + UI 組件]
-            SESSION_MGR[會話管理<br/>SessionManager + 歷史追蹤]
+            SESSION_MGR[會話管理<br/>SessionManager + 歷史追蹤<br/>v2.4.3 重構增強]
             AUTO_SUBMIT[自動提交<br/>AutoSubmitManager + 倒數計時]
+            AUDIO_MGR[音效通知系統<br/>AudioManager + 自訂音效<br/>v2.4.3 新增]
+            MEMORY_MGR[智能記憶功能<br/>高度管理 + 一鍵複製<br/>v2.4.3 新增]
         end
 
         subgraph "工具層"
@@ -105,9 +110,13 @@ graph TB
     JS --> PROMPT
     JS --> SESSION_MGR
     JS --> AUTO_SUBMIT
+    JS --> AUDIO_MGR
+    JS --> MEMORY_MGR
     PROMPT --> WS
     SESSION_MGR --> WS
     AUTO_SUBMIT --> WS
+    AUDIO_MGR --> WS
+    MEMORY_MGR --> WS
 
     I18N --> ROUTES
     DEBUG --> SERVER
@@ -166,8 +175,10 @@ graph TB
 - 實時 WebSocket 通信
 - 豐富的用戶交互功能
 - **提示詞管理系統**：常用提示詞的 CRUD 操作和快速選擇
-- **會話管理功能**：會話歷史追蹤和統計分析
+- **會話管理功能**：會話歷史追蹤和統計分析（v2.4.3 重構增強）
 - **自動提交機制**：倒數計時器和自動回饋提交
+- **音效通知系統**：智能音效提醒和自訂音效管理（v2.4.3 新增）
+- **智能記憶功能**：輸入框高度記憶和一鍵複製（v2.4.3 新增）
 
 ### 3. 單一活躍會話模式
 ```mermaid
@@ -300,10 +311,17 @@ auto-refresh-manager → app
   - prompt-modal.js (編輯彈窗)
   - prompt-settings-ui.js (設定界面)
   - prompt-input-buttons.js (快速選擇按鈕)
-- **會話管理模組群組**：
+- **會話管理模組群組（v2.4.3 重構增強）**：
   - session-manager.js (會話控制器)
-  - session-data-manager.js (數據管理器)
-  - session-utils.js (工具函數)
+  - session-data-manager.js (數據管理器，新增本地存儲)
+  - session-ui-renderer.js (UI 渲染器，頁籤化設計)
+  - session-details-modal.js (詳情彈窗)
+- **音效通知模組群組（v2.4.3 新增）**：
+  - audio-manager.js (音效管理器)
+  - audio-settings-ui.js (音效設定界面)
+- **智能記憶功能（v2.4.3 新增）**：
+  - textarea-height-manager.js (輸入框高度管理)
+  - 一鍵複製功能整合在各 UI 組件中
 - **自動提交功能**：
   - 整合在 app.js 中的 AutoSubmitManager
   - 與提示詞管理和設定管理的深度整合
@@ -364,21 +382,127 @@ auto-refresh-manager → app
 - **併發控制**: 安全的多執行緒操作
 - **數據驗證**: 嚴格的輸入驗證和清理
 
+## 🆕 v2.4.3 版本新功能架構
+
+### 1. 音效通知系統架構
+
+**系統組成**：
+```mermaid
+graph TB
+    subgraph "音效通知系統"
+        AM[AudioManager<br/>音效管理器]
+        ASU[AudioSettingsUI<br/>設定界面]
+        DA[DefaultAudios<br/>內建音效]
+        CA[CustomAudios<br/>自訂音效]
+    end
+
+    subgraph "Web Audio API"
+        AUDIO[Audio 物件]
+        BASE64[Base64 音效數據]
+    end
+
+    subgraph "設定存儲"
+        LS[localStorage]
+        SM[SettingsManager]
+    end
+
+    AM --> ASU
+    AM --> DA
+    AM --> CA
+    AM --> AUDIO
+    AUDIO --> BASE64
+    ASU --> SM
+    SM --> LS
+
+    WS[WebSocket] -->|會話更新事件| AM
+    AM -->|播放通知| AUDIO
+```
+
+**核心特性**：
+- **內建音效**: 經典提示音、通知鈴聲、輕柔鐘聲
+- **自訂音效**: 支援 MP3、WAV、OGG 格式上傳
+- **音量控制**: 0-100% 可調節音量
+- **測試播放**: 即時測試音效效果
+- **設定持久化**: 音效偏好自動保存
+
+### 2. 會話管理重構架構
+
+**從側邊欄到頁籤的遷移**：
+```mermaid
+graph LR
+    subgraph "v2.4.2 設計"
+        SIDEBAR[左側邊欄<br/>會話管理]
+        COMPAT[瀏覽器相容性問題<br/>小視窗按鈕無法點擊]
+    end
+
+    subgraph "v2.4.3 重構"
+        TAB[獨立頁籤<br/>會話管理]
+        ENHANCED[增強功能<br/>本地存儲 + 隱私控制]
+    end
+
+    SIDEBAR -->|重構| TAB
+    COMPAT -->|解決| ENHANCED
+```
+
+**新增功能模組**：
+- **session-ui-renderer.js**: 專門的 UI 渲染器
+- **session-details-modal.js**: 會話詳情彈窗
+- **本地歷史存儲**: 支援 72 小時可配置保存期限
+- **隱私控制**: 三級用戶訊息記錄設定
+- **數據管理**: 匯出和清理功能
+
+### 3. 智能記憶功能架構
+
+**輸入框高度管理**：
+```mermaid
+graph TB
+    subgraph "高度管理系統"
+        THM[TextareaHeightManager<br/>高度管理器]
+        RO[ResizeObserver<br/>尺寸監控]
+        DEBOUNCE[防抖機制<br/>500ms 延遲]
+    end
+
+    subgraph "存儲機制"
+        SETTINGS[SettingsManager]
+        HEIGHT_KEY[combinedFeedbackTextHeight]
+    end
+
+    TEXTAREA[combinedFeedbackText] --> RO
+    RO --> THM
+    THM --> DEBOUNCE
+    DEBOUNCE --> SETTINGS
+    SETTINGS --> HEIGHT_KEY
+
+    THM -->|恢復高度| TEXTAREA
+```
+
+**一鍵複製功能**：
+- **專案路徑複製**: 點擊路徑文字即可複製
+- **會話ID複製**: 點擊會話ID即可複製
+- **複製反饋**: 視覺提示複製成功
+- **國際化支援**: 複製提示支援多語言
+
 ## 🔄 核心工作流程
 
-### AI 助手調用流程
+### AI 助手調用流程（v2.4.3 增強）
 ```mermaid
 sequenceDiagram
     participant AI as AI 助手
     participant MCP as MCP 服務
     participant WM as WebUIManager
     participant UI as Web UI
+    participant AUDIO as 音效管理器
     participant User as 用戶
 
     AI->>MCP: interactive_feedback()
     MCP->>WM: 創建/更新會話
     WM->>UI: 啟動 Web 服務
     WM->>User: 智能開啟瀏覽器
+
+    Note over UI,AUDIO: v2.4.3 新增音效通知
+    UI->>AUDIO: 會話更新事件
+    AUDIO->>User: 播放通知音效
+
     User->>UI: 提交回饋
     UI->>WM: WebSocket 傳送
     WM->>MCP: 回饋完成
@@ -462,8 +586,9 @@ graph LR
 
 ---
 
-**版本**: 2.4.0
-**最後更新**: 2025年6月
+**版本**: 2.4.3
+**最後更新**: 2025年6月14日
 **維護者**: Minidoracat
 **架構類型**: Web-Only 四層架構
-**新功能**: 提示詞管理、自動提交、會話管理、語系切換優化
+**v2.4.3 新功能**: 音效通知系統、會話管理重構、智能記憶功能、一鍵複製
+**歷史功能**: 提示詞管理、自動提交、會話管理、語系切換優化

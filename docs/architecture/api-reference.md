@@ -270,22 +270,81 @@ ws://localhost:{port}/ws
 - `settings.timeout`: 自動提交倒數時間（秒）
 - `settings.promptId`: 自動提交使用的提示詞 ID
 
-#### session_management
+#### session_management（v2.4.3 重構增強）
 會話管理操作。
 
 ```json
 {
     "type": "session_management",
     "data": {
-        "action": "get_history|get_stats|clear_history",
-        "sessionId": "550e8400-e29b-41d4-a716-446655440000"
+        "action": "get_history|get_stats|clear_history|export_history|view_details",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440000",
+        "options": {
+            "retentionHours": 72,
+            "privacyLevel": "full",
+            "includeUserMessages": true
+        }
     }
 }
 ```
 
 **字段說明**:
-- `action`: 管理動作（get_history=獲取歷史, get_stats=獲取統計, clear_history=清除歷史）
+- `action`: 管理動作（get_history=獲取歷史, get_stats=獲取統計, clear_history=清除歷史, export_history=匯出歷史, view_details=查看詳情）
 - `sessionId`: 會話 ID（可選）
+- `options.retentionHours`: 歷史保存時間（小時）
+- `options.privacyLevel`: 隱私等級（full=完整, basic=基本, disabled=停用）
+- `options.includeUserMessages`: 是否包含用戶訊息記錄
+
+#### audio_management（v2.4.3 新增）
+音效管理操作。
+
+```json
+{
+    "type": "audio_management",
+    "data": {
+        "action": "update_settings|test_audio|upload_custom|delete_custom",
+        "settings": {
+            "enabled": true,
+            "volume": 75,
+            "selectedAudioId": "notification-ding"
+        },
+        "customAudio": {
+            "id": "custom_1_1703123456789",
+            "name": "自訂提示音",
+            "data": "data:audio/mp3;base64,//uQx...",
+            "mimeType": "audio/mp3"
+        }
+    }
+}
+```
+
+**字段說明**:
+- `action`: 操作類型（update_settings=更新設定, test_audio=測試播放, upload_custom=上傳自訂音效, delete_custom=刪除自訂音效）
+- `settings.enabled`: 是否啟用音效通知
+- `settings.volume`: 音量（0-100）
+- `settings.selectedAudioId`: 選中的音效 ID
+- `customAudio`: 自訂音效數據
+
+#### height_management（v2.4.3 新增）
+輸入框高度管理。
+
+```json
+{
+    "type": "height_management",
+    "data": {
+        "action": "save_height|load_height",
+        "elementId": "combinedFeedbackText",
+        "height": 200,
+        "settingKey": "combinedFeedbackTextHeight"
+    }
+}
+```
+
+**字段說明**:
+- `action`: 操作類型（save_height=保存高度, load_height=載入高度）
+- `elementId`: 元素 ID
+- `height`: 高度值（像素）
+- `settingKey`: 設定鍵名
 
 ### 📥 服務器 → 客戶端訊息
 
@@ -366,7 +425,7 @@ WebSocket 連接建立確認。
 - `promptId`: 當前自動提交提示詞 ID
 - `promptName`: 當前自動提交提示詞名稱
 
-#### session_history
+#### session_history（v2.4.3 增強）
 會話歷史數據。
 
 ```json
@@ -379,14 +438,95 @@ WebSocket 連接建立確認。
                 "summary": "代碼審查完成",
                 "status": "completed",
                 "created_at": "2024-12-13T10:30:00Z",
-                "feedback_length": 150
+                "completed_at": "2024-12-13T10:35:00Z",
+                "feedback_length": 150,
+                "user_messages": [
+                    {
+                        "timestamp": "2024-12-13T10:32:00Z",
+                        "content": "代碼看起來不錯",
+                        "type": "text",
+                        "submission_method": "manual"
+                    }
+                ],
+                "project_directory": "./my-project"
             }
         ],
         "stats": {
             "total": 10,
             "completed": 8,
-            "average_feedback_length": 120
+            "average_feedback_length": 120,
+            "today_count": 3,
+            "average_duration": 300
+        },
+        "retention_info": {
+            "retention_hours": 72,
+            "oldest_session": "2024-12-11T10:30:00Z",
+            "cleanup_count": 2
         }
+    }
+}
+```
+
+#### audio_notification（v2.4.3 新增）
+音效通知觸發。
+
+```json
+{
+    "type": "audio_notification",
+    "data": {
+        "trigger": "session_updated",
+        "audioId": "notification-ding",
+        "volume": 75,
+        "timestamp": "2024-12-13T10:30:00Z"
+    }
+}
+```
+
+**字段說明**:
+- `trigger`: 觸發事件（session_updated=會話更新, feedback_received=回饋接收）
+- `audioId`: 播放的音效 ID
+- `volume`: 播放音量
+- `timestamp`: 觸發時間
+
+#### audio_settings_update（v2.4.3 新增）
+音效設定更新通知。
+
+```json
+{
+    "type": "audio_settings_update",
+    "data": {
+        "settings": {
+            "enabled": true,
+            "volume": 75,
+            "selectedAudioId": "soft-chime"
+        },
+        "availableAudios": [
+            {
+                "id": "default-beep",
+                "name": "經典提示音",
+                "isDefault": true
+            },
+            {
+                "id": "custom_1",
+                "name": "自訂音效1",
+                "isDefault": false
+            }
+        ]
+    }
+}
+```
+
+#### height_settings_update（v2.4.3 新增）
+高度設定更新通知。
+
+```json
+{
+    "type": "height_settings_update",
+    "data": {
+        "elementId": "combinedFeedbackText",
+        "height": 200,
+        "saved": true,
+        "timestamp": "2024-12-13T10:30:00Z"
     }
 }
 ```
@@ -505,7 +645,7 @@ def getPromptsSortedByUsage(self) -> List[dict]
 
 獲取按使用頻率排序的提示詞列表，自動提交提示詞優先顯示。
 
-### SessionManager API
+### SessionManager API（v2.4.3 重構增強）
 
 #### getCurrentSession()
 ```python
@@ -516,17 +656,108 @@ def getCurrentSession(self) -> dict
 
 #### getSessionHistory()
 ```python
-def getSessionHistory(self) -> List[dict]
+def getSessionHistory(self, retentionHours: int = 72) -> List[dict]
 ```
 
-獲取會話歷史記錄。
+獲取會話歷史記錄，支援保存期限過濾。
 
 #### getSessionStats()
 ```python
 def getSessionStats(self) -> dict
 ```
 
-獲取會話統計信息。
+獲取會話統計信息，包含今日統計和平均時長。
+
+#### exportSessionHistory()
+```python
+def exportSessionHistory(self, format: str = "json") -> str
+```
+
+匯出會話歷史數據。
+
+**參數**:
+- `format`: 匯出格式（json, csv）
+
+#### cleanupExpiredSessions()
+```python
+def cleanupExpiredSessions(self, retentionHours: int = 72) -> int
+```
+
+清理過期會話記錄。
+
+**返回值**: 清理的會話數量
+
+### AudioManager API（v2.4.3 新增）
+
+#### playNotification()
+```python
+def playNotification(self) -> None
+```
+
+播放通知音效。
+
+#### updateSettings()
+```python
+def updateSettings(self, enabled: bool, volume: int, selectedAudioId: str) -> None
+```
+
+更新音效設定。
+
+#### addCustomAudio()
+```python
+def addCustomAudio(self, name: str, audioData: str, mimeType: str) -> dict
+```
+
+新增自訂音效。
+
+**參數**:
+- `name`: 音效名稱
+- `audioData`: Base64 編碼的音效數據
+- `mimeType`: MIME 類型（audio/mp3, audio/wav, audio/ogg）
+
+#### deleteCustomAudio()
+```python
+def deleteCustomAudio(self, audioId: str) -> bool
+```
+
+刪除自訂音效。
+
+#### getAllAudios()
+```python
+def getAllAudios(self) -> List[dict]
+```
+
+獲取所有可用音效（內建 + 自訂）。
+
+### TextareaHeightManager API（v2.4.3 新增）
+
+#### registerTextarea()
+```python
+def registerTextarea(self, elementId: str, settingKey: str) -> bool
+```
+
+註冊 textarea 元素進行高度管理。
+
+#### saveHeight()
+```python
+def saveHeight(self, elementId: str, height: int) -> None
+```
+
+保存 textarea 高度到設定。
+
+#### loadHeight()
+```python
+def loadHeight(self, elementId: str) -> int
+```
+
+從設定載入 textarea 高度。
+
+#### unregisterTextarea()
+```python
+def unregisterTextarea(self, elementId: str) -> None
+```
+
+取消註冊 textarea 元素。
 
 ### AutoSubmitManager API
 
@@ -595,6 +826,32 @@ class AutoSubmitStatus:
     COMPLETED = "completed"     # 已完成提交
 ```
 
+### 音效通知狀態（v2.4.3 新增）
+```python
+class AudioNotificationStatus:
+    DISABLED = "disabled"       # 已停用
+    ENABLED = "enabled"         # 已啟用
+    PLAYING = "playing"         # 播放中
+    ERROR = "error"             # 播放錯誤
+```
+
+### 會話歷史狀態（v2.4.3 新增）
+```python
+class SessionHistoryStatus:
+    ACTIVE = "active"           # 活躍會話
+    COMPLETED = "completed"     # 已完成會話
+    EXPIRED = "expired"         # 已過期會話
+    ARCHIVED = "archived"       # 已歸檔會話
+```
+
+### 隱私等級（v2.4.3 新增）
+```python
+class PrivacyLevel:
+    FULL = "full"               # 完整記錄
+    BASIC = "basic"             # 基本記錄
+    DISABLED = "disabled"       # 停用記錄
+```
+
 ## 🔒 安全考慮
 
 ### 輸入驗證
@@ -605,6 +862,15 @@ class AutoSubmitStatus:
 - 提示詞名稱長度限制：最大 100 字符
 - 提示詞內容長度限制：最大 5,000 字符
 - 提示詞數量限制：最多 50 個
+- **音效文件限制（v2.4.3 新增）**：
+  - 支援格式：MP3, WAV, OGG
+  - 單個文件最大：2MB
+  - 自訂音效數量：最多 20 個
+  - 音效名稱長度：最大 50 字符
+- **會話歷史限制（v2.4.3 新增）**：
+  - 預設保存期限：72 小時
+  - 最大保存期限：168 小時（7天）
+  - 單個會話最大用戶訊息數：100 條
 
 ### 資源保護
 - WebSocket 連接數限制：每會話最多 5 個連接
@@ -633,9 +899,10 @@ app.add_middleware(
 
 ---
 
-**版本**: 2.4.0
-**最後更新**: 2025年6月
+**版本**: 2.4.3
+**最後更新**: 2025年6月14日
 **維護者**: Minidoracat
 **API 版本**: v1
-**協議支援**: MCP 2.0+, WebSocket, HTTP/1.1
-**新功能**: 自動提交、提示詞管理、會話管理、語系切換優化
+**協議支援**: MCP 2.0+, WebSocket, HTTP/1.1, Web Audio API
+**v2.4.3 新功能**: 音效通知系統、會話管理重構、智能記憶功能、一鍵複製
+**歷史功能**: 自動提交、提示詞管理、會話管理、語系切換優化

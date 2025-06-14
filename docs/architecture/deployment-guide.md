@@ -46,12 +46,14 @@ graph TB
 - **內存**: 512MB 可用內存
 - **磁盤**: 100MB 可用空間
 - **網路**: 可訪問的網路連接
+- **瀏覽器**: 支援 Web Audio API 的現代瀏覽器（v2.4.3 音效功能）
 
 #### 推薦配置
 - **Python**: 3.12+
 - **內存**: 1GB+ 可用內存
-- **磁盤**: 500MB+ 可用空間
+- **磁盤**: 500MB+ 可用空間（包含音效文件存儲）
 - **CPU**: 2 核心或更多
+- **瀏覽器**: Chrome 90+, Firefox 88+, Safari 14+（完整功能支援）
 
 ### 安裝方式
 
@@ -61,7 +63,7 @@ graph TB
 uvx mcp-feedback-enhanced@latest web
 
 # 指定版本
-uvx mcp-feedback-enhanced@2.3.0 web
+uvx mcp-feedback-enhanced@2.4.3 web
 ```
 
 #### 2. 使用 pip
@@ -223,6 +225,8 @@ mcp-feedback-enhanced web [OPTIONS]
 | `--debug` | `bool` | `False` | 啟用調試模式 |
 | `--no-browser` | `bool` | `False` | 不自動開啟瀏覽器 |
 | `--timeout` | `int` | `600` | 預設會話超時時間（秒） |
+| `--audio-enabled` | `bool` | `True` | 啟用音效通知（v2.4.3 新增） |
+| `--session-retention` | `int` | `72` | 會話歷史保存時間（小時，v2.4.3 新增） |
 
 ### 環境變數
 
@@ -232,6 +236,8 @@ export MCP_FEEDBACK_HOST=0.0.0.0
 export MCP_FEEDBACK_PORT=9000
 export MCP_FEEDBACK_DEBUG=true
 export MCP_FEEDBACK_TIMEOUT=1200
+export MCP_FEEDBACK_AUDIO_ENABLED=true
+export MCP_FEEDBACK_SESSION_RETENTION=72
 ```
 
 ### 配置文件
@@ -250,6 +256,101 @@ export MCP_FEEDBACK_TIMEOUT=1200
     "ui": {
         "default_language": "zh-TW",
         "theme": "light"
+    },
+    "audio": {
+        "enabled": true,
+        "default_volume": 75,
+        "max_custom_audios": 20,
+        "max_file_size_mb": 2
+    },
+    "session_history": {
+        "retention_hours": 72,
+        "max_retention_hours": 168,
+        "privacy_level": "full",
+        "auto_cleanup": true
+    }
+}
+```
+
+## 🆕 v2.4.3 版本部署考慮
+
+### 音效通知系統部署
+
+#### 瀏覽器相容性檢查
+```javascript
+// 檢查 Web Audio API 支援
+function checkAudioSupport() {
+    if (typeof Audio === 'undefined') {
+        console.warn('Web Audio API 不支援，音效功能將被停用');
+        return false;
+    }
+    return true;
+}
+```
+
+#### 音效文件存儲配置
+```json
+{
+    "audio_storage": {
+        "type": "localStorage",
+        "max_size_mb": 10,
+        "compression": true,
+        "fallback_enabled": true
+    }
+}
+```
+
+#### 自動播放政策處理
+```bash
+# 部署時需要考慮瀏覽器自動播放限制
+# Chrome: 需要用戶交互後才能播放音效
+# Firefox: 預設允許音效播放
+# Safari: 需要用戶手勢觸發
+```
+
+### 會話管理重構部署
+
+#### localStorage 容量規劃
+```javascript
+// 估算存儲需求
+const estimatedStorage = {
+    sessions_per_day: 50,
+    average_session_size_kb: 5,
+    retention_days: 3,
+    total_size_mb: (50 * 5 * 3) / 1024  // 約 0.73 MB
+};
+```
+
+#### 隱私設定配置
+```json
+{
+    "privacy_defaults": {
+        "user_message_recording": "full",
+        "retention_hours": 72,
+        "auto_cleanup": true,
+        "export_enabled": true
+    }
+}
+```
+
+### 智能記憶功能部署
+
+#### ResizeObserver 支援檢查
+```javascript
+// 檢查 ResizeObserver 支援
+if (typeof ResizeObserver === 'undefined') {
+    console.warn('ResizeObserver 不支援，高度記憶功能將使用 fallback');
+    // 使用 window.resize 事件作為 fallback
+}
+```
+
+#### 設定存儲優化
+```json
+{
+    "memory_settings": {
+        "debounce_delay_ms": 500,
+        "max_stored_heights": 10,
+        "cleanup_interval_hours": 24
     }
 }
 ```
@@ -266,9 +367,19 @@ curl http://localhost:8000/health
 # 響應示例
 {
     "status": "healthy",
-    "version": "2.3.0",
+    "version": "2.4.3",
     "uptime": "2h 30m 15s",
-    "active_sessions": 1
+    "active_sessions": 1,
+    "features": {
+        "audio_notifications": true,
+        "session_history": true,
+        "smart_memory": true
+    },
+    "storage": {
+        "session_history_count": 25,
+        "custom_audio_count": 3,
+        "localStorage_usage_mb": 1.2
+    }
 }
 ```
 
@@ -309,7 +420,41 @@ MAX_WEBSOCKET_CONNECTIONS = 50
 
 #### 常見問題
 
-1. **埠被佔用**
+**v2.4.3 新增問題**：
+
+1. **音效無法播放**
+```bash
+# 檢查瀏覽器自動播放政策
+# 解決方案：用戶需要先與頁面交互
+console.log('請點擊頁面任意位置以啟用音效功能');
+
+# 檢查音效文件格式
+# 支援格式：MP3, WAV, OGG
+# 最大文件大小：2MB
+```
+
+2. **會話歷史丟失**
+```bash
+# 檢查 localStorage 容量
+# 解決方案：清理過期數據或增加保存期限
+localStorage.getItem('sessionHistory');
+
+# 檢查隱私設定
+# 確認用戶訊息記錄等級設定正確
+```
+
+3. **輸入框高度不記憶**
+```bash
+# 檢查 ResizeObserver 支援
+if (typeof ResizeObserver === 'undefined') {
+    console.warn('瀏覽器不支援 ResizeObserver');
+}
+
+# 檢查設定存儲
+localStorage.getItem('combinedFeedbackTextHeight');
+```
+
+4. **埠被佔用**
 ```bash
 # 檢查埠使用情況
 netstat -tulpn | grep 8000
@@ -391,6 +536,13 @@ sudo firewall-cmd --reload
 - 平均回應時間
 - 錯誤率
 
+### v2.4.3 新增指標
+- 音效播放成功率
+- 會話歷史存儲使用量
+- 自訂音效上傳數量
+- 輸入框高度調整頻率
+- localStorage 使用量
+
 ### 監控工具集成
 ```python
 # Prometheus 指標
@@ -399,8 +551,92 @@ from prometheus_client import Counter, Histogram, Gauge
 session_counter = Counter('mcp_sessions_total', 'Total sessions created')
 response_time = Histogram('mcp_response_time_seconds', 'Response time')
 active_sessions = Gauge('mcp_active_sessions', 'Active sessions')
+
+# v2.4.3 新增指標
+audio_plays = Counter('mcp_audio_plays_total', 'Total audio notifications played')
+audio_errors = Counter('mcp_audio_errors_total', 'Total audio playback errors')
+session_history_size = Gauge('mcp_session_history_size_bytes', 'Session history storage size')
+custom_audio_count = Gauge('mcp_custom_audio_count', 'Number of custom audio files')
+height_adjustments = Counter('mcp_height_adjustments_total', 'Total textarea height adjustments')
 ```
 
 ---
 
-**完成**: 架構文檔體系已建立完成，包含完整的技術文檔和部署指南。
+## 🔄 版本升級指南
+
+### 從 v2.4.2 升級到 v2.4.3
+
+#### 1. 備份現有數據
+```bash
+# 備份用戶設定
+cp ~/.mcp-feedback/settings.json ~/.mcp-feedback/settings.json.backup
+
+# 備份提示詞數據
+cp ~/.mcp-feedback/prompts.json ~/.mcp-feedback/prompts.json.backup
+```
+
+#### 2. 升級軟體
+```bash
+# 使用 uvx 升級
+uvx mcp-feedback-enhanced@2.4.3 web
+
+# 或使用 pip 升級
+pip install --upgrade mcp-feedback-enhanced==2.4.3
+```
+
+#### 3. 驗證新功能
+```bash
+# 檢查音效功能
+curl http://localhost:8000/health | jq '.features.audio_notifications'
+
+# 檢查會話歷史功能
+curl http://localhost:8000/health | jq '.features.session_history'
+
+# 檢查智能記憶功能
+curl http://localhost:8000/health | jq '.features.smart_memory'
+```
+
+#### 4. 配置遷移
+```json
+// 新增的配置項目會自動使用預設值
+{
+    "audio": {
+        "enabled": true,
+        "volume": 75,
+        "selectedAudioId": "default-beep"
+    },
+    "sessionHistory": {
+        "retentionHours": 72,
+        "privacyLevel": "full"
+    },
+    "smartMemory": {
+        "heightMemoryEnabled": true
+    }
+}
+```
+
+### 回滾指南
+
+如果需要回滾到 v2.4.2：
+
+```bash
+# 停止服務
+pkill -f mcp-feedback-enhanced
+
+# 安裝舊版本
+pip install mcp-feedback-enhanced==2.4.2
+
+# 恢復備份設定
+cp ~/.mcp-feedback/settings.json.backup ~/.mcp-feedback/settings.json
+
+# 重新啟動服務
+mcp-feedback-enhanced web
+```
+
+---
+
+**版本**: 2.4.3
+**最後更新**: 2025年6月14日
+**維護者**: Minidoracat
+**新功能**: 音效通知系統、會話管理重構、智能記憶功能、一鍵複製
+**完成**: 架構文檔體系已更新完成，包含 v2.4.3 版本的完整技術文檔和部署指南。

@@ -1154,11 +1154,13 @@
             } else {
                 console.log('⚠️ 自動提交提示詞驗證失敗:', {
                     promptExists: !!prompt,
-                    isAutoSubmit: prompt ? prompt.isAutoSubmit : false
+                    isAutoSubmit: prompt ? prompt.isAutoSubmit : false,
+                    reason: !prompt ? '提示詞不存在' : '提示詞未標記為自動提交'
                 });
-                // 清空無效的自動提交設定
+                // 只清空無效的 promptId，保留用戶的 autoSubmitEnabled 設定
+                // 這樣避免因為提示詞問題而強制關閉用戶的自動提交偏好
                 this.settingsManager.set('autoSubmitPromptId', null);
-                this.settingsManager.set('autoSubmitEnabled', false);
+                console.log('🔧 已清空無效的 autoSubmitPromptId，保留 autoSubmitEnabled 設定:', autoSubmitEnabled);
             }
         }
 

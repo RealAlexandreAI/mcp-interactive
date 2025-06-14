@@ -396,16 +396,31 @@
         // 同步更新設定管理器中的自動提交提示詞 ID
         if (this.settingsManager) {
             console.log('🔄 updateAutoSubmitSelect 設定前:', this.settingsManager.get('autoSubmitPromptId'));
+            const currentAutoSubmitEnabled = this.settingsManager.get('autoSubmitEnabled');
+
             if (autoSubmitPromptId) {
-                this.settingsManager.set('autoSubmitPromptId', autoSubmitPromptId);
-                this.settingsManager.set('autoSubmitEnabled', true);
-                console.log('🔄 updateAutoSubmitSelect 同步設定:', autoSubmitPromptId);
+                // 檢查狀態一致性：如果設定中的 promptId 與找到的不一致，以找到的為準
+                const currentPromptId = this.settingsManager.get('autoSubmitPromptId');
+                if (currentPromptId !== autoSubmitPromptId) {
+                    console.log('🔧 狀態不一致，修正 autoSubmitPromptId:', currentPromptId, '->', autoSubmitPromptId);
+                    this.settingsManager.set('autoSubmitPromptId', autoSubmitPromptId);
+                }
+
+                // 不自動改變 autoSubmitEnabled 的值，完全尊重用戶的設定
+                // updateAutoSubmitSelect 只負責同步 promptId 和下拉選單顯示
+                console.log('🔄 updateAutoSubmitSelect 同步 promptId，保持 autoSubmitEnabled 狀態:', {
+                    promptId: autoSubmitPromptId,
+                    enabled: currentAutoSubmitEnabled
+                });
             } else {
+                // 沒有找到自動提交提示詞，清空 promptId 但完全保留 enabled 狀態
                 this.settingsManager.set('autoSubmitPromptId', null);
-                this.settingsManager.set('autoSubmitEnabled', false);
-                console.log('🔄 updateAutoSubmitSelect 清空設定');
+                console.log('🔄 updateAutoSubmitSelect 清空 promptId，完全保留 autoSubmitEnabled 狀態:', currentAutoSubmitEnabled);
             }
-            console.log('🔄 updateAutoSubmitSelect 設定後:', this.settingsManager.get('autoSubmitPromptId'));
+            console.log('🔄 updateAutoSubmitSelect 設定後:', {
+                promptId: this.settingsManager.get('autoSubmitPromptId'),
+                enabled: this.settingsManager.get('autoSubmitEnabled')
+            });
         } else {
             console.warn('⚠️ updateAutoSubmitSelect: settingsManager 未設定，無法同步設定');
         }

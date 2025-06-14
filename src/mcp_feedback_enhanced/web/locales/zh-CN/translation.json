@@ -78,27 +78,23 @@
     },
     "command": {
         "title": "⚡ 命令执行",
-        "description": "在此执行命令来验证结果或收集更多信息。命令将在项目目录中执行。",
         "inputLabel": "命令输入",
         "placeholder": "输入要执行的命令...",
         "execute": "▶️ 执行",
         "runButton": "▶️ 执行",
         "clear": "清除",
         "output": "命令输出",
-        "outputLabel": "命令输出",
         "running": "执行中...",
         "completed": "执行完成",
         "error": "执行错误",
         "history": "命令历史"
     },
     "combined": {
-        "description": "AI 摘要和反馈输入在同一页面中，方便对照查看。",
         "summaryTitle": "📋 AI 工作摘要",
         "feedbackTitle": "💬 提供反馈"
     },
     "settings": {
         "title": "⚙️ 设定",
-        "description": "调整界面设定和偏好选项。",
         "language": "语言",
         "currentLanguage": "当前语言",
         "languageDesc": "选择界面显示语言",
@@ -376,7 +372,6 @@
     },
     "about": {
         "title": "ℹ️ 关于",
-        "description": "一个强大的 MCP 服务器，为 AI 辅助开发工具提供人在回路的交互反馈功能。支持 Web UI 界面，并具备图片上传、命令执行、多语言等丰富功能。",
         "appInfo": "应用程序信息",
         "version": "版本",
         "projectLinks": "项目链接",

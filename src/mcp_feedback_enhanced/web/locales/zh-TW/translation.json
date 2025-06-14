@@ -83,27 +83,23 @@
     },
     "command": {
         "title": "⚡ 命令執行",
-        "description": "在此執行命令來驗證結果或收集更多資訊。命令將在專案目錄中執行。",
         "inputLabel": "命令輸入",
         "placeholder": "輸入要執行的命令...",
         "execute": "▶️ 執行",
         "runButton": "▶️ 執行",
         "clear": "清除",
         "output": "命令輸出",
-        "outputLabel": "命令輸出",
         "running": "執行中...",
         "completed": "執行完成",
         "error": "執行錯誤",
         "history": "命令歷史"
     },
     "combined": {
-        "description": "AI 摘要和回饋輸入在同一頁面中，方便對照查看。",
         "summaryTitle": "📋 AI 工作摘要",
         "feedbackTitle": "💬 提供回饋"
     },
     "settings": {
         "title": "⚙️ 設定",
-        "description": "調整介面設定和偏好選項。",
         "language": "語言",
         "currentLanguage": "當前語言",
         "languageDesc": "選擇界面顯示語言",
@@ -381,7 +377,6 @@
     },
     "about": {
         "title": "ℹ️ 關於",
-        "description": "一個強大的 MCP 伺服器，為 AI 輔助開發工具提供人在回路的互動回饋功能。支援 Web UI 介面，並具備圖片上傳、命令執行、多語言等豐富功能。",
         "appInfo": "應用程式資訊",
         "version": "版本",
         "projectLinks": "專案連結",

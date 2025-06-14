@@ -642,13 +642,8 @@
 
             <!-- 命令分頁 -->
             <div id="tab-command" class="tab-content">
-                <div class="section-description" data-i18n="command.description">
-                    在此執行命令來驗證結果或收集更多資訊。命令將在專案目錄中執行。
-                </div>
-
                 <!-- 命令輸出區域 - 放在上面 -->
                 <div class="input-group">
-                    <label class="input-label" data-i18n="command.outputLabel">命令輸出</label>
                     <div id="commandOutput" class="command-output"></div>
                 </div>
 
@@ -676,15 +671,6 @@
 
             <!-- 工作區分頁 - 移動到此位置 -->
             <div id="tab-combined" class="tab-content">
-                <div class="combined-header">
-                    <div class="section-description" data-i18n="combined.description">
-                        AI 摘要和回饋輸入在同一頁面中，方便對照查看。
-                    </div>
-                    <button id="submitBtn" class="btn btn-success combined-submit-btn" data-i18n="buttons.submit">
-                        ✅ 提交回饋
-                    </button>
-                </div>
-
                 <div class="combined-content">
                     <!-- AI 摘要區域 -->
                     <div class="combined-section">
@@ -698,7 +684,12 @@
 
                     <!-- 回饋輸入區域 -->
                     <div class="combined-section">
-                        <h3 class="combined-section-title" data-i18n="combined.feedbackTitle">💬 提供回饋</h3>
+                        <div class="feedback-title-container">
+                            <h3 class="combined-section-title" data-i18n="combined.feedbackTitle">💬 提供回饋</h3>
+                            <button id="submitBtn" class="btn btn-success combined-submit-btn" data-i18n="buttons.submit">
+                                ✅ 提交回饋
+                            </button>
+                        </div>
 
                         <!-- 等待回饋狀態指示器 -->
                         {% set id = "combinedFeedbackStatusIndicator" %}
@@ -746,10 +737,6 @@
 
             <!-- 設定分頁 -->
             <div id="tab-settings" class="tab-content">
-                <div class="section-description" data-i18n="settings.description">
-                    調整介面設定和偏好選項。
-                </div>
-
                 <!-- 介面設定卡片 -->
                 <div class="settings-card">
                     <div class="settings-card-header">
@@ -1035,10 +1022,6 @@
 
             <!-- 關於分頁 -->
             <div id="tab-about" class="tab-content">
-                <div class="section-description" data-i18n="about.description">
-                    關於 MCP Feedback Enhanced - 應用程式資訊、專案連結和致謝。
-                </div>
-
                 <!-- 主要資訊卡片 -->
                 <div class="settings-card">
                     <div class="settings-card-header">

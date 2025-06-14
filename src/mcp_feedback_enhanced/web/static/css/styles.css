@@ -1333,22 +1333,7 @@ h3.combined-section-title {
     margin: 0;
 }
 
-/* Combined 標籤頁頂部佈局 */
-.combined-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    padding: 8px 12px;
-    gap: 16px;
-}
 
-.combined-header .section-description {
-    flex: 1;
-    font-size: 13px;
-    margin: 0;
-    padding: 0;
-}
 
 /* Combined 標籤頁提交按鈕樣式 */
 .combined-submit-btn {
@@ -1358,15 +1343,36 @@ h3.combined-section-title {
     white-space: nowrap;
 }
 
+/* 回饋標題容器樣式 */
+.feedback-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 16px;
+}
+
+.feedback-title-container h3.combined-section-title {
+    margin: 0;
+    flex: 1;
+}
+
+.feedback-title-container .combined-submit-btn {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
 /* 響應式設計 - 小螢幕時垂直排列 */
 @media (max-width: 768px) {
-    .combined-header {
+    .feedback-title-container {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
     }
 
-    .combined-submit-btn {
+    .feedback-title-container .combined-submit-btn {
         align-self: flex-end;
         width: auto;
     }

@@ -78,27 +78,23 @@
     },
     "command": {
         "title": "⚡ Command Execution",
-        "description": "Execute commands here to verify results or collect more information. Commands will be executed in the project directory.",
         "inputLabel": "Command Input",
         "placeholder": "Enter command to execute...",
         "execute": "▶️ Execute",
         "runButton": "▶️ Execute",
         "clear": "Clear",
         "output": "Command Output",
-        "outputLabel": "Command Output",
         "running": "Running...",
         "completed": "Completed",
         "error": "Execution Error",
         "history": "Command History"
     },
     "combined": {
-        "description": "AI summary and feedback input are on the same page for easy comparison.",
         "summaryTitle": "📋 AI Work Summary",
         "feedbackTitle": "💬 Provide Feedback"
     },
     "settings": {
         "title": "⚙️ Settings",
-        "description": "Adjust interface settings and preference options.",
         "language": "Language",
         "currentLanguage": "Current Language",
         "languageDesc": "Select interface display language",
@@ -376,7 +372,6 @@
     },
     "about": {
         "title": "ℹ️ About",
-        "description": "A powerful MCP server that provides human-in-the-loop interactive feedback functionality for AI-assisted development tools. Supports Web UI interface, with rich features including image upload, command execution, multi-language support, and more.",
         "appInfo": "Application Information",
         "version": "Version",
         "projectLinks": "Project Links",

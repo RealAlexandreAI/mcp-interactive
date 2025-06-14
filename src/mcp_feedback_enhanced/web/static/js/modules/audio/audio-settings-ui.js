@@ -58,7 +58,10 @@
         this.createUI();
         this.setupEventListeners();
         this.refreshUI();
-        
+
+        // 主動應用翻譯到新創建的元素
+        this.applyInitialTranslations();
+
         console.log('✅ AudioSettingsUI 初始化完成');
     };
 
@@ -636,6 +639,48 @@
     };
 
 
+
+    /**
+     * 應用初始翻譯到新創建的元素
+     */
+    AudioSettingsUI.prototype.applyInitialTranslations = function() {
+        if (!this.container) return;
+
+        // 對容器內所有有 data-i18n 屬性的元素應用翻譯
+        const elements = this.container.querySelectorAll('[data-i18n]');
+        elements.forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            const translation = this.t(key);
+            if (translation && translation !== key) {
+                element.textContent = translation;
+            }
+        });
+
+        // 對有 data-i18n-placeholder 屬性的元素應用翻譯
+        const placeholderElements = this.container.querySelectorAll('[data-i18n-placeholder]');
+        placeholderElements.forEach(element => {
+            const key = element.getAttribute('data-i18n-placeholder');
+            const translation = this.t(key);
+            if (translation && translation !== key) {
+                element.placeholder = translation;
+            }
+        });
+
+        console.log('🌐 AudioSettingsUI 初始翻譯已應用');
+    };
+
+    /**
+     * 更新所有翻譯（包括靜態文字和動態內容）
+     */
+    AudioSettingsUI.prototype.updateTranslations = function() {
+        // 更新所有靜態文字元素
+        this.applyInitialTranslations();
+
+        // 更新音效選擇器的翻譯
+        this.updateAudioSelectTranslations();
+
+        console.log('🌐 AudioSettingsUI 翻譯已更新');
+    };
 
     /**
      * 更新音效選擇器的翻譯

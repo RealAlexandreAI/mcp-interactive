@@ -321,10 +321,10 @@ class I18nManager {
     }
 
     updateAudioSelectTranslations() {
-        // 更新音效選擇器的翻譯
+        // 更新音效設定區域的所有翻譯
         if (window.feedbackApp && window.feedbackApp.audioSettingsUI) {
-            if (typeof window.feedbackApp.audioSettingsUI.updateAudioSelectTranslations === 'function') {
-                window.feedbackApp.audioSettingsUI.updateAudioSelectTranslations();
+            if (typeof window.feedbackApp.audioSettingsUI.updateTranslations === 'function') {
+                window.feedbackApp.audioSettingsUI.updateTranslations();
             }
         }
     }

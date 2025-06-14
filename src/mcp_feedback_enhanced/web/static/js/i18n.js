@@ -161,6 +161,16 @@ class I18nManager {
             }
         });
 
+        // 翻譯有 data-i18n-title 屬性的元素
+        const titleElements = document.querySelectorAll('[data-i18n-title]');
+        titleElements.forEach(element => {
+            const key = element.getAttribute('data-i18n-title');
+            const translation = this.t(key);
+            if (translation && translation !== key) {
+                element.title = translation;
+            }
+        });
+
         // 更新動態內容
         this.updateDynamicContent();
 

@@ -8,6 +8,12 @@
         "authorLink": "GitHub: Minidoracat",
         "credits": "⭐ 如果這個專案對您有幫助，請在 GitHub 上給我們一個星星！\n\n本增強版本由 Minidoracat 開發和維護，大幅擴展了專案功能，新增了 Web UI 介面、圖片支援、多語言能力以及許多其他改進功能。\n\n同時感謝 sanshao85 的 mcp-feedback-collector 專案提供的 UI 設計靈感。\n\n開源協作讓技術變得更美好！",
         "projectDirectory": "專案目錄",
+        "clickToCopyPath": "點擊複製完整路徑",
+        "clickToCopySessionId": "點擊複製完整會話ID",
+        "pathCopied": "專案路徑已複製到剪貼板",
+        "pathCopyFailed": "複製路徑失敗",
+        "sessionIdCopied": "會話ID已複製到剪貼板",
+        "sessionIdCopyFailed": "複製會話ID失敗",
         "updateFailed": "更新內容失敗，請手動刷新頁面以查看新的 AI 工作摘要"
     },
     "tabs": {

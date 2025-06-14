@@ -398,12 +398,32 @@
                 <h1 data-i18n="app.title">MCP Feedback Enhanced</h1>
             </div>
             <div class="project-info">
-                <span data-i18n="app.projectDirectory">專案目錄</span>: {{ project_directory }}
+                📂 <span data-i18n="app.projectDirectory">專案目錄</span>:
+                <span id="projectPathDisplay" class="project-path-display"
+                      data-full-path="{{ project_directory }}"
+                      data-i18n-title="app.clickToCopyPath"
+                      title="點擊複製完整路徑">{{ project_directory }}</span>
             </div>
         </div>
 
         <!-- 中間：連線狀態資訊 -->
         <div class="connection-status-group">
+            <!-- 左側：會話狀態資訊 -->
+            <div class="session-status-info">
+                <div class="current-session-info">
+                    <span class="session-indicator">
+                        📋 <span data-i18n="sessionManagement.currentSession">當前會話</span>:
+                        <span id="currentSessionId" class="session-id-display"
+                              data-full-id="{{ session_id if session_id else 'loading' }}"
+                              data-i18n-title="app.clickToCopySessionId"
+                              title="點擊複製完整會話ID">{{ session_id[:8] if session_id else 'loading' }}...</span>
+                    </span>
+                    <span class="session-age">
+                        <span data-i18n="sessionManagement.activeTime">活躍時間</span>: <span id="sessionAge">--</span>
+                    </span>
+                </div>
+            </div>
+
             <!-- 倒數計時器顯示 -->
             <div id="countdownDisplay" class="countdown-display" style="display: none;">
                 <span class="countdown-label" data-i18n="autoSubmit.countdownLabel">提交倒數</span>
@@ -424,21 +444,24 @@
                 </div>
             </div>
 
-            <!-- 連線詳細資訊 -->
-            <div class="connection-details">
-                <span class="connection-time"><span data-i18n="connectionMonitor.connectionTime">連線時間</span>: --:--</span>
-                <span class="reconnect-count"><span data-i18n="connectionMonitor.reconnectCount">重連</span>: 0 <span data-i18n="connectionMonitor.times">次</span></span>
-            </div>
-
-            <!-- 詳細狀態資訊 -->
-            <div class="detailed-status-info">
-                <div class="websocket-metrics">
-                    <span class="metric"><span data-i18n="connectionMonitor.metrics.messages">訊息</span>: <span id="messageCount">0</span></span>
-                    <span class="metric"><span data-i18n="connectionMonitor.metrics.latencyMs">延遲</span>: <span id="latencyDisplay">--ms</span></span>
+            <!-- 連線和狀態資訊組合 -->
+            <div class="connection-status-combined">
+                <!-- 連線詳細資訊 -->
+                <div class="connection-details">
+                    <span class="connection-time"><span data-i18n="connectionMonitor.connectionTime">連線時間</span>: --:--</span>
+                    <span class="reconnect-count"><span data-i18n="connectionMonitor.reconnectCount">重連</span>: 0 <span data-i18n="connectionMonitor.times">次</span></span>
                 </div>
-                <div class="session-metrics">
-                    <span class="metric"><span data-i18n="connectionMonitor.metrics.sessions">會話</span>: <span id="sessionCount">1</span></span>
-                    <span class="metric"><span data-i18n="connectionMonitor.statusText">狀態</span>: <span id="sessionStatusText" data-i18n="connectionMonitor.waiting">等待中</span></span>
+
+                <!-- 詳細狀態資訊 -->
+                <div class="detailed-status-info">
+                    <div class="websocket-metrics">
+                        <span class="metric"><span data-i18n="connectionMonitor.metrics.messages">訊息</span>: <span id="messageCount">0</span></span>
+                        <span class="metric"><span data-i18n="connectionMonitor.metrics.latencyMs">延遲</span>: <span id="latencyDisplay">--ms</span></span>
+                    </div>
+                    <div class="session-metrics">
+                        <span class="metric"><span data-i18n="connectionMonitor.metrics.sessions">會話</span>: <span id="sessionCount">1</span></span>
+                        <span class="metric"><span data-i18n="connectionMonitor.statusText">狀態</span>: <span id="sessionStatusText" data-i18n="connectionMonitor.waiting">等待中</span></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -530,20 +553,6 @@
 
             <!-- ===== 右側主要內容區域 ===== -->
             <div class="main-content-area" style="flex: 1; min-width: 0;">
-                <!-- 會話狀態條 -->
-                <div class="session-status-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); margin-bottom: 16px; border-radius: 6px;">
-                    <div class="current-session-info">
-                        <span class="session-indicator" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary);">
-                            📋 <span data-i18n="sessionManagement.currentSession">當前會話</span>: <span id="currentSessionId" style="font-family: monospace; color: var(--accent-color);">{{ session_id[:8] if session_id else 'loading' }}...</span>
-                        </span>
-                        <span class="session-age" style="margin-left: 16px; font-size: 12px; color: var(--text-secondary);"><span data-i18n="sessionManagement.activeTime">活躍時間</span>: <span id="sessionAge">--</span></span>
-                    </div>
-                    <div class="session-controls">
-                        <button class="btn-link" id="switchSessionBtn" style="display: none; font-size: 12px; color: var(--accent-color); background: none; border: none; cursor: pointer;" data-i18n="sessionManagement.switchSession">
-                            切換會話
-                        </button>
-                    </div>
-                </div>
 
                 <!-- 分頁導航 -->
                 <div class="tabs">

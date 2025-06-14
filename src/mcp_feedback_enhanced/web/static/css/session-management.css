@@ -107,6 +107,170 @@
   align-items: center;
   gap: 16px;
   flex: 2;
+  justify-content: space-between;
+}
+
+/* 會話狀態資訊區域 */
+.session-status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.session-status-info .current-session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.session-status-info .session-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.session-status-info .session-age {
+  font-size: 10px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  margin-left: 20px;
+}
+
+/* 會話ID顯示樣式 */
+.session-id-display {
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: var(--accent-color);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 122, 204, 0.1);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast) ease;
+  position: relative;
+  font-weight: 500;
+}
+
+.session-id-display:hover {
+  background: rgba(0, 122, 204, 0.2);
+  border-color: var(--accent-color);
+  transform: scale(1.02);
+}
+
+.session-id-display:active {
+  transform: scale(0.98);
+}
+
+/* 會話ID tooltip */
+.session-id-display::after {
+  content: attr(data-full-id);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast) ease;
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.session-id-display:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 專案路徑顯示樣式 - 模仿會話ID顯示 */
+.project-path-display {
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: var(--accent-color);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 122, 204, 0.1);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast) ease;
+  position: relative;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.project-path-display:hover {
+  background: rgba(0, 122, 204, 0.2);
+  border-color: var(--accent-color);
+  transform: scale(1.02);
+}
+
+.project-path-display:active {
+  transform: scale(0.98);
+}
+
+/* 專案路徑 tooltip */
+.project-path-display::after {
+  content: attr(data-full-path);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast) ease;
+  z-index: 1000;
+  margin-top: 4px;
+  max-width: 400px;
+  word-break: break-all;
+}
+
+.project-path-display:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 專案路徑 tooltip 位置自動調整 */
+.project-path-display.tooltip-up::after {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+.project-path-display.tooltip-left::after {
+  left: 0;
+  transform: translateX(0);
+}
+
+.project-path-display.tooltip-right::after {
+  left: auto;
+  right: 0;
+  transform: translateX(0);
+}
+
+/* 連線和狀態資訊組合容器 */
+.connection-status-combined {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
   justify-content: center;
 }
 
@@ -114,7 +278,7 @@
 .detailed-status-info {
   display: flex;
   gap: 16px;
-  margin-left: 16px;
+  margin-left: 0;
 }
 
 .websocket-metrics,
@@ -680,9 +844,14 @@
     flex-wrap: wrap;
   }
 
+  .connection-status-combined {
+    width: 100%;
+    align-items: center;
+  }
+
   .detailed-status-info {
     margin-left: 0;
-    margin-top: 8px;
+    margin-top: 0;
     justify-content: center;
     flex-wrap: wrap;
   }

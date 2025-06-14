@@ -122,6 +122,125 @@
         },
 
         /**
+         * 從右側截斷路徑，保留最後幾個目錄層級
+         * @param {string} path - 完整路徑
+         * @param {number} maxLevels - 保留的最大目錄層級數（默認2）
+         * @param {number} maxLength - 最大顯示長度（默認40）
+         * @returns {object} 包含 truncated（截斷後的路徑）和 isTruncated（是否被截斷）
+         */
+        truncatePathFromRight: function(path, maxLevels, maxLength) {
+            maxLevels = maxLevels || 2;
+            maxLength = maxLength || 40;
+
+            if (!path || typeof path !== 'string') {
+                return { truncated: path || '', isTruncated: false };
+            }
+
+            // 如果路徑長度小於最大長度，直接返回
+            if (path.length <= maxLength) {
+                return { truncated: path, isTruncated: false };
+            }
+
+            // 統一路徑分隔符為反斜線（Windows風格）
+            const normalizedPath = path.replace(/\//g, '\\');
+
+            // 分割路徑
+            const parts = normalizedPath.split('\\').filter(part => part.length > 0);
+
+            if (parts.length <= maxLevels) {
+                return { truncated: normalizedPath, isTruncated: false };
+            }
+
+            // 取最後幾個層級
+            const lastParts = parts.slice(-maxLevels);
+            const truncatedPath = '...' + '\\' + lastParts.join('\\');
+
+            return {
+                truncated: truncatedPath,
+                isTruncated: true
+            };
+        },
+
+        /**
+         * 複製文字到剪貼板（統一的複製功能）
+         * @param {string} text - 要複製的文字
+         * @param {string} successMessage - 成功提示訊息
+         * @param {string} errorMessage - 錯誤提示訊息
+         * @returns {Promise<boolean>} 複製是否成功
+         */
+        copyToClipboard: function(text, successMessage, errorMessage) {
+            successMessage = successMessage || '已複製到剪貼板';
+            errorMessage = errorMessage || '複製失敗';
+
+            return new Promise(function(resolve) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    // 使用現代 Clipboard API
+                    navigator.clipboard.writeText(text).then(function() {
+                        if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                            window.MCPFeedback.Utils.showMessage(successMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS);
+                        }
+                        resolve(true);
+                    }).catch(function(err) {
+                        console.error('Clipboard API 複製失敗:', err);
+                        // 回退到舊方法
+                        const success = window.MCPFeedback.Utils.fallbackCopyToClipboard(text);
+                        if (success) {
+                            if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                                window.MCPFeedback.Utils.showMessage(successMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS);
+                            }
+                            resolve(true);
+                        } else {
+                            if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                                window.MCPFeedback.Utils.showMessage(errorMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_ERROR);
+                            }
+                            resolve(false);
+                        }
+                    });
+                } else {
+                    // 直接使用回退方法
+                    const success = window.MCPFeedback.Utils.fallbackCopyToClipboard(text);
+                    if (success) {
+                        if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                            window.MCPFeedback.Utils.showMessage(successMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS);
+                        }
+                        resolve(true);
+                    } else {
+                        if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+                            window.MCPFeedback.Utils.showMessage(errorMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_ERROR);
+                        }
+                        resolve(false);
+                    }
+                }
+            });
+        },
+
+        /**
+         * 回退的複製到剪貼板方法
+         * @param {string} text - 要複製的文字
+         * @returns {boolean} 複製是否成功
+         */
+        fallbackCopyToClipboard: function(text) {
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                return successful;
+            } catch (err) {
+                console.error('回退複製方法失敗:', err);
+                return false;
+            }
+        },
+
+        /**
          * 安全的元素查詢
          * @param {string} selector - CSS 選擇器
          * @param {Element} context - 查詢上下文（可選）

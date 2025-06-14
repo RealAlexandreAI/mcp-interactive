@@ -36,6 +36,7 @@
         this.currentSessionData = null;
 
         this.initializeElements();
+        this.initializeProjectPathDisplay();
         this.startActiveTimeTimer();
 
         console.log('🎨 SessionUIRenderer 初始化完成');
@@ -53,6 +54,58 @@
             todayCount: DOMUtils.safeQuerySelector('.stat-today-count'),
             averageDuration: DOMUtils.safeQuerySelector('.stat-average-duration')
         };
+    };
+
+    /**
+     * 初始化專案路徑顯示
+     */
+    SessionUIRenderer.prototype.initializeProjectPathDisplay = function() {
+        console.log('🎨 初始化專案路徑顯示');
+
+        const projectPathElement = document.getElementById('projectPathDisplay');
+        console.log('🎨 初始化時找到專案路徑元素:', !!projectPathElement);
+
+        if (projectPathElement) {
+            const fullPath = projectPathElement.getAttribute('data-full-path');
+            console.log('🎨 初始化時的完整路徑:', fullPath);
+
+            if (fullPath) {
+                // 使用工具函數截斷路徑
+                const pathResult = window.MCPFeedback.Utils.truncatePathFromRight(fullPath, 2, 40);
+                console.log('🎨 初始化時路徑處理:', { fullPath, shortPath: pathResult.truncated });
+
+                // 更新顯示文字
+                DOMUtils.safeSetTextContent(projectPathElement, pathResult.truncated);
+
+                // 添加點擊複製功能
+                if (!projectPathElement.hasAttribute('data-copy-handler')) {
+                    console.log('🎨 初始化時添加點擊複製功能');
+                    projectPathElement.setAttribute('data-copy-handler', 'true');
+                    projectPathElement.addEventListener('click', function() {
+                        console.log('🎨 初始化的專案路徑被點擊');
+                        const fullPath = this.getAttribute('data-full-path');
+                        console.log('🎨 初始化時準備複製路徑:', fullPath);
+
+                        if (fullPath) {
+                            const successMessage = window.i18nManager ?
+                                window.i18nManager.t('app.pathCopied', '專案路徑已複製到剪貼板') :
+                                '專案路徑已複製到剪貼板';
+                            const errorMessage = window.i18nManager ?
+                                window.i18nManager.t('app.pathCopyFailed', '複製路徑失敗') :
+                                '複製路徑失敗';
+
+                            console.log('🎨 初始化時調用複製函數');
+                            window.MCPFeedback.Utils.copyToClipboard(fullPath, successMessage, errorMessage);
+                        }
+                    });
+                } else {
+                    console.log('🎨 初始化時點擊複製功能已存在');
+                }
+
+                // 添加 tooltip 位置自動調整
+                this.adjustTooltipPosition(projectPathElement);
+            }
+        }
     };
 
     /**
@@ -145,6 +198,88 @@
             const projectLabel = window.i18nManager ? window.i18nManager.t('sessionManagement.project') : '專案';
             DOMUtils.safeSetTextContent(projectElement, projectLabel + ': ' + projectDir);
         }
+
+        // 更新頂部狀態列的專案路徑顯示
+        this.updateTopProjectPathDisplay(sessionData);
+    };
+
+    /**
+     * 更新頂部狀態列的專案路徑顯示
+     */
+    SessionUIRenderer.prototype.updateTopProjectPathDisplay = function(sessionData) {
+        console.log('🎨 updateProjectPathDisplay 被調用:', sessionData);
+
+        const projectPathElement = document.getElementById('projectPathDisplay');
+        console.log('🎨 找到專案路徑元素:', !!projectPathElement);
+
+        if (projectPathElement && sessionData.project_directory) {
+            const fullPath = sessionData.project_directory;
+
+            // 使用工具函數截斷路徑
+            const pathResult = window.MCPFeedback.Utils.truncatePathFromRight(fullPath, 2, 40);
+            console.log('🎨 路徑處理:', { fullPath, shortPath: pathResult.truncated });
+
+            // 更新顯示文字
+            DOMUtils.safeSetTextContent(projectPathElement, pathResult.truncated);
+
+            // 更新完整路徑屬性
+            projectPathElement.setAttribute('data-full-path', fullPath);
+
+            // 添加點擊複製功能（如果還沒有）
+            if (!projectPathElement.hasAttribute('data-copy-handler')) {
+                console.log('🎨 添加點擊複製功能');
+                projectPathElement.setAttribute('data-copy-handler', 'true');
+                projectPathElement.addEventListener('click', function() {
+                    console.log('🎨 專案路徑被點擊');
+                    const fullPath = this.getAttribute('data-full-path');
+                    console.log('🎨 準備複製路徑:', fullPath);
+
+                    if (fullPath) {
+                        const successMessage = window.i18nManager ?
+                            window.i18nManager.t('app.pathCopied', '專案路徑已複製到剪貼板') :
+                            '專案路徑已複製到剪貼板';
+                        const errorMessage = window.i18nManager ?
+                            window.i18nManager.t('app.pathCopyFailed', '複製路徑失敗') :
+                            '複製路徑失敗';
+
+                        console.log('🎨 調用複製函數');
+                        window.MCPFeedback.Utils.copyToClipboard(fullPath, successMessage, errorMessage);
+                    }
+                });
+            } else {
+                console.log('🎨 點擊複製功能已存在');
+            }
+
+            // 添加 tooltip 位置自動調整
+            this.adjustTooltipPosition(projectPathElement);
+        }
+    };
+
+    /**
+     * 調整 tooltip 位置以避免超出視窗邊界
+     */
+    SessionUIRenderer.prototype.adjustTooltipPosition = function(element) {
+        if (!element) return;
+
+        // 移除之前的位置類別
+        element.classList.remove('tooltip-up', 'tooltip-left', 'tooltip-right');
+
+        // 獲取元素位置
+        const rect = element.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // 檢查是否需要調整垂直位置
+        if (rect.bottom + 100 > viewportHeight) {
+            element.classList.add('tooltip-up');
+        }
+
+        // 檢查是否需要調整水平位置
+        if (rect.left + 200 > viewportWidth) {
+            element.classList.add('tooltip-right');
+        } else if (rect.left < 200) {
+            element.classList.add('tooltip-left');
+        }
     };
 
     /**
@@ -168,10 +303,30 @@
 
         console.log('🎨 更新會話狀態列:', sessionData);
 
-        // 更新當前會話 ID - 顯示完整 session ID
+        // 更新當前會話 ID - 顯示縮短版本，完整ID存在data-full-id中
         const currentSessionElement = document.getElementById('currentSessionId');
         if (currentSessionElement && sessionData.session_id) {
-            DOMUtils.safeSetTextContent(currentSessionElement, sessionData.session_id);
+            const shortId = sessionData.session_id.substring(0, 8) + '...';
+            DOMUtils.safeSetTextContent(currentSessionElement, shortId);
+            currentSessionElement.setAttribute('data-full-id', sessionData.session_id);
+
+            // 添加點擊複製功能（如果還沒有）
+            if (!currentSessionElement.hasAttribute('data-copy-handler')) {
+                currentSessionElement.setAttribute('data-copy-handler', 'true');
+                currentSessionElement.addEventListener('click', function() {
+                    const fullId = this.getAttribute('data-full-id');
+                    if (fullId) {
+                        const successMessage = window.i18nManager ?
+                            window.i18nManager.t('app.sessionIdCopied', '會話ID已複製到剪貼板') :
+                            '會話ID已複製到剪貼板';
+                        const errorMessage = window.i18nManager ?
+                            window.i18nManager.t('app.sessionIdCopyFailed', '複製會話ID失敗') :
+                            '複製會話ID失敗';
+
+                        window.MCPFeedback.Utils.copyToClipboard(fullId, successMessage, errorMessage);
+                    }
+                });
+            }
         }
 
         // 立即更新活躍時間（定時器會持續更新）

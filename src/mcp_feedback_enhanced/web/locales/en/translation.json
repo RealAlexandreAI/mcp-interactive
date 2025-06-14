@@ -3,6 +3,12 @@
         "title": "MCP Interactive Feedback System",
         "subtitle": "AI Assistant Interactive Feedback Platform",
         "projectDirectory": "Project Directory",
+        "clickToCopyPath": "Click to copy full path",
+        "clickToCopySessionId": "Click to copy full session ID",
+        "pathCopied": "Project path copied to clipboard",
+        "pathCopyFailed": "Failed to copy path",
+        "sessionIdCopied": "Session ID copied to clipboard",
+        "sessionIdCopyFailed": "Failed to copy session ID",
         "updateFailed": "Failed to update content, please manually refresh the page to view new AI work summary"
     },
     "tabs": {

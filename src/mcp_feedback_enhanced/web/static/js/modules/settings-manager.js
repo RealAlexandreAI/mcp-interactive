@@ -40,7 +40,9 @@
             sessionHistoryRetentionHours: 72,
             // 用戶訊息記錄設定
             userMessageRecordingEnabled: true,
-            userMessagePrivacyLevel: 'full' // 'full', 'basic', 'disabled'
+            userMessagePrivacyLevel: 'full', // 'full', 'basic', 'disabled'
+            // UI 元素尺寸設定
+            combinedFeedbackTextHeight: 150 // combinedFeedbackText textarea 的高度（px）
         };
         
         // 當前設定

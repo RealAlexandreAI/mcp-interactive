@@ -207,19 +207,22 @@
                         // 11. 初始化自動提交管理器
                         self.initializeAutoSubmitManager();
 
-                        // 11. 應用設定到 UI
+                        // 12. 初始化 Textarea 高度管理器
+                        self.initializeTextareaHeightManager();
+
+                        // 13. 應用設定到 UI
                         self.settingsManager.applyToUI();
 
-                        // 12. 初始化各個管理器
+                        // 14. 初始化各個管理器
                         self.uiManager.initTabs();
                         self.imageHandler.init();
 
-                        // 13. 檢查並啟動自動提交（如果條件滿足）
+                        // 15. 檢查並啟動自動提交（如果條件滿足）
                         setTimeout(function() {
                             self.checkAndStartAutoSubmit();
                         }, 500); // 延遲 500ms 確保所有初始化完成
 
-                        // 14. 建立 WebSocket 連接
+                        // 16. 建立 WebSocket 連接
                         self.webSocketManager.connect();
 
                         resolve();
@@ -470,6 +473,47 @@
 
         } catch (error) {
             console.error('❌ 音效管理器初始化失敗:', error);
+        }
+    };
+
+    /**
+     * 初始化 Textarea 高度管理器
+     */
+    FeedbackApp.prototype.initializeTextareaHeightManager = function() {
+        console.log('📏 初始化 Textarea 高度管理器...');
+
+        try {
+            // 檢查 TextareaHeightManager 模組是否已載入
+            if (!window.MCPFeedback.TextareaHeightManager) {
+                console.warn('⚠️ TextareaHeightManager 模組未載入，跳過初始化');
+                return;
+            }
+
+            // 建立 TextareaHeightManager 實例
+            this.textareaHeightManager = new window.MCPFeedback.TextareaHeightManager({
+                settingsManager: this.settingsManager,
+                debounceDelay: 500 // 500ms 防抖延遲
+            });
+
+            // 初始化管理器
+            this.textareaHeightManager.initialize();
+
+            // 註冊 combinedFeedbackText textarea
+            const success = this.textareaHeightManager.registerTextarea(
+                'combinedFeedbackText',
+                'combinedFeedbackTextHeight'
+            );
+
+            if (success) {
+                console.log('✅ combinedFeedbackText 高度管理已啟用');
+            } else {
+                console.warn('⚠️ combinedFeedbackText 註冊失敗');
+            }
+
+            console.log('✅ Textarea 高度管理器初始化完成');
+
+        } catch (error) {
+            console.error('❌ Textarea 高度管理器初始化失敗:', error);
         }
     };
 
@@ -1451,7 +1495,9 @@
             this.imageHandler.cleanup();
         }
 
-
+        if (this.textareaHeightManager) {
+            this.textareaHeightManager.destroy();
+        }
 
         console.log('✅ 應用程式資源清理完成');
     };

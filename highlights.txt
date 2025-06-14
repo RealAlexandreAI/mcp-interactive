@@ -1,1 +1,4 @@
-
+- 🔊 **Audio Notification System**: Play audio alerts for session updates, supports built-in and custom audio uploads
+- 📚 **Session History Management**: Local session record storage with export and cleanup functionality
+- 💾 **Input Height Memory**: Automatically save and restore textarea input height settings
+- 📋 **One-Click Copy**: Project path and session ID support click-to-copy

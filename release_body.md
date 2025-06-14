@@ -1,7 +1,10 @@
-# Release v2.4.2 - Web-Only Architecture Refactoring & Smart Feature Enhancement
+# Release v2.4.3 - 2025-06-14 - Session Management Refactoring & Audio Notifications
 
 ## 🌟 Key Highlights
-
+- 🔊 **Audio Notification System**: Play audio alerts for session updates, supports built-in and custom audio uploads
+- 📚 **Session History Management**: Local session record storage with export and cleanup functionality
+- 💾 **Input Height Memory**: Automatically save and restore textarea input height settings
+- 📋 **One-Click Copy**: Project path and session ID support click-to-copy
 
 ## 🌐 Detailed Release Notes
 
@@ -23,7 +26,7 @@
 uvx mcp-feedback-enhanced@latest
 
 # This specific version / 此特定版本
-uvx mcp-feedback-enhanced@v2.4.2
+uvx mcp-feedback-enhanced@v2.4.3
 ```
 
 ## 🔗 Links

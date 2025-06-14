@@ -831,6 +831,9 @@
             });
 
             if (success) {
+                // 記錄用戶訊息到會話歷史
+                this.recordUserMessage(feedbackData);
+
                 // 清空表單
                 this.clearFeedback();
                 console.log('📤 回饋已發送，等待服務器確認...');
@@ -847,6 +850,44 @@
             if (this.uiManager) {
                 this.uiManager.setFeedbackState(window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_WAITING);
             }
+        }
+    };
+
+    /**
+     * 記錄用戶訊息到會話歷史
+     */
+    FeedbackApp.prototype.recordUserMessage = function(feedbackData) {
+        console.log('📝 記錄用戶訊息到會話歷史...');
+
+        try {
+            // 檢查是否有會話管理器
+            if (!this.sessionManager || !this.sessionManager.dataManager) {
+                console.warn('📝 會話管理器未初始化，跳過用戶訊息記錄');
+                return;
+            }
+
+            // 判斷提交方式
+            const submissionMethod = this.autoSubmitManager && this.autoSubmitManager.isEnabled ? 'auto' : 'manual';
+
+            // 建立訊息記錄資料
+            const messageData = {
+                content: feedbackData.feedback || '',
+                images: feedbackData.images || [],
+                submission_method: submissionMethod
+            };
+
+            // 記錄到會話歷史
+            const success = this.sessionManager.dataManager.addUserMessage(messageData);
+
+            if (success) {
+                console.log('📝 用戶訊息已記錄到會話歷史');
+            } else {
+                console.log('📝 用戶訊息記錄被跳過（可能因隱私設定或其他原因）');
+            }
+
+        } catch (error) {
+            console.error('❌ 記錄用戶訊息失敗:', error);
+            // 不影響主要功能，只記錄錯誤
         }
     };
 

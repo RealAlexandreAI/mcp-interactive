@@ -877,6 +877,148 @@
   border-color: var(--accent-color);
 }
 
+/* ===== 用戶訊息記錄樣式 ===== */
+.user-messages-section {
+  margin-top: 16px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.user-messages-summary {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.user-messages-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+}
+
+.user-message-item {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  transition: background var(--transition-fast) ease;
+}
+
+.user-message-item:last-child {
+  border-bottom: none;
+}
+
+.user-message-item:hover {
+  background: var(--bg-secondary);
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.message-index {
+  background: var(--accent-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 10px;
+}
+
+.message-time {
+  color: var(--text-secondary);
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.message-method {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.message-method:contains("自動") {
+  background: rgba(255, 152, 0, 0.2);
+  color: var(--warning-color);
+  border: 1px solid var(--warning-color);
+}
+
+.message-method:contains("手動") {
+  background: rgba(76, 175, 80, 0.2);
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
+}
+
+.message-content,
+.message-stats {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  padding: 8px 12px;
+  border-radius: 4px;
+  border-left: 3px solid var(--accent-color);
+}
+
+.message-content strong,
+.message-stats strong {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.message-images {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 隱私等級選擇器樣式增強 */
+#userMessagePrivacyLevel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  transition: all var(--transition-fast) ease;
+}
+
+#userMessagePrivacyLevel:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+#userMessagePrivacyLevel option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* 用戶訊息記錄開關樣式已整合到標準切換開關樣式中 */
+
+/* 切換開關容器樣式 */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle-label {
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
 /* 減少動畫偏好 */
 @media (prefers-reduced-motion: reduce) {
   * {

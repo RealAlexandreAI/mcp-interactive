@@ -37,7 +37,10 @@
             selectedAudioId: 'default-beep',
             customAudios: [],
             // 會話歷史設定
-            sessionHistoryRetentionHours: 72
+            sessionHistoryRetentionHours: 72,
+            // 用戶訊息記錄設定
+            userMessageRecordingEnabled: true,
+            userMessagePrivacyLevel: 'full' // 'full', 'basic', 'disabled'
         };
         
         // 當前設定
@@ -263,17 +266,22 @@
      */
     SettingsManager.prototype.handleLanguageChange = function(newLanguage) {
         console.log('語言設定變更: ' + newLanguage);
-        
+
         // 同步到 localStorage
         if (Utils.isLocalStorageSupported()) {
             localStorage.setItem('language', newLanguage);
         }
-        
+
         // 通知國際化系統
         if (window.i18nManager) {
             window.i18nManager.setLanguage(newLanguage);
         }
-        
+
+        // 延遲更新動態文字，確保 i18n 已經載入新語言
+        setTimeout(() => {
+            this.updatePrivacyLevelDescription(this.currentSettings.userMessagePrivacyLevel);
+        }, 100);
+
         // 觸發語言變更回調
         if (this.onLanguageChange) {
             this.onLanguageChange(newLanguage);
@@ -412,6 +420,9 @@
 
         // 應用會話歷史設定
         this.applySessionHistorySettings();
+
+        // 應用用戶訊息記錄設定
+        this.applyUserMessageSettings();
     };
 
     /**
@@ -567,6 +578,63 @@
         console.log('會話歷史設定已應用到 UI:', {
             retentionHours: this.currentSettings.sessionHistoryRetentionHours
         });
+    };
+
+    /**
+     * 應用用戶訊息記錄設定
+     */
+    SettingsManager.prototype.applyUserMessageSettings = function() {
+        // 更新用戶訊息記錄啟用開關
+        const userMessageRecordingToggle = Utils.safeQuerySelector('#userMessageRecordingToggle');
+        if (userMessageRecordingToggle) {
+            userMessageRecordingToggle.checked = this.currentSettings.userMessageRecordingEnabled;
+        }
+
+        // 更新隱私等級選擇器
+        const userMessagePrivacySelect = Utils.safeQuerySelector('#userMessagePrivacyLevel');
+        if (userMessagePrivacySelect) {
+            userMessagePrivacySelect.value = this.currentSettings.userMessagePrivacyLevel;
+        }
+
+        console.log('用戶訊息記錄設定已應用到 UI:', {
+            recordingEnabled: this.currentSettings.userMessageRecordingEnabled,
+            privacyLevel: this.currentSettings.userMessagePrivacyLevel
+        });
+
+        // 更新隱私等級描述
+        this.updatePrivacyLevelDescription(this.currentSettings.userMessagePrivacyLevel);
+    };
+
+    /**
+     * 更新隱私等級描述文字
+     */
+    SettingsManager.prototype.updatePrivacyLevelDescription = function(privacyLevel) {
+        const descriptionElement = Utils.safeQuerySelector('#userMessagePrivacyDescription');
+        if (!descriptionElement || !window.i18nManager) {
+            return;
+        }
+
+        let descriptionKey = '';
+        switch (privacyLevel) {
+            case 'full':
+                descriptionKey = 'sessionHistory.userMessages.privacyDescription.full';
+                break;
+            case 'basic':
+                descriptionKey = 'sessionHistory.userMessages.privacyDescription.basic';
+                break;
+            case 'disabled':
+                descriptionKey = 'sessionHistory.userMessages.privacyDescription.disabled';
+                break;
+            default:
+                descriptionKey = 'sessionHistory.userMessages.privacyDescription.full';
+        }
+
+        // 更新 data-i18n 屬性，這樣在語言切換時會自動更新
+        descriptionElement.setAttribute('data-i18n', descriptionKey);
+
+        // 立即更新文字內容
+        const description = window.i18nManager.t(descriptionKey);
+        descriptionElement.textContent = description;
     };
 
     /**
@@ -784,6 +852,50 @@
                 if (window.MCPFeedback && window.MCPFeedback.SessionManager) {
                     window.MCPFeedback.SessionManager.clearSessionHistory();
                 }
+            });
+        }
+
+        // 清空用戶訊息記錄按鈕
+        const clearUserMessagesBtn = Utils.safeQuerySelector('#clearUserMessagesBtn');
+        if (clearUserMessagesBtn) {
+            clearUserMessagesBtn.addEventListener('click', function() {
+                const i18n = window.i18nManager;
+                const confirmMessage = i18n ?
+                    i18n.t('sessionHistory.userMessages.confirmClearAll') :
+                    '確定要清空所有會話的用戶訊息記錄嗎？此操作無法復原。';
+
+                if (confirm(confirmMessage)) {
+                    if (window.MCPFeedback && window.MCPFeedback.app && window.MCPFeedback.app.sessionManager) {
+                        const success = window.MCPFeedback.app.sessionManager.dataManager.clearAllUserMessages();
+                        if (success) {
+                            const successMessage = i18n ?
+                                i18n.t('sessionHistory.userMessages.clearSuccess') :
+                                '用戶訊息記錄已清空';
+                            alert(successMessage);
+                        }
+                    }
+                }
+            });
+        }
+
+        // 用戶訊息記錄啟用開關
+        const userMessageRecordingToggle = Utils.safeQuerySelector('#userMessageRecordingToggle');
+        if (userMessageRecordingToggle) {
+            userMessageRecordingToggle.addEventListener('change', function() {
+                const newValue = userMessageRecordingToggle.checked;
+                self.set('userMessageRecordingEnabled', newValue);
+                console.log('用戶訊息記錄狀態已更新:', newValue);
+            });
+        }
+
+        // 用戶訊息隱私等級選擇
+        const userMessagePrivacySelect = Utils.safeQuerySelector('#userMessagePrivacyLevel');
+        if (userMessagePrivacySelect) {
+            userMessagePrivacySelect.addEventListener('change', function(e) {
+                const privacyLevel = e.target.value;
+                self.set('userMessagePrivacyLevel', privacyLevel);
+                self.updatePrivacyLevelDescription(privacyLevel);
+                console.log('用戶訊息隱私等級已更新:', privacyLevel);
             });
         }
 

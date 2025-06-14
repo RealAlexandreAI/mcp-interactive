@@ -205,9 +205,19 @@
         // 新增儲存時間戳記
         sessionData.saved_at = TimeUtils.getCurrentTimestamp();
 
+        // 確保 user_messages 陣列存在（向後相容）
+        if (!sessionData.user_messages) {
+            sessionData.user_messages = [];
+        }
+
         // 避免重複新增
         const existingIndex = this.sessionHistory.findIndex(s => s.session_id === sessionData.session_id);
         if (existingIndex !== -1) {
+            // 合併用戶訊息記錄
+            const existingSession = this.sessionHistory[existingIndex];
+            if (existingSession.user_messages && sessionData.user_messages) {
+                sessionData.user_messages = this.mergeUserMessages(existingSession.user_messages, sessionData.user_messages);
+            }
             this.sessionHistory[existingIndex] = sessionData;
         } else {
             this.sessionHistory.unshift(sessionData);
@@ -229,6 +239,185 @@
         }
 
         return true;
+    };
+
+    /**
+     * 合併用戶訊息記錄
+     */
+    SessionDataManager.prototype.mergeUserMessages = function(existingMessages, newMessages) {
+        const merged = existingMessages.slice(); // 複製現有訊息
+
+        // 新增不重複的訊息（基於時間戳記去重）
+        newMessages.forEach(function(newMsg) {
+            const exists = merged.some(function(existingMsg) {
+                return existingMsg.timestamp === newMsg.timestamp;
+            });
+            if (!exists) {
+                merged.push(newMsg);
+            }
+        });
+
+        // 按時間戳記排序
+        merged.sort(function(a, b) {
+            return a.timestamp - b.timestamp;
+        });
+
+        return merged;
+    };
+
+    /**
+     * 新增用戶訊息到當前會話
+     */
+    SessionDataManager.prototype.addUserMessage = function(messageData) {
+        console.log('📊 新增用戶訊息:', messageData);
+
+        // 檢查隱私設定
+        if (!this.isUserMessageRecordingEnabled()) {
+            console.log('📊 用戶訊息記錄已停用，跳過記錄');
+            return false;
+        }
+
+        // 檢查是否有當前會話
+        if (!this.currentSession || !this.currentSession.session_id) {
+            console.warn('📊 沒有當前會話，無法記錄用戶訊息');
+            return false;
+        }
+
+        // 確保當前會話有 user_messages 陣列
+        if (!this.currentSession.user_messages) {
+            this.currentSession.user_messages = [];
+        }
+
+        // 建立用戶訊息記錄
+        const userMessage = this.createUserMessageRecord(messageData);
+
+        // 新增到當前會話
+        this.currentSession.user_messages.push(userMessage);
+
+        console.log('📊 用戶訊息已記錄到當前會話:', this.currentSession.session_id);
+        return true;
+    };
+
+    /**
+     * 建立用戶訊息記錄
+     */
+    SessionDataManager.prototype.createUserMessageRecord = function(messageData) {
+        const timestamp = TimeUtils.getCurrentTimestamp();
+        const privacyLevel = this.getUserMessagePrivacyLevel();
+
+        const record = {
+            timestamp: timestamp,
+            submission_method: messageData.submission_method || 'manual',
+            type: 'feedback'
+        };
+
+        // 根據隱私等級決定記錄內容
+        if (privacyLevel === 'full') {
+            record.content = messageData.content || '';
+            record.images = this.processImageDataForRecord(messageData.images || []);
+        } else if (privacyLevel === 'basic') {
+            record.content_length = (messageData.content || '').length;
+            record.image_count = (messageData.images || []).length;
+            record.has_content = !!(messageData.content && messageData.content.trim());
+        } else if (privacyLevel === 'disabled') {
+            // 停用記錄時，只記錄最基本的時間戳記和提交方式
+            record.privacy_note = 'Content recording disabled by user privacy settings';
+        }
+
+        return record;
+    };
+
+    /**
+     * 處理圖片資料用於記錄
+     */
+    SessionDataManager.prototype.processImageDataForRecord = function(images) {
+        if (!Array.isArray(images)) {
+            return [];
+        }
+
+        return images.map(function(img) {
+            return {
+                name: img.name || 'unknown',
+                size: img.size || 0,
+                type: img.type || 'unknown'
+            };
+        });
+    };
+
+    /**
+     * 檢查是否啟用用戶訊息記錄
+     */
+    SessionDataManager.prototype.isUserMessageRecordingEnabled = function() {
+        if (!this.settingsManager) {
+            return true; // 預設啟用
+        }
+
+        // 檢查總開關
+        const recordingEnabled = this.settingsManager.get('userMessageRecordingEnabled', true);
+        if (!recordingEnabled) {
+            return false;
+        }
+
+        // 檢查隱私等級（disabled 等級視為停用記錄）
+        const privacyLevel = this.settingsManager.get('userMessagePrivacyLevel', 'full');
+        return privacyLevel !== 'disabled';
+    };
+
+    /**
+     * 獲取用戶訊息隱私等級
+     */
+    SessionDataManager.prototype.getUserMessagePrivacyLevel = function() {
+        if (!this.settingsManager) {
+            return 'full'; // 預設完整記錄
+        }
+        return this.settingsManager.get('userMessagePrivacyLevel', 'full');
+    };
+
+    /**
+     * 清空所有會話的用戶訊息記錄
+     */
+    SessionDataManager.prototype.clearAllUserMessages = function() {
+        console.log('📊 清空所有會話的用戶訊息記錄...');
+
+        // 清空當前會話的用戶訊息
+        if (this.currentSession && this.currentSession.user_messages) {
+            this.currentSession.user_messages = [];
+        }
+
+        // 清空歷史會話的用戶訊息
+        this.sessionHistory.forEach(function(session) {
+            if (session.user_messages) {
+                session.user_messages = [];
+            }
+        });
+
+        // 保存到 localStorage
+        this.saveToLocalStorage();
+
+        console.log('📊 所有用戶訊息記錄已清空');
+        return true;
+    };
+
+    /**
+     * 清空指定會話的用戶訊息記錄
+     */
+    SessionDataManager.prototype.clearSessionUserMessages = function(sessionId) {
+        console.log('📊 清空會話用戶訊息記錄:', sessionId);
+
+        // 查找並清空指定會話的用戶訊息
+        const session = this.sessionHistory.find(function(s) {
+            return s.session_id === sessionId;
+        });
+
+        if (session && session.user_messages) {
+            session.user_messages = [];
+            this.saveToLocalStorage();
+            console.log('📊 會話用戶訊息記錄已清空:', sessionId);
+            return true;
+        }
+
+        console.warn('📊 找不到指定會話或該會話沒有用戶訊息記錄:', sessionId);
+        return false;
     };
 
     /**
@@ -479,11 +668,12 @@
      * 匯出會話歷史
      */
     SessionDataManager.prototype.exportSessionHistory = function() {
+        const self = this;
         const exportData = {
             exportedAt: new Date().toISOString(),
             totalSessions: this.sessionHistory.length,
             sessions: this.sessionHistory.map(function(session) {
-                return {
+                const sessionData = {
                     session_id: session.session_id,
                     created_at: session.created_at,
                     completed_at: session.completed_at,
@@ -493,6 +683,14 @@
                     ai_summary: session.summary || session.ai_summary,
                     saved_at: session.saved_at
                 };
+
+                // 包含用戶訊息記錄（如果存在且允許匯出）
+                if (session.user_messages && self.isUserMessageRecordingEnabled()) {
+                    sessionData.user_messages = session.user_messages;
+                    sessionData.user_message_count = session.user_messages.length;
+                }
+
+                return sessionData;
             })
         };
 
@@ -516,18 +714,26 @@
             return null;
         }
 
+        const sessionData = {
+            session_id: session.session_id,
+            created_at: session.created_at,
+            completed_at: session.completed_at,
+            duration: session.duration,
+            status: session.status,
+            project_directory: session.project_directory,
+            ai_summary: session.summary || session.ai_summary,
+            saved_at: session.saved_at
+        };
+
+        // 包含用戶訊息記錄（如果存在且允許匯出）
+        if (session.user_messages && this.isUserMessageRecordingEnabled()) {
+            sessionData.user_messages = session.user_messages;
+            sessionData.user_message_count = session.user_messages.length;
+        }
+
         const exportData = {
             exportedAt: new Date().toISOString(),
-            session: {
-                session_id: session.session_id,
-                created_at: session.created_at,
-                completed_at: session.completed_at,
-                duration: session.duration,
-                status: session.status,
-                project_directory: session.project_directory,
-                ai_summary: session.summary || session.ai_summary,
-                saved_at: session.saved_at
-            }
+            session: sessionData
         };
 
         const shortId = sessionId.substring(0, 8);

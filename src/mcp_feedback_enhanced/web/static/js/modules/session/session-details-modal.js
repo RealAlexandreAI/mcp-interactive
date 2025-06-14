@@ -88,6 +88,10 @@
         const statusText = StatusUtils.getStatusText(status);
         const statusColor = StatusUtils.getStatusColor(status);
 
+        // 處理用戶訊息記錄
+        const userMessages = sessionData.user_messages || [];
+        const userMessageCount = userMessages.length;
+
         return {
             sessionId: sessionId,
             status: statusText,
@@ -95,7 +99,9 @@
             createdTime: createdTime,
             duration: duration,
             projectDirectory: sessionData.project_directory || (window.i18nManager ? window.i18nManager.t('sessionManagement.sessionDetails.unknown') : '未知'),
-            summary: sessionData.summary || (window.i18nManager ? window.i18nManager.t('sessionManagement.sessionDetails.noSummary') : '暫無摘要')
+            summary: sessionData.summary || (window.i18nManager ? window.i18nManager.t('sessionManagement.sessionDetails.noSummary') : '暫無摘要'),
+            userMessages: userMessages,
+            userMessageCount: userMessageCount
         };
     };
 
@@ -162,9 +168,99 @@
                             <span class="detail-label">${i18n ? i18n.t('sessionManagement.aiSummary') : 'AI 摘要'}:</span>
                             <div class="detail-value summary">${this.escapeHtml(details.summary)}</div>
                         </div>
+                        ${this.createUserMessagesSection(details)}
                     </div>
                     <div class="modal-footer">
                         <button class="btn-secondary" id="closeSessionDetailsBtn">${closeLabel}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    /**
+     * 創建用戶訊息記錄區段
+     */
+    SessionDetailsModal.prototype.createUserMessagesSection = function(details) {
+        const i18n = window.i18nManager;
+        const userMessages = details.userMessages || [];
+
+        if (userMessages.length === 0) {
+            return '';
+        }
+
+        const sectionTitle = i18n ? i18n.t('sessionHistory.userMessages.title') : '用戶訊息記錄';
+        const messageCountLabel = i18n ? i18n.t('sessionHistory.userMessages.messageCount') : '訊息數量';
+
+        let messagesHtml = '';
+
+        userMessages.forEach((message, index) => {
+            const timestamp = message.timestamp ? TimeUtils.formatTimestamp(message.timestamp) : '未知時間';
+            const submissionMethod = message.submission_method === 'auto' ?
+                (i18n ? i18n.t('sessionHistory.userMessages.auto') : '自動提交') :
+                (i18n ? i18n.t('sessionHistory.userMessages.manual') : '手動提交');
+
+            let contentHtml = '';
+
+            if (message.content !== undefined) {
+                // 完整記錄模式
+                const contentPreview = message.content.length > 100 ?
+                    message.content.substring(0, 100) + '...' :
+                    message.content;
+                contentHtml = `
+                    <div class="message-content">
+                        <strong>內容:</strong> ${this.escapeHtml(contentPreview)}
+                    </div>
+                `;
+
+                if (message.images && message.images.length > 0) {
+                    const imageCountText = i18n ? i18n.t('sessionHistory.userMessages.imageCount') : '圖片數量';
+                    contentHtml += `
+                        <div class="message-images">
+                            <strong>${imageCountText}:</strong> ${message.images.length}
+                        </div>
+                    `;
+                }
+            } else if (message.content_length !== undefined) {
+                // 基本統計模式
+                const contentLengthLabel = i18n ? i18n.t('sessionHistory.userMessages.contentLength') : '內容長度';
+                const imageCountLabel = i18n ? i18n.t('sessionHistory.userMessages.imageCount') : '圖片數量';
+                contentHtml = `
+                    <div class="message-stats">
+                        <strong>${contentLengthLabel}:</strong> ${message.content_length} 字元<br>
+                        <strong>${imageCountLabel}:</strong> ${message.image_count || 0}
+                    </div>
+                `;
+            } else if (message.privacy_note) {
+                // 隱私保護模式
+                contentHtml = `
+                    <div class="message-privacy">
+                        <em style="color: var(--text-secondary);">內容記錄已停用（隱私設定）</em>
+                    </div>
+                `;
+            }
+
+            messagesHtml += `
+                <div class="user-message-item">
+                    <div class="message-header">
+                        <span class="message-index">#${index + 1}</span>
+                        <span class="message-time">${timestamp}</span>
+                        <span class="message-method">${submissionMethod}</span>
+                    </div>
+                    ${contentHtml}
+                </div>
+            `;
+        });
+
+        return `
+            <div class="detail-row user-messages-section">
+                <span class="detail-label">${sectionTitle}:</span>
+                <div class="detail-value">
+                    <div class="user-messages-summary">
+                        <strong>${messageCountLabel}:</strong> ${userMessages.length}
+                    </div>
+                    <div class="user-messages-list">
+                        ${messagesHtml}
                     </div>
                 </div>
             </div>

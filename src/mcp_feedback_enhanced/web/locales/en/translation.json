@@ -236,7 +236,8 @@
             "confirmClear": "Are you sure you want to clear all session history?",
             "exportSuccess": "Session history exported successfully",
             "clearSuccess": "Session history cleared successfully",
-            "description": "Manage locally stored session history records, including retention period settings and data export functionality"
+            "description": "Manage locally stored session history records, including retention period settings and data export functionality",
+            "exportDescription": "Export or clear locally stored session history records"
         },
         "retention": {
             "24hours": "24 hours",
@@ -244,6 +245,32 @@
             "168hours": "7 days",
             "720hours": "30 days",
             "custom": "Custom"
+        },
+        "userMessages": {
+            "title": "User Message Recording",
+            "description": "Control whether to record user submitted feedback messages in session history",
+            "recordingEnabled": "Enable Message Recording",
+            "privacyLevel": "Privacy Level",
+            "privacyLevels": {
+                "full": "Full Recording",
+                "basic": "Basic Statistics",
+                "disabled": "Disable Recording"
+            },
+            "privacyDescription": {
+                "full": "Record complete message content and image information",
+                "basic": "Only record message length, image count and other statistics",
+                "disabled": "Do not record any user message content"
+            },
+            "messageCount": "Message Count",
+            "submissionMethod": "Submission Method",
+            "manual": "Manual Submit",
+            "auto": "Auto Submit",
+            "contentLength": "Content Length",
+            "imageCount": "Image Count",
+            "timestamp": "Timestamp",
+            "clearAll": "Clear Message Records",
+            "confirmClearAll": "Are you sure you want to clear all user message records from all sessions? This action cannot be undone.",
+            "clearSuccess": "User message records cleared successfully"
         }
     },
     "connectionMonitor": {

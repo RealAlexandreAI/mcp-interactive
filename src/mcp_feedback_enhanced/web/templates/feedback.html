@@ -907,16 +907,53 @@
                             </div>
                         </div>
 
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="sessionHistory.userMessages.title">用戶訊息記錄</div>
+                                <div class="setting-description" data-i18n="sessionHistory.userMessages.description">
+                                    控制是否記錄用戶提交的回饋訊息到會話歷史中
+                                </div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-container">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="userMessageRecordingToggle" class="toggle-input">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span class="toggle-label" data-i18n="sessionHistory.userMessages.recordingEnabled">啟用訊息記錄</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label" data-i18n="sessionHistory.userMessages.privacyLevel">隱私等級</div>
+                                <div class="setting-description" id="userMessagePrivacyDescription" data-i18n="sessionHistory.userMessages.privacyDescription.full">
+                                    記錄完整的訊息內容和圖片資訊
+                                </div>
+                            </div>
+                            <div class="setting-control">
+                                <select id="userMessagePrivacyLevel" class="form-select" style="width: 150px;">
+                                    <option value="full" data-i18n="sessionHistory.userMessages.privacyLevels.full">完整記錄</option>
+                                    <option value="basic" data-i18n="sessionHistory.userMessages.privacyLevels.basic">基本統計</option>
+                                    <option value="disabled" data-i18n="sessionHistory.userMessages.privacyLevels.disabled">停用記錄</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="setting-item" style="border-bottom: none;">
                             <div class="setting-info">
                                 <div class="setting-label" data-i18n="sessionHistory.management.export">資料管理</div>
-                                <div class="setting-description">
+                                <div class="setting-description" data-i18n="sessionHistory.management.exportDescription">
                                     匯出或清空本地儲存的會話歷史記錄
                                 </div>
                             </div>
-                            <div class="setting-control" style="display: flex; gap: 8px;">
+                            <div class="setting-control" style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button id="exportSessionHistoryBtn" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">
                                     <span data-i18n="sessionHistory.management.exportAll">匯出全部</span>
+                                </button>
+                                <button id="clearUserMessagesBtn" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; color: var(--warning-color); border-color: var(--warning-color);">
+                                    <span data-i18n="sessionHistory.userMessages.clearAll">清空訊息記錄</span>
                                 </button>
                                 <button id="clearSessionHistoryBtn" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; color: var(--error-color); border-color: var(--error-color);">
                                     <span data-i18n="sessionHistory.management.clear">清空</span>

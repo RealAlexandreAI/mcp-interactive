@@ -353,7 +353,11 @@
             "noLastPrompt": "No recently used prompt available",
             "lastPromptApplied": "Last used prompt applied successfully",
             "promptNotFound": "Prompt not found",
-            "promptApplied": "Prompt applied: "
+            "promptApplied": "Prompt applied: ",
+            "selectPromptTooltipEmpty": "No prompt templates available",
+            "selectPromptTooltipAvailable": "Select prompt template ({count} available)",
+            "lastPromptTooltipEmpty": "No recently used prompt available",
+            "lastPromptTooltipAvailable": "Use last prompt: {name}"
         },
         "select": {
             "title": "Select Prompt Template"

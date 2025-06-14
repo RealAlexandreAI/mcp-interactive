@@ -276,11 +276,15 @@ class I18nManager {
     }
 
     updatePromptInputButtons() {
-        // 更新提示詞輸入按鈕的文字
+        // 更新提示詞輸入按鈕的文字和狀態
         if (window.feedbackApp && window.feedbackApp.promptInputButtons) {
             // 觸發提示詞按鈕更新文字
             if (typeof window.feedbackApp.promptInputButtons.updateButtonTexts === 'function') {
                 window.feedbackApp.promptInputButtons.updateButtonTexts();
+            }
+            // 觸發提示詞按鈕更新狀態（包括 tooltip）
+            if (typeof window.feedbackApp.promptInputButtons.updateButtonStates === 'function') {
+                window.feedbackApp.promptInputButtons.updateButtonStates();
             }
         }
     }

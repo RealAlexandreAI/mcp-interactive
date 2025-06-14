@@ -353,7 +353,11 @@
             "noLastPrompt": "尚无最近使用的提示词",
             "lastPromptApplied": "已套用上次使用的提示词",
             "promptNotFound": "找不到指定的提示词",
-            "promptApplied": "已套用提示词："
+            "promptApplied": "已套用提示词：",
+            "selectPromptTooltipEmpty": "尚无常用提示词",
+            "selectPromptTooltipAvailable": "选择常用提示词 ({count} 个可用)",
+            "lastPromptTooltipEmpty": "尚无最近使用的提示词",
+            "lastPromptTooltipAvailable": "使用上次提示词：{name}"
         },
         "select": {
             "title": "选择常用提示词"

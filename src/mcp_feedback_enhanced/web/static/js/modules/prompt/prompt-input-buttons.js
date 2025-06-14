@@ -332,9 +332,14 @@
                 button.disabled = prompts.length === 0;
 
                 if (prompts.length === 0) {
-                    button.title = '尚無常用提示詞';
+                    button.title = window.i18nManager ?
+                        window.i18nManager.t('prompts.buttons.selectPromptTooltipEmpty') :
+                        '尚無常用提示詞';
                 } else {
-                    button.title = `選擇常用提示詞 (${prompts.length} 個可用)`;
+                    const tooltipText = window.i18nManager ?
+                        window.i18nManager.t('prompts.buttons.selectPromptTooltipAvailable', { count: prompts.length }) :
+                        `選擇常用提示詞 (${prompts.length} 個可用)`;
+                    button.title = tooltipText;
                 }
             }
         });
@@ -345,9 +350,14 @@
                 button.disabled = !lastPrompt;
 
                 if (!lastPrompt) {
-                    button.title = '尚無最近使用的提示詞';
+                    button.title = window.i18nManager ?
+                        window.i18nManager.t('prompts.buttons.lastPromptTooltipEmpty') :
+                        '尚無最近使用的提示詞';
                 } else {
-                    button.title = `使用上次提示詞：${lastPrompt.name}`;
+                    const tooltipText = window.i18nManager ?
+                        window.i18nManager.t('prompts.buttons.lastPromptTooltipAvailable', { name: lastPrompt.name }) :
+                        `使用上次提示詞：${lastPrompt.name}`;
+                    button.title = tooltipText;
                 }
             }
         });

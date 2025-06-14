@@ -942,6 +942,7 @@ body {
     max-width: 100%;
     overflow: hidden;
     gap: 0;
+    min-height: 0; /* 允許內容自然收縮 */
 }
 
 .main-content-area {
@@ -949,6 +950,7 @@ body {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0; /* 允許內容自然收縮 */
     padding: 20px;
     overflow: hidden;
     transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
@@ -1015,7 +1017,7 @@ body {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    min-height: 600px;
+    min-height: 0; /* 移除固定高度，使用 flex 自適應 */
 }
 
 .tab-content.active {

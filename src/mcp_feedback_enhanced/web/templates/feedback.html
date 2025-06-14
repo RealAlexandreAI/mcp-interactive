@@ -67,6 +67,8 @@
             flex: 1 !important;
             min-width: 300px;
             max-width: 50%;
+            display: flex;
+            flex-direction: column;
             overflow: hidden; /* 確保容器不超出範圍 */
         }
 
@@ -76,14 +78,15 @@
         }
 
         #tab-combined.active.combined-horizontal .combined-summary {
-            height: calc(100vh - 200px);
-            max-height: 600px;
+            flex: 1; /* 讓摘要區域自動填滿剩餘空間 */
+            display: flex;
+            flex-direction: column;
             overflow: hidden; /* 確保摘要容器不超出範圍 */
         }
 
         #tab-combined.active.combined-horizontal #combinedSummaryContent {
-            height: 100%;
-            min-height: 400px;
+            flex: 1; /* 讓內容區域自動填滿摘要容器 */
+            min-height: 200px; /* 降低最小高度 */
             overflow-y: auto; /* 添加垂直滾動條 */
             overflow-x: hidden; /* 隱藏水平滾動條 */
         }
@@ -103,7 +106,8 @@
         #tab-combined.active.combined-vertical .combined-section:first-child {
             flex: 1 !important;
             min-height: 200px;
-            max-height: 400px;
+            display: flex;
+            flex-direction: column;
             overflow: hidden; /* 確保容器不超出範圍 */
         }
 
@@ -113,14 +117,15 @@
         }
 
         #tab-combined.active.combined-vertical .combined-summary {
-            height: 300px;
-            max-height: 400px;
+            flex: 1; /* 讓摘要區域自動填滿剩餘空間 */
+            display: flex;
+            flex-direction: column;
             overflow: hidden; /* 確保摘要容器不超出範圍 */
         }
 
         #tab-combined.active.combined-vertical #combinedSummaryContent {
-            height: 100%;
-            min-height: 200px;
+            flex: 1; /* 讓內容區域自動填滿摘要容器 */
+            min-height: 150px; /* 降低最小高度 */
             overflow-y: auto; /* 添加垂直滾動條 */
             overflow-x: hidden; /* 隱藏水平滾動條 */
         }
@@ -135,6 +140,7 @@
             flex-direction: column;
             gap: 16px;
             flex: 1;
+            height: 100%; /* 確保充滿父容器 */
         }
 
         /* 工作區基礎樣式 */
@@ -144,6 +150,25 @@
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 16px;
+        }
+
+        /* 確保 AI 摘要區域能夠自動擴展 */
+        .combined-section .section-header {
+            flex-shrink: 0; /* 標題區域不收縮 */
+        }
+
+        .combined-summary {
+            display: flex;
+            flex-direction: column;
+            flex: 1; /* 讓摘要容器自動填滿剩餘空間 */
+            min-height: 0; /* 允許收縮 */
+        }
+
+        #combinedSummaryContent {
+            flex: 1; /* 讓內容區域自動填滿摘要容器 */
+            min-height: 150px; /* 設定合理的最小高度 */
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .combined-section-title {

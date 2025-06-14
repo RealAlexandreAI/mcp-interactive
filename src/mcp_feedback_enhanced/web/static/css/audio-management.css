@@ -266,14 +266,24 @@
     border-radius: 4px;
 }
 
+/* 覆蓋 Bootstrap btn-danger 的預設樣式，使其符合深色主題 */
+.audio-delete-btn.btn-danger {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
 .audio-play-btn:hover {
     background: var(--success-color);
     border-color: var(--success-color);
+    color: white;
 }
 
-.audio-delete-btn:hover {
+.audio-delete-btn:hover,
+.audio-delete-btn.btn-danger:hover {
     background: var(--error-color);
     border-color: var(--error-color);
+    color: white;
 }
 
 /* ===== 空狀態樣式 ===== */

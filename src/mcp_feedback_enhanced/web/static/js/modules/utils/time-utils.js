@@ -63,26 +63,55 @@
         },
 
         /**
-         * 格式化持續時間（秒）
+         * 格式化持續時間（秒）- 支援國際化
          */
         formatDuration: function(seconds) {
-            if (!seconds || seconds < 0) return '0秒';
+            if (!seconds || seconds < 0) {
+                const secondsText = this.getTimeUnitText('seconds');
+                return `0${secondsText}`;
+            }
 
             const hours = Math.floor(seconds / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
             const remainingSeconds = Math.floor(seconds % 60);
 
+            const hoursText = this.getTimeUnitText('hours');
+            const minutesText = this.getTimeUnitText('minutes');
+            const secondsText = this.getTimeUnitText('seconds');
+
             if (hours > 0) {
-                return `${hours}小時${minutes > 0 ? minutes + '分鐘' : ''}`;
+                return `${hours}${hoursText}${minutes > 0 ? minutes + minutesText : ''}`;
             } else if (minutes > 0) {
-                return `${minutes}分鐘${remainingSeconds > 0 ? remainingSeconds + '秒' : ''}`;
+                return `${minutes}${minutesText}${remainingSeconds > 0 ? remainingSeconds + secondsText : ''}`;
             } else {
-                return `${remainingSeconds}秒`;
+                return `${remainingSeconds}${secondsText}`;
             }
         },
 
         /**
-         * 格式化相對時間（多久之前）
+         * 獲取時間單位文字（支援國際化）
+         */
+        getTimeUnitText: function(unit) {
+            if (window.i18nManager && typeof window.i18nManager.t === 'function') {
+                return window.i18nManager.t(`timeUnits.${unit}`, unit);
+            }
+
+            // 回退到預設值（繁體中文）
+            const fallbackUnits = {
+                'seconds': '秒',
+                'minutes': '分鐘',
+                'hours': '小時',
+                'days': '天',
+                'ago': '前',
+                'justNow': '剛剛',
+                'about': '約'
+            };
+
+            return fallbackUnits[unit] || unit;
+        },
+
+        /**
+         * 格式化相對時間（多久之前）- 支援國際化
          */
         formatRelativeTime: function(timestamp) {
             if (!timestamp) return '未知';
@@ -96,17 +125,23 @@
                 const now = Date.now() / 1000;
                 const diff = now - normalizedTimestamp;
 
+                const minutesText = this.getTimeUnitText('minutes');
+                const hoursText = this.getTimeUnitText('hours');
+                const daysText = this.getTimeUnitText('days');
+                const agoText = this.getTimeUnitText('ago');
+                const justNowText = this.getTimeUnitText('justNow');
+
                 if (diff < 60) {
-                    return '剛剛';
+                    return justNowText;
                 } else if (diff < 3600) {
                     const minutes = Math.floor(diff / 60);
-                    return `${minutes}分鐘前`;
+                    return `${minutes}${minutesText}${agoText}`;
                 } else if (diff < 86400) {
                     const hours = Math.floor(diff / 3600);
-                    return `${hours}小時前`;
+                    return `${hours}${hoursText}${agoText}`;
                 } else {
                     const days = Math.floor(diff / 86400);
-                    return `${days}天前`;
+                    return `${days}${daysText}${agoText}`;
                 }
             } catch (error) {
                 console.warn('相對時間計算失敗:', timestamp, error);
@@ -353,7 +388,7 @@
         },
 
         /**
-         * 估算會話持續時間（用於歷史會話）
+         * 估算會話持續時間（用於歷史會話）- 支援國際化
          */
         estimateSessionDuration: function(sessionData) {
             // 基礎時間 2 分鐘
@@ -377,7 +412,9 @@
             // 限制在合理範圍內
             estimatedMinutes = Math.max(1, Math.min(estimatedMinutes, 15));
 
-            return `約 ${estimatedMinutes} 分鐘`;
+            const aboutText = this.getTimeUnitText('about');
+            const minutesText = this.getTimeUnitText('minutes');
+            return `${aboutText} ${estimatedMinutes} ${minutesText}`;
         },
 
         /**

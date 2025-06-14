@@ -204,8 +204,7 @@
      */
     UIManager.prototype.updateSubmitButton = function() {
         const submitButtons = [
-            Utils.safeQuerySelector('#submitBtn'),
-            Utils.safeQuerySelector('#combinedSubmitBtn')
+            Utils.safeQuerySelector('#submitBtn')
         ].filter(function(btn) { return btn !== null; });
 
         const self = this;
@@ -404,8 +403,7 @@
 
         // 重新啟用提交按鈕
         const submitButtons = [
-            Utils.safeQuerySelector('#submitBtn'),
-            Utils.safeQuerySelector('#combinedSubmitBtn')
+            Utils.safeQuerySelector('#submitBtn')
         ].filter(function(btn) { return btn !== null; });
 
         submitButtons.forEach(function(button) {

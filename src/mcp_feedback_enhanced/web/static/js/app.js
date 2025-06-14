@@ -240,8 +240,7 @@
         return new Promise(function(resolve) {
             // 提交按鈕事件
             const submitButtons = [
-                window.MCPFeedback.Utils.safeQuerySelector('#submitBtn'),
-                window.MCPFeedback.Utils.safeQuerySelector('#combinedSubmitBtn')
+                window.MCPFeedback.Utils.safeQuerySelector('#submitBtn')
             ].filter(function(btn) { return btn !== null; });
 
             submitButtons.forEach(function(button) {
@@ -250,17 +249,7 @@
                 });
             });
 
-            // 取消按鈕事件
-            const cancelButtons = [
-                window.MCPFeedback.Utils.safeQuerySelector('#cancelBtn'),
-                window.MCPFeedback.Utils.safeQuerySelector('#combinedCancelBtn')
-            ].filter(function(btn) { return btn !== null; });
-
-            cancelButtons.forEach(function(button) {
-                button.addEventListener('click', function() {
-                    self.cancelFeedback();
-                });
-            });
+            // 取消按鈕事件 - 已移除取消按鈕，保留 ESC 快捷鍵功能
 
             // 命令執行事件
             const runCommandBtn = window.MCPFeedback.Utils.safeQuerySelector('#runCommandBtn');

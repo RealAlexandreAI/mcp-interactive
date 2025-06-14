@@ -79,11 +79,18 @@
                 
                 <div class="audio-settings-controls">
                     <!-- 啟用開關 -->
-                    <div class="audio-setting-item">
-                        <label class="audio-setting-label">
-                            <input type="checkbox" id="audioNotificationEnabled" class="audio-toggle">
-                            <span data-i18n="audio.notification.enabled">啟用音效通知</span>
-                        </label>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label" data-i18n="audio.notification.enabled">啟用音效通知</div>
+                            <div class="setting-description" data-i18n="audio.notification.enabledDesc">
+                                啟用後將在有新會話更新時播放音效通知
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <button type="button" id="audioNotificationEnabled" class="toggle-btn" aria-label="切換音效通知">
+                                <span class="toggle-slider"></span>
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- 音量控制 -->
@@ -156,8 +163,9 @@
 
         // 啟用開關事件
         if (this.enabledToggle) {
-            this.enabledToggle.addEventListener('change', function(e) {
-                self.handleEnabledChange(e.target.checked);
+            this.enabledToggle.addEventListener('click', function() {
+                const newValue = !self.enabledToggle.classList.contains('active');
+                self.handleEnabledChange(newValue);
             });
         }
 
@@ -219,7 +227,7 @@
             console.error('❌ 設定啟用狀態失敗:', error);
             this.showError(error.message);
             // 恢復原狀態
-            this.enabledToggle.checked = this.audioManager.getSettings().enabled;
+            this.enabledToggle.classList.toggle('active', this.audioManager.getSettings().enabled);
         }
     };
 
@@ -342,7 +350,7 @@
         
         // 更新啟用狀態
         if (this.enabledToggle) {
-            this.enabledToggle.checked = settings.enabled;
+            this.enabledToggle.classList.toggle('active', settings.enabled);
         }
         
         // 更新音量
@@ -496,7 +504,7 @@
      * 更新控制項狀態
      */
     AudioSettingsUI.prototype.updateControlsState = function() {
-        const enabled = this.enabledToggle ? this.enabledToggle.checked : false;
+        const enabled = this.enabledToggle ? this.enabledToggle.classList.contains('active') : false;
         
         // 根據啟用狀態禁用/啟用控制項
         const controls = [

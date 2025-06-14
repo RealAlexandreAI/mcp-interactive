@@ -481,7 +481,7 @@
                             </div>
                             <div class="stat-item">
                                 <div class="stat-value stat-average-duration">--</div>
-                                <div class="stat-label" data-i18n="sessionManagement.averageDuration">平均時長</div>
+                                <div class="stat-label" data-i18n="sessionManagement.todayAverageDuration">今日平均時長</div>
                             </div>
                         </div>
                     </div>
@@ -642,8 +642,13 @@
 
             <!-- 工作區分頁 - 移動到此位置 -->
             <div id="tab-combined" class="tab-content">
-                <div class="section-description" style="margin-bottom: 12px; padding: 8px 12px; font-size: 13px;" data-i18n="combined.description">
-                    AI 摘要和回饋輸入在同一頁面中，方便對照查看。
+                <div class="combined-header">
+                    <div class="section-description" data-i18n="combined.description">
+                        AI 摘要和回饋輸入在同一頁面中，方便對照查看。
+                    </div>
+                    <button id="submitBtn" class="btn btn-success combined-submit-btn" data-i18n="buttons.submit">
+                        ✅ 提交回饋
+                    </button>
                 </div>
 
                 <div class="combined-content">
@@ -1078,15 +1083,7 @@
             </div> <!-- 關閉 main-content-area -->
         </main>
 
-        <!-- 底部操作按鈕 -->
-        <footer class="footer-actions">
-            <button id="cancelBtn" class="btn btn-secondary" data-i18n="buttons.cancel">
-                ❌ 取消
-            </button>
-            <button id="submitBtn" class="btn btn-success" data-i18n="buttons.submit">
-                ✅ 提交回饋
-            </button>
-        </footer>
+
     </div>
 
     <!-- WebSocket 和 JavaScript -->

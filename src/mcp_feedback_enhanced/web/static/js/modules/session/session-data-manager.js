@@ -29,8 +29,7 @@
         // 統計數據
         this.sessionStats = {
             todayCount: 0,
-            averageDuration: 0,
-            totalSessions: 0
+            averageDuration: 0
         };
 
         // localStorage 相關設定
@@ -453,20 +452,19 @@
     SessionDataManager.prototype.updateStats = function() {
         // 計算今日會話數
         const todayStart = TimeUtils.getTodayStartTimestamp();
-        this.sessionStats.todayCount = this.sessionHistory.filter(function(session) {
+        const todaySessions = this.sessionHistory.filter(function(session) {
             return session.created_at && session.created_at >= todayStart;
-        }).length;
+        });
+        this.sessionStats.todayCount = todaySessions.length;
 
-        // 計算平均持續時間
-        const completedSessions = this.sessionHistory.filter(s => s.duration && s.duration > 0);
-        if (completedSessions.length > 0) {
-            const totalDuration = completedSessions.reduce((sum, s) => sum + s.duration, 0);
-            this.sessionStats.averageDuration = Math.round(totalDuration / completedSessions.length);
+        // 計算今日平均持續時間
+        const todayCompletedSessions = todaySessions.filter(s => s.duration && s.duration > 0);
+        if (todayCompletedSessions.length > 0) {
+            const totalDuration = todayCompletedSessions.reduce((sum, s) => sum + s.duration, 0);
+            this.sessionStats.averageDuration = Math.round(totalDuration / todayCompletedSessions.length);
         } else {
             this.sessionStats.averageDuration = 0;
         }
-
-        this.sessionStats.totalSessions = this.sessionHistory.length;
 
         // 觸發回調
         if (this.onStatsChange) {
@@ -671,7 +669,7 @@
         const self = this;
         const exportData = {
             exportedAt: new Date().toISOString(),
-            totalSessions: this.sessionHistory.length,
+            sessionCount: this.sessionHistory.length,
             sessions: this.sessionHistory.map(function(session) {
                 const sessionData = {
                     session_id: session.session_id,
@@ -774,8 +772,7 @@
         this.lastStatusUpdate = null;
         this.sessionStats = {
             todayCount: 0,
-            averageDuration: 0,
-            totalSessions: 0
+            averageDuration: 0
         };
 
         console.log('📊 SessionDataManager 清理完成');

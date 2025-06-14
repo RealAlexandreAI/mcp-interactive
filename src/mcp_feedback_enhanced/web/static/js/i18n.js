@@ -218,6 +218,14 @@ class I18nManager {
             if (typeof window.feedbackApp.sessionManager.updateDisplay === 'function') {
                 window.feedbackApp.sessionManager.updateDisplay();
             }
+
+            // 重新渲染統計資訊以更新時間單位
+            if (window.feedbackApp.sessionManager.dataManager &&
+                window.feedbackApp.sessionManager.uiRenderer) {
+                const stats = window.feedbackApp.sessionManager.dataManager.getStats();
+                window.feedbackApp.sessionManager.uiRenderer.renderStats(stats);
+                console.log('🌐 已更新統計資訊的語言顯示');
+            }
         }
 
         // 更新狀態徽章文字

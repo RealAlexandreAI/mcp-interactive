@@ -16,6 +16,8 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 - 🔧 **Easy Maintenance**: Unified Web interface, reduced complexity
 - 📦 **Compact Size**: Removed heavy GUI libraries, significantly smaller installation package
 
+**🔮 Future Plans:** We plan to reintroduce desktop applications after feature stabilization, currently focusing on Web UI feature enhancement and optimization.
+
 **Supported Platforms:** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
 ### 🔄 Workflow
@@ -46,11 +48,12 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 - **Deep Integration**: Seamless integration with prompt management system
 - **Complete Control**: Support pause, resume, and cancel operations
 
-### 📊 Session Management & Tracking (v2.4.0 New Feature)
-- **Real-time Status**: Current session status display in real-time
-- **History Records**: Complete session history and statistical analysis
-- **Data Statistics**: Today's session count and average duration statistics
-- **Detail Management**: Session detail viewing and management functions
+### 📊 Session Management & Tracking (v2.4.3 Refactored & Enhanced)
+- **Dedicated Tab Design**: Migrated from sidebar to dedicated tab, resolving browser compatibility issues
+- **Local History Storage**: Support for local session record storage with configurable retention periods
+- **Privacy Control**: User message recording with three privacy level settings
+- **Data Management**: Support for session history export and cleanup functionality
+- **Real-time Statistics**: Today's session count and average duration statistics
 
 ### 🔗 Connection Monitoring System (v2.4.0 New Feature)
 - **Real-time Monitoring**: WebSocket connection status monitoring in real-time
@@ -58,21 +61,33 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 - **Auto Reconnection**: Smart reconnection mechanism and error handling
 - **Detailed Statistics**: Complete connection statistical information
 
+### 🔊 Audio Notification System (v2.4.3 New Feature)
+- **Smart Alerts**: Automatically play audio notifications when sessions update
+- **Multiple Audio Options**: Built-in classic beep, notification ding, soft chime
+- **Custom Audio**: Support uploading custom audio files (MP3, WAV, OGG formats)
+- **Full Control**: Volume adjustment, test playback, and audio management features
+
 ### 🎨 Modern Interface Design
 - **Modular Architecture**: JavaScript completely modularized refactoring
 - **Responsive Design**: Adapts to different screen sizes and window dimensions
 - **Unified Style**: Consistent design language and visual experience
-- **Session Panel**: New left session management panel with collapse/expand support
+- **Smart Layout**: AI summary auto-expansion, optimized submit button positioning
 
 ### 🖼️ Image Support
 - **Format Support**: PNG, JPG, JPEG, GIF, BMP, WebP
 - **Upload Methods**: Drag & drop files + clipboard paste (Ctrl+V)
 - **Unlimited Upload**: Support image files of any size with automatic smart processing
 
+### 💾 Smart Memory Features (v2.4.3 New Feature)
+- **Input Height Memory**: Automatically save and restore textarea input height settings
+- **One-Click Copy**: Project path and session ID support click-to-copy to clipboard
+- **Settings Persistence**: All user preference settings automatically saved
+
 ### 🌏 Multi-language
 - **Three Languages**: English, Traditional Chinese, Simplified Chinese
 - **Smart Detection**: Auto-select based on system language
 - **Live Switching**: Change language directly within interface
+- **Complete Internationalization**: Includes multilingual support for tooltips and button hints
 
 ### ✨ WSL Environment Support (v2.2.5)
 - **Auto Detection**: Intelligently identifies WSL (Windows Subsystem for Linux) environments
@@ -223,14 +238,14 @@ make quick-check                                        # Quick check with auto-
 
 📋 **Complete Version History:** [RELEASE_NOTES/CHANGELOG.en.md](RELEASE_NOTES/CHANGELOG.en.md)
 
-### Latest Version Highlights (v2.4.0)
-- 🏗️ **Web-Only Architecture Refactoring**: Completely removed PyQt6 GUI dependencies, transitioned to pure Web UI architecture, dramatically simplifying deployment
-- 📝 **Smart Prompt Management**: Added complete prompt CRUD system with usage statistics and intelligent sorting
-- ⏰ **Auto-Timed Submit**: Configurable countdown timer with deep integration with prompt management system
-- 📊 **Session Management System**: Real-time session status, history records, and statistical analysis features
-- 🔗 **Enhanced Connection Monitoring**: WebSocket connection status monitoring, latency measurement, and auto-reconnection
-- 🎨 **Comprehensive UI/UX Optimization**: New session panel, responsive design, unified visual style
-- 🌐 **Enhanced Multi-language System**: Optimized language switching mechanism, improved localization coverage
+### Latest Version Highlights (v2.4.3)
+- 📋 **Session Management Refactoring**: Migrated from sidebar to dedicated tab, resolving browser compatibility issues
+- 🔊 **Audio Notification System**: Session update audio alerts with built-in and custom audio support
+- 📚 **Enhanced Session History**: Local storage, privacy control, export and cleanup functionality
+- 💾 **Smart Memory Features**: Input height memory, one-click copy, and other convenience features
+- 🎨 **Interface Layout Optimization**: AI summary auto-expansion, button repositioning, simplified design
+- 🌐 **Multilingual Enhancement**: Complete internationalization support for tooltips and button hints
+- 🐛 **Bug Fixes**: Fixed session details button, modal close delay, and other user experience issues
 - 🛠️ **Technical Architecture Upgrade**: JavaScript modular refactoring, adopting modern development patterns
 
 ## 🐛 Common Issues

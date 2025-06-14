@@ -2,6 +2,30 @@
 
 This document records all version updates for **MCP Feedback Enhanced**.
 
+## [v2.4.3] - 2025-06-14 - Session Management Refactoring & Audio Notifications
+
+### 🌟 Version Highlights
+Migrated session management from sidebar to dedicated tab, resolving browser compatibility issues. Added audio notification system with custom audio support.
+
+### ✨ New Features
+- 🔊 **Audio Notification System**: Play audio alerts for session updates, supports built-in and custom audio uploads
+- 📚 **Session History Management**: Local session record storage with export and cleanup functionality
+- 💾 **Input Height Memory**: Automatically save and restore textarea input height settings
+- 📋 **One-Click Copy**: Project path and session ID support click-to-copy
+
+### 🚀 Improvements
+- 📋 **Session Management Refactoring**: Migrated from sidebar to "Session Management" tab, fixing button click issues in small windows
+- 🎨 **Interface Layout Optimization**: AI summary auto-expansion, submit button repositioning, removed redundant descriptions
+- 🌐 **Multilingual Enhancement**: Added tooltip and button multilingual support
+
+### 🐛 Bug Fixes
+- Fixed current session details button unresponsive issue
+- Fixed session details modal close delay issue
+- Fixed audio notification language initialization issue
+- Corrected auto-submit processing logic
+
+---
+
 ## [v2.4.2] - Web-Only Architecture Refactoring & Smart Feature Enhancement
 
 ### 🌟 Version Highlights

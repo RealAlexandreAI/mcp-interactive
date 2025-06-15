@@ -74,6 +74,9 @@
             },
             onStatsChange: function(stats) {
                 self.handleStatsChange(stats);
+            },
+            onDataChanged: function() {
+                self.handleDataChanged();
             }
         });
     };
@@ -112,6 +115,22 @@
         console.log('📋 處理統計資訊變更:', stats);
 
         // 更新 UI 渲染
+        this.uiRenderer.renderStats(stats);
+    };
+
+    /**
+     * 處理資料變更（用於異步載入完成後的更新）
+     */
+    SessionManager.prototype.handleDataChanged = function() {
+        console.log('📋 處理資料變更，重新渲染所有內容');
+
+        // 重新渲染所有內容
+        const currentSession = this.dataManager.getCurrentSession();
+        const history = this.dataManager.getSessionHistory();
+        const stats = this.dataManager.getStats();
+
+        this.uiRenderer.renderCurrentSession(currentSession);
+        this.uiRenderer.renderSessionHistory(history);
         this.uiRenderer.renderStats(stats);
     };
 

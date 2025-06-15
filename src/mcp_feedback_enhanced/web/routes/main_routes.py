@@ -306,6 +306,91 @@ def setup_routes(manager: "WebUIManager"):
                 content={"status": "error", "message": f"清除失敗: {e!s}"},
             )
 
+    @manager.app.get("/api/load-session-history")
+    async def load_session_history():
+        """從檔案載入會話歷史"""
+        try:
+            # 使用統一的設定檔案路徑
+            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
+            history_file = config_dir / "session_history.json"
+
+            if history_file.exists():
+                with open(history_file, encoding="utf-8") as f:
+                    history_data = json.load(f)
+
+                debug_log(f"會話歷史已從檔案載入: {history_file}")
+
+                # 確保資料格式相容性
+                if isinstance(history_data, dict):
+                    # 新格式：包含版本資訊和其他元資料
+                    sessions = history_data.get("sessions", [])
+                    last_cleanup = history_data.get("lastCleanup", 0)
+                else:
+                    # 舊格式：直接是會話陣列（向後相容）
+                    sessions = history_data if isinstance(history_data, list) else []
+                    last_cleanup = 0
+
+                # 回傳與 localStorage 格式相容的資料
+                return JSONResponse(
+                    content={"sessions": sessions, "lastCleanup": last_cleanup}
+                )
+
+            debug_log("會話歷史檔案不存在，返回空歷史")
+            return JSONResponse(content={"sessions": [], "lastCleanup": 0})
+
+        except Exception as e:
+            debug_log(f"載入會話歷史失敗: {e}")
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": f"載入失敗: {e!s}"},
+            )
+
+    @manager.app.post("/api/save-session-history")
+    async def save_session_history(request: Request):
+        """保存會話歷史到檔案"""
+        try:
+            data = await request.json()
+
+            # 使用統一的設定檔案路徑
+            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
+            config_dir.mkdir(parents=True, exist_ok=True)
+            history_file = config_dir / "session_history.json"
+
+            # 建立新格式的資料結構
+            history_data = {
+                "version": "1.0",
+                "sessions": data.get("sessions", []),
+                "lastCleanup": data.get("lastCleanup", 0),
+                "savedAt": int(time.time() * 1000),  # 當前時間戳
+            }
+
+            # 如果是首次儲存且有 localStorage 遷移標記
+            if not history_file.exists() and data.get("migratedFrom") == "localStorage":
+                history_data["migratedFrom"] = "localStorage"
+                history_data["migratedAt"] = int(time.time() * 1000)
+
+            # 保存會話歷史到檔案
+            with open(history_file, "w", encoding="utf-8") as f:
+                json.dump(history_data, f, ensure_ascii=False, indent=2)
+
+            debug_log(f"會話歷史已保存到: {history_file}")
+            session_count = len(history_data["sessions"])
+            debug_log(f"保存了 {session_count} 個會話記錄")
+
+            return JSONResponse(
+                content={
+                    "status": "success",
+                    "message": f"會話歷史已保存（{session_count} 個會話）",
+                }
+            )
+
+        except Exception as e:
+            debug_log(f"保存會話歷史失敗: {e}")
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": f"保存失敗: {e!s}"},
+            )
+
     @manager.app.get("/api/active-tabs")
     async def get_active_tabs():
         """獲取活躍標籤頁信息 - 優先使用全局狀態"""

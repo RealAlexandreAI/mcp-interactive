@@ -32,19 +32,18 @@
             averageDuration: 0
         };
 
-        // localStorage 相關設定
-        this.localStorageKey = 'mcp-session-history';
+        // 設定管理器
         this.settingsManager = options.settingsManager || null;
 
         // 回調函數
         this.onSessionChange = options.onSessionChange || null;
         this.onHistoryChange = options.onHistoryChange || null;
         this.onStatsChange = options.onStatsChange || null;
+        this.onDataChanged = options.onDataChanged || null;
 
         // 初始化：載入歷史記錄並清理過期資料
-        this.loadFromLocalStorage();
-        this.cleanupExpiredSessions();
-        this.updateStats();
+        // 注意：loadFromServer 是異步的，會在載入完成後自動觸發更新
+        this.loadFromServer();
 
         console.log('📊 SessionDataManager 初始化完成');
     }
@@ -227,8 +226,8 @@
             this.sessionHistory = this.sessionHistory.slice(0, 10);
         }
 
-        // 保存到 localStorage
-        this.saveToLocalStorage();
+        // 保存到伺服器端
+        this.saveToServer();
 
         this.updateStats();
 
@@ -390,8 +389,8 @@
             }
         });
 
-        // 保存到 localStorage
-        this.saveToLocalStorage();
+        // 保存到伺服器端
+        this.saveToServer();
 
         console.log('📊 所有用戶訊息記錄已清空');
         return true;
@@ -410,7 +409,7 @@
 
         if (session && session.user_messages) {
             session.user_messages = [];
-            this.saveToLocalStorage();
+            this.saveToServer();
             console.log('📊 會話用戶訊息記錄已清空:', sessionId);
             return true;
         }
@@ -458,9 +457,17 @@
         this.sessionStats.todayCount = todaySessions.length;
 
         // 計算今日平均持續時間
-        const todayCompletedSessions = todaySessions.filter(s => s.duration && s.duration > 0);
+        const todayCompletedSessions = todaySessions.filter(function(s) {
+            // 過濾有效的持續時間：大於 0 且小於 24 小時（86400 秒）
+            return s.duration && s.duration > 0 && s.duration < 86400;
+        });
+
         if (todayCompletedSessions.length > 0) {
-            const totalDuration = todayCompletedSessions.reduce((sum, s) => sum + s.duration, 0);
+            const totalDuration = todayCompletedSessions.reduce(function(sum, s) {
+                // 確保持續時間是合理的數值
+                const duration = Math.min(s.duration, 86400); // 最大 24 小時
+                return sum + duration;
+            }, 0);
             this.sessionStats.averageDuration = Math.round(totalDuration / todayCompletedSessions.length);
         } else {
             this.sessionStats.averageDuration = 0;
@@ -495,8 +502,8 @@
     SessionDataManager.prototype.clearHistory = function() {
         this.sessionHistory = [];
 
-        // 清空 localStorage
-        this.clearLocalStorage();
+        // 清空伺服器端資料
+        this.clearServerData();
 
         this.updateStats();
         if (this.onHistoryChange) {
@@ -562,64 +569,133 @@
     };
 
     /**
-     * 從 localStorage 載入會話歷史
+     * 從伺服器載入會話歷史
      */
-    SessionDataManager.prototype.loadFromLocalStorage = function() {
-        if (!window.localStorage) {
-            console.warn('📊 localStorage 不可用');
-            return;
-        }
+    SessionDataManager.prototype.loadFromServer = function() {
+        const self = this;
 
-        try {
-            const stored = localStorage.getItem(this.localStorageKey);
-            if (stored) {
-                const data = JSON.parse(stored);
-                if (data && Array.isArray(data.sessions)) {
-                    this.sessionHistory = data.sessions;
-                    console.log('📊 從 localStorage 載入', this.sessionHistory.length, '個會話');
+        fetch('/api/load-session-history')
+            .then(function(response) {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('伺服器回應錯誤: ' + response.status);
                 }
+            })
+            .then(function(data) {
+                if (data && Array.isArray(data.sessions)) {
+                    self.sessionHistory = data.sessions;
+                    console.log('📊 從伺服器載入', self.sessionHistory.length, '個會話');
+
+                    // 載入完成後進行清理和統計更新
+                    self.cleanupExpiredSessions();
+                    self.updateStats();
+
+                    // 觸發歷史記錄變更回調
+                    if (self.onHistoryChange) {
+                        self.onHistoryChange(self.sessionHistory);
+                    }
+
+                    // 觸發資料變更回調
+                    if (self.onDataChanged) {
+                        self.onDataChanged();
+                    }
+                } else {
+                    console.warn('📊 伺服器回應格式錯誤:', data);
+                    self.sessionHistory = [];
+
+                    // 即使沒有資料也要更新統計
+                    self.updateStats();
+
+                    // 觸發歷史記錄變更回調（空列表）
+                    if (self.onHistoryChange) {
+                        self.onHistoryChange(self.sessionHistory);
+                    }
+
+                    if (self.onDataChanged) {
+                        self.onDataChanged();
+                    }
+                }
+            })
+            .catch(function(error) {
+                console.warn('📊 從伺服器載入會話歷史失敗:', error);
+                self.sessionHistory = [];
+
+                // 載入失敗時也要更新統計
+                self.updateStats();
+
+                // 觸發歷史記錄變更回調（空列表）
+                if (self.onHistoryChange) {
+                    self.onHistoryChange(self.sessionHistory);
+                }
+
+                if (self.onDataChanged) {
+                    self.onDataChanged();
+                }
+            });
+    };
+
+    /**
+     * 保存會話歷史到伺服器
+     */
+    SessionDataManager.prototype.saveToServer = function() {
+        const data = {
+            sessions: this.sessionHistory,
+            lastCleanup: TimeUtils.getCurrentTimestamp()
+        };
+
+        fetch('/api/save-session-history', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(function(response) {
+            if (response.ok) {
+                console.log('📊 已保存', data.sessions.length, '個會話到伺服器');
+                return response.json();
+            } else {
+                throw new Error('伺服器回應錯誤: ' + response.status);
             }
-        } catch (error) {
-            console.error('📊 從 localStorage 載入會話歷史失敗:', error);
-        }
+        })
+        .then(function(result) {
+            console.log('📊 伺服器保存回應:', result.message);
+        })
+        .catch(function(error) {
+            console.error('📊 保存會話歷史到伺服器失敗:', error);
+        });
     };
 
     /**
-     * 保存會話歷史到 localStorage
+     * 清空伺服器端的會話歷史
      */
-    SessionDataManager.prototype.saveToLocalStorage = function() {
-        if (!window.localStorage) {
-            console.warn('📊 localStorage 不可用');
-            return;
-        }
+    SessionDataManager.prototype.clearServerData = function() {
+        const emptyData = {
+            sessions: [],
+            lastCleanup: TimeUtils.getCurrentTimestamp()
+        };
 
-        try {
-            const data = {
-                sessions: this.sessionHistory,
-                lastCleanup: TimeUtils.getCurrentTimestamp()
-            };
-            localStorage.setItem(this.localStorageKey, JSON.stringify(data));
-            console.log('📊 已保存', this.sessionHistory.length, '個會話到 localStorage');
-        } catch (error) {
-            console.error('📊 保存會話歷史到 localStorage 失敗:', error);
-        }
+        fetch('/api/save-session-history', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(emptyData)
+        })
+        .then(function(response) {
+            if (response.ok) {
+                console.log('📊 已清空伺服器端的會話歷史');
+            } else {
+                throw new Error('伺服器回應錯誤: ' + response.status);
+            }
+        })
+        .catch(function(error) {
+            console.error('📊 清空伺服器端會話歷史失敗:', error);
+        });
     };
 
-    /**
-     * 清空 localStorage 中的會話歷史
-     */
-    SessionDataManager.prototype.clearLocalStorage = function() {
-        if (!window.localStorage) {
-            return;
-        }
 
-        try {
-            localStorage.removeItem(this.localStorageKey);
-            console.log('📊 已清空 localStorage 中的會話歷史');
-        } catch (error) {
-            console.error('📊 清空 localStorage 失敗:', error);
-        }
-    };
 
     /**
      * 清理過期的會話
@@ -642,7 +718,7 @@
         const cleanedCount = originalCount - this.sessionHistory.length;
         if (cleanedCount > 0) {
             console.log('📊 清理了', cleanedCount, '個過期會話');
-            this.saveToLocalStorage();
+            this.saveToServer();
         }
     };
 

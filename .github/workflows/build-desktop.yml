@@ -260,3 +260,105 @@ jobs:
           echo "- 修復問題後重新觸發此工作流程" >> $GITHUB_STEP_SUMMARY
           echo "- 確保所有平台都能成功構建後再進行發佈" >> $GITHUB_STEP_SUMMARY
         fi
+
+  # 新增：將構建的二進制文件提交到 Git
+  commit-binaries:
+    name: 提交桌面二進制文件到 Git
+    runs-on: ubuntu-latest
+    needs: [build-desktop, build-summary]
+    if: needs.build-desktop.result == 'success'
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+    - name: Download all desktop artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: desktop-artifacts
+
+    - name: Prepare desktop binaries for commit
+      run: |
+        echo "📦 準備桌面二進制文件以提交到 Git..."
+
+        # 創建桌面應用目錄
+        mkdir -p src/mcp_feedback_enhanced/desktop_release
+
+        # 確保 __init__.py 存在
+        if [ ! -f "src/mcp_feedback_enhanced/desktop_release/__init__.py" ]; then
+          echo '"""桌面應用程式二進制檔案"""' > src/mcp_feedback_enhanced/desktop_release/__init__.py
+        fi
+
+        # 定義平台映射
+        declare -A PLATFORM_MAP=(
+          ["desktop-windows"]="mcp-feedback-enhanced-desktop.exe"
+          ["desktop-macos-intel"]="mcp-feedback-enhanced-desktop-macos-intel"
+          ["desktop-macos-arm64"]="mcp-feedback-enhanced-desktop-macos-arm64"
+          ["desktop-linux"]="mcp-feedback-enhanced-desktop-linux"
+        )
+
+        # 複製並重命名二進制文件
+        COPIED_COUNT=0
+
+        for platform_dir in desktop-windows desktop-macos-intel desktop-macos-arm64 desktop-linux; do
+          echo "🔍 處理平台: $platform_dir"
+
+          # 查找該平台的二進制文件
+          BINARY_FILE=""
+          if [ -d "desktop-artifacts/$platform_dir" ]; then
+            BINARY_FILE=$(find "desktop-artifacts/$platform_dir" -name "mcp-feedback-enhanced-desktop*" -type f | head -1)
+          fi
+
+          if [ -n "$BINARY_FILE" ] && [ -f "$BINARY_FILE" ]; then
+            TARGET_NAME="${PLATFORM_MAP[$platform_dir]}"
+            cp "$BINARY_FILE" "src/mcp_feedback_enhanced/desktop_release/$TARGET_NAME"
+
+            # 設置執行權限（非 Windows）
+            if [[ "$TARGET_NAME" != *.exe ]]; then
+              chmod +x "src/mcp_feedback_enhanced/desktop_release/$TARGET_NAME"
+            fi
+
+            echo "✅ $platform_dir: $BINARY_FILE -> $TARGET_NAME"
+            COPIED_COUNT=$((COPIED_COUNT + 1))
+          else
+            echo "⚠️ $platform_dir: 未找到二進制文件"
+          fi
+        done
+
+        echo ""
+        echo "📊 複製結果統計："
+        echo "  成功複製: $COPIED_COUNT/4 個平台"
+
+        # 顯示最終文件列表
+        echo ""
+        echo "📦 最終的桌面應用二進制文件："
+        ls -la src/mcp_feedback_enhanced/desktop_release/
+
+    - name: Commit desktop binaries
+      run: |
+        echo "📝 提交桌面二進制文件到 Git..."
+
+        # 檢查是否有變更
+        if [ -n "$(git status --porcelain src/mcp_feedback_enhanced/desktop_release/)" ]; then
+          # 添加桌面二進制文件
+          git add src/mcp_feedback_enhanced/desktop_release/
+
+          # 提交變更
+          git commit -m "🖥️ 更新桌面應用二進制文件 - 自動構建多平台版本 (Run ${{ github.run_id }})"
+
+          # 推送到遠程倉庫
+          git push origin main
+
+          echo "✅ 桌面二進制文件已成功提交並推送到 Git"
+        else
+          echo "ℹ️ 沒有檢測到桌面二進制文件的變更，跳過提交"
+        fi

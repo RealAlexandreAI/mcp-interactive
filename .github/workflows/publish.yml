@@ -317,117 +317,38 @@ jobs:
           fi
         fi
 
-    - name: Download desktop binaries
-      if: ${{ github.event.inputs.include_desktop == 'true' }}
-      uses: dawidd6/action-download-artifact@v6
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        workflow: build-desktop.yml
-        run_id: ${{ steps.check_desktop.outputs.run_id }}
-        path: desktop-artifacts
-        if_no_artifact_found: error
-
-    - name: Prepare multi-platform desktop binaries
+    - name: Check desktop applications in Git
       if: ${{ github.event.inputs.include_desktop == 'true' }}
       run: |
-        echo "📦 準備多平台桌面應用二進制文件..."
+        echo "🔍 檢查 Git 中的桌面應用程式二進制檔案..."
 
-        # 檢查下載的產物
-        echo "🔍 檢查下載的桌面應用產物..."
-        if [ ! -d "desktop-artifacts" ]; then
-          echo "❌ 桌面產物目錄不存在"
-          exit 1
-        fi
+        if [ -d "src/mcp_feedback_enhanced/desktop_release" ]; then
+          echo "📁 桌面應用目錄內容："
+          ls -la src/mcp_feedback_enhanced/desktop_release/
 
-        echo "📁 產物目錄內容："
-        find desktop-artifacts -type f -name "*" | head -20
+          # 檢查是否有二進制文件
+          BINARY_COUNT=$(find src/mcp_feedback_enhanced/desktop_release -name "mcp-feedback-enhanced-desktop*" -type f | wc -l)
+          echo "📊 找到 $BINARY_COUNT 個桌面二進制文件"
 
-        # 創建桌面應用目錄
-        mkdir -p src/mcp_feedback_enhanced/desktop_release
-
-        # 定義平台映射
-        declare -A PLATFORM_MAP=(
-          ["desktop-windows"]="mcp-feedback-enhanced-desktop.exe"
-          ["desktop-macos-intel"]="mcp-feedback-enhanced-desktop-macos-intel"
-          ["desktop-macos-arm64"]="mcp-feedback-enhanced-desktop-macos-arm64"
-          ["desktop-linux"]="mcp-feedback-enhanced-desktop-linux"
-        )
-
-        # 複製並重命名二進制文件
-        COPIED_COUNT=0
-        TOTAL_PLATFORMS=4
-
-        for platform_dir in desktop-windows desktop-macos-intel desktop-macos-arm64 desktop-linux; do
-          echo "🔍 處理平台: $platform_dir"
-
-          # 查找該平台的二進制文件
-          BINARY_FILE=""
-          if [ -d "desktop-artifacts/$platform_dir" ]; then
-            # 查找二進制文件（可能是 .exe 或無擴展名）
-            BINARY_FILE=$(find "desktop-artifacts/$platform_dir" -name "mcp-feedback-enhanced-desktop*" -type f | head -1)
-          fi
-
-          if [ -n "$BINARY_FILE" ] && [ -f "$BINARY_FILE" ]; then
-            TARGET_NAME="${PLATFORM_MAP[$platform_dir]}"
-            cp "$BINARY_FILE" "src/mcp_feedback_enhanced/desktop_release/$TARGET_NAME"
-
-            # 設置執行權限（非 Windows）
-            if [[ "$TARGET_NAME" != *.exe ]]; then
-              chmod +x "src/mcp_feedback_enhanced/desktop_release/$TARGET_NAME"
-            fi
-
-            echo "✅ $platform_dir: $BINARY_FILE -> $TARGET_NAME"
-            COPIED_COUNT=$((COPIED_COUNT + 1))
+          if [ $BINARY_COUNT -eq 0 ]; then
+            echo "❌ 沒有找到桌面二進制文件"
+            echo "💡 請先運行 'Build Desktop Applications' 工作流程"
+            echo "   該工作流程會自動構建並提交桌面二進制文件到 Git"
+            exit 1
+          elif [ $BINARY_COUNT -lt 4 ]; then
+            echo "⚠️ 桌面二進制文件不完整 ($BINARY_COUNT/4)"
+            echo "💡 請重新運行 'Build Desktop Applications' 工作流程"
+            echo "   確保所有 4 個平台都構建成功"
+            exit 1
           else
-            echo "⚠️ $platform_dir: 未找到二進制文件"
+            echo "✅ 桌面二進制文件完整 ($BINARY_COUNT/4)"
           fi
-        done
-
-        # 創建 __init__.py
-        echo '"""桌面應用程式二進制檔案"""' > src/mcp_feedback_enhanced/desktop_release/__init__.py
-
-        # 驗證結果
-        echo ""
-        echo "📊 複製結果統計："
-        echo "  成功複製: $COPIED_COUNT/$TOTAL_PLATFORMS 個平台"
-
-        if [ $COPIED_COUNT -eq 0 ]; then
-          echo "❌ 沒有成功複製任何平台的二進制文件"
-          echo "💡 建議："
-          echo "  1. 檢查 'Build Desktop Applications' 工作流程是否成功"
-          echo "  2. 確認所有平台都構建成功"
-          echo "  3. 或者設置 include_desktop 為 false"
-          exit 1
-        elif [ $COPIED_COUNT -lt $TOTAL_PLATFORMS ]; then
-          echo "❌ 部分平台缺失，無法保證多平台支援"
-          echo "💡 缺失的平台："
-
-          # 檢查具體缺失哪些平台
-          for platform_dir in desktop-windows desktop-macos-intel desktop-macos-arm64 desktop-linux; do
-            if [ ! -d "desktop-artifacts/$platform_dir" ] || [ -z "$(find "desktop-artifacts/$platform_dir" -name "mcp-feedback-enhanced-desktop*" -type f)" ]; then
-              case $platform_dir in
-                "desktop-windows") echo "  - ❌ Windows x64" ;;
-                "desktop-macos-intel") echo "  - ❌ macOS Intel" ;;
-                "desktop-macos-arm64") echo "  - ❌ macOS Apple Silicon" ;;
-                "desktop-linux") echo "  - ❌ Linux x64" ;;
-              esac
-            fi
-          done
-
-          echo ""
-          echo "🔧 解決方案："
-          echo "  1. 重新運行 'Build Desktop Applications' 工作流程"
-          echo "  2. 確保所有平台都構建成功後再發佈"
-          echo "  3. 或者設置 include_desktop 為 false（僅 Web 版本）"
-          exit 1
         else
-          echo "✅ 所有平台都已成功複製"
+          echo "❌ 桌面應用目錄不存在"
+          echo "💡 請先運行 'Build Desktop Applications' 工作流程"
+          echo "   該工作流程會自動構建並提交桌面二進制文件到 Git"
+          exit 1
         fi
-
-        # 顯示最終文件列表
-        echo ""
-        echo "📦 最終的桌面應用二進制文件："
-        ls -la src/mcp_feedback_enhanced/desktop_release/
 
     - name: Validate desktop binaries
       if: ${{ github.event.inputs.include_desktop == 'true' }}
@@ -532,23 +453,7 @@ jobs:
         echo "📁 桌面應用目錄內容："
         ls -la src/mcp_feedback_enhanced/desktop_release/
 
-    - name: Add desktop binaries to git temporarily (for packaging)
-      if: ${{ github.event.inputs.include_desktop == 'true' }}
-      run: |
-        echo "📦 臨時添加桌面二進制文件到 Git 以便打包..."
 
-        # 臨時添加桌面二進制文件到 Git
-        if [ -d "src/mcp_feedback_enhanced/desktop_release" ]; then
-          # 強制添加二進制文件（忽略 .gitignore）
-          git add -f src/mcp_feedback_enhanced/desktop_release/*.exe || true
-          git add -f src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-* || true
-
-          echo "✅ 桌面二進制文件已臨時添加到 Git"
-          echo "📁 添加的文件："
-          git ls-files src/mcp_feedback_enhanced/desktop_release/ | grep -E '\.(exe|mcp-feedback-enhanced-desktop-)' || echo "  沒有找到二進制文件"
-        else
-          echo "⚠️ 桌面應用目錄不存在"
-        fi
 
     - name: Build package
       run: uv build
@@ -562,19 +467,7 @@ jobs:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
 
-    - name: Clean up temporary desktop binaries from git
-      if: ${{ github.event.inputs.include_desktop == 'true' }}
-      run: |
-        echo "🧹 清理臨時添加的桌面二進制文件..."
 
-        # 重置 Git 狀態，移除臨時添加的二進制文件
-        git reset HEAD src/mcp_feedback_enhanced/desktop_release/*.exe 2>/dev/null || true
-        git reset HEAD src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-* 2>/dev/null || true
-
-        # 清理工作目錄中的未追蹤文件
-        git checkout -- src/mcp_feedback_enhanced/desktop_release/ 2>/dev/null || true
-
-        echo "✅ 桌面二進制文件已從 Git 中移除"
 
     - name: Push changes and tags
       run: |

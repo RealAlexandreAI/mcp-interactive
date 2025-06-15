@@ -70,8 +70,8 @@ class DesktopApp:
             self.web_manager.start_server()
 
         # 等待服務器啟動
-        max_wait = 10  # 最多等待 10 秒
-        wait_count = 0
+        max_wait = 10.0  # 最多等待 10 秒
+        wait_count = 0.0
         while wait_count < max_wait:
             if (
                 self.web_manager.server_thread

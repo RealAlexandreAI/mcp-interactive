@@ -960,13 +960,16 @@
     FeedbackApp.prototype.submitFeedbackInternal = function(feedbackData) {
         console.log('📤 內部提交回饋...');
 
-        // 設置處理狀態
-        if (this.uiManager) {
-            this.uiManager.setFeedbackState(window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_PROCESSING);
-        }
-
         try {
-            // 發送回饋
+            // 1. 首先記錄用戶訊息到會話歷史（立即保存到伺服器）
+            this.recordUserMessage(feedbackData);
+
+            // 2. 設置處理狀態
+            if (this.uiManager) {
+                this.uiManager.setFeedbackState(window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_PROCESSING);
+            }
+
+            // 3. 發送回饋到 AI 助手
             const success = this.webSocketManager.send({
                 type: 'submit_feedback',
                 feedback: feedbackData.feedback,
@@ -975,9 +978,6 @@
             });
 
             if (success) {
-                // 記錄用戶訊息到會話歷史
-                this.recordUserMessage(feedbackData);
-
                 // 清空表單
                 this.clearFeedback();
                 console.log('📤 回饋已發送，等待服務器確認...');

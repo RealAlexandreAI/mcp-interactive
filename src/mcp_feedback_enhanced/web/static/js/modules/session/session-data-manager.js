@@ -166,14 +166,28 @@
     SessionDataManager.prototype.handleSessionCompleted = function(sessionData) {
         console.log('📊 處理會話完成:', sessionData);
 
-        // 確保會話有完成時間
-        if (!sessionData.completed_at) {
+        // 優先使用用戶最後互動時間作為完成時間
+        if (this.currentSession &&
+            this.currentSession.session_id === sessionData.session_id &&
+            this.currentSession.last_user_interaction) {
+            sessionData.completed_at = this.currentSession.last_user_interaction;
+            console.log('📊 使用用戶最後互動時間作為完成時間:', sessionData.completed_at);
+        } else if (!sessionData.completed_at) {
             sessionData.completed_at = TimeUtils.getCurrentTimestamp();
+            console.log('📊 使用當前時間作為完成時間:', sessionData.completed_at);
         }
 
         // 計算持續時間
         if (sessionData.created_at && !sessionData.duration) {
             sessionData.duration = sessionData.completed_at - sessionData.created_at;
+        }
+
+        // 確保包含用戶訊息（如果當前會話有的話）
+        if (this.currentSession &&
+            this.currentSession.session_id === sessionData.session_id &&
+            this.currentSession.user_messages) {
+            sessionData.user_messages = this.currentSession.user_messages;
+            console.log('📊 會話完成時包含', sessionData.user_messages.length, '條用戶訊息');
         }
 
         // 將完成的會話加入歷史記錄
@@ -291,6 +305,12 @@
 
         // 新增到當前會話
         this.currentSession.user_messages.push(userMessage);
+
+        // 記錄用戶最後互動時間
+        this.currentSession.last_user_interaction = TimeUtils.getCurrentTimestamp();
+
+        // 立即保存當前會話到伺服器
+        this.saveCurrentSessionToServer();
 
         console.log('📊 用戶訊息已記錄到當前會話:', this.currentSession.session_id);
         return true;
@@ -633,6 +653,72 @@
                     self.onDataChanged();
                 }
             });
+    };
+
+    /**
+     * 立即保存當前會話到伺服器
+     */
+    SessionDataManager.prototype.saveCurrentSessionToServer = function() {
+        if (!this.currentSession) {
+            console.log('📊 沒有當前會話，跳過即時保存');
+            return;
+        }
+
+        console.log('📊 立即保存當前會話到伺服器:', this.currentSession.session_id);
+
+        // 建立當前會話的快照（包含用戶訊息）
+        const sessionSnapshot = Object.assign({}, this.currentSession);
+
+        // 確保快照包含在歷史記錄中（用於即時保存）
+        const updatedHistory = this.sessionHistory.slice();
+        const existingIndex = updatedHistory.findIndex(s => s.session_id === sessionSnapshot.session_id);
+
+        if (existingIndex !== -1) {
+            // 更新現有會話，保留用戶訊息
+            const existingSession = updatedHistory[existingIndex];
+            if (existingSession.user_messages && sessionSnapshot.user_messages) {
+                sessionSnapshot.user_messages = this.mergeUserMessages(existingSession.user_messages, sessionSnapshot.user_messages);
+            }
+            updatedHistory[existingIndex] = sessionSnapshot;
+        } else {
+            // 新增會話快照到歷史記錄開頭
+            updatedHistory.unshift(sessionSnapshot);
+        }
+
+        // 保存包含當前會話的歷史記錄
+        this.saveSessionSnapshot(updatedHistory);
+    };
+
+    /**
+     * 保存會話快照到伺服器
+     */
+    SessionDataManager.prototype.saveSessionSnapshot = function(sessions) {
+        const data = {
+            sessions: sessions,
+            lastCleanup: TimeUtils.getCurrentTimestamp()
+        };
+
+        fetch('/api/save-session-history', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(function(response) {
+            if (response.ok) {
+                console.log('📊 已保存會話快照到伺服器，包含', data.sessions.length, '個會話');
+                return response.json();
+            } else {
+                throw new Error('伺服器回應錯誤: ' + response.status);
+            }
+        })
+        .then(function(result) {
+            console.log('📊 會話快照保存回應:', result.message);
+        })
+        .catch(function(error) {
+            console.error('📊 保存會話快照到伺服器失敗:', error);
+        });
     };
 
     /**

@@ -115,15 +115,24 @@ class DesktopApp:
         # 找到 Tauri 可執行檔案
         # 首先嘗試從打包後的位置找（PyPI 安裝後的位置）
         try:
+            debug_log("嘗試從發布包位置導入桌面模組...")
             from mcp_feedback_enhanced.desktop_release import __file__ as desktop_init
 
             desktop_dir = Path(desktop_init).parent
+            debug_log(f"桌面應用目錄: {desktop_dir}")
+
+            # 列出目錄內容以便調試
+            if desktop_dir.exists():
+                debug_log(f"桌面目錄內容: {list(desktop_dir.iterdir())}")
+            else:
+                debug_log(f"桌面目錄不存在: {desktop_dir}")
 
             # 根據平台選擇對應的二進制文件
             import platform
 
             system = platform.system().lower()
             machine = platform.machine().lower()
+            debug_log(f"檢測到平台: {system}, 架構: {machine}")
 
             # 定義平台到二進制文件的映射
             if system == "windows":
@@ -144,9 +153,17 @@ class DesktopApp:
                 # 回退到通用名稱
                 tauri_exe = desktop_dir / "mcp-feedback-enhanced-desktop"
 
+            debug_log(f"預期的可執行檔案路徑: {tauri_exe}")
+
             if tauri_exe.exists():
                 debug_log(f"找到打包後的 Tauri 可執行檔案: {tauri_exe}")
+                # 檢查文件權限
+                file_stat = tauri_exe.stat()
+                debug_log(
+                    f"文件權限: {oct(file_stat.st_mode)}, 大小: {file_stat.st_size} bytes"
+                )
             else:
+                debug_log(f"主要可執行檔案不存在: {tauri_exe}")
                 # 嘗試回退選項
                 fallback_files = [
                     desktop_dir / "mcp-feedback-enhanced-desktop.exe",
@@ -156,7 +173,9 @@ class DesktopApp:
                     desktop_dir / "mcp-feedback-enhanced-desktop",
                 ]
 
+                debug_log("嘗試回退選項...")
                 for fallback in fallback_files:
+                    debug_log(f"檢查回退文件: {fallback} - 存在: {fallback.exists()}")
                     if fallback.exists():
                         tauri_exe = fallback
                         debug_log(f"使用回退的可執行檔案: {tauri_exe}")
@@ -166,7 +185,8 @@ class DesktopApp:
                         f"找不到任何可執行檔案，檢查的路徑: {tauri_exe}"
                     )
 
-        except (ImportError, FileNotFoundError):
+        except (ImportError, FileNotFoundError) as e:
+            debug_log(f"從發布包位置導入失敗: {e}")
             # 回退到開發環境路徑
             debug_log("未找到打包後的可執行檔案，嘗試開發環境路徑...")
             project_root = Path(__file__).parent.parent.parent.parent

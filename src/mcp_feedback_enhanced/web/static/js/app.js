@@ -561,6 +561,10 @@
                 console.log('🔄 收到會話更新訊息:', data.session_info);
                 this.handleSessionUpdated(data);
                 break;
+            case 'desktop_close_request':
+                console.log('🖥️ 收到桌面關閉請求');
+                this.handleDesktopCloseRequest(data);
+                break;
         }
     };
 
@@ -594,6 +598,34 @@
         this.updateSummaryStatus(submittedMessage);
 
         console.log('反饋已提交，頁面保持開啟狀態');
+    };
+
+    /**
+     * 處理桌面關閉請求
+     */
+    FeedbackApp.prototype.handleDesktopCloseRequest = function(data) {
+        console.log('🖥️ 處理桌面關閉請求:', data.message);
+
+        // 顯示關閉訊息
+        const closeMessage = data.message || '正在關閉桌面應用程式...';
+        window.MCPFeedback.Utils.showMessage(closeMessage, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_INFO);
+
+        // 檢查是否在 Tauri 環境中
+        if (window.__TAURI__) {
+            console.log('🖥️ 檢測到 Tauri 環境，關閉桌面視窗');
+            try {
+                // 使用 Tauri API 關閉視窗
+                window.__TAURI__.window.getCurrent().close();
+            } catch (error) {
+                console.error('關閉 Tauri 視窗失敗:', error);
+                // 備用方案：關閉瀏覽器視窗
+                window.close();
+            }
+        } else {
+            console.log('🖥️ 非 Tauri 環境，嘗試關閉瀏覽器視窗');
+            // 在瀏覽器環境中嘗試關閉視窗
+            window.close();
+        }
     };
 
     /**

@@ -1,10 +1,10 @@
-# Release v2.4.3 - 2025-06-14 - Session Management Refactoring & Audio Notifications
+# Release v2.5.0 - 2025-06-15 - Desktop Application & Performance Optimization
 
 ## 🌟 Key Highlights
-- 🔊 **Audio Notification System**: Play audio alerts for session updates, supports built-in and custom audio uploads
-- 📚 **Session History Management**: Local session record storage with export and cleanup functionality
-- 💾 **Input Height Memory**: Automatically save and restore textarea input height settings
-- 📋 **One-Click Copy**: Project path and session ID support click-to-copy
+- 🖥️ **Desktop Application**: Native cross-platform desktop app based on Tauri framework, supporting Windows x64, macOS (Intel/Apple Silicon), Linux x64
+- 📊 **Server-side Session History Storage**: Session records migrated from localStorage to server-side local file storage for improved data consistency and reliability
+- 🔧 **Multi-platform Build Support**: Complete CI/CD pipeline supporting automated multi-platform desktop application builds
+- 📝 **Desktop Mode Configuration**: Added `MCP_DESKTOP_MODE` environment variable for desktop/web mode switching
 
 ## 🌐 Detailed Release Notes
 
@@ -26,7 +26,7 @@
 uvx mcp-feedback-enhanced@latest
 
 # This specific version / 此特定版本
-uvx mcp-feedback-enhanced@v2.4.3
+uvx mcp-feedback-enhanced@v2.5.0
 ```
 
 ## 🔗 Links

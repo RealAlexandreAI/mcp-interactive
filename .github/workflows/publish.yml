@@ -393,9 +393,33 @@ jobs:
 
         if [ $COPIED_COUNT -eq 0 ]; then
           echo "❌ 沒有成功複製任何平台的二進制文件"
+          echo "💡 建議："
+          echo "  1. 檢查 'Build Desktop Applications' 工作流程是否成功"
+          echo "  2. 確認所有平台都構建成功"
+          echo "  3. 或者設置 include_desktop 為 false"
           exit 1
         elif [ $COPIED_COUNT -lt $TOTAL_PLATFORMS ]; then
-          echo "⚠️ 部分平台缺失，但繼續發佈"
+          echo "❌ 部分平台缺失，無法保證多平台支援"
+          echo "💡 缺失的平台："
+
+          # 檢查具體缺失哪些平台
+          for platform_dir in desktop-windows desktop-macos-intel desktop-macos-arm64 desktop-linux; do
+            if [ ! -d "desktop-artifacts/$platform_dir" ] || [ -z "$(find "desktop-artifacts/$platform_dir" -name "mcp-feedback-enhanced-desktop*" -type f)" ]; then
+              case $platform_dir in
+                "desktop-windows") echo "  - ❌ Windows x64" ;;
+                "desktop-macos-intel") echo "  - ❌ macOS Intel" ;;
+                "desktop-macos-arm64") echo "  - ❌ macOS Apple Silicon" ;;
+                "desktop-linux") echo "  - ❌ Linux x64" ;;
+              esac
+            fi
+          done
+
+          echo ""
+          echo "🔧 解決方案："
+          echo "  1. 重新運行 'Build Desktop Applications' 工作流程"
+          echo "  2. 確保所有平台都構建成功後再發佈"
+          echo "  3. 或者設置 include_desktop 為 false（僅 Web 版本）"
+          exit 1
         else
           echo "✅ 所有平台都已成功複製"
         fi
@@ -451,6 +475,21 @@ jobs:
           echo "  2. 確認指定的 Run ID 是否正確"
           echo "  3. 或者設置 include_desktop 為 false"
           exit 1
+        elif [ $VALID_COUNT -lt 4 ]; then
+          echo "❌ 不是所有平台都有效，無法保證完整的多平台支援"
+          echo "📋 要求：桌面應用必須支援所有 4 個平台"
+          echo "  - Windows x64"
+          echo "  - macOS Intel"
+          echo "  - macOS Apple Silicon"
+          echo "  - Linux x64"
+          echo ""
+          echo "🔧 解決方案："
+          echo "  1. 重新運行 'Build Desktop Applications' 工作流程"
+          echo "  2. 確保所有平台都構建成功且文件大小正常"
+          echo "  3. 或者設置 include_desktop 為 false（僅發佈 Web 版本）"
+          exit 1
+        else
+          echo "✅ 所有 4 個平台都驗證通過，可以發佈完整的多平台桌面應用"
         fi
 
     - name: Skip desktop applications
@@ -458,6 +497,40 @@ jobs:
       run: |
         echo "⏭️ 跳過桌面應用，僅發佈 Web 版本"
         echo "💡 用戶將只能使用 Web 模式，無法使用桌面模式"
+
+    - name: Prepare package for build
+      run: |
+        echo "🔧 準備包構建..."
+
+        # 確保桌面應用目錄存在（即使是空的）
+        mkdir -p src/mcp_feedback_enhanced/desktop_release
+
+        # 如果沒有包含桌面應用，創建一個說明文件
+        if [ "${{ github.event.inputs.include_desktop }}" != "true" ] || [ ! -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop.exe" ]; then
+          echo "🔍 桌面應用未包含，創建說明文件..."
+          cat > src/mcp_feedback_enhanced/desktop_release/README.md << 'EOF'
+        # 桌面應用程式
+
+        此版本不包含桌面應用程式二進制檔案。
+
+        ## 使用方式
+
+        僅支援 Web 模式
+        uvx mcp-feedback-enhanced test --web
+
+        如需桌面應用支援，請使用包含桌面應用的版本。
+        EOF
+        else
+          echo "✅ 桌面應用已包含"
+        fi
+
+        # 確保 __init__.py 存在
+        if [ ! -f "src/mcp_feedback_enhanced/desktop_release/__init__.py" ]; then
+          echo '"""桌面應用程式二進制檔案"""' > src/mcp_feedback_enhanced/desktop_release/__init__.py
+        fi
+
+        echo "📁 桌面應用目錄內容："
+        ls -la src/mcp_feedback_enhanced/desktop_release/
 
     - name: Build package
       run: uv build

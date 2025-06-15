@@ -62,9 +62,8 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_feedback_enhanced"]
 
-# 包含桌面應用程式二進制檔案
-[tool.hatch.build.targets.wheel.force-include]
-"src/mcp_feedback_enhanced/desktop_release" = "mcp_feedback_enhanced/desktop_release"
+# 桌面應用程式二進制檔案會在發佈流程中動態添加到 src/mcp_feedback_enhanced/desktop_release
+# 如果目錄不存在，構建過程會自動跳過
 
 [tool.uv]
 dev-dependencies = [

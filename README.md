@@ -349,5 +349,9 @@ If you find it useful, please:
 
 MIT License - See [LICENSE](LICENSE) file for details
 
+## 📈 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Minidoracat/mcp-feedback-enhanced&type=Date)](https://star-history.com/#Minidoracat/mcp-feedback-enhanced&Date)
+
 ---
 **🌟 Welcome to Star and share with more developers!**

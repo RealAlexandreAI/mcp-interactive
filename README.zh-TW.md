@@ -350,5 +350,9 @@ A: 各種 AI 模型（包括 Gemini Pro 2.5、Claude 等）在圖片解析上可
 
 MIT 授權條款 - 詳見 [LICENSE](LICENSE) 檔案
 
+## 📈 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Minidoracat/mcp-feedback-enhanced&type=Date)](https://star-history.com/#Minidoracat/mcp-feedback-enhanced&Date)
+
 ---
 **🌟 歡迎 Star 並分享給更多開發者！**

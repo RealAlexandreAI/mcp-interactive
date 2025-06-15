@@ -8,21 +8,21 @@
 
 ## 🎯 核心概念
 
-這是一個 [MCP 伺服器](https://modelcontextprotocol.io/)，建立**回饋導向的開發工作流程**，採用**純 Web UI 架構**，完美適配本地、**SSH 遠端開發環境**與 **WSL (Windows Subsystem for Linux) 環境**。透過引導 AI 與用戶確認而非進行推測性操作，可將多次工具調用合併為單次回饋導向請求，大幅節省平台成本並提升開發效率。
+這是一個 [MCP 伺服器](https://modelcontextprotocol.io/)，建立**回饋導向的開發工作流程**，提供**Web UI 和桌面應用程式**雙重選擇，完美適配本地、**SSH 遠端開發環境**與 **WSL (Windows Subsystem for Linux) 環境**。透過引導 AI 與用戶確認而非進行推測性操作，可將多次工具調用合併為單次回饋導向請求，大幅節省平台成本並提升開發效率。
 
-**🌐 Web-Only 架構優勢：**
-- 🚀 **簡化部署**：無需 GUI 依賴，安裝更輕量
-- 🌍 **跨平台相容**：支援所有作業系統和環境
-- 🔧 **維護簡單**：統一的 Web 介面，降低複雜度
-- 📦 **體積精簡**：移除重型 GUI 庫，安裝包大幅縮小
+**🌐 雙重介面架構優勢：**
+- 🖥️ **桌面應用程式**：原生跨平台桌面體驗，支援 Windows、macOS、Linux
+- 🌐 **Web UI 介面**：無需 GUI 依賴，適合遠端和 WSL 環境
+- 🔧 **靈活部署**：根據環境需求選擇最適合的介面模式
+- 📦 **統一功能**：兩種介面提供完全相同的功能體驗
 
-**🔮 未來計劃：** 我們計劃在功能穩定後重新引入桌面版應用程式，目前專注於 Web UI 功能的完善和優化。
+**🖥️ 桌面應用程式：** v2.5.0 新增跨平台桌面應用程式支援，基於 Tauri 框架，支援 Windows、macOS、Linux 三大平台，提供原生桌面體驗。
 
 **支援平台：** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
 ### 🔄 工作流程
 1. **AI 調用** → `mcp-feedback-enhanced` 工具
-2. **Web UI 啟動** → 自動開啟瀏覽器介面（純 Web 架構）
+2. **介面啟動** → 自動開啟桌面應用程式或瀏覽器介面（根據配置）
 3. **智能互動** → 提示詞選擇、文字輸入、圖片上傳、自動提交
 4. **即時回饋** → WebSocket 連線即時傳遞資訊給 AI
 5. **會話追蹤** → 自動記錄會話歷史與統計
@@ -30,81 +30,33 @@
 
 ## 🌟 主要功能
 
-### 🌐 純 Web UI 架構系統
-- **Web-Only 設計**：完全移除桌面 GUI 依賴，採用純 Web 介面
-- **通用相容性**：支援本地、SSH Remote 和 WSL 環境
-- **自動適配**：智能環境檢測與最佳配置
-- **輕量部署**：無需複雜的 GUI 環境配置
+### 🖥️ 雙重介面支援
+- **桌面應用程式**：基於 Tauri 的跨平台原生應用，支援 Windows、macOS、Linux
+- **Web UI 介面**：輕量級瀏覽器介面，適合遠端和 WSL 環境
+- **環境自動檢測**：智能識別 SSH Remote、WSL 等特殊環境
+- **統一功能體驗**：兩種介面提供完全相同的功能
 
-### 📝 智能提示詞管理系統（v2.4.0 新功能）
-- **CRUD 操作**：新增、編輯、刪除、使用常用提示詞
-- **使用統計**：追蹤使用頻率並智能排序
-- **快速應用**：一鍵選擇和應用提示詞
-- **自動提交整合**：支援自動提交標記和優先顯示
+### 📝 智能工作流程
+- **提示詞管理**：常用提示詞的 CRUD 操作、使用統計、智能排序
+- **自動定時提交**：1-86400 秒彈性計時器，支援暫停、恢復、取消
+- **會話管理追蹤**：本地檔案存儲、隱私控制、歷史匯出、即時統計
+- **連線監控**：WebSocket 狀態監控、自動重連、品質指示
+- **AI 工作摘要 Markdown 顯示**：支援豐富的 Markdown 語法渲染，包含標題、粗體、程式碼區塊、列表、連結等格式，提升內容可讀性
 
-### ⏰ 自動定時提交功能（v2.4.0 新功能）
-- **彈性計時**：可設定 1-86400 秒的倒數計時器
-- **視覺化顯示**：即時倒數顯示和狀態指示
-- **深度整合**：與提示詞管理系統無縫配合
-- **完整控制**：支援暫停、恢復、取消操作
+### 🎨 現代化體驗
+- **響應式設計**：適配不同螢幕尺寸，模組化 JavaScript 架構
+- **音效通知**：內建多種音效、支援自訂音效上傳、音量控制
+- **智能記憶**：輸入框高度記憶、一鍵複製、設定持久化
+- **多語言支援**：繁體中文、英文、簡體中文，即時切換
 
-### 📊 會話管理與追蹤（v2.4.3 重構增強）
-- **獨立頁籤設計**：從左側邊欄遷移到專屬頁籤，解決瀏覽器相容性問題
-- **本地歷史保存**：支援會話記錄本地保存，可設定保存期限
-- **隱私控制**：用戶訊息記錄支援三種隱私等級設定
-- **數據管理**：支援會話歷史匯出和清理功能
-- **即時統計**：今日會話數量和平均時長統計
-
-### 🔗 連線監控系統（v2.4.0 新功能）
-- **即時監控**：WebSocket 連線狀態即時監控
-- **品質指示**：延遲測量和連線品質指示
-- **自動重連**：智能重連機制和錯誤處理
-- **詳細統計**：完整的連線統計資訊
-
-### 🔊 音效通知系統（v2.4.3 新功能）
-- **智能提醒**：會話更新時自動播放音效通知
-- **多種音效**：內建經典提示音、通知鈴聲、輕柔鐘聲
-- **自訂音效**：支援上傳 MP3、WAV、OGG 格式的自訂音效
-- **完整控制**：音量調節、測試播放、音效管理功能
-
-### 🎨 現代化界面設計
-- **模組化架構**：JavaScript 完全模組化重構
-- **響應式設計**：適配不同螢幕尺寸和視窗大小
-- **統一風格**：一致的設計語言和視覺體驗
-- **智能佈局**：AI 摘要區域自動擴展，提交按鈕位置優化
-
-### 🖼️ 圖片支援
-- **格式支援**：PNG、JPG、JPEG、GIF、BMP、WebP
-- **上傳方式**：拖拽檔案 + 剪貼板粘貼（Ctrl+V）
-- **無限制上傳**：支援任意大小的圖片檔案，自動智能處理
-
-### 💾 智能記憶功能（v2.4.3 新功能）
-- **輸入框高度記憶**：自動保存和恢復文字輸入框的高度設定
-- **一鍵複製**：專案路徑和會話ID支援點擊複製到剪貼板
-- **設定持久化**：所有用戶偏好設定自動保存
-
-### 🌏 多語言
-- **三語支援**：繁體中文、英文、簡體中文
-- **智能偵測**：根據系統語言自動選擇
-- **即時切換**：介面內可直接切換語言
-- **完整國際化**：包含 tooltip 和按鈕提示的多語言支援
-
-### ✨ WSL 環境支援（v2.2.5）
-- **自動檢測**：智能識別 WSL (Windows Subsystem for Linux) 環境
-- **瀏覽器整合**：WSL 環境下自動啟動 Windows 瀏覽器
-- **多種啟動方式**：支援 `cmd.exe`、`powershell.exe`、`wslview` 等多種瀏覽器啟動方法
-- **無縫體驗**：WSL 用戶可直接使用 Web UI，無需額外配置
-
-### 🌐 SSH Remote 環境支援（v2.3.0 新功能）
-- **智能檢測**：自動識別 SSH Remote 環境（Cursor SSH Remote、VS Code Remote SSH 等）
-- **瀏覽器啟動指引**：當無法自動啟動瀏覽器時，提供清晰的解決方案
-- **端口轉發支援**：完整的端口轉發設定指引和故障排除
-- **MCP 整合優化**：改善與 MCP 系統的整合，提供更穩定的連接體驗
-- **詳細文檔**：[SSH Remote 環境使用指南](docs/zh-TW/ssh-remote/browser-launch-issues.md)
+### 🖼️ 圖片與媒體
+- **全格式支援**：PNG、JPG、JPEG、GIF、BMP、WebP
+- **便捷上傳**：拖拽檔案、剪貼板粘貼（Ctrl+V）
+- **無限制處理**：支援任意大小圖片，自動智能處理
 
 ## 🌐 介面預覽
 
-### Web UI 介面（v2.4.0 - Web-Only 架構）
+### Web UI 介面（v2.5.0 - 支援桌面應用程式）
 
 <div align="center">
   <img src="docs/zh-TW/images/web1.jpeg" width="400" alt="Web UI 主介面 - 提示詞管理與自動提交" />
@@ -119,7 +71,15 @@
 
 </details>
 
-*Web UI 介面 - 純 Web 架構，支援提示詞管理、自動提交、會話追蹤等智能功能*
+*Web UI 介面 - 支援桌面應用程式和 Web 介面，提供提示詞管理、自動提交、會話追蹤等智能功能*
+
+### 桌面應用程式介面（v2.5.0 新功能）
+
+<div align="center">
+  <img src="docs/zh-TW/images/desktop1.png" width="600" alt="桌面應用程式 - 原生跨平台桌面體驗" />
+</div>
+
+*桌面應用程式 - 基於 Tauri 框架的原生跨平台桌面應用，支援 Windows、macOS、Linux，提供與 Web UI 完全相同的功能*
 
 **快捷鍵支援**
 - `Ctrl+Enter`（Windows/Linux）/ `Cmd+Enter`（macOS）：提交回饋（主鍵盤與數字鍵盤皆支援）
@@ -170,6 +130,29 @@ uvx mcp-feedback-enhanced@latest test
 }
 ```
 
+**桌面應用程式配置**（v2.5.0 新功能 - 使用原生桌面應用程式）：
+```json
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
+      "command": "uvx",
+      "args": ["mcp-feedback-enhanced@latest"],
+      "timeout": 600,
+      "env": {
+        "MCP_DESKTOP_MODE": "true",
+        "MCP_WEB_PORT": "8765",
+        "MCP_DEBUG": "false"
+      },
+      "autoApprove": ["interactive_feedback"]
+    }
+  }
+}
+```
+
+**配置檔案範例**：
+- 桌面模式：[examples/mcp-config-desktop.json](examples/mcp-config-desktop.json)
+- Web 模式：[examples/mcp-config-web.json](examples/mcp-config-web.json)
+
 ### 3. 設定提示工程
 為了獲得最佳效果，請在 AI 助手中添加以下規則：
 
@@ -190,6 +173,7 @@ uvx mcp-feedback-enhanced@latest test
 |------|------|-----|------|
 | `MCP_DEBUG` | 調試模式 | `true`/`false` | `false` |
 | `MCP_WEB_PORT` | Web UI 端口 | `1024-65535` | `8765` |
+| `MCP_DESKTOP_MODE` | 桌面應用程式模式 | `true`/`false` | `false` |
 
 ### 測試選項
 ```bash
@@ -198,6 +182,7 @@ uvx mcp-feedback-enhanced@latest version       # 檢查版本
 
 # 介面測試
 uvx mcp-feedback-enhanced@latest test --web    # 測試 Web UI (自動持續運行)
+uvx mcp-feedback-enhanced@latest test --desktop # 測試桌面應用程式 (v2.5.0 新功能)
 
 # 調試模式
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
@@ -213,8 +198,20 @@ uv sync
 **本地測試方式**
 ```bash
 # 功能測試
+make test-func                                           # 標準功能測試
+make test-web                                            # Web UI 測試 (持續運行)
+make test-desktop-func                                   # 桌面應用功能測試
+
+# 或直接使用指令
 uv run python -m mcp_feedback_enhanced test              # 標準功能測試
-uvx --with-editable . mcp-feedback-enhanced test --web   # Web UI 測試 (持續運行)
+uvx --no-cache --with-editable . mcp-feedback-enhanced test --web   # Web UI 測試 (持續運行)
+uvx --no-cache --with-editable . mcp-feedback-enhanced test --desktop # 桌面應用測試
+
+# 桌面應用構建 (v2.5.0 新功能)
+make build-desktop                                       # 構建桌面應用 (debug 模式)
+make build-desktop-release                               # 構建桌面應用 (release 模式)
+make test-desktop                                        # 測試桌面應用
+make clean-desktop                                       # 清理桌面構建產物
 
 # 單元測試
 make test                                                # 運行所有單元測試
@@ -237,14 +234,15 @@ make quick-check                                        # 快速檢查並自動�
 
 📋 **完整版本更新記錄：** [RELEASE_NOTES/CHANGELOG.zh-TW.md](RELEASE_NOTES/CHANGELOG.zh-TW.md)
 
-### 最新版本亮點（v2.4.3）
-- 📋 **會話管理重構**: 從左側邊欄遷移到獨立頁籤，解決瀏覽器相容性問題
-- 🔊 **音效通知系統**: 會話更新音效提醒，支援內建和自訂音效
-- 📚 **會話歷史增強**: 本地保存、隱私控制、匯出清理功能
-- 💾 **智能記憶功能**: 輸入框高度記憶、一鍵複製等便利功能
-- 🎨 **介面佈局優化**: AI 摘要自動擴展、按鈕位置調整、簡化設計
-- 🌐 **多語言完善**: tooltip 和按鈕提示的完整國際化支援
-- 🐛 **問題修復**: 修復會話詳情按鈕、彈窗關閉延遲等用戶體驗問題
+### 最新版本亮點（v2.5.0）
+- 🖥️ **桌面應用程式**: 全新跨平台桌面應用，支援 Windows、macOS、Linux
+- 📋 **AI 工作摘要 Markdown 顯示**: 支援 Markdown 語法渲染，包含標題、粗體、程式碼區塊、列表、連結等格式
+- ⚡ **效能大幅提升**: 引入防抖/節流機制，減少不必要的渲染和網路請求
+- 📊 **會話歷史存儲改進**: 從 localStorage 改為伺服器端本地檔案存儲
+- 🌐 **網路連接穩定性**: 改進 WebSocket 重連機制，支援網路狀態檢測
+- 🎨 **UI 渲染優化**: 優化會話管理、統計資訊、狀態指示器的渲染效能
+- 🛠️ **構建流程優化**: 新增 Makefile 桌面應用構建命令和開發工具
+- 📚 **文檔完善**: 新增桌面應用構建指南和工作流程說明
 
 ## 🐛 常見問題
 
@@ -262,25 +260,29 @@ A: 請確認 MCP 工具狀態為綠燈。**解決方法**：反覆開關 MCP 工
 A: **解決方法**：完全關閉並重新啟動 VS Code 或 Cursor，重新開啟專案。
 
 ### 🔧 一般問題
-**Q: 如何使用舊版 GUI 介面？**
-A: v2.4.0 版本已完全移除 PyQt6 GUI 依賴，轉為純 Web UI 架構。如需使用舊版 GUI，請指定 v2.3.0 或更早版本：
-```bash
-# 使用 v2.3.0（最後支援 GUI 的版本）
-uvx mcp-feedback-enhanced@2.3.0
-
-# 或在 MCP 配置中指定版本
+**Q: 如何使用桌面應用程式？**
+A: v2.5.0 新增跨平台桌面應用程式支援。在 MCP 配置中設定 `"MCP_DESKTOP_MODE": "true"` 即可啟用：
+```json
 {
   "mcpServers": {
     "mcp-feedback-enhanced": {
       "command": "uvx",
-      "args": ["mcp-feedback-enhanced@2.3.0"],
+      "args": ["mcp-feedback-enhanced@latest"],
       "timeout": 600,
+      "env": {
+        "MCP_DESKTOP_MODE": "true",
+        "MCP_WEB_PORT": "8765"
+      },
       "autoApprove": ["interactive_feedback"]
     }
   }
 }
 ```
-**注意**：舊版本不包含 v2.4.0 的新功能（提示詞管理、自動提交、會話管理等）。
+**配置檔案範例**：[examples/mcp-config-desktop.json](examples/mcp-config-desktop.json)
+
+**Q: 如何使用舊版 PyQt6 GUI 介面？**
+A: v2.4.0 版本已完全移除 PyQt6 GUI 依賴。如需使用舊版 GUI，請指定 v2.3.0 或更早版本：`uvx mcp-feedback-enhanced@2.3.0`
+**注意**：舊版本不包含新功能（提示詞管理、自動提交、會話管理、桌面應用程式等）。
 
 **Q: 出現 "Unexpected token 'D'" 錯誤**
 A: 調試輸出干擾。設置 `MCP_DEBUG=false` 或移除該環境變數。

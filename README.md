@@ -8,21 +8,21 @@
 
 ## 🎯 Core Concept
 
-This is an [MCP server](https://modelcontextprotocol.io/) that establishes **feedback-oriented development workflows**, adopting a **pure Web UI architecture**, perfectly adapting to local, **SSH Remote environments** (Cursor SSH Remote, VS Code Remote SSH), and **WSL (Windows Subsystem for Linux) environments**. By guiding AI to confirm with users rather than making speculative operations, it can consolidate multiple tool calls into a single feedback-oriented request, dramatically reducing platform costs and improving development efficiency.
+This is an [MCP server](https://modelcontextprotocol.io/) that establishes **feedback-oriented development workflows**, providing **Web UI and Desktop Application** dual interface options, perfectly adapting to local, **SSH Remote environments** (Cursor SSH Remote, VS Code Remote SSH), and **WSL (Windows Subsystem for Linux) environments**. By guiding AI to confirm with users rather than making speculative operations, it can consolidate multiple tool calls into a single feedback-oriented request, dramatically reducing platform costs and improving development efficiency.
 
-**🌐 Web-Only Architecture Advantages:**
-- 🚀 **Simplified Deployment**: No GUI dependencies, lighter installation
-- 🌍 **Cross-Platform Compatibility**: Supports all operating systems and environments
-- 🔧 **Easy Maintenance**: Unified Web interface, reduced complexity
-- 📦 **Compact Size**: Removed heavy GUI libraries, significantly smaller installation package
+**🌐 Dual Interface Architecture Advantages:**
+- 🖥️ **Desktop Application**: Native cross-platform desktop experience, supporting Windows, macOS, Linux
+- 🌐 **Web UI Interface**: No GUI dependencies required, suitable for remote and WSL environments
+- 🔧 **Flexible Deployment**: Choose the most suitable interface mode based on environment requirements
+- 📦 **Unified Functionality**: Both interfaces provide exactly the same functional experience
 
-**🔮 Future Plans:** We plan to reintroduce desktop applications after feature stabilization, currently focusing on Web UI feature enhancement and optimization.
+**🖥️ Desktop Application:** v2.5.0 introduces cross-platform desktop application support based on Tauri framework, supporting Windows, macOS, and Linux platforms with native desktop experience.
 
 **Supported Platforms:** [Cursor](https://www.cursor.com) | [Cline](https://cline.bot) | [Windsurf](https://windsurf.com) | [Augment](https://www.augmentcode.com) | [Trae](https://www.trae.ai)
 
 ### 🔄 Workflow
 1. **AI Call** → `mcp-feedback-enhanced` tool
-2. **Web UI Launch** → Auto-open browser interface (pure Web architecture)
+2. **Interface Launch** → Auto-open desktop application or browser interface (based on configuration)
 3. **Smart Interaction** → Prompt selection, text input, image upload, auto-submit
 4. **Real-time Feedback** → WebSocket connection delivers information to AI instantly
 5. **Session Tracking** → Auto-record session history and statistics
@@ -30,85 +30,36 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 
 ## 🌟 Key Features
 
-### 🌐 Pure Web UI Architecture System
-- **Web-Only Design**: Completely removed desktop GUI dependencies, adopting pure Web interface
-- **Universal Compatibility**: Supports local, SSH Remote, and WSL environments
-- **Auto Adaptation**: Intelligent environment detection and optimal configuration
-- **Lightweight Deployment**: No complex GUI environment configuration required
+### 🖥️ Dual Interface Support
+- **Desktop Application**: Cross-platform native application based on Tauri, supporting Windows, macOS, Linux
+- **Web UI Interface**: Lightweight browser interface suitable for remote and WSL environments
+- **Automatic Environment Detection**: Intelligently recognizes SSH Remote, WSL and other special environments
+- **Unified Feature Experience**: Both interfaces provide exactly the same functionality
 
-### 📝 Smart Prompt Management System (v2.4.0 New Feature)
-- **CRUD Operations**: Create, edit, delete, and use common prompts
-- **Usage Statistics**: Track usage frequency with intelligent sorting
-- **Quick Application**: One-click selection and application of prompts
-- **Auto-Submit Integration**: Support auto-submit marking and priority display
+### 📝 Smart Workflow
+- **Prompt Management**: CRUD operations for common prompts, usage statistics, intelligent sorting
+- **Auto-Timed Submit**: 1-86400 second flexible timer, supports pause, resume, cancel
+- **Session Management & Tracking**: Local file storage, privacy controls, history export, real-time statistics
+- **Connection Monitoring**: WebSocket status monitoring, auto-reconnection, quality indicators
+- **AI Work Summary Markdown Display**: Support for rich Markdown syntax rendering including headers, bold text, code blocks, lists, links and other formats for enhanced content readability
 
-### ⏰ Auto-Timed Submit Feature (v2.4.0 New Feature)
-- **Flexible Timing**: Configurable countdown timer from 1-86400 seconds
-- **Visual Display**: Real-time countdown display and status indicators
-- **Deep Integration**: Seamless integration with prompt management system
-- **Complete Control**: Support pause, resume, and cancel operations
+### 🎨 Modern Experience
+- **Responsive Design**: Adapts to different screen sizes, modular JavaScript architecture
+- **Audio Notifications**: Built-in multiple sound effects, custom audio upload support, volume control
+- **Smart Memory**: Input box height memory, one-click copy, persistent settings
+- **Multi-language Support**: Traditional Chinese, English, Simplified Chinese, instant switching
 
-### 📊 Session Management & Tracking (v2.4.3 Refactored & Enhanced)
-- **Dedicated Tab Design**: Migrated from sidebar to dedicated tab, resolving browser compatibility issues
-- **Local History Storage**: Support for local session record storage with configurable retention periods
-- **Privacy Control**: User message recording with three privacy level settings
-- **Data Management**: Support for session history export and cleanup functionality
-- **Real-time Statistics**: Today's session count and average duration statistics
-
-### 🔗 Connection Monitoring System (v2.4.0 New Feature)
-- **Real-time Monitoring**: WebSocket connection status monitoring in real-time
-- **Quality Indicators**: Latency measurement and connection quality indicators
-- **Auto Reconnection**: Smart reconnection mechanism and error handling
-- **Detailed Statistics**: Complete connection statistical information
-
-### 🔊 Audio Notification System (v2.4.3 New Feature)
-- **Smart Alerts**: Automatically play audio notifications when sessions update
-- **Multiple Audio Options**: Built-in classic beep, notification ding, soft chime
-- **Custom Audio**: Support uploading custom audio files (MP3, WAV, OGG formats)
-- **Full Control**: Volume adjustment, test playback, and audio management features
-
-### 🎨 Modern Interface Design
-- **Modular Architecture**: JavaScript completely modularized refactoring
-- **Responsive Design**: Adapts to different screen sizes and window dimensions
-- **Unified Style**: Consistent design language and visual experience
-- **Smart Layout**: AI summary auto-expansion, optimized submit button positioning
-
-### 🖼️ Image Support
-- **Format Support**: PNG, JPG, JPEG, GIF, BMP, WebP
-- **Upload Methods**: Drag & drop files + clipboard paste (Ctrl+V)
-- **Unlimited Upload**: Support image files of any size with automatic smart processing
-
-### 💾 Smart Memory Features (v2.4.3 New Feature)
-- **Input Height Memory**: Automatically save and restore textarea input height settings
-- **One-Click Copy**: Project path and session ID support click-to-copy to clipboard
-- **Settings Persistence**: All user preference settings automatically saved
-
-### 🌏 Multi-language
-- **Three Languages**: English, Traditional Chinese, Simplified Chinese
-- **Smart Detection**: Auto-select based on system language
-- **Live Switching**: Change language directly within interface
-- **Complete Internationalization**: Includes multilingual support for tooltips and button hints
-
-### ✨ WSL Environment Support (v2.2.5)
-- **Auto Detection**: Intelligently identifies WSL (Windows Subsystem for Linux) environments
-- **Browser Integration**: Automatically launches Windows browser in WSL environments
-- **Multiple Launch Methods**: Supports `cmd.exe`, `powershell.exe`, `wslview` and other browser launch methods
-- **Seamless Experience**: WSL users can directly use Web UI without additional configuration
-
-### 🌐 SSH Remote Environment Support (v2.3.0 New Feature)
-- **Smart Detection**: Automatically identifies SSH Remote environments (Cursor SSH Remote, VS Code Remote SSH, etc.)
-- **Browser Launch Guidance**: Provides clear solutions when browser cannot launch automatically
-- **Port Forwarding Support**: Complete port forwarding setup guidance and troubleshooting
-- **MCP Integration Optimization**: Improved integration with MCP system for more stable connection experience
-- **Detailed Documentation**: [SSH Remote Environment Usage Guide](docs/en/ssh-remote/browser-launch-issues.md)
-- 🎯 **Auto-focus Input Box**: Automatically focus on feedback input box when window opens, improving user experience (Thanks @penn201500)
+### 🖼️ Images & Media
+- **Full Format Support**: PNG, JPG, JPEG, GIF, BMP, WebP
+- **Convenient Upload**: Drag & drop files, clipboard paste (Ctrl+V)
+- **Unlimited Processing**: Support for any size images, automatic intelligent processing
 
 ## 🌐 Interface Preview
 
-### Web UI Interface (v2.4.0 - Web-Only Architecture)
+### Web UI Interface (v2.5.0 - Desktop Application Support)
 
 <div align="center">
-  <img src="docs/en/images/web1.jpeg" width="400" alt="Web UI Main Interface - Prompt Management & Auto-Submit" />
+  <img src="docs/en/images/web1.jpeg" width="400" alt="Web UI Main Interface - Prompt Management & Auto Submit" />
 </div>
 
 <details>
@@ -120,12 +71,20 @@ This is an [MCP server](https://modelcontextprotocol.io/) that establishes **fee
 
 </details>
 
-*Web UI Interface - Pure Web architecture, supporting prompt management, auto-submit, session tracking and other smart features*
+*Web UI Interface - Supports desktop application and Web interface, providing prompt management, auto-submit, session tracking and other smart features*
 
-**Keyboard Shortcuts**
-- `Ctrl+Enter` (Windows/Linux) / `Cmd+Enter` (macOS): Submit feedback (supports both main keyboard and numpad)
-- `Ctrl+V` (Windows/Linux) / `Cmd+V` (macOS): Directly paste clipboard images
-- `Ctrl+I` (Windows/Linux) / `Cmd+I` (macOS): Quick focus input box (Thanks @penn201500)
+### Desktop Application Interface (v2.5.0 New Feature)
+
+<div align="center">
+  <img src="docs/en/images/desktop1.png" width="600" alt="Desktop Application - Native Cross-platform Desktop Experience" />
+</div>
+
+*Desktop Application - Native cross-platform desktop application based on Tauri framework, supporting Windows, macOS, Linux with exactly the same functionality as Web UI*
+
+**Shortcut Support**
+- `Ctrl+Enter`（Windows/Linux）/ `Cmd+Enter`（macOS）：Submit feedback (both main keyboard and numeric keypad supported)
+- `Ctrl+V`（Windows/Linux）/ `Cmd+V`（macOS）：Direct paste clipboard images
+- `Ctrl+I`（Windows/Linux）/ `Cmd+I`（macOS）：Quick focus input box (Thanks @penn201500)
 
 ## 🚀 Quick Start
 
@@ -138,7 +97,7 @@ pip install uv
 uvx mcp-feedback-enhanced@latest test
 ```
 
-### 2. MCP Configuration
+### 2. Configure MCP
 **Basic Configuration** (suitable for most users):
 ```json
 {
@@ -153,7 +112,7 @@ uvx mcp-feedback-enhanced@latest test
 }
 ```
 
-**Advanced Configuration** (custom environment needed):
+**Advanced Configuration** (requires custom environment):
 ```json
 {
   "mcpServers": {
@@ -171,17 +130,40 @@ uvx mcp-feedback-enhanced@latest test
 }
 ```
 
+**Desktop Application Configuration** (v2.5.0 new feature - using native desktop application):
+```json
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
+      "command": "uvx",
+      "args": ["mcp-feedback-enhanced@latest"],
+      "timeout": 600,
+      "env": {
+        "MCP_DESKTOP_MODE": "true",
+        "MCP_WEB_PORT": "8765",
+        "MCP_DEBUG": "false"
+      },
+      "autoApprove": ["interactive_feedback"]
+    }
+  }
+}
+```
+
+**Configuration File Examples**:
+- Desktop Mode: [examples/mcp-config-desktop.json](examples/mcp-config-desktop.json)
+- Web Mode: [examples/mcp-config-web.json](examples/mcp-config-web.json)
+
 ### 3. Prompt Engineering Setup
-For best results, add these rules to your AI assistant:
+For optimal results, add the following rules to your AI assistant:
 
 ```
 # MCP Interactive Feedback Rules
 
-1. During any process, task, or conversation, whether asking, responding, or completing stage tasks, must call MCP mcp-feedback-enhanced.
-2. When receiving user feedback, if feedback content is not empty, must call MCP mcp-feedback-enhanced again and adjust behavior based on feedback.
-3. Only when user explicitly indicates "end" or "no more interaction needed" can you stop calling MCP mcp-feedback-enhanced, then the process is complete.
-4. Unless receiving end command, all steps must repeatedly call MCP mcp-feedback-enhanced.
-5. Before completing the task, use the MCP mcp-feedback-enhanced to ask the user for feedback.
+1. During any process, task, or conversation, whether asking, replying, or completing phased tasks, you must call MCP mcp-feedback-enhanced.
+2. Whenever user feedback is received, if the feedback content is not empty, you must call MCP mcp-feedback-enhanced again and adjust behavior based on the feedback content.
+3. Only when the user explicitly indicates "end" or "no more interaction needed" can you stop calling MCP mcp-feedback-enhanced, and the process is considered complete.
+4. Unless receiving termination instructions, all steps must repeatedly call MCP mcp-feedback-enhanced.
+5. Before completing tasks, you must use the MCP mcp-feedback-enhanced tool to ask users for feedback.
 ```
 
 ## ⚙️ Advanced Settings
@@ -191,6 +173,7 @@ For best results, add these rules to your AI assistant:
 |----------|---------|--------|---------|
 | `MCP_DEBUG` | Debug mode | `true`/`false` | `false` |
 | `MCP_WEB_PORT` | Web UI port | `1024-65535` | `8765` |
+| `MCP_DESKTOP_MODE` | Desktop application mode | `true`/`false` | `false` |
 
 ### Testing Options
 ```bash
@@ -199,7 +182,7 @@ uvx mcp-feedback-enhanced@latest version       # Check version
 
 # Interface testing
 uvx mcp-feedback-enhanced@latest test --web    # Test Web UI (auto continuous running)
-uvx mcp-feedback-enhanced@latest test --enhanced # Enhanced test suite
+uvx mcp-feedback-enhanced@latest test --desktop # Test desktop application (v2.5.0 new feature)
 
 # Debug mode
 MCP_DEBUG=true uvx mcp-feedback-enhanced@latest test
@@ -214,18 +197,30 @@ uv sync
 
 **Local Testing Methods**
 ```bash
-# Functional Testing
-uv run python -m mcp_feedback_enhanced test              # Standard functional testing
-uvx --with-editable . mcp-feedback-enhanced test --web   # Web UI testing (continuous running)
+# Functional testing
+make test-func                                           # Standard functional testing
+make test-web                                            # Web UI testing (continuous running)
+make test-desktop-func                                   # Desktop application functional testing
 
-# Unit Testing
+# Or use direct commands
+uv run python -m mcp_feedback_enhanced test              # Standard functional testing
+uvx --no-cache --with-editable . mcp-feedback-enhanced test --web   # Web UI testing (continuous running)
+uvx --no-cache --with-editable . mcp-feedback-enhanced test --desktop # Desktop application testing
+
+# Desktop application build (v2.5.0 new feature)
+make build-desktop                                       # Build desktop application (debug mode)
+make build-desktop-release                               # Build desktop application (release mode)
+make test-desktop                                        # Test desktop application
+make clean-desktop                                       # Clean desktop build artifacts
+
+# Unit testing
 make test                                                # Run all unit tests
 make test-fast                                          # Fast testing (skip slow tests)
-make test-cov                                           # Testing with coverage report
+make test-cov                                           # Test and generate coverage report
 
-# Code Quality Checks
-make check                                              # Complete code quality checks
-make quick-check                                        # Quick check with auto-fix
+# Code quality checks
+make check                                              # Complete code quality check
+make quick-check                                        # Quick check and auto-fix
 ```
 
 **Testing Descriptions**
@@ -236,91 +231,95 @@ make quick-check                                        # Quick check with auto-
 
 ## 🆕 Version History
 
-📋 **Complete Version History:** [RELEASE_NOTES/CHANGELOG.en.md](RELEASE_NOTES/CHANGELOG.en.md)
+📋 **Complete Version History:** [RELEASE_NOTES/CHANGELOG.md](RELEASE_NOTES/CHANGELOG.md)
 
-### Latest Version Highlights (v2.4.3)
-- 📋 **Session Management Refactoring**: Migrated from sidebar to dedicated tab, resolving browser compatibility issues
-- 🔊 **Audio Notification System**: Session update audio alerts with built-in and custom audio support
-- 📚 **Enhanced Session History**: Local storage, privacy control, export and cleanup functionality
-- 💾 **Smart Memory Features**: Input height memory, one-click copy, and other convenience features
-- 🎨 **Interface Layout Optimization**: AI summary auto-expansion, button repositioning, simplified design
-- 🌐 **Multilingual Enhancement**: Complete internationalization support for tooltips and button hints
-- 🐛 **Bug Fixes**: Fixed session details button, modal close delay, and other user experience issues
-- 🛠️ **Technical Architecture Upgrade**: JavaScript modular refactoring, adopting modern development patterns
+### Latest Version Highlights (v2.5.0)
+- 🖥️ **Desktop Application**: Brand new cross-platform desktop application supporting Windows, macOS, Linux
+- 📋 **AI Work Summary Markdown Display**: Support for Markdown syntax rendering including headers, bold text, code blocks, lists, links and other formats
+- ⚡ **Significant Performance Enhancement**: Introduced debounce/throttle mechanisms to reduce unnecessary rendering and network requests
+- 📊 **Session History Storage Improvement**: Migrated from localStorage to server-side local file storage
+- 🌐 **Network Connection Stability**: Improved WebSocket reconnection mechanism with network status detection
+- 🎨 **UI Rendering Optimization**: Optimized rendering performance for session management, statistics, and status indicators
+- 🛠️ **Build Process Optimization**: Added Makefile desktop application build commands and development tools
+- 📚 **Documentation Enhancement**: Added desktop application build guide and workflow documentation
 
 ## 🐛 Common Issues
 
 ### 🌐 SSH Remote Environment Issues
 **Q: Browser cannot launch in SSH Remote environment**
-A: This is normal behavior. SSH Remote environments have no graphical interface, requiring manual opening in local browser. For detailed solutions, see: [SSH Remote Environment Usage Guide](docs/en/ssh-remote/browser-launch-issues.md)
+A: This is normal. SSH Remote environments have no graphical interface, requiring manual opening in local browser. For detailed solutions, refer to: [SSH Remote Environment Usage Guide](docs/en/ssh-remote/browser-launch-issues.md)
 
 **Q: Why am I not receiving new MCP feedback?**
-A: There might be a WebSocket connection issue. **Solution**: Simply refresh the browser page.
+A: Likely a WebSocket connection issue. **Solution**: Directly refresh the browser page.
 
 **Q: Why isn't MCP being called?**
-A: Please confirm the MCP tool status shows green light. **Solution**: Toggle the MCP tool on/off repeatedly, wait a few seconds for system reconnection.
+A: Please confirm MCP tool status shows green light. **Solution**: Repeatedly toggle MCP tool on/off, wait a few seconds for system reconnection.
 
 **Q: Augment cannot start MCP**
-A: **Solution**: Completely close and restart VS Code or Cursor, then reopen the project.
+A: **Solution**: Completely close and restart VS Code or Cursor, reopen the project.
 
 ### 🔧 General Issues
-**Q: How to use the legacy GUI interface?**
-A: v2.4.0 has completely removed PyQt6 GUI dependencies and transitioned to a pure Web UI architecture. To use the legacy GUI, please specify v2.3.0 or earlier versions:
-```bash
-# Use v2.3.0 (last version supporting GUI)
-uvx mcp-feedback-enhanced@2.3.0
-
-# Or specify version in MCP configuration
+**Q: How to use desktop application?**
+A: v2.5.0 introduces cross-platform desktop application support. Set `"MCP_DESKTOP_MODE": "true"` in MCP configuration to enable:
+```json
 {
   "mcpServers": {
     "mcp-feedback-enhanced": {
       "command": "uvx",
-      "args": ["mcp-feedback-enhanced@2.3.0"],
+      "args": ["mcp-feedback-enhanced@latest"],
       "timeout": 600,
+      "env": {
+        "MCP_DESKTOP_MODE": "true",
+        "MCP_WEB_PORT": "8765"
+      },
       "autoApprove": ["interactive_feedback"]
     }
   }
 }
 ```
-**Note**: Legacy versions do not include v2.4.0 new features (prompt management, auto-submit, session management, etc.).
+**Configuration File Example**: [examples/mcp-config-desktop.json](examples/mcp-config-desktop.json)
 
-**Q: Getting "Unexpected token 'D'" error**
+**Q: How to use legacy PyQt6 GUI interface?**
+A: v2.4.0 completely removed PyQt6 GUI dependencies. To use legacy GUI, specify v2.3.0 or earlier: `uvx mcp-feedback-enhanced@2.3.0`
+**Note**: Legacy versions don't include new features (prompt management, auto-submit, session management, desktop application, etc.).
+
+**Q: "Unexpected token 'D'" error appears**
 A: Debug output interference. Set `MCP_DEBUG=false` or remove the environment variable.
 
 **Q: Chinese character garbled text**
 A: Fixed in v2.0.3. Update to latest version: `uvx mcp-feedback-enhanced@latest`
 
-**Q: Multi-screen window disappearing or positioning errors**
-A: Fixed in v2.1.1. Go to "⚙️ Settings" tab, check "Always show window at primary screen center" to resolve. Especially useful for T-shaped screen arrangements and other complex multi-monitor configurations.
+**Q: Window disappears or positioning errors in multi-screen environment**
+A: Fixed in v2.1.1. Go to "⚙️ Settings" tab, check "Always show window at primary screen center" to resolve. Especially suitable for T-shaped screen arrangements and other complex multi-screen configurations.
 
-**Q: Image upload fails**
-A: Check file format (PNG/JPG/JPEG/GIF/BMP/WebP). System supports image files of any size.
+**Q: Image upload failure**
+A: Check file format (PNG/JPG/JPEG/GIF/BMP/WebP). System supports any size image files.
 
-**Q: Web UI won't start**
-A: Check firewall settings or try using a different port.
+**Q: Web UI cannot start**
+A: Check firewall settings or try using different ports.
 
-**Q: UV Cache taking up too much disk space**
-A: Due to frequent use of `uvx` commands, cache may accumulate to tens of GB. Regular cleanup is recommended:
+**Q: UV Cache occupies too much disk space**
+A: Due to frequent use of `uvx` commands, cache may accumulate to tens of GB. Regular cleanup recommended:
 ```bash
-# Check cache size and detailed information
+# View cache size and detailed information
 python scripts/cleanup_cache.py --size
 
-# Preview cleanup content (without actually cleaning)
+# Preview cleanup content (no actual cleanup)
 python scripts/cleanup_cache.py --dry-run
 
 # Execute standard cleanup
 python scripts/cleanup_cache.py --clean
 
-# Force cleanup (attempts to close related processes, solves Windows file lock issues)
+# Force cleanup (attempts to close related programs, solving Windows file occupation issues)
 python scripts/cleanup_cache.py --force
 
-# Or use uv command directly
+# Or directly use uv command
 uv cache clean
 ```
-For detailed instructions, see: [Cache Management Guide](docs/en/cache-management.md)
+For detailed instructions, refer to: [Cache Management Guide](docs/en/cache-management.md)
 
 **Q: AI models cannot parse images**
-A: Various AI models (including Gemini Pro 2.5, Claude, etc.) may have instability in image parsing, sometimes correctly identifying and sometimes unable to parse uploaded image content. This is a known limitation of AI visual understanding technology. Recommendations:
+A: Various AI models (including Gemini Pro 2.5, Claude, etc.) may have instability in image parsing, sometimes correctly recognizing and sometimes unable to parse uploaded image content. This is a known limitation of AI visual understanding technology. Recommendations:
 1. Ensure good image quality (high contrast, clear text)
 2. Try uploading multiple times, retries usually succeed
 3. If parsing continues to fail, try adjusting image size or format
@@ -331,7 +330,7 @@ A: Various AI models (including Gemini Pro 2.5, Claude, etc.) may have instabili
 **Fábio Ferreira** - [X @fabiomlferreira](https://x.com/fabiomlferreira)
 **Original Project:** [noopstudios/interactive-feedback-mcp](https://github.com/noopstudios/interactive-feedback-mcp)
 
-If you find this useful, please:
+If you find it useful, please:
 - ⭐ [Star the original project](https://github.com/noopstudios/interactive-feedback-mcp)
 - 📱 [Follow the original author](https://x.com/fabiomlferreira)
 
@@ -348,7 +347,7 @@ If you find this useful, please:
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details
+MIT License - See [LICENSE](LICENSE) file for details
 
 ---
 **🌟 Welcome to Star and share with more developers!**

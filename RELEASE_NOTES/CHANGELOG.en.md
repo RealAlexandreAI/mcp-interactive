@@ -2,6 +2,45 @@
 
 This document records all version updates for **MCP Feedback Enhanced**.
 
+## [v2.5.0] - 2025-06-15 - Desktop Application & Performance Optimization
+
+### 🌟 Version Highlights
+Introducing cross-platform desktop application supporting Windows, macOS, and Linux. Significant performance improvements with debounce/throttle mechanisms and enhanced system stability.
+
+### ✨ New Features
+- 🖥️ **Desktop Application**: Native cross-platform desktop app based on Tauri framework, supporting Windows x64, macOS (Intel/Apple Silicon), Linux x64
+- 📊 **Server-side Session History Storage**: Session records migrated from localStorage to server-side local file storage for improved data consistency and reliability
+- 🔧 **Multi-platform Build Support**: Complete CI/CD pipeline supporting automated multi-platform desktop application builds
+- 📝 **Desktop Mode Configuration**: Added `MCP_DESKTOP_MODE` environment variable for desktop/web mode switching
+- 📋 **AI Work Summary Markdown Display**: Support for Markdown syntax rendering including headers, bold text, code blocks, lists, links and other formats
+
+### 🚀 Improvements
+- ⚡ **Significant Performance Enhancement**: Introduced debounce/throttle mechanisms to reduce unnecessary rendering and network requests
+- 🌐 **Network Connection Stability**: Improved WebSocket reconnection mechanism with network status detection and intelligent reconnection
+- 🎨 **UI Rendering Optimization**: Optimized rendering performance for session management, statistics, and status indicators
+- 📱 **Responsive Improvements**: Adjusted heartbeat frequency and timeout thresholds to reduce system load
+- 🔄 **Enhanced Modularity**: Optimized JavaScript module structure with better logging management
+
+### 🐛 Bug Fixes
+- 🌐 **Network Reconnection Improvements**: Optimized reconnection algorithm with exponential backoff strategy and random jitter
+- 🖥️ **Desktop Mode Adaptation**: Fixed browser auto-launch issues in desktop mode
+- 📊 **Rendering Performance Fixes**: Resolved duplicate rendering and unnecessary state update issues
+
+### 🛠️ Technical Improvements
+- 🏗️ **Build Process Optimization**: Added Makefile desktop application build commands supporting debug/release modes
+- 📦 **Dependency Management**: Integrated Rust toolchain supporting cross-platform compilation and packaging
+- 🔍 **Enhanced Development Tools**: Added environment checks, build validation, and cleanup tools
+- 📚 **Documentation Enhancement**: Added desktop application build guide and workflow documentation
+- 🔒 **Security Enhancement**: Introduced DOMPurify for XSS protection ensuring content security
+
+### 📋 Usage Instructions
+- **Desktop Mode**: Set `"MCP_DESKTOP_MODE": "true"` in MCP configuration (refer to `examples/mcp-config-desktop.json`)
+- **Web Mode**: Set `"MCP_DESKTOP_MODE": "false"` in MCP configuration (default, refer to `examples/mcp-config-web.json`)
+- **Test Desktop Mode**: `uvx mcp-feedback-enhanced@latest test --desktop`
+- **Build Desktop Application**: `make build-desktop-release`
+
+---
+
 ## [v2.4.3] - 2025-06-14 - Session Management Refactoring & Audio Notifications
 
 ### 🌟 Version Highlights

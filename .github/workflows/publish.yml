@@ -532,6 +532,24 @@ jobs:
         echo "📁 桌面應用目錄內容："
         ls -la src/mcp_feedback_enhanced/desktop_release/
 
+    - name: Add desktop binaries to git temporarily (for packaging)
+      if: ${{ github.event.inputs.include_desktop == 'true' }}
+      run: |
+        echo "📦 臨時添加桌面二進制文件到 Git 以便打包..."
+
+        # 臨時添加桌面二進制文件到 Git
+        if [ -d "src/mcp_feedback_enhanced/desktop_release" ]; then
+          # 強制添加二進制文件（忽略 .gitignore）
+          git add -f src/mcp_feedback_enhanced/desktop_release/*.exe || true
+          git add -f src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-* || true
+
+          echo "✅ 桌面二進制文件已臨時添加到 Git"
+          echo "📁 添加的文件："
+          git ls-files src/mcp_feedback_enhanced/desktop_release/ | grep -E '\.(exe|mcp-feedback-enhanced-desktop-)' || echo "  沒有找到二進制文件"
+        else
+          echo "⚠️ 桌面應用目錄不存在"
+        fi
+
     - name: Build package
       run: uv build
 
@@ -543,6 +561,20 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
+
+    - name: Clean up temporary desktop binaries from git
+      if: ${{ github.event.inputs.include_desktop == 'true' }}
+      run: |
+        echo "🧹 清理臨時添加的桌面二進制文件..."
+
+        # 重置 Git 狀態，移除臨時添加的二進制文件
+        git reset HEAD src/mcp_feedback_enhanced/desktop_release/*.exe 2>/dev/null || true
+        git reset HEAD src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-* 2>/dev/null || true
+
+        # 清理工作目錄中的未追蹤文件
+        git checkout -- src/mcp_feedback_enhanced/desktop_release/ 2>/dev/null || true
+
+        echo "✅ 桌面二進制文件已從 Git 中移除"
 
     - name: Push changes and tags
       run: |

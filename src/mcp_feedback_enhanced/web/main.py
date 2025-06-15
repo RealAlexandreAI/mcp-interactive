@@ -613,7 +613,7 @@ class WebUIManager:
                     debug_log("使用發佈包中的桌面應用程式模組")
                     return desktop_func
                 except ImportError:
-                    pass
+                    debug_log("發佈包中未找到桌面應用程式模組，嘗試開發環境...")
 
                 # 回退到開發環境路徑
                 import sys
@@ -633,6 +633,7 @@ class WebUIManager:
                     return dev_func
                 except ImportError:
                     debug_log("無法從開發環境路徑導入桌面應用程式模組")
+                    debug_log("這可能是 PyPI 安裝的版本，桌面應用功能不可用")
                     raise
 
             launch_desktop_app_func = import_desktop_app()

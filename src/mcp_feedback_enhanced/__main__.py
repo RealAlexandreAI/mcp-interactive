@@ -276,7 +276,7 @@ def test_desktop_app():
                     print("✅ 找到發佈包中的桌面應用程式模組")
                     return desktop_func
                 except ImportError:
-                    pass
+                    print("🔍 發佈包中未找到桌面應用程式模組，嘗試開發環境...")
 
                 # 回退到開發環境路徑
                 tauri_python_path = os.path.join(
@@ -295,12 +295,17 @@ def test_desktop_app():
                         print("❌ 無法從開發環境路徑導入桌面應用程式模組")
                         return None
                 else:
-                    print(f"⚠️  Tauri Python 模組路徑不存在: {tauri_python_path}")
-                    print("💡 請確保已正確建立 PyTauri 專案結構")
+                    print(f"⚠️  開發環境路徑不存在: {tauri_python_path}")
+                    print("💡 這可能是 PyPI 安裝的版本，桌面應用功能不可用")
                     return None
 
             launch_desktop_app_func = import_desktop_app()
             if launch_desktop_app_func is None:
+                print("❌ 桌面應用程式不可用")
+                print("💡 可能的原因：")
+                print("   1. 此版本不包含桌面應用程式二進制檔案")
+                print("   2. 請使用包含桌面應用的版本，或使用 Web 模式")
+                print("   3. Web 模式指令：uvx mcp-feedback-enhanced test --web")
                 return False
 
             print("✅ 桌面應用程式模組導入成功")

@@ -71,8 +71,9 @@ src-tauri/WixTools/
 src-tauri/gen/
 
 # Desktop application binaries (these should be built and copied by build script)
-src/mcp_feedback_enhanced/desktop_release/*
-src/mcp_feedback_enhanced/desktop_app/
+# Note: desktop_app module should be tracked, only exclude large binaries
+src/mcp_feedback_enhanced/desktop_release/*.exe
+src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-*
 src/mcp_feedback_enhanced/desktop/mcp-feedback-enhanced-desktop
 
 

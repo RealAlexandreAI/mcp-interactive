@@ -14,6 +14,11 @@
 
     const DOMUtils = window.MCPFeedback.Utils.DOM;
     const TimeUtils = window.MCPFeedback.Utils.Time;
+
+    // 創建模組專用日誌器
+    const logger = window.MCPFeedback.Logger ?
+        new window.MCPFeedback.Logger({ moduleName: 'SessionUIRenderer' }) :
+        console;
     const StatusUtils = window.MCPFeedback.Utils.Status;
 
     /**
@@ -35,11 +40,26 @@
         this.activeTimeTimer = null;
         this.currentSessionData = null;
 
+        // 渲染防抖機制
+        this.renderDebounceTimers = {
+            stats: null,
+            history: null,
+            currentSession: null
+        };
+        this.renderDebounceDelay = options.renderDebounceDelay || 100; // 預設 100ms 防抖延遲
+
+        // 快取上次渲染的數據，避免不必要的重渲染
+        this.lastRenderedData = {
+            stats: null,
+            historyLength: 0,
+            currentSessionId: null
+        };
+
         this.initializeElements();
         this.initializeProjectPathDisplay();
         this.startActiveTimeTimer();
 
-        console.log('🎨 SessionUIRenderer 初始化完成');
+        logger.info('SessionUIRenderer 初始化完成，渲染防抖延遲:', this.renderDebounceDelay + 'ms');
     }
 
     /**
@@ -109,18 +129,49 @@
     };
 
     /**
-     * 渲染當前會話
+     * 渲染當前會話（帶防抖機制）
      */
     SessionUIRenderer.prototype.renderCurrentSession = function(sessionData) {
         if (!this.currentSessionCard || !sessionData) return;
 
-        console.log('🎨 渲染當前會話:', sessionData);
+        const self = this;
 
         // 檢查是否是新會話（會話 ID 變更）
         const isNewSession = !this.currentSessionData ||
                             this.currentSessionData.session_id !== sessionData.session_id;
 
-        // 更新當前會話數據
+        // 檢查數據是否有變化
+        if (!isNewSession && self.lastRenderedData.currentSessionId === sessionData.session_id &&
+            self.currentSessionData &&
+            self.currentSessionData.status === sessionData.status &&
+            self.currentSessionData.summary === sessionData.summary) {
+            // 數據沒有重要變化，跳過渲染
+            return;
+        }
+
+        // 清除之前的防抖定時器
+        if (self.renderDebounceTimers.currentSession) {
+            clearTimeout(self.renderDebounceTimers.currentSession);
+        }
+
+        // 對於新會話，立即渲染；對於更新，使用防抖
+        if (isNewSession) {
+            self._performCurrentSessionRender(sessionData, isNewSession);
+        } else {
+            self.renderDebounceTimers.currentSession = setTimeout(function() {
+                self._performCurrentSessionRender(sessionData, false);
+            }, self.renderDebounceDelay);
+        }
+    };
+
+    /**
+     * 執行實際的當前會話渲染
+     */
+    SessionUIRenderer.prototype._performCurrentSessionRender = function(sessionData, isNewSession) {
+        console.log('🎨 渲染當前會話:', sessionData);
+
+        // 更新快取
+        this.lastRenderedData.currentSessionId = sessionData.session_id;
         this.currentSessionData = sessionData;
 
         // 如果是新會話，重置活躍時間定時器
@@ -334,12 +385,38 @@
     };
 
     /**
-     * 渲染會話歷史列表
+     * 渲染會話歷史列表（帶防抖機制）
      */
     SessionUIRenderer.prototype.renderSessionHistory = function(sessionHistory) {
-        if (!this.historyList) return;
+        if (!this.historyList || !sessionHistory) return;
 
+        const self = this;
+
+        // 檢查數據是否有變化（簡單比較長度）
+        if (self.lastRenderedData.historyLength === sessionHistory.length) {
+            // 長度沒有變化，跳過渲染（可以進一步優化為深度比較）
+            return;
+        }
+
+        // 清除之前的防抖定時器
+        if (self.renderDebounceTimers.history) {
+            clearTimeout(self.renderDebounceTimers.history);
+        }
+
+        // 設置新的防抖定時器
+        self.renderDebounceTimers.history = setTimeout(function() {
+            self._performHistoryRender(sessionHistory);
+        }, self.renderDebounceDelay);
+    };
+
+    /**
+     * 執行實際的會話歷史渲染
+     */
+    SessionUIRenderer.prototype._performHistoryRender = function(sessionHistory) {
         console.log('🎨 渲染會話歷史:', sessionHistory.length, '個會話');
+
+        // 更新快取
+        this.lastRenderedData.historyLength = sessionHistory.length;
 
         // 清空現有內容
         DOMUtils.clearElement(this.historyList);
@@ -519,30 +596,59 @@
     };
 
     /**
-     * 渲染統計資訊
+     * 渲染統計資訊（帶防抖機制）
      */
     SessionUIRenderer.prototype.renderStats = function(stats) {
-        console.log('🎨 渲染統計資訊:', stats);
-        console.log('🎨 統計元素狀態:', {
-            todayCount: !!this.statsElements.todayCount,
-            averageDuration: !!this.statsElements.averageDuration
-        });
+        if (!stats) return;
+
+        const self = this;
+
+        // 檢查數據是否有變化
+        if (self.lastRenderedData.stats &&
+            self.lastRenderedData.stats.todayCount === stats.todayCount &&
+            self.lastRenderedData.stats.averageDuration === stats.averageDuration) {
+            // 數據沒有變化，跳過渲染
+            return;
+        }
+
+        // 清除之前的防抖定時器
+        if (self.renderDebounceTimers.stats) {
+            clearTimeout(self.renderDebounceTimers.stats);
+        }
+
+        // 設置新的防抖定時器
+        self.renderDebounceTimers.stats = setTimeout(function() {
+            self._performStatsRender(stats);
+        }, self.renderDebounceDelay);
+    };
+
+    /**
+     * 執行實際的統計資訊渲染
+     */
+    SessionUIRenderer.prototype._performStatsRender = function(stats) {
+        logger.debug('渲染統計資訊:', stats);
+
+        // 更新快取
+        this.lastRenderedData.stats = {
+            todayCount: stats.todayCount,
+            averageDuration: stats.averageDuration
+        };
 
         // 更新今日會話數
         if (this.statsElements.todayCount) {
             DOMUtils.safeSetTextContent(this.statsElements.todayCount, stats.todayCount.toString());
-            console.log('🎨 已更新今日會話數:', stats.todayCount);
+            logger.debug('已更新今日會話數:', stats.todayCount);
         } else {
-            console.warn('🎨 找不到今日會話數元素 (.stat-today-count)');
+            logger.warn('找不到今日會話數元素 (.stat-today-count)');
         }
 
         // 更新今日平均時長
         if (this.statsElements.averageDuration) {
             const durationText = TimeUtils.formatDuration(stats.averageDuration);
             DOMUtils.safeSetTextContent(this.statsElements.averageDuration, durationText);
-            console.log('🎨 已更新今日平均時長:', durationText);
+            logger.debug('已更新今日平均時長:', durationText);
         } else {
-            console.warn('🎨 找不到平均時長元素 (.stat-average-duration)');
+            logger.warn('找不到平均時長元素 (.stat-average-duration)');
         }
     };
 
@@ -624,11 +730,24 @@
         // 停止定時器
         this.stopActiveTimeTimer();
 
+        // 清理防抖定時器
+        Object.keys(this.renderDebounceTimers).forEach(key => {
+            if (this.renderDebounceTimers[key]) {
+                clearTimeout(this.renderDebounceTimers[key]);
+                this.renderDebounceTimers[key] = null;
+            }
+        });
+
         // 清理引用
         this.currentSessionCard = null;
         this.historyList = null;
         this.statsElements = {};
         this.currentSessionData = null;
+        this.lastRenderedData = {
+            stats: null,
+            historyLength: 0,
+            currentSessionId: null
+        };
 
         console.log('🎨 SessionUIRenderer 清理完成');
     };

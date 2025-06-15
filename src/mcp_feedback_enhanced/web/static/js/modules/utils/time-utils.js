@@ -432,7 +432,8 @@
     };
 
     // 將 TimeUtils 加入命名空間
-    window.MCPFeedback.Utils.Time = TimeUtils;
+    window.MCPFeedback.TimeUtils = TimeUtils;
+    window.MCPFeedback.Utils.Time = TimeUtils; // 保持向後相容
 
     console.log('✅ TimeUtils 模組載入完成');
 

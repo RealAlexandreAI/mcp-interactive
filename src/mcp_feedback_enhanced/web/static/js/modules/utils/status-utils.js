@@ -395,7 +395,8 @@
     };
 
     // 將 StatusUtils 加入命名空間
-    window.MCPFeedback.Utils.Status = StatusUtils;
+    window.MCPFeedback.StatusUtils = StatusUtils;
+    window.MCPFeedback.Utils.Status = StatusUtils; // 保持向後相容
 
     console.log('✅ StatusUtils 模組載入完成');
 

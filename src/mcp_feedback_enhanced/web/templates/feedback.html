@@ -1098,6 +1098,9 @@
     <!-- WebSocket 和 JavaScript -->
     <script src="/static/js/i18n.js?v=2025010510"></script>
     <!-- 載入所有模組 -->
+    <!-- 核心模組（最先載入） -->
+    <script src="/static/js/modules/logger.js?v=2025010510"></script>
+
     <!-- 工具模組 -->
     <script src="/static/js/modules/utils/dom-utils.js?v=2025010510"></script>
     <script src="/static/js/modules/utils/time-utils.js?v=2025010510"></script>
@@ -1137,27 +1140,52 @@
         async function initializeApp() {
             const sessionId = '{{ session_id }}';
 
-            // 檢查所有必要的模組是否已載入
-            if (!window.MCPFeedback ||
-                !window.MCPFeedback.Utils ||
-                !window.MCPFeedback.ConnectionMonitor ||
-                !window.MCPFeedback.SessionManager ||
-                !window.MCPFeedback.FeedbackApp) {
-                console.error('❌ 模組載入不完整，延遲初始化...');
+            // 檢查核心依賴
+            const requiredModules = [
+                'MCPFeedback',
+                'MCPFeedback.Logger',
+                'MCPFeedback.Utils',
+                'MCPFeedback.DOMUtils',
+                'MCPFeedback.TimeUtils',
+                'MCPFeedback.StatusUtils',
+                'MCPFeedback.ConnectionMonitor',
+                'MCPFeedback.SessionManager',
+                'MCPFeedback.FeedbackApp'
+            ];
+
+            const missingModules = requiredModules.filter(modulePath => {
+                const parts = modulePath.split('.');
+                let current = window;
+                for (const part of parts) {
+                    if (!current[part]) return true;
+                    current = current[part];
+                }
+                return false;
+            });
+
+            if (missingModules.length > 0) {
+                const logger = window.MCPFeedback?.logger || console;
+                logger.warn('模組載入不完整，缺少:', missingModules.join(', '));
                 setTimeout(initializeApp, 100);
                 return;
             }
 
             try {
+                const logger = window.MCPFeedback.logger;
+                logger.info('開始初始化應用程式...');
+
                 // 確保 I18nManager 已經初始化
                 if (window.i18nManager) {
+                    logger.debug('初始化國際化管理器...');
                     await window.i18nManager.init();
                 }
 
                 // 初始化 FeedbackApp（使用新的命名空間）
+                logger.debug('創建 FeedbackApp 實例...');
                 window.feedbackApp = new window.MCPFeedback.FeedbackApp(sessionId);
 
                 // 初始化應用程式
+                logger.debug('初始化 FeedbackApp...');
                 await window.feedbackApp.init();
 
                 // 設置全域引用，讓 SessionManager 可以被 HTML 中的 onclick 調用
@@ -1165,9 +1193,10 @@
                     window.MCPFeedback.app = window.feedbackApp;
                 }
 
-                console.log('✅ 應用程式初始化完成');
+                logger.info('應用程式初始化完成');
             } catch (error) {
-                console.error('❌ 應用程式初始化失敗:', error);
+                const logger = window.MCPFeedback?.logger || console;
+                logger.error('應用程式初始化失敗:', error);
             }
         }
 

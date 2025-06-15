@@ -35,9 +35,31 @@
         // 回調函數
         this.onTabChange = options.onTabChange || null;
         this.onLayoutModeChange = options.onLayoutModeChange || null;
-        
+
+        // 初始化防抖函數
+        this.initDebounceHandlers();
+
         this.initUIElements();
     }
+
+    /**
+     * 初始化防抖處理器
+     */
+    UIManager.prototype.initDebounceHandlers = function() {
+        // 為狀態指示器更新添加防抖
+        this._debouncedUpdateStatusIndicator = Utils.DOM.debounce(
+            this._originalUpdateStatusIndicator.bind(this),
+            100,
+            false
+        );
+
+        // 為狀態指示器元素更新添加防抖
+        this._debouncedUpdateStatusIndicatorElement = Utils.DOM.debounce(
+            this._originalUpdateStatusIndicatorElement.bind(this),
+            50,
+            false
+        );
+    };
 
     /**
      * 初始化 UI 元素
@@ -266,23 +288,39 @@
     };
 
     /**
-     * 更新狀態指示器
+     * 更新狀態指示器（原始版本，供防抖使用）
      */
-    UIManager.prototype.updateStatusIndicator = function() {
+    UIManager.prototype._originalUpdateStatusIndicator = function() {
         const feedbackStatusIndicator = Utils.safeQuerySelector('#feedbackStatusIndicator');
         const combinedStatusIndicator = Utils.safeQuerySelector('#combinedFeedbackStatusIndicator');
 
         const statusInfo = this.getStatusInfo();
-        
+
         if (feedbackStatusIndicator) {
-            this.updateStatusIndicatorElement(feedbackStatusIndicator, statusInfo);
-        }
-        
-        if (combinedStatusIndicator) {
-            this.updateStatusIndicatorElement(combinedStatusIndicator, statusInfo);
+            this._originalUpdateStatusIndicatorElement(feedbackStatusIndicator, statusInfo);
         }
 
-        console.log('✅ 狀態指示器已更新: ' + statusInfo.status + ' - ' + statusInfo.title);
+        if (combinedStatusIndicator) {
+            this._originalUpdateStatusIndicatorElement(combinedStatusIndicator, statusInfo);
+        }
+
+        // 減少重複日誌：只在狀態真正改變時記錄
+        if (!this._lastStatusInfo || this._lastStatusInfo.status !== statusInfo.status) {
+            console.log('✅ 狀態指示器已更新: ' + statusInfo.status + ' - ' + statusInfo.title);
+            this._lastStatusInfo = statusInfo;
+        }
+    };
+
+    /**
+     * 更新狀態指示器（防抖版本）
+     */
+    UIManager.prototype.updateStatusIndicator = function() {
+        if (this._debouncedUpdateStatusIndicator) {
+            this._debouncedUpdateStatusIndicator();
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalUpdateStatusIndicator();
+        }
     };
 
     /**
@@ -329,9 +367,9 @@
     };
 
     /**
-     * 更新單個狀態指示器元素
+     * 更新單個狀態指示器元素（原始版本，供防抖使用）
      */
-    UIManager.prototype.updateStatusIndicatorElement = function(element, statusInfo) {
+    UIManager.prototype._originalUpdateStatusIndicatorElement = function(element, statusInfo) {
         if (!element) return;
 
         // 更新狀態類別
@@ -350,7 +388,22 @@
             messageElement.textContent = statusInfo.message;
         }
 
-        console.log('🔧 已更新狀態指示器: ' + element.id + ' -> ' + statusInfo.status);
+        // 減少重複日誌：只記錄元素 ID 變化
+        if (element.id) {
+            console.log('🔧 已更新狀態指示器: ' + element.id + ' -> ' + statusInfo.status);
+        }
+    };
+
+    /**
+     * 更新單個狀態指示器元素（防抖版本）
+     */
+    UIManager.prototype.updateStatusIndicatorElement = function(element, statusInfo) {
+        if (this._debouncedUpdateStatusIndicatorElement) {
+            this._debouncedUpdateStatusIndicatorElement(element, statusInfo);
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalUpdateStatusIndicatorElement(element, statusInfo);
+        }
     };
 
     /**

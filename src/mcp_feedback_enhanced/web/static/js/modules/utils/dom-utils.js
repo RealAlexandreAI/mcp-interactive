@@ -291,11 +291,101 @@
                 return true;
             }
             return false;
+        },
+
+        /**
+         * 防抖函數 - 延遲執行，在指定時間內重複調用會重置計時器
+         * @param {Function} func - 要防抖的函數
+         * @param {number} delay - 延遲時間（毫秒）
+         * @param {boolean} immediate - 是否立即執行第一次調用
+         * @returns {Function} 防抖後的函數
+         */
+        debounce: function(func, delay, immediate) {
+            let timeoutId;
+            return function() {
+                const context = this;
+                const args = arguments;
+
+                const later = function() {
+                    timeoutId = null;
+                    if (!immediate) {
+                        func.apply(context, args);
+                    }
+                };
+
+                const callNow = immediate && !timeoutId;
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(later, delay);
+
+                if (callNow) {
+                    func.apply(context, args);
+                }
+            };
+        },
+
+        /**
+         * 節流函數 - 限制函數執行頻率，在指定時間內最多執行一次
+         * @param {Function} func - 要節流的函數
+         * @param {number} limit - 時間間隔（毫秒）
+         * @returns {Function} 節流後的函數
+         */
+        throttle: function(func, limit) {
+            let inThrottle;
+            return function() {
+                const context = this;
+                const args = arguments;
+
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(function() {
+                        inThrottle = false;
+                    }, limit);
+                }
+            };
+        },
+
+        /**
+         * 創建帶有防抖的函數包裝器
+         * @param {Object} target - 目標對象
+         * @param {string} methodName - 方法名稱
+         * @param {number} delay - 防抖延遲時間
+         * @param {boolean} immediate - 是否立即執行
+         * @returns {Function} 原始函數的引用
+         */
+        wrapWithDebounce: function(target, methodName, delay, immediate) {
+            if (!target || typeof target[methodName] !== 'function') {
+                console.warn('無法為不存在的方法添加防抖:', methodName);
+                return null;
+            }
+
+            const originalMethod = target[methodName];
+            target[methodName] = this.debounce(originalMethod.bind(target), delay, immediate);
+            return originalMethod;
+        },
+
+        /**
+         * 創建帶有節流的函數包裝器
+         * @param {Object} target - 目標對象
+         * @param {string} methodName - 方法名稱
+         * @param {number} limit - 節流時間間隔
+         * @returns {Function} 原始函數的引用
+         */
+        wrapWithThrottle: function(target, methodName, limit) {
+            if (!target || typeof target[methodName] !== 'function') {
+                console.warn('無法為不存在的方法添加節流:', methodName);
+                return null;
+            }
+
+            const originalMethod = target[methodName];
+            target[methodName] = this.throttle(originalMethod.bind(target), limit);
+            return originalMethod;
         }
     };
 
     // 將 DOMUtils 加入命名空間
-    window.MCPFeedback.Utils.DOM = DOMUtils;
+    window.MCPFeedback.DOMUtils = DOMUtils;
+    window.MCPFeedback.Utils.DOM = DOMUtils; // 保持向後相容
 
     console.log('✅ DOMUtils 模組載入完成');
 

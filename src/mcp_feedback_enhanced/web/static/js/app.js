@@ -49,8 +49,44 @@
         this.isInitialized = false;
         this.pendingSubmission = null;
 
+        // 初始化防抖函數
+        this.initDebounceHandlers();
+
         console.log('🚀 FeedbackApp 建構函數初始化完成');
     }
+
+    /**
+     * 初始化防抖處理器
+     */
+    FeedbackApp.prototype.initDebounceHandlers = function() {
+        // 為自動提交檢查添加防抖
+        this._debouncedCheckAndStartAutoSubmit = window.MCPFeedback.Utils.DOM.debounce(
+            this._originalCheckAndStartAutoSubmit.bind(this),
+            200,
+            false
+        );
+
+        // 為 WebSocket 訊息處理添加防抖
+        this._debouncedHandleWebSocketMessage = window.MCPFeedback.Utils.DOM.debounce(
+            this._originalHandleWebSocketMessage.bind(this),
+            50,
+            false
+        );
+
+        // 為會話更新處理添加防抖
+        this._debouncedHandleSessionUpdated = window.MCPFeedback.Utils.DOM.debounce(
+            this._originalHandleSessionUpdated.bind(this),
+            100,
+            false
+        );
+
+        // 為狀態更新處理添加防抖
+        this._debouncedHandleStatusUpdate = window.MCPFeedback.Utils.DOM.debounce(
+            this._originalHandleStatusUpdate.bind(this),
+            100,
+            false
+        );
+    };
 
     /**
      * 初始化應用程式
@@ -222,7 +258,14 @@
                             self.checkAndStartAutoSubmit();
                         }, 500); // 延遲 500ms 確保所有初始化完成
 
-                        // 16. 建立 WebSocket 連接
+                        // 16. 播放啟動音效（如果音效已啟用）
+                        setTimeout(function() {
+                            if (self.audioManager) {
+                                self.audioManager.playStartupNotification();
+                            }
+                        }, 800); // 延遲 800ms 確保所有初始化完成且避免與其他音效衝突
+
+                        // 17. 建立 WebSocket 連接
                         self.webSocketManager.connect();
 
                         resolve();
@@ -532,9 +575,9 @@
     };
 
     /**
-     * 處理 WebSocket 訊息
+     * 處理 WebSocket 訊息（原始版本，供防抖使用）
      */
-    FeedbackApp.prototype.handleWebSocketMessage = function(data) {
+    FeedbackApp.prototype._originalHandleWebSocketMessage = function(data) {
         console.log('📨 處理 WebSocket 訊息:', data);
 
         switch (data.type) {
@@ -555,16 +598,28 @@
                 break;
             case 'status_update':
                 console.log('狀態更新:', data.status_info);
-                this.handleStatusUpdate(data.status_info);
+                this._originalHandleStatusUpdate(data.status_info);
                 break;
             case 'session_updated':
                 console.log('🔄 收到會話更新訊息:', data.session_info);
-                this.handleSessionUpdated(data);
+                this._originalHandleSessionUpdated(data);
                 break;
             case 'desktop_close_request':
                 console.log('🖥️ 收到桌面關閉請求');
                 this.handleDesktopCloseRequest(data);
                 break;
+        }
+    };
+
+    /**
+     * 處理 WebSocket 訊息（防抖版本）
+     */
+    FeedbackApp.prototype.handleWebSocketMessage = function(data) {
+        if (this._debouncedHandleWebSocketMessage) {
+            this._debouncedHandleWebSocketMessage(data);
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalHandleWebSocketMessage(data);
         }
     };
 
@@ -629,9 +684,9 @@
     };
 
     /**
-     * 處理會話更新
+     * 處理會話更新（原始版本，供防抖使用）
      */
-    FeedbackApp.prototype.handleSessionUpdated = function(data) {
+    FeedbackApp.prototype._originalHandleSessionUpdated = function(data) {
         console.log('🔄 處理會話更新:', data.session_info);
 
         // 播放音效通知
@@ -734,9 +789,21 @@
     };
 
     /**
-     * 處理狀態更新
+     * 處理會話更新（防抖版本）
      */
-    FeedbackApp.prototype.handleStatusUpdate = function(statusInfo) {
+    FeedbackApp.prototype.handleSessionUpdated = function(data) {
+        if (this._debouncedHandleSessionUpdated) {
+            this._debouncedHandleSessionUpdated(data);
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalHandleSessionUpdated(data);
+        }
+    };
+
+    /**
+     * 處理狀態更新（原始版本，供防抖使用）
+     */
+    FeedbackApp.prototype._originalHandleStatusUpdate = function(statusInfo) {
         console.log('處理狀態更新:', statusInfo);
 
         // 更新 SessionManager 的狀態資訊
@@ -781,6 +848,18 @@
                     }, 100); // 短暫延遲確保狀態更新完成
                 }
                 break;
+        }
+    };
+
+    /**
+     * 處理狀態更新（防抖版本）
+     */
+    FeedbackApp.prototype.handleStatusUpdate = function(statusInfo) {
+        if (this._debouncedHandleStatusUpdate) {
+            this._debouncedHandleStatusUpdate(statusInfo);
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalHandleStatusUpdate(statusInfo);
         }
     };
 
@@ -1230,10 +1309,14 @@
     };
 
     /**
-     * 檢查並啟動自動提交（如果條件滿足）
+     * 檢查並啟動自動提交（原始版本，供防抖使用）
      */
-    FeedbackApp.prototype.checkAndStartAutoSubmit = function() {
-        console.log('🔍 檢查自動提交條件...');
+    FeedbackApp.prototype._originalCheckAndStartAutoSubmit = function() {
+        // 減少重複日誌：只在首次檢查或條件變化時記錄
+        if (!this._lastAutoSubmitCheck || Date.now() - this._lastAutoSubmitCheck > 1000) {
+            console.log('🔍 檢查自動提交條件...');
+            this._lastAutoSubmitCheck = Date.now();
+        }
 
         if (!this.autoSubmitManager || !this.settingsManager || !this.promptManager) {
             console.log('⚠️ 自動提交管理器、設定管理器或提示詞管理器未初始化');
@@ -1285,6 +1368,18 @@
             console.log('❌ 自動提交條件不滿足，停止倒數計時器');
             this.autoSubmitManager.stop();
             this.updateAutoSubmitStatus('disabled');
+        }
+    };
+
+    /**
+     * 檢查並啟動自動提交（防抖版本）
+     */
+    FeedbackApp.prototype.checkAndStartAutoSubmit = function() {
+        if (this._debouncedCheckAndStartAutoSubmit) {
+            this._debouncedCheckAndStartAutoSubmit();
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalCheckAndStartAutoSubmit();
         }
     };
 

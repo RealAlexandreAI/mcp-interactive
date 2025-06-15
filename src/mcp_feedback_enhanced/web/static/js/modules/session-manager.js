@@ -63,6 +63,9 @@
             showFullSessionId: options.showFullSessionId || false
         });
 
+        // 初始化防抖處理器
+        this.initDebounceHandlers();
+
         // 最後初始化數據管理器（確保 UI 組件已準備好接收回調）
         this.dataManager = new window.MCPFeedback.Session.DataManager({
             settingsManager: this.settingsManager,
@@ -81,13 +84,49 @@
         });
     };
 
+    /**
+     * 初始化防抖處理器
+     */
+    SessionManager.prototype.initDebounceHandlers = function() {
+        // 為會話變更處理添加防抖
+        this._debouncedHandleSessionChange = window.MCPFeedback.Utils.DOM.debounce(
+            this._originalHandleSessionChange.bind(this),
+            100,
+            false
+        );
 
+        // 為歷史記錄變更處理添加防抖
+        this._debouncedHandleHistoryChange = window.MCPFeedback.Utils.DOM.debounce(
+            this._originalHandleHistoryChange.bind(this),
+            150,
+            false
+        );
+
+        // 為統計資訊變更處理添加防抖
+        this._debouncedHandleStatsChange = window.MCPFeedback.Utils.DOM.debounce(
+            this._originalHandleStatsChange.bind(this),
+            100,
+            false
+        );
+
+        // 為資料變更處理添加防抖
+        this._debouncedHandleDataChanged = window.MCPFeedback.Utils.DOM.debounce(
+            this._originalHandleDataChanged.bind(this),
+            200,
+            false
+        );
+    };
 
     /**
-     * 處理會話變更
+     * 處理會話變更（原始版本，供防抖使用）
      */
-    SessionManager.prototype.handleSessionChange = function(sessionData) {
-        console.log('📋 處理會話變更:', sessionData);
+    SessionManager.prototype._originalHandleSessionChange = function(sessionData) {
+        // 減少重複日誌：只在會話 ID 變化時記錄
+        const sessionId = sessionData ? sessionData.session_id : null;
+        if (!this._lastSessionId || this._lastSessionId !== sessionId) {
+            console.log('📋 處理會話變更:', sessionData);
+            this._lastSessionId = sessionId;
+        }
 
         // 更新 UI 渲染
         this.uiRenderer.renderCurrentSession(sessionData);
@@ -99,29 +138,74 @@
     };
 
     /**
-     * 處理歷史記錄變更
+     * 處理會話變更（防抖版本）
      */
-    SessionManager.prototype.handleHistoryChange = function(history) {
-        console.log('📋 處理歷史記錄變更:', history.length, '個會話');
+    SessionManager.prototype.handleSessionChange = function(sessionData) {
+        if (this._debouncedHandleSessionChange) {
+            this._debouncedHandleSessionChange(sessionData);
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalHandleSessionChange(sessionData);
+        }
+    };
+
+    /**
+     * 處理歷史記錄變更（原始版本，供防抖使用）
+     */
+    SessionManager.prototype._originalHandleHistoryChange = function(history) {
+        // 減少重複日誌：只在歷史記錄數量變化時記錄
+        if (!this._lastHistoryCount || this._lastHistoryCount !== history.length) {
+            console.log('📋 處理歷史記錄變更:', history.length, '個會話');
+            this._lastHistoryCount = history.length;
+        }
 
         // 更新 UI 渲染
         this.uiRenderer.renderSessionHistory(history);
     };
 
     /**
-     * 處理統計資訊變更
+     * 處理歷史記錄變更（防抖版本）
      */
-    SessionManager.prototype.handleStatsChange = function(stats) {
-        console.log('📋 處理統計資訊變更:', stats);
+    SessionManager.prototype.handleHistoryChange = function(history) {
+        if (this._debouncedHandleHistoryChange) {
+            this._debouncedHandleHistoryChange(history);
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalHandleHistoryChange(history);
+        }
+    };
+
+    /**
+     * 處理統計資訊變更（原始版本，供防抖使用）
+     */
+    SessionManager.prototype._originalHandleStatsChange = function(stats) {
+        // 減少重複日誌：只在統計資訊有意義變化時記錄
+        const statsKey = stats ? JSON.stringify(stats) : null;
+        if (!this._lastStatsKey || this._lastStatsKey !== statsKey) {
+            console.log('📋 處理統計資訊變更:', stats);
+            this._lastStatsKey = statsKey;
+        }
 
         // 更新 UI 渲染
         this.uiRenderer.renderStats(stats);
     };
 
     /**
-     * 處理資料變更（用於異步載入完成後的更新）
+     * 處理統計資訊變更（防抖版本）
      */
-    SessionManager.prototype.handleDataChanged = function() {
+    SessionManager.prototype.handleStatsChange = function(stats) {
+        if (this._debouncedHandleStatsChange) {
+            this._debouncedHandleStatsChange(stats);
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalHandleStatsChange(stats);
+        }
+    };
+
+    /**
+     * 處理資料變更（原始版本，供防抖使用）
+     */
+    SessionManager.prototype._originalHandleDataChanged = function() {
         console.log('📋 處理資料變更，重新渲染所有內容');
 
         // 重新渲染所有內容
@@ -132,6 +216,18 @@
         this.uiRenderer.renderCurrentSession(currentSession);
         this.uiRenderer.renderSessionHistory(history);
         this.uiRenderer.renderStats(stats);
+    };
+
+    /**
+     * 處理資料變更（防抖版本）
+     */
+    SessionManager.prototype.handleDataChanged = function() {
+        if (this._debouncedHandleDataChanged) {
+            this._debouncedHandleDataChanged();
+        } else {
+            // 回退到原始方法（防抖未初始化時）
+            this._originalHandleDataChanged();
+        }
     };
 
     /**

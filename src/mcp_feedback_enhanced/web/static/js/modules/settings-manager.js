@@ -12,6 +12,11 @@
     window.MCPFeedback = window.MCPFeedback || {};
     const Utils = window.MCPFeedback.Utils;
 
+    // 創建模組專用日誌器
+    const logger = window.MCPFeedback.Logger ?
+        new window.MCPFeedback.Logger({ moduleName: 'SettingsManager' }) :
+        console;
+
     /**
      * 設定管理器建構函數
      */
@@ -52,6 +57,13 @@
         this.onSettingsChange = options.onSettingsChange || null;
         this.onLanguageChange = options.onLanguageChange || null;
         this.onAutoSubmitStateChange = options.onAutoSubmitStateChange || null;
+
+        // 防抖機制相關
+        this.saveToServerDebounceTimer = null;
+        this.saveToServerDebounceDelay = options.saveDebounceDelay || 500; // 預設 500ms 防抖延遲
+        this.pendingServerSave = false;
+
+        console.log('✅ SettingsManager 建構函數初始化完成，防抖延遲:', this.saveToServerDebounceDelay + 'ms');
     }
 
     /**
@@ -61,14 +73,14 @@
         const self = this;
         
         return new Promise(function(resolve, reject) {
-            console.log('開始載入設定...');
+            logger.info('開始載入設定...');
             
             // 優先從伺服器端載入設定
             self.loadFromServer()
                 .then(function(serverSettings) {
                     if (serverSettings && Object.keys(serverSettings).length > 0) {
                         self.currentSettings = self.mergeSettings(self.defaultSettings, serverSettings);
-                        console.log('從伺服器端載入設定成功:', self.currentSettings);
+                        logger.info('從伺服器端載入設定成功:', self.currentSettings);
                         
                         // 同步到 localStorage
                         self.saveToLocalStorage();
@@ -143,7 +155,7 @@
             this.currentSettings = this.mergeSettings(this.currentSettings, newSettings);
         }
 
-        console.log('保存設定:', this.currentSettings);
+        logger.debug('保存設定:', this.currentSettings);
 
         // 保存到 localStorage
         this.saveToLocalStorage();
@@ -175,15 +187,43 @@
     };
 
     /**
-     * 保存到伺服器
+     * 保存到伺服器（帶防抖機制）
      */
     SettingsManager.prototype.saveToServer = function() {
+        const self = this;
+
+        // 清除之前的定時器
+        if (self.saveToServerDebounceTimer) {
+            clearTimeout(self.saveToServerDebounceTimer);
+        }
+
+        // 標記有待處理的保存操作
+        self.pendingServerSave = true;
+
+        // 設置新的防抖定時器
+        self.saveToServerDebounceTimer = setTimeout(function() {
+            self._performServerSave();
+        }, self.saveToServerDebounceDelay);
+    };
+
+    /**
+     * 執行實際的伺服器保存操作
+     */
+    SettingsManager.prototype._performServerSave = function() {
+        const self = this;
+
+        if (!self.pendingServerSave) {
+            return;
+        }
+
+        self.pendingServerSave = false;
+
         fetch('/api/save-settings', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(this.currentSettings)
+            body: JSON.stringify(self.currentSettings)
         })
         .then(function(response) {
             if (response.ok) {
@@ -195,6 +235,21 @@
         .catch(function(error) {
             console.warn('同步設定到伺服器端時發生錯誤:', error);
         });
+    };
+
+    /**
+     * 立即保存到伺服器（跳過防抖機制）
+     * 用於重要操作，如語言變更、重置設定等
+     */
+    SettingsManager.prototype.saveToServerImmediate = function() {
+        // 清除防抖定時器
+        if (this.saveToServerDebounceTimer) {
+            clearTimeout(this.saveToServerDebounceTimer);
+            this.saveToServerDebounceTimer = null;
+        }
+
+        // 立即執行保存
+        this._performServerSave();
     };
 
     /**
@@ -232,9 +287,19 @@
         // 特殊處理語言變更
         if (key === 'language' && oldValue !== value) {
             this.handleLanguageChange(value);
+            // 語言變更是重要操作，立即保存
+            this.saveToLocalStorage();
+            this.saveToServerImmediate();
+
+            // 觸發回調
+            if (this.onSettingsChange) {
+                this.onSettingsChange(this.currentSettings);
+            }
+        } else {
+            // 一般設定變更使用防抖保存
+            this.saveSettings();
         }
-        
-        this.saveSettings();
+
         return this;
     };
 
@@ -304,8 +369,14 @@
         // 重置為預設值
         this.currentSettings = Utils.deepClone(this.defaultSettings);
 
-        // 保存重置後的設定
-        this.saveSettings();
+        // 立即保存重置後的設定（重要操作）
+        this.saveToLocalStorage();
+        this.saveToServerImmediate();
+
+        // 觸發回調
+        if (this.onSettingsChange) {
+            this.onSettingsChange(this.currentSettings);
+        }
 
         return this.currentSettings;
     };

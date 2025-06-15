@@ -43,6 +43,10 @@
         // 待處理的提交
         this.pendingSubmission = null;
         this.sessionUpdatePending = false;
+
+        // 網路狀態檢測
+        this.networkOnline = navigator.onLine;
+        this.setupNetworkStatusDetection();
     }
 
     /**
@@ -217,11 +221,17 @@
                 self.connect();
             }, 200);
         }
-        // 只有在非正常關閉時才重連
-        else if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+        // 檢查是否應該重連
+        else if (this.shouldAttemptReconnect(event)) {
             this.reconnectAttempts++;
-            this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
-            console.log(this.reconnectDelay / 1000 + '秒後嘗試重連... (第' + this.reconnectAttempts + '次)');
+
+            // 改進的指數退避算法：基礎延遲 * 2^重試次數，加上隨機抖動
+            const baseDelay = Utils.CONSTANTS.DEFAULT_RECONNECT_DELAY;
+            const exponentialDelay = baseDelay * Math.pow(2, this.reconnectAttempts - 1);
+            const jitter = Math.random() * 1000; // 0-1秒的隨機抖動
+            this.reconnectDelay = Math.min(exponentialDelay + jitter, 30000); // 最大 30 秒
+
+            console.log(Math.round(this.reconnectDelay / 1000) + '秒後嘗試重連... (第' + this.reconnectAttempts + '次)');
 
             // 更新狀態為重連中
             const reconnectingTemplate = window.i18nManager ? window.i18nManager.t('connectionMonitor.reconnecting') : '重連中... (第{attempt}次)';
@@ -375,6 +385,64 @@
      */
     WebSocketManager.prototype.isReady = function() {
         return this.isConnected && this.connectionReady;
+    };
+
+    /**
+     * 設置網路狀態檢測
+     */
+    WebSocketManager.prototype.setupNetworkStatusDetection = function() {
+        const self = this;
+
+        // 監聽網路狀態變化
+        window.addEventListener('online', function() {
+            console.log('🌐 網路已恢復，嘗試重新連接...');
+            self.networkOnline = true;
+
+            // 如果 WebSocket 未連接且不在重連過程中，立即嘗試連接
+            if (!self.isConnected && self.reconnectAttempts < self.maxReconnectAttempts) {
+                // 重置重連計數器，因為網路問題已解決
+                self.reconnectAttempts = 0;
+                self.reconnectDelay = Utils.CONSTANTS.DEFAULT_RECONNECT_DELAY;
+
+                setTimeout(function() {
+                    self.connect();
+                }, 1000); // 延遲 1 秒確保網路穩定
+            }
+        });
+
+        window.addEventListener('offline', function() {
+            console.log('🌐 網路已斷開');
+            self.networkOnline = false;
+
+            // 更新連接狀態
+            const offlineMessage = window.i18nManager ?
+                window.i18nManager.t('connectionMonitor.offline', '網路已斷開') :
+                '網路已斷開';
+            self.updateConnectionStatus('offline', offlineMessage);
+        });
+    };
+
+    /**
+     * 檢查是否應該嘗試重連
+     */
+    WebSocketManager.prototype.shouldAttemptReconnect = function(event) {
+        // 如果網路離線，不嘗試重連
+        if (!this.networkOnline) {
+            console.log('🌐 網路離線，跳過重連');
+            return false;
+        }
+
+        // 如果是正常關閉，不重連
+        if (event.code === 1000) {
+            return false;
+        }
+
+        // 如果達到最大重連次數，不重連
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            return false;
+        }
+
+        return true;
     };
 
     /**

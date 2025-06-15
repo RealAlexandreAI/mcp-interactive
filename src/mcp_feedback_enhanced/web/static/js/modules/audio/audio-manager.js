@@ -58,10 +58,19 @@
         
         // 當前播放的 Audio 物件
         this.currentAudio = null;
-        
+
+        // 用戶互動檢測
+        this.userHasInteracted = false;
+        this.pendingNotifications = [];
+        this.autoplayBlocked = false;
+        this.interactionListenersAdded = false;
+
         // 回調函數
         this.onSettingsChange = options.onSettingsChange || null;
-        
+
+        // 啟動音效播放標記
+        this.startupNotificationPlayed = false;
+
         console.log('🔊 AudioManager 初始化完成');
     }
 
@@ -70,6 +79,7 @@
      */
     AudioManager.prototype.initialize = function() {
         this.loadAudioSettings();
+        this.setupUserInteractionDetection();
         console.log('✅ AudioManager 初始化完成');
     };
 
@@ -122,7 +132,7 @@
     };
 
     /**
-     * 播放通知音效
+     * 播放通知音效（智能播放策略）
      */
     AudioManager.prototype.playNotification = function() {
         if (!this.currentAudioSettings.enabled) {
@@ -134,51 +144,114 @@
             const audioData = this.getAudioById(this.currentAudioSettings.selectedAudioId);
             if (!audioData) {
                 console.warn('⚠️ 找不到指定的音效，使用預設音效');
-                this.playAudio(this.defaultAudios['default-beep']);
+                this.playAudioSmart(this.defaultAudios['default-beep']);
                 return;
             }
 
-            this.playAudio(audioData);
+            this.playAudioSmart(audioData);
         } catch (error) {
             console.error('❌ 播放通知音效失敗:', error);
         }
     };
 
     /**
-     * 播放指定的音效
+     * 播放啟動音效通知（應用程式就緒時播放）
+     */
+    AudioManager.prototype.playStartupNotification = function() {
+        if (!this.currentAudioSettings.enabled) {
+            console.log('🔇 音效通知已停用，跳過啟動音效');
+            return;
+        }
+
+        // 確保啟動音效只播放一次
+        if (this.startupNotificationPlayed) {
+            console.log('🔇 啟動音效已播放過，跳過重複播放');
+            return;
+        }
+
+        this.startupNotificationPlayed = true;
+        console.log('🎵 播放應用程式啟動音效');
+
+        try {
+            const audioData = this.getAudioById(this.currentAudioSettings.selectedAudioId);
+            if (!audioData) {
+                console.warn('⚠️ 找不到指定的音效，使用預設啟動音效');
+                this.playAudioSmart(this.defaultAudios['default-beep']);
+                return;
+            }
+
+            this.playAudioSmart(audioData);
+        } catch (error) {
+            console.error('❌ 播放啟動音效失敗:', error);
+        }
+    };
+
+    /**
+     * 智能音效播放（處理自動播放限制）
+     */
+    AudioManager.prototype.playAudioSmart = function(audioData) {
+        // 如果已知自動播放被阻止，直接加入待播放隊列
+        if (this.autoplayBlocked && !this.userHasInteracted) {
+            this.addToPendingNotifications(audioData);
+            return;
+        }
+
+        // 嘗試播放
+        this.playAudio(audioData)
+            .then(() => {
+                // 播放成功，清空待播放隊列
+                this.processPendingNotifications();
+            })
+            .catch((error) => {
+                if (error.name === 'NotAllowedError') {
+                    // 自動播放被阻止
+                    this.autoplayBlocked = true;
+                    this.addToPendingNotifications(audioData);
+                    this.showAutoplayBlockedNotification();
+                }
+            });
+    };
+
+    /**
+     * 播放指定的音效（返回 Promise）
      */
     AudioManager.prototype.playAudio = function(audioData) {
-        try {
-            // 停止當前播放的音效
-            if (this.currentAudio) {
-                this.currentAudio.pause();
-                this.currentAudio = null;
-            }
+        return new Promise((resolve, reject) => {
+            try {
+                // 停止當前播放的音效
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    this.currentAudio = null;
+                }
 
-            // 建立新的 Audio 物件
-            this.currentAudio = new Audio();
-            this.currentAudio.src = 'data:' + audioData.mimeType + ';base64,' + audioData.data;
-            this.currentAudio.volume = this.currentAudioSettings.volume / 100;
+                // 建立新的 Audio 物件
+                this.currentAudio = new Audio();
+                this.currentAudio.src = 'data:' + audioData.mimeType + ';base64,' + audioData.data;
+                this.currentAudio.volume = this.currentAudioSettings.volume / 100;
 
-            // 播放音效
-            const playPromise = this.currentAudio.play();
-            
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        console.log('🔊 音效播放成功:', audioData.name);
-                    })
-                    .catch(error => {
-                        console.error('❌ 音效播放失敗:', error);
-                        // 可能是瀏覽器的自動播放政策限制
-                        if (error.name === 'NotAllowedError') {
-                            console.warn('⚠️ 瀏覽器阻止自動播放，需要用戶互動');
-                        }
-                    });
+                // 播放音效
+                const playPromise = this.currentAudio.play();
+
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            console.log('🔊 音效播放成功:', audioData.name);
+                            resolve();
+                        })
+                        .catch(error => {
+                            console.error('❌ 音效播放失敗:', error);
+                            reject(error);
+                        });
+                } else {
+                    // 舊版瀏覽器，假設播放成功
+                    console.log('🔊 音效播放（舊版瀏覽器）:', audioData.name);
+                    resolve();
+                }
+            } catch (error) {
+                console.error('❌ 播放音效時發生錯誤:', error);
+                reject(error);
             }
-        } catch (error) {
-            console.error('❌ 播放音效時發生錯誤:', error);
-        }
+        });
     };
 
     /**
@@ -431,6 +504,97 @@
             binary += String.fromCharCode(bytes[i]);
         }
         return btoa(binary);
+    };
+
+    /**
+     * 設置用戶互動檢測
+     */
+    AudioManager.prototype.setupUserInteractionDetection = function() {
+        if (this.interactionListenersAdded) return;
+
+        const self = this;
+        const interactionEvents = ['click', 'keydown', 'touchstart'];
+
+        const handleUserInteraction = function() {
+            if (!self.userHasInteracted) {
+                self.userHasInteracted = true;
+                console.log('🎯 檢測到用戶互動，音效播放已解鎖');
+
+                // 播放待播放的通知
+                self.processPendingNotifications();
+
+                // 移除事件監聽器
+                interactionEvents.forEach(event => {
+                    document.removeEventListener(event, handleUserInteraction, true);
+                });
+                self.interactionListenersAdded = false;
+            }
+        };
+
+        // 添加事件監聽器
+        interactionEvents.forEach(event => {
+            document.addEventListener(event, handleUserInteraction, true);
+        });
+
+        this.interactionListenersAdded = true;
+        console.log('🎯 用戶互動檢測已設置');
+    };
+
+    /**
+     * 添加到待播放通知隊列
+     */
+    AudioManager.prototype.addToPendingNotifications = function(audioData) {
+        // 限制隊列長度，避免積累太多通知
+        if (this.pendingNotifications.length >= 3) {
+            this.pendingNotifications.shift(); // 移除最舊的通知
+        }
+
+        this.pendingNotifications.push({
+            audioData: audioData,
+            timestamp: Date.now()
+        });
+
+        console.log('📋 音效已加入待播放隊列:', audioData.name, '隊列長度:', this.pendingNotifications.length);
+    };
+
+    /**
+     * 處理待播放的通知
+     */
+    AudioManager.prototype.processPendingNotifications = function() {
+        if (this.pendingNotifications.length === 0) return;
+
+        console.log('🔊 處理待播放通知，數量:', this.pendingNotifications.length);
+
+        // 只播放最新的通知，避免音效重疊
+        const latestNotification = this.pendingNotifications[this.pendingNotifications.length - 1];
+        this.pendingNotifications = []; // 清空隊列
+
+        this.playAudio(latestNotification.audioData)
+            .then(() => {
+                console.log('🔊 待播放通知播放成功');
+            })
+            .catch(error => {
+                console.warn('⚠️ 待播放通知播放失敗:', error);
+            });
+    };
+
+    /**
+     * 顯示自動播放被阻止的通知
+     */
+    AudioManager.prototype.showAutoplayBlockedNotification = function() {
+        // 只顯示一次通知
+        if (this.autoplayNotificationShown) return;
+        this.autoplayNotificationShown = true;
+
+        console.log('🔇 瀏覽器阻止音效自動播放，請點擊頁面任意位置以啟用音效通知');
+
+        // 可以在這裡添加 UI 通知邏輯
+        if (window.MCPFeedback && window.MCPFeedback.Utils && window.MCPFeedback.Utils.showMessage) {
+            const message = window.i18nManager ?
+                window.i18nManager.t('audio.autoplayBlocked', '瀏覽器阻止音效自動播放，請點擊頁面以啟用音效通知') :
+                '瀏覽器阻止音效自動播放，請點擊頁面以啟用音效通知';
+            window.MCPFeedback.Utils.showMessage(message, 'info');
+        }
     };
 
     /**

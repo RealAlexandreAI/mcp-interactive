@@ -1222,6 +1222,7 @@
 
                 // 更新 AI 摘要內容
                 if (self.uiManager) {
+                    // console.log('🔧 準備更新 AI 摘要內容，summary 長度:', sessionData.summary ? sessionData.summary.length : 'undefined');
                     self.uiManager.updateAISummaryContent(sessionData.summary);
                     self.uiManager.resetFeedbackForm();
                     self.uiManager.updateStatusIndicator();

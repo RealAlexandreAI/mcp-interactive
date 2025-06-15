@@ -419,21 +419,68 @@
     };
 
     /**
+     * 安全地渲染 Markdown 內容
+     */
+    UIManager.prototype.renderMarkdownSafely = function(content) {
+        try {
+            // 檢查 marked 和 DOMPurify 是否可用
+            if (typeof window.marked === 'undefined' || typeof window.DOMPurify === 'undefined') {
+                console.warn('⚠️ Markdown 庫未載入，使用純文字顯示');
+                return this.escapeHtml(content);
+            }
+
+            // 使用 marked 解析 Markdown
+            const htmlContent = window.marked.parse(content);
+
+            // 使用 DOMPurify 清理 HTML
+            const cleanHtml = window.DOMPurify.sanitize(htmlContent, {
+                ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'a', 'hr', 'del', 's', 'table', 'thead', 'tbody', 'tr', 'td', 'th'],
+                ALLOWED_ATTR: ['href', 'title', 'class', 'align', 'style'],
+                ALLOW_DATA_ATTR: false
+            });
+
+            return cleanHtml;
+        } catch (error) {
+            console.error('❌ Markdown 渲染失敗:', error);
+            return this.escapeHtml(content);
+        }
+    };
+
+    /**
+     * HTML 轉義函數
+     */
+    UIManager.prototype.escapeHtml = function(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
+
+    /**
      * 更新 AI 摘要內容
      */
     UIManager.prototype.updateAISummaryContent = function(summary) {
-        console.log('📝 更新 AI 摘要內容...');
+        console.log('📝 更新 AI 摘要內容...', '內容長度:', summary ? summary.length : 'undefined');
+        console.log('📝 marked 可用:', typeof window.marked !== 'undefined');
+        console.log('📝 DOMPurify 可用:', typeof window.DOMPurify !== 'undefined');
+
+        // 渲染 Markdown 內容
+        const renderedContent = this.renderMarkdownSafely(summary);
+        console.log('📝 渲染後內容長度:', renderedContent ? renderedContent.length : 'undefined');
 
         const summaryContent = Utils.safeQuerySelector('#summaryContent');
         if (summaryContent) {
-            summaryContent.textContent = summary;
-            console.log('✅ 已更新分頁模式摘要內容');
+            summaryContent.innerHTML = renderedContent;
+            console.log('✅ 已更新分頁模式摘要內容（Markdown 渲染）');
+        } else {
+            console.warn('⚠️ 找不到 #summaryContent 元素');
         }
 
         const combinedSummaryContent = Utils.safeQuerySelector('#combinedSummaryContent');
         if (combinedSummaryContent) {
-            combinedSummaryContent.textContent = summary;
-            console.log('✅ 已更新合併模式摘要內容');
+            combinedSummaryContent.innerHTML = renderedContent;
+            console.log('✅ 已更新合併模式摘要內容（Markdown 渲染）');
+        } else {
+            console.warn('⚠️ 找不到 #combinedSummaryContent 元素');
         }
     };
 

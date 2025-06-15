@@ -1149,7 +1149,42 @@ if __name__ == "__main__":
     async def main():
         try:
             project_dir = os.getcwd()
-            summary = "這是一個測試摘要，用於驗證 Web UI 功能。"
+            summary = """# Markdown 功能測試
+
+## 🎯 任務完成摘要
+
+我已成功為 **mcp-feedback-enhanced** 專案實現了 Markdown 語法顯示功能！
+
+### ✅ 完成的功能
+
+1. **標題支援** - 支援 H1 到 H6 標題
+2. **文字格式化**
+   - **粗體文字** 使用雙星號
+   - *斜體文字* 使用單星號
+   - `行內程式碼` 使用反引號
+3. **程式碼區塊**
+4. **列表功能**
+   - 無序列表項目
+   - 有序列表項目
+
+### 📋 技術實作
+
+```javascript
+// 使用 marked.js 進行 Markdown 解析
+const renderedContent = this.renderMarkdownSafely(summary);
+element.innerHTML = renderedContent;
+```
+
+### 🔗 相關連結
+
+- [marked.js 官方文檔](https://marked.js.org/)
+- [DOMPurify 安全清理](https://github.com/cure53/DOMPurify)
+
+> **注意**: 此功能包含 XSS 防護，使用 DOMPurify 進行 HTML 清理。
+
+---
+
+**測試狀態**: ✅ 功能正常運作"""
 
             from ..debug import debug_log
 

@@ -136,9 +136,72 @@ def test_web_ui_simple():
 
         print("🔧 創建測試會話...")
         with tempfile.TemporaryDirectory() as temp_dir:
-            created_session_id = manager.create_session(
-                temp_dir, "Web UI 測試 - 驗證基本功能"
-            )
+            markdown_test_content = """# Web UI 測試 - Markdown 渲染功能
+
+## 🎯 測試目標
+驗證 **combinedSummaryContent** 區域的 Markdown 語法顯示功能
+
+### ✨ 支援的語法特性
+
+#### 文字格式
+- **粗體文字** 使用雙星號
+- *斜體文字* 使用單星號
+- ~~刪除線文字~~ 使用雙波浪號
+- `行內程式碼` 使用反引號
+
+#### 程式碼區塊
+```javascript
+// JavaScript 範例
+function renderMarkdown(content) {
+    return marked.parse(content);
+}
+```
+
+```python
+# Python 範例
+def process_feedback(data):
+    return {"status": "success", "data": data}
+```
+
+#### 列表功能
+**無序列表：**
+- 第一個項目
+- 第二個項目
+  - 巢狀項目 1
+  - 巢狀項目 2
+- 第三個項目
+
+**有序列表：**
+1. 初始化 Markdown 渲染器
+2. 載入 marked.js 和 DOMPurify
+3. 配置安全選項
+4. 渲染內容
+
+#### 連結和引用
+- 專案連結：[MCP Feedback Enhanced](https://github.com/example/mcp-feedback-enhanced)
+- 文檔連結：[Marked.js 官方文檔](https://marked.js.org/)
+
+> **重要提示：** 所有 HTML 輸出都經過 DOMPurify 清理，確保安全性。
+
+#### 表格範例
+| 功能 | 狀態 | 說明 |
+|------|------|------|
+| 標題渲染 | ✅ | 支援 H1-H6 |
+| 程式碼高亮 | ✅ | 基本語法高亮 |
+| 列表功能 | ✅ | 有序/無序列表 |
+| 連結處理 | ✅ | 安全連結渲染 |
+
+---
+
+### 🔒 安全特性
+- XSS 防護：使用 DOMPurify 清理
+- 白名單標籤：僅允許安全的 HTML 標籤
+- URL 驗證：限制允許的 URL 協議
+
+### 📝 測試結果
+如果您能看到上述內容以正確的格式顯示，表示 Markdown 渲染功能運作正常！"""
+
+            created_session_id = manager.create_session(temp_dir, markdown_test_content)
 
             if created_session_id:
                 print("✅ 會話創建成功")

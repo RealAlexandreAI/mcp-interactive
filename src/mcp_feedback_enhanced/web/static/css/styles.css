@@ -1624,3 +1624,287 @@ textarea:-ms-input-placeholder,
     color: var(--error-color);
 }
 
+/* ===== Markdown 內容樣式 ===== */
+
+/* AI 摘要區域的 Markdown 樣式 - 基於 marked.js 官方樣式 */
+/* 移除舊的衝突樣式，使用下方的 VSCode 風格樣式 */
+
+/* Markdown 強調樣式 */
+#summaryContent strong, #combinedSummaryContent strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+#summaryContent em, #combinedSummaryContent em {
+    font-style: italic;
+    color: var(--text-primary);
+}
+
+/* Markdown 刪除線樣式 */
+#summaryContent del, #summaryContent s,
+#combinedSummaryContent del, #combinedSummaryContent s {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+/* Markdown 程式碼樣式 - 基於 marked.js 官方樣式 */
+#summaryContent code, #combinedSummaryContent code {
+    padding: 0.2em 0.4em !important;
+    margin: 0 !important;
+    font-size: 85% !important;
+    background-color: rgba(175, 184, 193, 0.2) !important;
+    border-radius: 3px !important;
+    font-family: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace !important;
+    color: var(--text-primary) !important;
+}
+
+#summaryContent pre, #combinedSummaryContent pre {
+    font-family: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace !important;
+    padding: 16px !important;
+    overflow: auto !important;
+    font-size: 85% !important;
+    line-height: 1.45 !important;
+    background-color: rgba(175, 184, 193, 0.1) !important;
+    border-radius: 3px !important;
+    margin: 16px 0 !important;
+    border: none !important;
+}
+
+#summaryContent pre code, #combinedSummaryContent pre code {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 100% !important;
+    color: var(--text-primary) !important;
+    display: block !important;
+    overflow: auto !important;
+}
+
+/* 移除舊的列表樣式，使用下方的 VSCode 風格樣式 */
+
+/* Markdown 引用區塊樣式 */
+#summaryContent blockquote, #combinedSummaryContent blockquote {
+    border-left: 4px solid var(--accent-color);
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    background: rgba(0, 122, 204, 0.05);
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Markdown 連結樣式 - 基於 marked.js 官方樣式 */
+#summaryContent a, #combinedSummaryContent a {
+    color: #0366d6;
+    text-decoration: none;
+}
+
+#summaryContent a:hover, #combinedSummaryContent a:hover {
+    text-decoration: underline;
+}
+
+/* Markdown 水平線樣式 - 基於 marked.js 官方樣式 */
+#summaryContent hr, #combinedSummaryContent hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 24px 0;
+    height: 0;
+}
+
+/* 確保第一個元素沒有上邊距 */
+#summaryContent > *:first-child, #combinedSummaryContent > *:first-child {
+    margin-top: 0;
+}
+
+/* 確保最後一個元素沒有下邊距 */
+#summaryContent > *:last-child, #combinedSummaryContent > *:last-child {
+    margin-bottom: 0;
+}
+
+/* Markdown 內容樣式 - VSCode 風格極緊湊樣式 */
+#summaryContent, #combinedSummaryContent {
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol" !important;
+    font-size: 14px !important;
+    line-height: 1.1 !important;
+    word-wrap: break-word !important;
+}
+
+/* 強制覆蓋所有子元素的行高和間距 */
+#summaryContent *, #combinedSummaryContent * {
+    line-height: 1.1 !important;
+}
+
+#summaryContent p, #combinedSummaryContent p {
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.1 !important;
+    font-size: 14px !important;
+    padding: 0 !important;
+}
+
+/* 標題樣式 - VSCode 風格含底線 */
+#summaryContent h1, #summaryContent h2, #summaryContent h3,
+#summaryContent h4, #summaryContent h5, #summaryContent h6,
+#combinedSummaryContent h1, #combinedSummaryContent h2, #combinedSummaryContent h3,
+#combinedSummaryContent h4, #combinedSummaryContent h5, #combinedSummaryContent h6 {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+}
+
+#summaryContent h1, #combinedSummaryContent h1 {
+    margin: 0.3em 0 0.1em 0 !important;
+    line-height: 1.1 !important;
+    font-size: 1.8em !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    padding-bottom: 6px !important;
+}
+
+#summaryContent h2, #combinedSummaryContent h2 {
+    margin: 0.25em 0 0.08em 0 !important;
+    line-height: 1.1 !important;
+    font-size: 1.5em !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding-bottom: 4px !important;
+}
+
+#summaryContent h3, #combinedSummaryContent h3 {
+    margin: 0.2em 0 0.03em 0 !important;
+    line-height: 1.1 !important;
+    font-size: 1.3em !important;
+}
+
+#summaryContent h4, #combinedSummaryContent h4 {
+    margin: 0.15em 0 0.02em 0 !important;
+    line-height: 1.1 !important;
+    font-size: 1.1em !important;
+}
+
+#summaryContent h5, #combinedSummaryContent h5,
+#summaryContent h6, #combinedSummaryContent h6 {
+    margin: 0.1em 0 0.02em 0 !important;
+    line-height: 1.1 !important;
+    font-size: 1em !important;
+}
+
+/* 列表樣式 - VSCode 風格極緊湊 */
+#summaryContent ul, #combinedSummaryContent ul,
+#summaryContent ol, #combinedSummaryContent ol {
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+    padding-left: 1.2em !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+#summaryContent li, #combinedSummaryContent li {
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.1 !important;
+    padding: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    font-size: 14px !important;
+}
+
+#summaryContent li > ul, #combinedSummaryContent li > ul,
+#summaryContent li > ol, #combinedSummaryContent li > ol {
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+    padding-left: 1.0em !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* 強制段落後的列表緊密貼合 */
+#summaryContent p + ul, #combinedSummaryContent p + ul,
+#summaryContent p + ol, #combinedSummaryContent p + ol,
+#summaryContent h1 + ul, #combinedSummaryContent h1 + ul,
+#summaryContent h2 + ul, #combinedSummaryContent h2 + ul,
+#summaryContent h3 + ul, #combinedSummaryContent h3 + ul,
+#summaryContent h4 + ul, #combinedSummaryContent h4 + ul,
+#summaryContent h1 + ol, #combinedSummaryContent h1 + ol,
+#summaryContent h2 + ol, #combinedSummaryContent h2 + ol,
+#summaryContent h3 + ol, #combinedSummaryContent h3 + ol,
+#summaryContent h4 + ol, #combinedSummaryContent h4 + ol {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+#summaryContent blockquote, #combinedSummaryContent blockquote {
+    margin: 0.05em 0 !important;
+    padding: 0.1em 0.5em !important;
+    line-height: 1.1 !important;
+    font-size: 14px !important;
+}
+
+#summaryContent pre, #combinedSummaryContent pre {
+    margin: 0.05em 0 !important;
+    line-height: 1.1 !important;
+    font-size: 13px !important;
+}
+
+#summaryContent code, #combinedSummaryContent code {
+    line-height: 1.1 !important;
+    font-size: 13px !important;
+}
+
+/* Markdown 表格樣式 - 適應主題顏色 */
+#summaryContent table, #combinedSummaryContent table {
+    border-spacing: 0 !important;
+    border-collapse: collapse !important;
+    display: table !important;
+    width: 100% !important;
+    margin: 0.5em 0 !important;
+    font-variant: tabular-nums !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    background-color: var(--bg-primary) !important;
+}
+
+#summaryContent thead, #combinedSummaryContent thead {
+    display: table-header-group !important;
+}
+
+#summaryContent tbody, #combinedSummaryContent tbody {
+    display: table-row-group !important;
+}
+
+#summaryContent tr, #combinedSummaryContent tr {
+    display: table-row !important;
+    background-color: var(--bg-primary) !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
+#summaryContent tr:nth-child(2n), #combinedSummaryContent tr:nth-child(2n) {
+    background-color: var(--bg-secondary) !important;
+}
+
+#summaryContent td, #summaryContent th,
+#combinedSummaryContent td, #combinedSummaryContent th {
+    display: table-cell !important;
+    padding: 4px 8px !important;
+    border: 1px solid var(--border-color) !important;
+    text-align: left !important;
+    vertical-align: top !important;
+    color: var(--text-color) !important;
+    line-height: 1.3 !important;
+}
+
+#summaryContent th, #combinedSummaryContent th {
+    font-weight: 600 !important;
+    background-color: var(--bg-secondary) !important;
+    border-bottom: 2px solid var(--border-color) !important;
+}
+
+#summaryContent td > *:last-child, #combinedSummaryContent td > *:last-child {
+    margin-bottom: 0 !important;
+}
+

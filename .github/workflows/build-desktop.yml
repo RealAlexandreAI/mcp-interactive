@@ -97,18 +97,47 @@ jobs:
           ${{ runner.os }}-cargo-${{ matrix.target }}-
           ${{ runner.os }}-cargo-
 
+    - name: Install platform-specific dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libwebkit2gtk-4.1-dev \
+          libappindicator3-dev \
+          librsvg2-dev \
+          patchelf \
+          libgtk-3-dev \
+          libayatana-appindicator3-dev
+
     - name: Build desktop application for ${{ matrix.name }}
       run: |
         cd src-tauri
+        echo "🔨 開始構建 ${{ matrix.name }} (${{ matrix.target }})..."
         cargo build --release --target ${{ matrix.target }} --bin mcp-feedback-enhanced-desktop
+        echo "✅ 構建完成"
 
     - name: Verify build output
       run: |
         echo "🔍 檢查構建產物..."
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          ls -la "src-tauri/target/${{ matrix.target }}/release/${{ matrix.binary }}" || echo "❌ Windows 二進制文件不存在"
+        BINARY_PATH="src-tauri/target/${{ matrix.target }}/release/${{ matrix.binary }}"
+
+        if [ -f "$BINARY_PATH" ]; then
+          echo "✅ 找到二進制文件: $BINARY_PATH"
+          ls -la "$BINARY_PATH"
+
+          # 檢查文件大小
+          FILE_SIZE=$(stat -f%z "$BINARY_PATH" 2>/dev/null || stat -c%s "$BINARY_PATH" 2>/dev/null || echo "unknown")
+          echo "📏 文件大小: $FILE_SIZE bytes"
+
+          # 檢查文件類型 (僅在 Linux/macOS)
+          if [ "${{ matrix.os }}" != "windows-latest" ]; then
+            file "$BINARY_PATH" || echo "無法檢查文件類型"
+          fi
         else
-          ls -la "src-tauri/target/${{ matrix.target }}/release/${{ matrix.binary }}" || echo "❌ ${{ matrix.name }} 二進制文件不存在"
+          echo "❌ ${{ matrix.name }} 二進制文件不存在: $BINARY_PATH"
+          echo "🔍 檢查目標目錄內容:"
+          ls -la "src-tauri/target/${{ matrix.target }}/release/" || echo "目標目錄不存在"
+          exit 1
         fi
       shell: bash
 
@@ -120,14 +149,38 @@ jobs:
         path: src-tauri/target/${{ matrix.target }}/release/${{ matrix.binary }}
         retention-days: 30  # 保留 30 天
         compression-level: 6
+        if-no-files-found: error  # 如果沒有找到文件則失敗
 
-  # 構建摘要
+  # 構建摘要和驗證
   build-summary:
     needs: build-desktop
     runs-on: ubuntu-latest
     if: always()
+    outputs:
+      build_success: ${{ steps.check_results.outputs.success }}
+      platforms_built: ${{ steps.check_results.outputs.platforms }}
 
     steps:
+    - name: Check build results
+      id: check_results
+      run: |
+        echo "🔍 檢查構建結果..."
+
+        # 檢查構建狀態
+        BUILD_SUCCESS="false"
+        PLATFORMS_BUILT=""
+
+        if [ "${{ needs.build-desktop.result }}" = "success" ]; then
+          BUILD_SUCCESS="true"
+          PLATFORMS_BUILT="windows,macos-intel,macos-arm64,linux"
+          echo "✅ 所有平台構建成功"
+        else
+          echo "❌ 構建失敗或部分失敗"
+        fi
+
+        echo "success=$BUILD_SUCCESS" >> $GITHUB_OUTPUT
+        echo "platforms=$PLATFORMS_BUILT" >> $GITHUB_OUTPUT
+
     - name: Generate build summary
       run: |
         echo "## 🖥️ 桌面應用構建摘要" >> $GITHUB_STEP_SUMMARY
@@ -137,16 +190,43 @@ jobs:
 
         # 檢查各平台構建狀態
         if [ "${{ needs.build-desktop.result }}" = "success" ]; then
-          echo "✅ 所有平台構建成功" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **所有平台構建成功**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 平台 | 狀態 | 產物名稱 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows x64 | ✅ 成功 | \`desktop-windows\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS Intel | ✅ 成功 | \`desktop-macos-intel\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS ARM64 | ✅ 成功 | \`desktop-macos-arm64\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux x64 | ✅ 成功 | \`desktop-linux\` |" >> $GITHUB_STEP_SUMMARY
         elif [ "${{ needs.build-desktop.result }}" = "failure" ]; then
-          echo "❌ 部分平台構建失敗" >> $GITHUB_STEP_SUMMARY
+          echo "❌ **部分平台構建失敗**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "請檢查各平台的構建日誌以了解失敗原因。" >> $GITHUB_STEP_SUMMARY
         else
-          echo "⚠️ 構建狀態: ${{ needs.build-desktop.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **構建狀態**: ${{ needs.build-desktop.result }}" >> $GITHUB_STEP_SUMMARY
         fi
 
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 下一步" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 產物信息" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "- 構建產物已上傳到 GitHub Artifacts" >> $GITHUB_STEP_SUMMARY
-        echo "- 可以在發佈流程中使用這些二進制文件" >> $GITHUB_STEP_SUMMARY
-        echo "- 如需重新構建，請手動觸發此工作流程" >> $GITHUB_STEP_SUMMARY
+        echo "- **保留期限**: 30 天" >> $GITHUB_STEP_SUMMARY
+        echo "- **下載位置**: GitHub Actions Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- **使用方式**: 在發佈工作流程中自動下載" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 下一步" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ needs.build-desktop.result }}" = "success" ]; then
+          echo "✅ **可以進行發佈**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. 前往 [Auto Release to PyPI](../../actions/workflows/publish.yml)" >> $GITHUB_STEP_SUMMARY
+          echo "2. 點擊 'Run workflow'" >> $GITHUB_STEP_SUMMARY
+          echo "3. 設置 'include_desktop' 為 true" >> $GITHUB_STEP_SUMMARY
+          echo "4. 可選：指定此次構建的 Run ID: \`${{ github.run_id }}\`" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **請修復構建問題後重新運行**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 檢查構建日誌中的錯誤信息" >> $GITHUB_STEP_SUMMARY
+          echo "- 修復問題後重新觸發此工作流程" >> $GITHUB_STEP_SUMMARY
+          echo "- 確保所有平台都能成功構建後再進行發佈" >> $GITHUB_STEP_SUMMARY
+        fi

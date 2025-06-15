@@ -86,15 +86,52 @@ ls -la src/mcp_feedback_enhanced/desktop_app/
    - 測試安裝: `uvx mcp-feedback-enhanced@latest`
    - 測試桌面模式: `uvx mcp-feedback-enhanced@latest test --desktop`
 
+## 🚀 一鍵構建和發佈
+
+### Build Desktop & Release 工作流程
+
+最簡單的方式是使用 **Build Desktop & Release** 工作流程，它會自動：
+1. 構建所有平台的桌面應用
+2. 等待構建完成
+3. 自動觸發發佈流程
+
+**使用方法**：
+1. 前往 [Build Desktop & Release](../../actions/workflows/build-and-release.yml)
+2. 點擊 "Run workflow"
+3. 選擇版本類型或輸入自定義版本
+4. 選擇要構建的平台（默認：all）
+5. 如果只想構建不發佈，勾選 "只構建桌面應用，不進行發佈"
+
+**優勢**：
+- ✅ 自動化整個流程
+- ✅ 確保桌面應用構建成功後才發佈
+- ✅ 統一的狀態報告
+- ✅ 減少手動操作錯誤
+
 ## 🔧 故障排除
 
 ### 桌面應用構建失敗
 
 1. **檢查構建日誌** - 查看 GitHub Actions 中的詳細錯誤信息
 2. **平台特定問題**:
-   - macOS: 可能缺少 Xcode 命令行工具
-   - Linux: 可能缺少系統依賴 (GTK, Cairo 等)
-   - Windows: 通常構建成功
+   - **macOS**: 可能缺少 Xcode 命令行工具或系統依賴
+   - **Linux**: 可能缺少系統依賴 (GTK, WebKit, Cairo 等)
+   - **Windows**: 通常構建成功，如失敗檢查 MSVC 工具鏈
+
+### 發佈流程問題
+
+1. **桌面應用缺失**:
+   - 確認 "Build Desktop Applications" 工作流程已成功運行
+   - 檢查指定的 Run ID 是否正確
+   - 驗證 Artifacts 是否已正確上傳
+
+2. **版本衝突**:
+   - 檢查 PyPI 上是否已存在相同版本
+   - 確認版本號格式正確 (X.Y.Z)
+
+3. **權限問題**:
+   - 確認 PYPI_API_TOKEN 密鑰已正確設置
+   - 檢查 GitHub Token 權限
 
 3. **本地測試** - 在對應平台上運行本地構建腳本
 

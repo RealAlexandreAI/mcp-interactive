@@ -287,93 +287,170 @@ jobs:
         - Auto-generated release from workflow"
         git tag "v${{ steps.bump_version.outputs.new }}"
 
-    - name: Download desktop binaries from latest build
+    - name: Check desktop build availability
+      if: ${{ github.event.inputs.include_desktop == 'true' }}
+      id: check_desktop
+      run: |
+        echo "🔍 檢查桌面應用構建可用性..."
+
+        # 如果指定了 run_id，使用指定的構建
+        if [ -n "${{ github.event.inputs.desktop_build_run_id }}" ]; then
+          echo "🎯 使用指定的構建 Run ID: ${{ github.event.inputs.desktop_build_run_id }}"
+          echo "run_id=${{ github.event.inputs.desktop_build_run_id }}" >> $GITHUB_OUTPUT
+        else
+          echo "🔍 查找最新的成功桌面構建..."
+
+          # 使用 GitHub API 查找最新的成功構建
+          LATEST_RUN=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/build-desktop.yml/runs?status=success&per_page=1" \
+            | jq -r '.workflow_runs[0].id // empty')
+
+          if [ -n "$LATEST_RUN" ] && [ "$LATEST_RUN" != "null" ]; then
+            echo "✅ 找到最新成功構建: $LATEST_RUN"
+            echo "run_id=$LATEST_RUN" >> $GITHUB_OUTPUT
+          else
+            echo "❌ 沒有找到成功的桌面構建"
+            echo "💡 請先運行 'Build Desktop Applications' 工作流程"
+            exit 1
+          fi
+        fi
+
+    - name: Download desktop binaries
       if: ${{ github.event.inputs.include_desktop == 'true' }}
       uses: dawidd6/action-download-artifact@v6
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         workflow: build-desktop.yml
-        run_id: ${{ github.event.inputs.desktop_build_run_id }}
+        run_id: ${{ steps.check_desktop.outputs.run_id }}
         path: desktop-artifacts
-        if_no_artifact_found: warn
+        if_no_artifact_found: error
 
     - name: Prepare multi-platform desktop binaries
       if: ${{ github.event.inputs.include_desktop == 'true' }}
       run: |
-        # 檢查是否有桌面應用構建產物
-        if [ ! -d "desktop-artifacts" ] || [ -z "$(ls -A desktop-artifacts 2>/dev/null)" ]; then
-          echo "⚠️ 警告：沒有找到桌面應用構建產物"
-          echo "💡 提示：請先運行 'Build Desktop Applications' 工作流程"
-          echo "🔧 或者設置 include_desktop 為 false 來跳過桌面應用"
+        echo "📦 準備多平台桌面應用二進制文件..."
+
+        # 檢查下載的產物
+        echo "🔍 檢查下載的桌面應用產物..."
+        if [ ! -d "desktop-artifacts" ]; then
+          echo "❌ 桌面產物目錄不存在"
           exit 1
         fi
+
+        echo "📁 產物目錄內容："
+        find desktop-artifacts -type f -name "*" | head -20
 
         # 創建桌面應用目錄
         mkdir -p src/mcp_feedback_enhanced/desktop_release
 
-        # 複製所有平台的二進制文件並重命名
-        echo "📦 準備多平台桌面應用二進制文件..."
+        # 定義平台映射
+        declare -A PLATFORM_MAP=(
+          ["desktop-windows"]="mcp-feedback-enhanced-desktop.exe"
+          ["desktop-macos-intel"]="mcp-feedback-enhanced-desktop-macos-intel"
+          ["desktop-macos-arm64"]="mcp-feedback-enhanced-desktop-macos-arm64"
+          ["desktop-linux"]="mcp-feedback-enhanced-desktop-linux"
+        )
 
-        # 檢查並複製各平台文件
-        if [ -f "desktop-artifacts/desktop-windows/mcp-feedback-enhanced-desktop.exe" ]; then
-          cp desktop-artifacts/desktop-windows/mcp-feedback-enhanced-desktop.exe src/mcp_feedback_enhanced/desktop_release/
-          echo "✅ Windows 二進制文件已複製"
-        else
-          echo "⚠️ Windows 二進制文件不存在"
-        fi
+        # 複製並重命名二進制文件
+        COPIED_COUNT=0
+        TOTAL_PLATFORMS=4
 
-        if [ -f "desktop-artifacts/desktop-macos-intel/mcp-feedback-enhanced-desktop" ]; then
-          cp desktop-artifacts/desktop-macos-intel/mcp-feedback-enhanced-desktop src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-intel
-          echo "✅ macOS Intel 二進制文件已複製"
-        else
-          echo "⚠️ macOS Intel 二進制文件不存在"
-        fi
+        for platform_dir in desktop-windows desktop-macos-intel desktop-macos-arm64 desktop-linux; do
+          echo "🔍 處理平台: $platform_dir"
 
-        if [ -f "desktop-artifacts/desktop-macos-arm64/mcp-feedback-enhanced-desktop" ]; then
-          cp desktop-artifacts/desktop-macos-arm64/mcp-feedback-enhanced-desktop src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-arm64
-          echo "✅ macOS ARM64 二進制文件已複製"
-        else
-          echo "⚠️ macOS ARM64 二進制文件不存在"
-        fi
+          # 查找該平台的二進制文件
+          BINARY_FILE=""
+          if [ -d "desktop-artifacts/$platform_dir" ]; then
+            # 查找二進制文件（可能是 .exe 或無擴展名）
+            BINARY_FILE=$(find "desktop-artifacts/$platform_dir" -name "mcp-feedback-enhanced-desktop*" -type f | head -1)
+          fi
 
-        if [ -f "desktop-artifacts/desktop-linux/mcp-feedback-enhanced-desktop" ]; then
-          cp desktop-artifacts/desktop-linux/mcp-feedback-enhanced-desktop src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-linux
-          echo "✅ Linux 二進制文件已複製"
-        else
-          echo "⚠️ Linux 二進制文件不存在"
-        fi
+          if [ -n "$BINARY_FILE" ] && [ -f "$BINARY_FILE" ]; then
+            TARGET_NAME="${PLATFORM_MAP[$platform_dir]}"
+            cp "$BINARY_FILE" "src/mcp_feedback_enhanced/desktop_release/$TARGET_NAME"
 
-        # 設置執行權限
-        chmod +x src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-* 2>/dev/null || true
+            # 設置執行權限（非 Windows）
+            if [[ "$TARGET_NAME" != *.exe ]]; then
+              chmod +x "src/mcp_feedback_enhanced/desktop_release/$TARGET_NAME"
+            fi
+
+            echo "✅ $platform_dir: $BINARY_FILE -> $TARGET_NAME"
+            COPIED_COUNT=$((COPIED_COUNT + 1))
+          else
+            echo "⚠️ $platform_dir: 未找到二進制文件"
+          fi
+        done
 
         # 創建 __init__.py
         echo '"""桌面應用程式二進制檔案"""' > src/mcp_feedback_enhanced/desktop_release/__init__.py
 
-        # 顯示文件列表
+        # 驗證結果
+        echo ""
+        echo "📊 複製結果統計："
+        echo "  成功複製: $COPIED_COUNT/$TOTAL_PLATFORMS 個平台"
+
+        if [ $COPIED_COUNT -eq 0 ]; then
+          echo "❌ 沒有成功複製任何平台的二進制文件"
+          exit 1
+        elif [ $COPIED_COUNT -lt $TOTAL_PLATFORMS ]; then
+          echo "⚠️ 部分平台缺失，但繼續發佈"
+        else
+          echo "✅ 所有平台都已成功複製"
+        fi
+
+        # 顯示最終文件列表
+        echo ""
         echo "📦 最終的桌面應用二進制文件："
         ls -la src/mcp_feedback_enhanced/desktop_release/
 
-    - name: Build desktop applications locally (fallback)
+    - name: Validate desktop binaries
       if: ${{ github.event.inputs.include_desktop == 'true' }}
       run: |
-        # 如果沒有預構建的桌面應用，嘗試本地構建
-        if [ ! -d "src/mcp_feedback_enhanced/desktop_release" ] || [ -z "$(ls -A src/mcp_feedback_enhanced/desktop_release 2>/dev/null)" ]; then
-          echo "🔧 沒有找到預構建的桌面應用，嘗試本地構建..."
-          echo "⚠️ 注意：本地構建可能只支援當前平台"
+        echo "🔍 驗證桌面應用二進制文件..."
 
-          # 安裝 Rust（如果還沒安裝）
-          if ! command -v cargo &> /dev/null; then
-            echo "📦 安裝 Rust..."
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-            source ~/.cargo/env
+        if [ ! -d "src/mcp_feedback_enhanced/desktop_release" ]; then
+          echo "❌ 桌面應用目錄不存在"
+          exit 1
+        fi
+
+        # 檢查各平台文件
+        PLATFORMS=(
+          "mcp-feedback-enhanced-desktop.exe:Windows"
+          "mcp-feedback-enhanced-desktop-macos-intel:macOS Intel"
+          "mcp-feedback-enhanced-desktop-macos-arm64:macOS ARM64"
+          "mcp-feedback-enhanced-desktop-linux:Linux"
+        )
+
+        VALID_COUNT=0
+        for platform_info in "${PLATFORMS[@]}"; do
+          IFS=':' read -r filename description <<< "$platform_info"
+          filepath="src/mcp_feedback_enhanced/desktop_release/$filename"
+
+          if [ -f "$filepath" ]; then
+            filesize=$(stat -f%z "$filepath" 2>/dev/null || stat -c%s "$filepath" 2>/dev/null || echo "0")
+            if [ "$filesize" -gt 1000000 ]; then  # 至少 1MB
+              echo "✅ $description: $filename (${filesize} bytes)"
+              VALID_COUNT=$((VALID_COUNT + 1))
+            else
+              echo "⚠️ $description: $filename 文件太小 (${filesize} bytes)"
+            fi
+          else
+            echo "❌ $description: $filename 不存在"
           fi
+        done
 
-          # 運行本地構建腳本
-          python scripts/build_desktop.py --release
+        echo ""
+        echo "📊 驗證結果: $VALID_COUNT/4 個平台有效"
 
-          echo "✅ 本地桌面應用構建完成"
-        else
-          echo "✅ 使用預構建的桌面應用"
+        if [ $VALID_COUNT -eq 0 ]; then
+          echo "❌ 沒有有效的桌面應用二進制文件"
+          echo "💡 建議："
+          echo "  1. 檢查 'Build Desktop Applications' 工作流程是否成功"
+          echo "  2. 確認指定的 Run ID 是否正確"
+          echo "  3. 或者設置 include_desktop 為 false"
+          exit 1
         fi
 
     - name: Skip desktop applications
@@ -426,10 +503,37 @@ jobs:
           if [ -d "src/mcp_feedback_enhanced/desktop_release" ] && [ -n "$(ls -A src/mcp_feedback_enhanced/desktop_release 2>/dev/null)" ]; then
             echo "  ✅ 桌面應用已包含在發佈中"
             echo "  📱 支援的平台："
-            [ -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop.exe" ] && echo "    - Windows x64"
-            [ -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-intel" ] && echo "    - macOS Intel"
-            [ -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-arm64" ] && echo "    - macOS Apple Silicon"
-            [ -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-linux" ] && echo "    - Linux x64"
+
+            # 檢查各平台並顯示文件大小
+            if [ -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop.exe" ]; then
+              size=$(stat -f%z "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop.exe" 2>/dev/null || stat -c%s "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop.exe" 2>/dev/null || echo "unknown")
+              echo "    - ✅ Windows x64 (${size} bytes)"
+            else
+              echo "    - ❌ Windows x64 (缺失)"
+            fi
+
+            if [ -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-intel" ]; then
+              size=$(stat -f%z "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-intel" 2>/dev/null || stat -c%s "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-intel" 2>/dev/null || echo "unknown")
+              echo "    - ✅ macOS Intel (${size} bytes)"
+            else
+              echo "    - ❌ macOS Intel (缺失)"
+            fi
+
+            if [ -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-arm64" ]; then
+              size=$(stat -f%z "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-arm64" 2>/dev/null || stat -c%s "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-macos-arm64" 2>/dev/null || echo "unknown")
+              echo "    - ✅ macOS Apple Silicon (${size} bytes)"
+            else
+              echo "    - ❌ macOS Apple Silicon (缺失)"
+            fi
+
+            if [ -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-linux" ]; then
+              size=$(stat -f%z "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-linux" 2>/dev/null || stat -c%s "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop-linux" 2>/dev/null || echo "unknown")
+              echo "    - ✅ Linux x64 (${size} bytes)"
+            else
+              echo "    - ❌ Linux x64 (缺失)"
+            fi
+
+            echo "  🔗 構建來源: Run ID ${{ steps.check_desktop.outputs.run_id }}"
           else
             echo "  ⚠️ 桌面應用未包含（可能構建失敗）"
           fi

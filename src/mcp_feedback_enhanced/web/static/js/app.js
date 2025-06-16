@@ -329,10 +329,7 @@
                     self.focusInput();
                 }
 
-                // Esc 取消
-                if (e.key === 'Escape') {
-                    self.cancelFeedback();
-                }
+                // ESC 鍵功能已移除 - 避免意外清空用戶輸入的文字
             });
 
             // 設置設定管理器的事件監聽器

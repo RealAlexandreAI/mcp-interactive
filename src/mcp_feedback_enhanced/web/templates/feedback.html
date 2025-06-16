@@ -483,12 +483,9 @@
                 <!-- 分頁導航 -->
                 <div class="tabs">
                 <div class="tab-buttons">
-                    <!-- 工作區分頁 - 移到最左邊第一個 -->
-                    <button class="tab-button hidden" data-tab="combined" data-i18n="tabs.combined">
+                    <!-- 工作區分頁 - 主要分頁 -->
+                    <button class="tab-button active" data-tab="combined" data-i18n="tabs.combined">
                         📝 工作區
-                    </button>
-                    <button class="tab-button active" data-tab="feedback" data-i18n="tabs.feedback">
-                        💬 回饋
                     </button>
                     <button class="tab-button" data-tab="summary" data-i18n="tabs.summary">
                         📋 AI 摘要
@@ -510,51 +507,7 @@
 
 
 
-            <!-- ===== 回饋分頁 ===== -->
-            <div id="tab-feedback" class="tab-content active">
-                <div class="section-description" data-i18n="feedback.description">
-                    請提供您對 AI 工作成果的回饋意見。您可以輸入文字回饋並上傳相關圖片。
-                </div>
 
-                <!-- 等待回饋狀態指示器 -->
-                {% set id = "feedbackStatusIndicator" %}
-                {% set status = "waiting" %}
-                {% set icon = "⏳" %}
-                {% set title = "等待回饋" %}
-                {% set message = "請提供您的回饋意見" %}
-                {% include 'components/status-indicator.html' %}
-
-                <div class="input-group">
-                    <label class="input-label" data-i18n="feedback.textLabel">文字回饋</label>
-
-                    <!-- 提示詞按鈕 -->
-                    <div class="prompt-input-buttons" id="feedbackPromptButtons">
-                        <button type="button" class="prompt-input-btn select-prompt-btn" data-container-index="0">
-                            <span>📝</span>
-                            <span class="button-text" data-i18n="prompts.buttons.selectPrompt">Templates</span>
-                        </button>
-                        <button type="button" class="prompt-input-btn last-prompt-btn" data-container-index="0">
-                            <span>🔄</span>
-                            <span class="button-text" data-i18n="prompts.buttons.useLastPrompt">Last Used</span>
-                        </button>
-                    </div>
-
-                    <textarea
-                        id="feedbackText"
-                        class="text-input"
-                        data-i18n-placeholder="feedback.detailedPlaceholder"
-                        placeholder="請在這裡輸入您的回饋...
-
-💡 小提示：
-• 按 Ctrl+Enter/Cmd+Enter (支援數字鍵盤) 可快速提交
-• 按 Ctrl+V/Cmd+V 可直接貼上剪貼板圖片"
-                    ></textarea>
-                </div>
-
-                <!-- 圖片上傳組件 -->
-                {% set id_prefix = "feedback" %}
-                {% include 'components/image-upload.html' %}
-            </div>
 
             <!-- ===== AI 摘要分頁 ===== -->
             <div id="tab-summary" class="tab-content">
@@ -598,8 +551,8 @@
                 </div>
             </div>
 
-            <!-- 工作區分頁 - 移動到此位置 -->
-            <div id="tab-combined" class="tab-content">
+            <!-- 工作區分頁 - 主要分頁 -->
+            <div id="tab-combined" class="tab-content active">
                 <div class="combined-content">
                     <!-- AI 摘要區域 -->
                     <div class="combined-section">

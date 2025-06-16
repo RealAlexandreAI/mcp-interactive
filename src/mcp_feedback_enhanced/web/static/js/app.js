@@ -468,9 +468,8 @@
                 promptModal: this.promptModal
             });
 
-            // 初始化輸入按鈕到所有回饋輸入區域
+            // 初始化輸入按鈕到回饋輸入區域
             const inputContainers = [
-                '#feedbackText',           // 回饋分頁的 textarea
                 '#combinedFeedbackText'    // 工作區分頁的 textarea
             ];
             this.promptInputButtons.init(inputContainers);
@@ -925,17 +924,10 @@
      * 收集回饋數據
      */
     FeedbackApp.prototype.collectFeedbackData = function() {
-        // 根據當前佈局模式獲取回饋內容
+        // 獲取合併模式的回饋內容
         let feedback = '';
-        const layoutMode = this.settingsManager ? this.settingsManager.get('layoutMode') : 'combined-vertical';
-
-        if (layoutMode.startsWith('combined')) {
-            const combinedFeedbackInput = window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText');
-            feedback = combinedFeedbackInput ? combinedFeedbackInput.value.trim() : '';
-        } else {
-            const feedbackInput = window.MCPFeedback.Utils.safeQuerySelector('#feedbackText');
-            feedback = feedbackInput ? feedbackInput.value.trim() : '';
-        }
+        const combinedFeedbackInput = window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText');
+        feedback = combinedFeedbackInput ? combinedFeedbackInput.value.trim() : '';
 
         const images = this.imageHandler ? this.imageHandler.getImages() : [];
 
@@ -1068,21 +1060,12 @@
     FeedbackApp.prototype.focusInput = function() {
         console.log('🎯 執行聚焦輸入框...');
 
-        // 根據當前佈局模式選擇正確的輸入框
-        let targetInput = null;
-        const layoutMode = this.settingsManager ? this.settingsManager.get('layoutMode') : 'combined-vertical';
+        // 聚焦到合併模式的輸入框
+        const targetInput = window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText');
 
-        if (layoutMode.startsWith('combined')) {
-            // 工作區模式：聚焦合併模式的輸入框
-            targetInput = window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText');
-        } else {
-            // 分離模式：聚焦回饋分頁的輸入框
-            targetInput = window.MCPFeedback.Utils.safeQuerySelector('#feedbackText');
-
-            // 如果不在當前可見的分頁，先切換到回饋分頁
-            if (this.uiManager && this.uiManager.getCurrentTab() !== 'feedback') {
-                this.uiManager.switchTab('feedback');
-            }
+        // 確保在工作區分頁
+        if (this.uiManager && this.uiManager.getCurrentTab() !== 'combined') {
+            this.uiManager.switchTab('combined');
         }
 
         if (targetInput) {
@@ -1459,14 +1442,10 @@
         }
 
         // 設定提示詞內容到回饋輸入框
-        const feedbackInputs = [
-            window.MCPFeedback.Utils.safeQuerySelector('#feedbackText'),
-            window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText')
-        ].filter(function(input) { return input !== null; });
-
-        feedbackInputs.forEach(function(input) {
-            input.value = prompt.content;
-        });
+        const feedbackInput = window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText');
+        if (feedbackInput) {
+            feedbackInput.value = prompt.content;
+        }
 
         // 顯示自動提交訊息
         const message = window.i18nManager ?

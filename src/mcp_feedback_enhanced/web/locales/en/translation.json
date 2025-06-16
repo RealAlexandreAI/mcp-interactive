@@ -12,7 +12,6 @@
         "updateFailed": "Failed to update content, please manually refresh the page to view new AI work summary"
     },
     "tabs": {
-        "feedback": "💬 Feedback",
         "summary": "📋 AI Summary",
         "commands": "⚡ Commands",
         "command": "⚡ Commands",

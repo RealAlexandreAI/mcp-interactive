@@ -74,7 +74,6 @@
         this.tabContents = document.querySelectorAll('.tab-content');
 
         // 回饋相關元素
-        this.feedbackText = Utils.safeQuerySelector('#feedbackText');
         this.submitBtn = Utils.safeQuerySelector('#submitBtn');
 
         console.log('✅ UI 元素初始化完成');
@@ -257,15 +256,12 @@
      * 更新回饋輸入框狀態
      */
     UIManager.prototype.updateFeedbackInputs = function() {
-        const feedbackInputs = [
-            Utils.safeQuerySelector('#feedbackText'),
-            Utils.safeQuerySelector('#combinedFeedbackText')
-        ].filter(function(input) { return input !== null; });
-
+        const feedbackInput = Utils.safeQuerySelector('#combinedFeedbackText');
         const canInput = this.feedbackState === Utils.CONSTANTS.FEEDBACK_WAITING;
-        feedbackInputs.forEach(function(input) {
-            input.disabled = !canInput;
-        });
+
+        if (feedbackInput) {
+            feedbackInput.disabled = !canInput;
+        }
     };
 
     /**
@@ -491,15 +487,11 @@
         console.log('🔄 重置回饋表單...');
 
         // 清空回饋輸入
-        const feedbackInputs = [
-            Utils.safeQuerySelector('#feedbackText'),
-            Utils.safeQuerySelector('#combinedFeedbackText')
-        ].filter(function(input) { return input !== null; });
-
-        feedbackInputs.forEach(function(input) {
-            input.value = '';
-            input.disabled = false;
-        });
+        const feedbackInput = Utils.safeQuerySelector('#combinedFeedbackText');
+        if (feedbackInput) {
+            feedbackInput.value = '';
+            feedbackInput.disabled = false;
+        }
 
         // 重新啟用提交按鈕
         const submitButtons = [

@@ -16,6 +16,7 @@ import shlex
 import subprocess
 import threading
 import time
+from collections import deque
 from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
@@ -24,6 +25,7 @@ from typing import Any
 
 import psutil
 from fastapi import WebSocket
+from starlette.websockets import WebSocketState
 
 from ...debug import web_debug_log as debug_log
 from ...utils.error_handler import ErrorHandler, ErrorType
@@ -74,9 +76,33 @@ TEMP_DIR = Path.home() / ".cache" / "interactive-feedback-mcp-web"
 # 使用 get_message_code 函數來獲取訊息代碼
 
 
+# Image magic bytes for content-type validation
+_IMAGE_MAGIC = (
+    (b"\x89PNG\r\n\x1a\n", "png"),
+    (b"\xff\xd8\xff", "jpeg"),
+    (b"GIF87a", "gif"),
+    (b"GIF89a", "gif"),
+    (b"RIFF", "webp"),  # RIFF....WEBP (need extra check)
+    (b"BM", "bmp"),
+)
+
+
+def _validate_image_bytes(data: bytes) -> bool:
+    """Return True if *data* starts with a recognised image magic signature."""
+    for magic, _ in _IMAGE_MAGIC:
+        if data.startswith(magic):
+            return True
+    return False
+
+
 def _safe_parse_command(command: str) -> list[str]:
     """
     安全解析命令字符串，避免 shell 注入攻擊
+
+    Security note: The primary defense is shell=False in subprocess.Popen,
+    which prevents shell interpretation entirely.  This blacklist is a
+    secondary layer that blocks common dangerous patterns but is NOT a
+    complete security boundary.  Do not rely on it as the sole protection.
 
     Args:
         command: 命令字符串
@@ -88,6 +114,12 @@ def _safe_parse_command(command: str) -> list[str]:
         ValueError: 如果命令包含不安全的字符
     """
     try:
+        # Reject control characters (newlines, carriage returns, null bytes)
+        # that can act as command separators on Unix systems
+        for ch in ("\n", "\r", "\x00"):
+            if ch in command:
+                raise ValueError(f"命令包含不安全的控制字符: {ch!r}")
+
         # 使用 shlex 安全解析命令
         parsed = shlex.split(command)
 
@@ -101,10 +133,13 @@ def _safe_parse_command(command: str) -> list[str]:
             "<",
             "`",
             "$(",
+            "${",
             "rm -rf",
             "del /f",
             "format",
             "fdisk",
+            "mkfs",
+            "dd if=",
         ]
 
         command_lower = command.lower()
@@ -142,8 +177,8 @@ class WebFeedbackSession:
         self.settings: dict[str, Any] = {}  # 圖片設定
         self.feedback_completed = threading.Event()
         self.process: subprocess.Popen | None = None
-        self.command_logs: list[str] = []
-        self.user_messages: list[dict] = []  # 用戶消息記錄
+        self.command_logs: deque[str] = deque(maxlen=10000)
+        self.user_messages: deque[dict] = deque(maxlen=100)
         self._cleanup_done = False  # 防止重複清理
         # 移除語言設定，改由前端處理
 
@@ -358,16 +393,19 @@ class WebFeedbackSession:
             try:
                 if not self._cleanup_done and self.is_expired():
                     debug_log(f"會話 {self.session_id} 觸發自動清理（過期）")
-                    # 使用異步方式執行清理
-                    import asyncio
-
                     try:
-                        loop = asyncio.get_event_loop()
-                        loop.create_task(
-                            self._cleanup_resources_enhanced(CleanupReason.EXPIRED)
-                        )
+                        loop = asyncio.get_running_loop()
                     except RuntimeError:
-                        # 如果沒有事件循環，使用同步清理
+                        loop = None
+
+                    if loop and loop.is_running():
+                        # Schedule coroutine from this background thread
+                        asyncio.run_coroutine_threadsafe(
+                            self._cleanup_resources_enhanced(CleanupReason.EXPIRED),
+                            loop,
+                        )
+                    else:
+                        # No running event loop, use sync cleanup
                         self._cleanup_sync_enhanced(CleanupReason.EXPIRED)
                 else:
                     # 如果還沒過期，重新安排定時器
@@ -486,7 +524,7 @@ class WebFeedbackSession:
                 f"會話 {self.session_id} 開始等待回饋，超時時間: {actual_timeout} 秒（原始: {timeout} 秒）"
             )
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
 
             def wait_in_thread():
                 return self.feedback_completed.wait(actual_timeout)
@@ -536,7 +574,7 @@ class WebFeedbackSession:
             images: 圖片列表
             settings: 圖片設定（可選）
         """
-        self.feedback_result = feedback
+        self.feedback_result = feedback[:65536] if feedback else feedback
         # 先設置設定，再處理圖片（因為處理圖片時需要用到設定）
         self.settings = settings or {}
         self.images = self._process_images(images)
@@ -581,11 +619,18 @@ class WebFeedbackSession:
 
     def add_user_message(self, message_data: dict[str, Any]) -> None:
         """添加用戶消息記錄"""
-        # 創建用戶消息記錄
+        # Store metadata only — strip full image data to prevent memory bloat
+        raw_images = message_data.get("images", [])
+        image_meta = [
+            {"name": img.get("name", "unknown"), "size": img.get("size", 0)}
+            for img in raw_images
+        ]
+
         user_message = {
             "timestamp": int(time.time() * 1000),  # 毫秒時間戳
             "content": message_data.get("content", ""),
-            "images": message_data.get("images", []),
+            "images_meta": image_meta,
+            "images_count": len(raw_images),
             "submission_method": message_data.get("submission_method", "manual"),
             "type": "feedback",
         }
@@ -634,6 +679,11 @@ class WebFeedbackSession:
 
                 if len(image_bytes) == 0:
                     debug_log(f"圖片 {img['name']} 數據為空，跳過")
+                    continue
+
+                # Validate image content by checking magic bytes
+                if not _validate_image_bytes(image_bytes):
+                    debug_log(f"圖片 {img['name']} magic bytes 驗證失敗，跳過")
                     continue
 
                 processed_images.append(
@@ -708,7 +758,7 @@ class WebFeedbackSession:
 
             # 在背景線程中讀取輸出
             async def read_output():
-                loop = asyncio.get_event_loop()
+                loop = asyncio.get_running_loop()
                 try:
                     # 使用線程池執行器來處理阻塞的讀取操作
                     def read_line():
@@ -1075,7 +1125,7 @@ class WebFeedbackSession:
             # 檢查連接狀態
             if (
                 hasattr(self.websocket, "client_state")
-                and self.websocket.client_state.DISCONNECTED
+                and self.websocket.client_state == WebSocketState.DISCONNECTED
             ):
                 debug_log("WebSocket 已斷開，跳過關閉操作")
                 return

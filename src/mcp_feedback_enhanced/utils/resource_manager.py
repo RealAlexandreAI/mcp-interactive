@@ -621,6 +621,7 @@ class ResourceManager:
     def _check_process_health(self) -> None:
         """檢查進程健康狀態"""
         current_time = time.time()
+        pids_to_remove = []
 
         for pid, process_info in self.processes.items():
             try:
@@ -637,12 +638,16 @@ class ResourceManager:
                 # 檢查進程是否還在運行
                 if process_obj and hasattr(process_obj, "poll"):
                     if process_obj.poll() is not None:
-                        # 進程已結束，移除追蹤
+                        # 進程已結束，標記移除
                         debug_log(f"檢測到進程 {pid} 已結束，移除追蹤")
-                        self.unregister_process(pid)
+                        pids_to_remove.append(pid)
 
             except Exception as e:
                 debug_log(f"檢查進程 {pid} 健康狀態失敗: {e}")
+
+        # 在迭代完成後移除已結束的進程
+        for pid in pids_to_remove:
+            self.processes.pop(pid, None)
 
     def stop_auto_cleanup(self) -> None:
         """停止自動清理"""

@@ -7,7 +7,6 @@ Web UI 主要管理類
 """
 
 import asyncio
-import concurrent.futures
 import os
 import threading
 import time
@@ -46,6 +45,11 @@ class WebUIManager:
         if env_host:
             self.host = env_host
             debug_log(f"使用環境變數指定的主機: {self.host}")
+            if env_host == "0.0.0.0":
+                debug_log(
+                    "⚠️ 安全警告：MCP_WEB_HOST 設為 0.0.0.0，服務將暴露到所有網路介面。"
+                    "建議僅在受信任的網路環境中使用此設定。"
+                )
         else:
             self.host = host
             debug_log(f"未設定 MCP_WEB_HOST 環境變數，使用預設主機 {self.host}")
@@ -193,21 +197,8 @@ class WebUIManager:
         debug_log(f"並行初始化完成，耗時: {elapsed:.2f}秒")
 
     async def _preload_i18n_async(self):
-        """異步預載入 I18N 資源"""
-
-        def preload_i18n():
-            try:
-                # I18N 在前端處理，這裡只記錄預載入完成
-                debug_log("I18N 資源預載入完成（前端處理）")
-                return True
-            except Exception as e:
-                debug_log(f"I18N 資源預載入失敗: {e}")
-                return False
-
-        # 在線程池中執行
-        loop = asyncio.get_event_loop()
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            await loop.run_in_executor(executor, preload_i18n)
+        """I18N is handled entirely by the frontend; this is a no-op stub."""
+        debug_log("I18N 資源預載入完成（前端處理）")
 
     def _setup_compression_middleware(self):
         """設置壓縮和緩存中間件"""
@@ -612,8 +603,18 @@ class WebUIManager:
         self.server_thread = threading.Thread(target=run_server_with_retry, daemon=True)
         self.server_thread.start()
 
-        # 等待伺服器啟動
-        time.sleep(2)
+        # Poll until the server is accepting connections (up to 10 s)
+        import socket
+
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            try:
+                with socket.create_connection((self.host, self.port), timeout=0.5):
+                    break
+            except OSError:
+                time.sleep(0.2)
+        else:
+            debug_log("警告：伺服器啟動等待超時，繼續執行")
 
     def open_browser(self, url: str):
         """開啟瀏覽器"""
@@ -748,9 +749,14 @@ class WebUIManager:
         # 只有在確認連接沒有被新會話使用時才關閉
         try:
             # 檢查連接狀態
+            try:
+                from starlette.websockets import WebSocketState as _WSState
+            except ImportError:
+                _WSState = None  # type: ignore[assignment]
             if (
-                hasattr(websocket, "client_state")
-                and websocket.client_state.DISCONNECTED
+                _WSState
+                and hasattr(websocket, "client_state")
+                and websocket.client_state == _WSState.DISCONNECTED
             ):
                 debug_log("WebSocket 已斷開，跳過關閉操作")
                 return

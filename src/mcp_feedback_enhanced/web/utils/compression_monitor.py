@@ -51,8 +51,9 @@ class CompressionMonitor:
         self.lock = threading.Lock()
         self._start_time = datetime.now()
 
-        # 路徑統計
+        # 路徑統計 (capped to prevent unbounded growth)
         self.path_stats: dict[str, dict] = {}
+        self._max_path_stats = 500
 
         # 內容類型統計
         self.content_type_stats: dict[str, dict] = {}
@@ -97,6 +98,10 @@ class CompressionMonitor:
         """更新路徑統計"""
         path = metric.path
         if path not in self.path_stats:
+            # Evict oldest entry if at capacity
+            if len(self.path_stats) >= self._max_path_stats:
+                oldest_key = next(iter(self.path_stats))
+                del self.path_stats[oldest_key]
             self.path_stats[path] = {
                 "requests": 0,
                 "compressed_requests": 0,

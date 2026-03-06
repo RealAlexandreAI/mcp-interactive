@@ -22,12 +22,18 @@ from ..constants import get_message_code as get_msg_code
 if TYPE_CHECKING:
     from ..main import WebUIManager
 
-# Translation data loaded fresh each request during development
-# In production, consider caching with a version key
+# Translation data cached at module level to avoid per-request disk reads.
+# Cache is populated on first access and never invalidated (translations
+# don't change at runtime).
+_translations_cache: dict | None = None
 
 
 def _load_translations() -> dict:
-    """Load translation data from JSON files."""
+    """Load translation data from JSON files (cached after first call)."""
+    global _translations_cache
+    if _translations_cache is not None:
+        return _translations_cache
+
     translations = {}
     web_locales_dir = Path(__file__).parent.parent / "locales"
     supported_languages = ["zh-CN", "en"]
@@ -47,6 +53,7 @@ def _load_translations() -> dict:
             debug_log(f"載入 Web 翻譯檔案失敗 {lang_code}: {e}")
             translations[lang_code] = {}
 
+    _translations_cache = translations
     return translations
 
 
@@ -176,7 +183,7 @@ def setup_routes(manager: "WebUIManager"):
                 "project_directory": current_session.project_directory,
                 "summary": current_session.summary,
                 "feedback_completed": current_session.feedback_completed.is_set(),
-                "command_logs": current_session.command_logs,
+                "command_logs": list(current_session.command_logs),
                 "images_count": len(current_session.images),
             }
         )
@@ -201,7 +208,7 @@ def setup_routes(manager: "WebUIManager"):
                     "feedback_completed": session.feedback_completed.is_set(),
                     "has_websocket": session.websocket is not None,
                     "is_current": session == manager.current_session,
-                    "user_messages": session.user_messages,  # 包含用戶消息記錄
+                    "user_messages": list(session.user_messages),  # 包含用戶消息記錄
                 }
                 sessions_data.append(session_info)
 
@@ -319,6 +326,13 @@ def setup_routes(manager: "WebUIManager"):
         try:
             while True:
                 data = await websocket.receive_text()
+
+                # Enforce message size limit (50 MB) to prevent memory exhaustion
+                if len(data) > 50 * 1024 * 1024:
+                    await websocket.close(code=1009, reason="Message too large")
+                    debug_log("WebSocket message exceeds 50 MB limit, closing connection")
+                    return
+
                 message = json.loads(data)
 
                 # 重新獲取當前會話，以防會話已切換
@@ -346,8 +360,27 @@ def setup_routes(manager: "WebUIManager"):
     async def save_settings(request: Request):
         """保存設定到檔案"""
 
+        # Allowed top-level setting keys (whitelist)
+        _ALLOWED_SETTINGS_KEYS = {
+            "layoutMode", "language", "logLevel", "theme",
+            "notificationEnabled", "notificationVolume", "notificationSound",
+            "autoSubmit", "autoSubmitDelay", "showTimestamp",
+            "sessionHistoryRetention", "imageSizeLimit", "imageQuality",
+            "fontSize", "fontFamily", "promptTemplates",
+            "sessionTimeout", "sessionTimeoutEnabled",
+        }
+
         try:
             data = await request.json()
+
+            if not isinstance(data, dict):
+                return JSONResponse(
+                    status_code=400,
+                    content={"status": "error", "message": "Invalid settings format"},
+                )
+
+            # Filter to allowed keys only
+            sanitized = {k: v for k, v in data.items() if k in _ALLOWED_SETTINGS_KEYS}
 
             # 使用統一的設定檔案路徑
             config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
@@ -356,7 +389,7 @@ def setup_routes(manager: "WebUIManager"):
 
             # 保存設定到檔案
             with open(settings_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+                json.dump(sanitized, f, ensure_ascii=False, indent=2)
 
             debug_log(f"設定已保存到: {settings_file}")
 

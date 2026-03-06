@@ -9,6 +9,7 @@
 
 import threading
 import time
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -84,7 +85,7 @@ class SessionCleanupManager:
         self.stats_callbacks: list[Callable] = []
 
         # 清理歷史記錄
-        self.cleanup_history: list[dict[str, Any]] = []
+        self.cleanup_history: deque[dict[str, Any]] = deque(maxlen=100)
         self.max_history = 100
 
         debug_log("SessionCleanupManager 初始化完成")
@@ -421,9 +422,7 @@ class SessionCleanupManager:
 
         self.cleanup_history.append(cleanup_record)
 
-        # 限制歷史記錄數量
-        if len(self.cleanup_history) > self.max_history:
-            self.cleanup_history = self.cleanup_history[-self.max_history :]
+        # deque with maxlen auto-trims, no manual trimming needed
 
         # 調用統計回調
         for callback in self.stats_callbacks:
@@ -463,7 +462,8 @@ class SessionCleanupManager:
 
     def get_cleanup_history(self, limit: int = 20) -> list[dict[str, Any]]:
         """獲取清理歷史記錄"""
-        return self.cleanup_history[-limit:] if self.cleanup_history else []
+        history = list(self.cleanup_history)
+        return history[-limit:] if history else []
 
     def add_cleanup_callback(self, callback: Callable):
         """添加清理回調函數"""

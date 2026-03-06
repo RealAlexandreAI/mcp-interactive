@@ -46,7 +46,7 @@ Supported AI platforms: [Cursor](https://www.cursor.com) | [Cline](https://cline
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `MCP_WEB_HOST` | Web UI bind address | `127.0.0.1` |
-| `MCP_WEB_PORT` | Web UI port | `8765` |
+| `MCP_WEB_PORT` | Web UI port | `9766` |
 | `MCP_LANGUAGE` | UI language (`zh-CN` / `en`) | Auto-detect |
 | `MCP_DEBUG` | Debug mode | `false` |
 
@@ -57,7 +57,6 @@ For SSH remote development, set `MCP_WEB_HOST` to `0.0.0.0` to allow remote acce
 - **Prompt management** - CRUD for saved prompts with smart sorting
 - **Auto-timed submit** - Configurable timer (1-86400s) with pause/resume
 - **Image upload** - Drag & drop, paste from clipboard; PNG/JPG/GIF/BMP/WebP
-- **Audio notifications** - Built-in sounds, custom uploads, volume control
 - **Multi-language** - Simplified Chinese, English, instant switching
 - **WebSocket real-time** - Status monitoring, auto-reconnect
 

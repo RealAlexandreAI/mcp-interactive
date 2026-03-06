@@ -179,18 +179,19 @@ class TestWebFeedbackSessionCleanup:
         assert stats["cleanup_reason"] == CleanupReason.TIMEOUT.value
 
     def test_status_update_resets_timer(self):
-        """測試狀態更新重置定時器"""
+        """Test that timer resets when session reaches FEEDBACK_SUBMITTED"""
         old_timer = self.session.cleanup_timer
 
-        # 更新狀態為活躍 - 使用 next_step 方法
-        self.session.next_step("測試活躍狀態")
+        # Advance: WAITING -> ACTIVE -> FEEDBACK_SUBMITTED
+        # Timer only resets on FEEDBACK_SUBMITTED
+        self.session.next_step("Active")
+        self.session.next_step("Feedback submitted")
 
-        # 檢查定時器是否被重置
+        # Timer should be reset now
         assert self.session.cleanup_timer != old_timer
-        # 修復 union-attr 錯誤 - 檢查 Timer 是否存在且活躍
         assert self.session.cleanup_timer is not None
         assert self.session.cleanup_timer.is_alive()
-        assert self.session.status == SessionStatus.ACTIVE
+        assert self.session.status == SessionStatus.FEEDBACK_SUBMITTED
 
 
 class TestSessionCleanupManager:

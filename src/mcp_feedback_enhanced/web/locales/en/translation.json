@@ -12,23 +12,23 @@
         "updateFailed": "Failed to update content, please manually refresh the page to view new AI work summary"
     },
     "tabs": {
-        "summary": "📋 AI Summary",
-        "commands": "⚡ Commands",
-        "command": "⚡ Commands",
-        "sessions": "📋 Session Management",
-        "settings": "⚙️ Settings",
-        "combined": "📝 Workspace",
-        "about": "ℹ️ About"
+        "summary": "AI Summary",
+        "commands": "Commands",
+        "command": "Commands",
+        "sessions": "Session Management",
+        "settings": "Settings",
+        "combined": "Workspace",
+        "about": "About"
     },
     "feedback": {
-        "title": "💬 Provide Feedback",
+        "title": "Provide Feedback",
         "description": "Please provide your feedback on the AI assistant's work. You can enter text feedback and upload related images.",
         "textLabel": "Text Feedback",
         "placeholder": "Please enter your feedback here...",
-        "detailedPlaceholder": "Please enter your feedback here...\n\n💡 Tips:\n• Press Ctrl+Enter/Cmd+Enter (numpad supported) for quick submit\n• Press Ctrl+I/Cmd+I to focus input box\n• Press Ctrl+V/Cmd+V to paste clipboard images directly",
+        "detailedPlaceholder": "Please enter your feedback here...\n\nTips:\n• Press Ctrl+Enter/Cmd+Enter (numpad supported) for quick submit\n• Press Ctrl+I/Cmd+I to focus input box\n• Press Ctrl+V/Cmd+V to paste clipboard images directly",
         "imageLabel": "Image Attachments (Optional)",
-        "imageUploadText": "📎 Click to select images or drag and drop images here\nSupports PNG, JPG, JPEG, GIF, BMP, WebP formats",
-        "submit": "✅ Submit Feedback",
+        "imageUploadText": "Click to select images or drag and drop images here\nSupports PNG, JPG, JPEG, GIF, BMP, WebP formats",
+        "submit": "Submit Feedback",
         "uploading": "Uploading...",
         "dragdrop": "Drag and drop images here or click to upload",
         "selectfiles": "Select Files",
@@ -54,7 +54,7 @@
         "provideTextOrImage": "Please provide feedback text or upload an image"
     },
     "summary": {
-        "title": "📋 AI Work Summary",
+        "title": "AI Work Summary",
         "description": "Below is the work summary completed by the AI assistant. Please review carefully and provide your feedback.",
         "placeholder": "AI work summary will be displayed here...",
         "empty": "No summary content available",
@@ -62,12 +62,12 @@
         "refresh": "Refresh"
     },
     "commands": {
-        "title": "⚡ Command Execution",
+        "title": "Command Execution",
         "description": "Execute commands here to verify results or collect more information. Commands will be executed in the project directory.",
         "inputLabel": "Command Input",
         "placeholder": "Enter command to execute...",
-        "execute": "▶️ Execute",
-        "runButton": "▶️ Execute",
+        "execute": "Execute",
+        "runButton": "Execute",
         "clear": "Clear",
         "output": "Command Output",
         "outputLabel": "Command Output",
@@ -81,11 +81,11 @@
         "executing": "Executing..."
     },
     "command": {
-        "title": "⚡ Command Execution",
+        "title": "Command Execution",
         "inputLabel": "Command Input",
         "placeholder": "Enter command to execute...",
-        "execute": "▶️ Execute",
-        "runButton": "▶️ Execute",
+        "execute": "Execute",
+        "runButton": "Execute",
         "clear": "Clear",
         "output": "Command Output",
         "running": "Running...",
@@ -93,7 +93,7 @@
         "error": "Execution Error",
         "history": "Command History",
         "autoCommand": {
-            "title": "🤖 Auto Command Settings",
+            "title": "Auto Command Settings",
             "description": "Configure commands to execute automatically at specific times",
             "enabled": "Enable Auto Commands",
             "onNewSession": "Execute on New Session",
@@ -105,20 +105,20 @@
             "help": "These commands will execute automatically at the corresponding times. Leave empty to skip execution."
         },
         "autoSettings": {
-            "exampleNewSession": "💡 Example: pwd, git status, ls -la",
-            "exampleFeedback": "💡 Example: date, echo \"Done\", git log -1"
+            "exampleNewSession": "Example: pwd, git status, ls -la",
+            "exampleFeedback": "Example: date, echo \"Done\", git log -1"
         }
     },
     "combined": {
-        "summaryTitle": "📋 AI Work Summary",
-        "feedbackTitle": "💬 Provide Feedback"
+        "summaryTitle": "AI Response",
+        "feedbackTitle": "Feedback"
     },
     "settingsUI": {
-        "title": "⚙️ Settings",
-        "language": "🌍 Language",
+        "title": "Settings",
+        "language": "Language",
         "currentLanguage": "Current Language",
         "languageDesc": "Select interface display language",
-        "interface": "🎨 Interface Settings",
+        "interface": "Interface Settings",
         "layoutMode": "Interface Layout Mode",
         "layoutModeDesc": "Select how AI summary and feedback input are displayed",
         "combinedVertical": "Vertical Layout",
@@ -129,7 +129,7 @@
         "autoCloseDesc": "Automatically close page after submitting feedback",
         "theme": "Theme",
         "notifications": "Notifications",
-        "advanced": "🔧 Advanced Settings",
+        "advanced": "Advanced Settings",
         "save": "Save Settings",
         "reset": "Reset Settings",
         "resetDesc": "Clear all saved settings and restore to default state",
@@ -139,7 +139,7 @@
         "timeout": "Connection Timeout (seconds)",
         "autorefresh": "Auto Refresh",
         "debug": "Debug Mode",
-        "sessionTimeoutTitle": "⏱️ Session Timeout Settings",
+        "sessionTimeoutTitle": "Session Timeout Settings",
         "sessionTimeoutEnable": "Enable Session Timeout",
         "sessionTimeoutEnableDesc": "When enabled, the session will automatically close after the specified time",
         "sessionTimeoutDuration": "Timeout Duration (seconds)",
@@ -209,8 +209,8 @@
     },
     "buttons": {
         "ok": "OK",
-        "cancel": "❌ Cancel",
-        "submit": "✅ Submit Feedback",
+        "cancel": "Cancel",
+        "submit": "Submit Feedback",
         "processing": "Processing...",
         "submitted": "Submitted",
         "retry": "Retry",
@@ -219,7 +219,7 @@
         "download": "Download"
     },
     "sessionTimeout": {
-        "timeout": "⏰ Session has timed out, interface will close automatically",
+        "timeout": "Session has timed out, interface will close automatically",
         "timeoutWarning": "Session is about to timeout",
         "timeoutDescription": "Due to prolonged inactivity, the session has timed out. The interface will automatically close in 3 seconds.",
         "closing": "Closing...",
@@ -272,7 +272,7 @@
     },
     "sessionHistory": {
         "management": {
-            "title": "📚 Session History Management",
+            "title": "Session History Management",
             "retentionPeriod": "Retention Period",
             "retentionHours": "hours",
             "export": "Export",
@@ -370,12 +370,12 @@
     },
 
     "dynamic": {
-        "aiSummary": "Test Web UI Functionality\n\n🎯 **Test Items:**\n- Web UI server startup and operation\n- WebSocket real-time communication\n- Feedback submission functionality\n- Image upload and preview\n- Command execution functionality\n- Smart Ctrl+V image pasting\n- Multi-language interface functionality\n\n📋 **Test Steps:**\n1. Test image upload (drag-drop, file selection, clipboard)\n2. Press Ctrl+V in text box to test smart pasting\n3. Try switching languages (Traditional Chinese/Simplified Chinese/English)\n4. Test command execution functionality\n5. Submit feedback and images\n\nPlease test these features and provide feedback!",
+        "aiSummary": "Test Web UI Functionality\n\n**Test Items:**\n- Web UI server startup and operation\n- WebSocket real-time communication\n- Feedback submission functionality\n- Image upload and preview\n- Command execution functionality\n- Smart Ctrl+V image pasting\n- Multi-language interface functionality\n\n**Test Steps:**\n1. Test image upload (drag-drop, file selection, clipboard)\n2. Press Ctrl+V in text box to test smart pasting\n3. Try switching languages (Traditional Chinese/Simplified Chinese/English)\n4. Test command execution functionality\n5. Submit feedback and images\n\nPlease test these features and provide feedback!",
         "terminalWelcome": "Welcome to Interactive Feedback Terminal\n========================================\nProject Directory: {sessionId}\nEnter commands and press Enter or click Execute button\nSupported commands: ls, dir, pwd, cat, type, etc.\n\n$ "
     },
     "prompts": {
         "management": {
-            "title": "📝 Prompt Templates Management",
+            "title": "Prompt Templates Management",
             "description": "Manage your frequently used prompt templates for quick selection during feedback input",
             "addNew": "Add New Prompt",
             "edit": "Edit",
@@ -424,7 +424,7 @@
         }
     },
     "about": {
-        "title": "ℹ️ About",
+        "title": "About",
         "description": "A powerful MCP server that provides human-in-the-loop feedback functionality for AI-assisted development tools. Features a Web UI interface with rich capabilities including image upload, command execution, and multi-language support.",
         "appInfo": "Application Information",
         "version": "Version",
@@ -440,7 +440,7 @@
     },
     "images": {
         "settings": {
-            "title": "🖼️ Image Settings",
+            "title": "Image Settings",
             "sizeLimit": "Image Size Limit",
             "sizeLimitDesc": "Set the maximum file size limit for uploaded images",
             "sizeLimitOptions": {
@@ -451,15 +451,15 @@
             },
             "base64Detail": "Base64 Compatibility Mode",
             "base64DetailHelp": "When enabled, includes full Base64 image data in text, improving compatibility with certain AI models",
-            "base64Warning": "⚠️ Increases transmission size",
-            "compatibilityHint": "💡 Images not recognized correctly?",
+            "base64Warning": "Increases transmission size",
+            "compatibilityHint": "Images not recognized correctly?",
             "enableBase64Hint": "Try enabling Base64 compatibility mode"
         },
         "sizeLimitExceeded": "Image {filename} size is {size}, exceeds {limit} limit!",
         "sizeLimitExceededAdvice": "Consider compressing the image with editing software before uploading, or adjust the image size limit settings."
     },
     "autoSubmit": {
-        "title": "⏰ Auto Timed Submit",
+        "title": "Auto Timed Submit",
         "enable": "Enable Auto Submit",
         "enableDesc": "When enabled, automatically submit selected prompt content after specified time",
         "timeout": "Countdown Time (seconds)",
@@ -480,7 +480,7 @@
     },
     "audio": {
         "notification": {
-            "title": "🔊 Audio Notification Settings",
+            "title": "Audio Notification Settings",
             "description": "Configure audio notifications for session updates",
             "enabled": "Enable Audio Notifications",
             "enabledDesc": "Play audio notifications when there are new session updates",
@@ -518,7 +518,7 @@
         "title": "Browser Notifications",
         "settingLabel": "Browser Notifications",
         "description": "Get notified when new sessions are created (only when in background)",
-        "enabled": "Notifications enabled ✅",
+        "enabled": "Notifications enabled ",
         "disabled": "Notifications disabled",
         "permissionRequired": "Notification permission required to enable this feature",
         "permissionDenied": "Browser has blocked notifications, please allow in browser settings",

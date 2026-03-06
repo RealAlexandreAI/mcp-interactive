@@ -20,7 +20,7 @@
 
         this.imageSizeLimit = options.imageSizeLimit || 0;
         this.enableBase64Detail = options.enableBase64Detail || false;
-        this.layoutMode = options.layoutMode || 'combined-vertical';
+        this.layoutMode = options.layoutMode || 'combined-horizontal';
         this.currentImagePrefix = '';
 
         // UI 元素（保留用於設定同步）

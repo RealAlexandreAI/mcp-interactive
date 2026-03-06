@@ -27,7 +27,7 @@
         this.tabManager = null;
         this.webSocketManager = null;
         this.connectionMonitor = null;
-        this.sessionManager = null;
+        // sessionManager removed in UI overhaul
         this.imageHandler = null;
         this.settingsManager = null;
         this.uiManager = null;
@@ -38,9 +38,7 @@
         this.promptSettingsUI = null;
         this.promptInputButtons = null;
 
-        // 音效管理器
-        this.audioManager = null;
-        this.audioSettingsUI = null;
+        // 音效管理器 (removed)
 
         // 通知管理器
         this.notificationManager = null;
@@ -179,6 +177,9 @@
                             },
                             onLayoutModeChange: function(layoutMode) {
                                 self.handleLayoutModeChange(layoutMode);
+                            },
+                            onFeedbackStateChange: function(state) {
+                                self.updateStatusRing(state);
                             }
                         });
 
@@ -194,16 +195,7 @@
                             }
                         });
 
-                        // 6. 初始化會話管理器
-                        self.sessionManager = new window.MCPFeedback.SessionManager({
-                            settingsManager: self.settingsManager,
-                            onSessionChange: function(sessionData) {
-                                console.log('📋 會話變更:', sessionData);
-                            },
-                            onSessionSelect: function(sessionId) {
-                                console.log('📋 會話選擇:', sessionId);
-                            }
-                        });
+                        // 6. SessionManager removed - no longer needed
 
                         // 7. 初始化 WebSocket 管理器
                         self.webSocketManager = new window.MCPFeedback.WebSocketManager({
@@ -240,8 +232,7 @@
                         // 9. 初始化提示詞管理器
                         self.initializePromptManagers();
 
-                        // 10. 初始化音效管理器
-                        self.initializeAudioManagers();
+                        // 10. (audio removed)
 
                         // 11. 初始化通知管理器
                         self.initializeNotificationManager();
@@ -255,21 +246,16 @@
                         // 14. 應用設定到 UI
                         self.settingsManager.applyToUI();
 
+                        // 14b. Initialize status ring
+                        self.updateStatusRing(window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_WAITING);
+
                         // 15. 初始化各個管理器
-                        self.uiManager.initTabs();
                         self.imageHandler.init();
 
                         // 16. 檢查並啟動自動提交（如果條件滿足）
                         setTimeout(function() {
                             self.checkAndStartAutoSubmit();
                         }, 500); // 延遲 500ms 確保所有初始化完成
-
-                        // 17. 播放啟動音效（如果音效已啟用）
-                        setTimeout(function() {
-                            if (self.audioManager) {
-                                self.audioManager.playStartupNotification();
-                            }
-                        }, 800); // 延遲 800ms 確保所有初始化完成且避免與其他音效衝突
 
                         // 17. 初始化會話超時設定
                         if (self.settingsManager.get('sessionTimeoutEnabled')) {
@@ -310,6 +296,41 @@
                 });
             });
 
+            // OK quick reply button - fills "OK" and submits directly
+            var okQuickBtn = window.MCPFeedback.Utils.safeQuerySelector('#okQuickBtn');
+            if (okQuickBtn) {
+                okQuickBtn.addEventListener('click', function() {
+                    var textArea = window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText');
+                    if (textArea) {
+                        textArea.value = 'OK';
+                    }
+                    // Direct submit: bypass canSubmitFeedback state checks,
+                    // only require WebSocket readiness
+                    var wsReady = self.webSocketManager && self.webSocketManager.isReady();
+                    if (wsReady) {
+                        var feedbackData = {
+                            feedback: 'OK',
+                            images: [],
+                            settings: {
+                                image_size_limit: self.imageHandler ? self.imageHandler.imageSizeLimit : 0,
+                                enable_base64_detail: self.imageHandler ? self.imageHandler.enableBase64Detail : false
+                            }
+                        };
+                        self.submitFeedbackInternal(feedbackData);
+                    } else {
+                        var msg = window.i18nManager ?
+                            window.i18nManager.t('feedback.connectingMessage') :
+                            'WebSocket connecting, will submit when ready...';
+                        window.MCPFeedback.Utils.showMessage(msg, window.MCPFeedback.Utils.CONSTANTS.MESSAGE_INFO);
+                        self.pendingSubmission = {
+                            feedback: 'OK',
+                            images: [],
+                            settings: {}
+                        };
+                    }
+                });
+            }
+
             // 取消按鈕事件 - 已移除取消按鈕，保留 ESC 快捷鍵功能
 
             // 命令執行事件
@@ -327,15 +348,6 @@
                         e.preventDefault();
                         self.runCommand();
                     }
-                });
-            }
-
-            // 複製用戶內容按鈕
-            const copyUserFeedback = window.MCPFeedback.Utils.safeQuerySelector('#copyUserFeedback');
-            if (copyUserFeedback) {
-                copyUserFeedback.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    self.copyUserFeedback();
                 });
             }
 
@@ -517,43 +529,6 @@
 
         } catch (error) {
             console.error('❌ 提示詞管理器初始化失敗:', error);
-        }
-    };
-
-    /**
-     * 初始化音效管理器
-     */
-    FeedbackApp.prototype.initializeAudioManagers = function() {
-        console.log('🔊 初始化音效管理器...');
-
-        try {
-            // 檢查音效模組是否已載入
-            if (!window.MCPFeedback.AudioManager) {
-                console.warn('⚠️ 音效模組未載入，跳過初始化');
-                return;
-            }
-
-            // 1. 初始化音效管理器
-            this.audioManager = new window.MCPFeedback.AudioManager({
-                settingsManager: this.settingsManager,
-                onSettingsChange: function(settings) {
-                    console.log('🔊 音效設定已變更:', settings);
-                }
-            });
-            this.audioManager.initialize();
-
-            // 2. 初始化音效設定 UI
-            this.audioSettingsUI = new window.MCPFeedback.AudioSettingsUI({
-                container: document.querySelector('#audioManagementContainer'),
-                audioManager: this.audioManager,
-                t: window.i18nManager ? window.i18nManager.t.bind(window.i18nManager) : function(key, defaultValue) { return defaultValue || key; }
-            });
-            this.audioSettingsUI.initialize();
-
-            console.log('✅ 音效管理器初始化完成');
-
-        } catch (error) {
-            console.error('❌ 音效管理器初始化失敗:', error);
         }
     };
 
@@ -777,13 +752,7 @@
      * 刷新會話列表以顯示最新狀態
      */
     FeedbackApp.prototype.refreshSessionList = function() {
-        // 如果有會話管理器，觸發數據刷新
-        if (this.sessionManager && this.sessionManager.dataManager) {
-            console.log('🔄 刷新會話列表以顯示最新狀態');
-            this.sessionManager.dataManager.loadFromServer();
-        } else {
-            console.log('⚠️ 會話管理器未初始化，跳過會話列表刷新');
-        }
+        // Session manager removed in UI overhaul - no-op
     };
 
     /**
@@ -826,11 +795,6 @@
         if (data.action === 'new_session_created' || data.type === 'new_session_created') {
             console.log('🆕 檢測到新會話創建，局部更新頁面內容');
 
-            // 播放音效通知
-            if (this.audioManager) {
-                this.audioManager.playNotification();
-            }
-            
             // 執行新會話自動命令
             this.executeAutoCommandOnNewSession();
 
@@ -892,11 +856,6 @@
             return; // 提前返回，不執行後續的局部更新邏輯
         }
 
-        // 播放音效通知
-        if (this.audioManager) {
-            this.audioManager.playNotification();
-        }
-
         // 顯示更新通知
         window.MCPFeedback.Utils.showMessage(data.message || '會話已更新，正在局部更新內容...', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS);
 
@@ -906,65 +865,10 @@
             console.log('📋 會話 ID 更新: ' + this.currentSessionId + ' -> ' + newSessionId);
 
             // 保存舊會話到歷史記錄（在更新當前會話之前）
-            if (this.currentSessionId && this.sessionManager && this.currentSessionId !== newSessionId) {
-                console.log('📋 嘗試獲取當前會話數據...');
-                // 從 SessionManager 獲取當前會話的完整數據
-                const currentSessionData = this.sessionManager.getCurrentSessionData();
-                console.log('📋 從 currentSession 獲取數據:', this.currentSessionId);
-
-                if (currentSessionData) {
-                    // 計算實際持續時間
-                    const now = Date.now() / 1000;
-                    let duration = 300; // 預設 5 分鐘
-
-                    if (currentSessionData.created_at) {
-                        let createdAt = currentSessionData.created_at;
-                        // 處理時間戳格式
-                        if (createdAt > 1e12) {
-                            createdAt = createdAt / 1000;
-                        }
-                        duration = Math.max(1, Math.round(now - createdAt));
-                    }
-
-                    const oldSessionData = {
-                        session_id: this.currentSessionId,
-                        status: 'completed',
-                        created_at: currentSessionData.created_at || (now - duration),
-                        completed_at: now,
-                        duration: duration,
-                        project_directory: currentSessionData.project_directory,
-                        summary: currentSessionData.summary
-                    };
-
-                    console.log('📋 準備將舊會話加入歷史記錄:', oldSessionData);
-
-                    // 先更新當前會話 ID，再調用 addSessionToHistory
-                    this.currentSessionId = newSessionId;
-
-                    // 更新會話管理器的當前會話（這樣 addSessionToHistory 檢查時就不會認為是當前活躍會話）
-                    if (this.sessionManager) {
-                        this.sessionManager.updateCurrentSession(data.session_info);
-                    }
-
-                    // 現在可以安全地將舊會話加入歷史記錄
-                    this.sessionManager.dataManager.addSessionToHistory(oldSessionData);
-                } else {
-                    console.log('⚠️ 無法獲取當前會話數據，跳過歷史記錄保存');
-                    // 仍然需要更新當前會話 ID
-                    this.currentSessionId = newSessionId;
-                    // 更新會話管理器
-                    if (this.sessionManager) {
-                        this.sessionManager.updateCurrentSession(data.session_info);
-                    }
-                }
-            } else {
-                // 沒有舊會話或會話 ID 相同，直接更新
-                this.currentSessionId = newSessionId;
-                // 更新會話管理器
-                if (this.sessionManager) {
-                    this.sessionManager.updateCurrentSession(data.session_info);
-                }
+            if (this.currentSessionId && this.currentSessionId !== newSessionId) {
+                console.log('📋 Session ID changed: ' + this.currentSessionId + ' -> ' + newSessionId);
             }
+            this.currentSessionId = newSessionId;
 
             // 檢查當前狀態，只有在非已提交狀態時才重置
             const currentState = this.uiManager.getFeedbackState();
@@ -1026,10 +930,7 @@
             isNewSession: sessionId !== this.currentSessionId
         });
 
-        // 更新 SessionManager 的狀態資訊
-        if (this.sessionManager && this.sessionManager.updateStatusInfo) {
-            this.sessionManager.updateStatusInfo(statusInfo);
-        }
+        // SessionManager removed in UI overhaul - updateStatusInfo is no-op
 
         // 更新頁面標題顯示會話信息
         if (statusInfo.project_directory) {
@@ -1242,39 +1143,8 @@
     /**
      * 記錄用戶訊息到會話歷史
      */
-    FeedbackApp.prototype.recordUserMessage = function(feedbackData) {
-        console.log('📝 記錄用戶訊息到會話歷史...');
-
-        try {
-            // 檢查是否有會話管理器
-            if (!this.sessionManager || !this.sessionManager.dataManager) {
-                console.warn('📝 會話管理器未初始化，跳過用戶訊息記錄');
-                return;
-            }
-
-            // 判斷提交方式
-            const submissionMethod = this.autoSubmitManager && this.autoSubmitManager.isEnabled ? 'auto' : 'manual';
-
-            // 建立訊息記錄資料
-            const messageData = {
-                content: feedbackData.feedback || '',
-                images: feedbackData.images || [],
-                submission_method: submissionMethod
-            };
-
-            // 記錄到會話歷史
-            const success = this.sessionManager.dataManager.addUserMessage(messageData);
-
-            if (success) {
-                console.log('📝 用戶訊息已記錄到會話歷史');
-            } else {
-                console.log('📝 用戶訊息記錄被跳過（可能因隱私設定或其他原因）');
-            }
-
-        } catch (error) {
-            console.error('❌ 記錄用戶訊息失敗:', error);
-            // 不影響主要功能，只記錄錯誤
-        }
+    FeedbackApp.prototype.recordUserMessage = function() {
+        // SessionManager removed in UI overhaul - no-op
     };
 
     /**
@@ -1294,57 +1164,6 @@
         }
 
         console.log('✅ 回饋內容清空完成');
-    };
-
-    /**
-     * 複製用戶回饋內容
-     */
-    FeedbackApp.prototype.copyUserFeedback = function() {
-        console.log('📋 複製用戶回饋內容...');
-
-        const feedbackInput = window.MCPFeedback.Utils.safeQuerySelector('#combinedFeedbackText');
-        if (!feedbackInput || !feedbackInput.value.trim()) {
-            window.MCPFeedback.Utils.showMessage(
-                window.i18nManager ? window.i18nManager.t('feedback.noContent') : '沒有可複製的內容',
-                window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING
-            );
-            return;
-        }
-
-        const textContent = feedbackInput.value;
-
-        // 複製到剪貼板
-        navigator.clipboard.writeText(textContent)
-            .then(function() {
-                console.log('✅ 內容已複製到剪貼板');
-                window.MCPFeedback.Utils.showMessage(
-                    window.i18nManager ? window.i18nManager.t('feedback.copySuccess') : '內容已複製到剪貼板',
-                    window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS
-                );
-            })
-            .catch(function(err) {
-                console.error('❌ 複製失敗:', err);
-                // 降級方案：使用舊的複製方法
-                const textarea = document.createElement('textarea');
-                textarea.value = textContent;
-                textarea.style.position = 'fixed';
-                textarea.style.left = '-999999px';
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    document.execCommand('copy');
-                    window.MCPFeedback.Utils.showMessage(
-                        window.i18nManager ? window.i18nManager.t('feedback.copySuccess') : '內容已複製到剪貼板',
-                        window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS
-                    );
-                } catch (error) {
-                    window.MCPFeedback.Utils.showMessage(
-                        window.i18nManager ? window.i18nManager.t('feedback.copyFailed') : '複製失敗',
-                        window.MCPFeedback.Utils.CONSTANTS.MESSAGE_ERROR
-                    );
-                }
-                document.body.removeChild(textarea);
-            });
     };
 
     /**
@@ -1392,13 +1211,13 @@
 
         if (!command) {
             const emptyCommandMessage = window.i18nManager ? window.i18nManager.t('commands.emptyCommand') : '請輸入命令';
-            this.appendCommandOutput('⚠️ ' + emptyCommandMessage + '\n');
+            this.appendCommandOutput('[WARN] ' + emptyCommandMessage + '\n');
             return;
         }
 
         if (!this.webSocketManager || !this.webSocketManager.isConnected) {
             const notConnectedMessage = window.i18nManager ? window.i18nManager.t('commands.notConnected') : 'WebSocket 未連接，無法執行命令';
-            this.appendCommandOutput('❌ ' + notConnectedMessage + '\n');
+            this.appendCommandOutput('[ERROR] ' + notConnectedMessage + '\n');
             return;
         }
 
@@ -1419,12 +1238,12 @@
                 this.appendCommandOutput('[' + executingMessage + ']\n');
             } else {
                 const sendFailedMessage = window.i18nManager ? window.i18nManager.t('commands.sendFailed') : '發送命令失敗';
-                this.appendCommandOutput('❌ ' + sendFailedMessage + '\n');
+                this.appendCommandOutput('[ERROR] ' + sendFailedMessage + '\n');
             }
 
         } catch (error) {
             const sendFailedMessage = window.i18nManager ? window.i18nManager.t('commands.sendFailed') : '發送命令失敗';
-            this.appendCommandOutput('❌ ' + sendFailedMessage + ': ' + error.message + '\n');
+            this.appendCommandOutput('[ERROR] ' + sendFailedMessage + ': ' + error.message + '\n');
         }
     };
 
@@ -1437,7 +1256,7 @@
             // 檢查是否是空的（首次使用）
             if (commandOutput.textContent === '' && output.startsWith('$')) {
                 // 如果是空的且輸出以 $ 開頭，添加歡迎訊息
-                const projectPathElement = window.MCPFeedback.Utils.safeQuerySelector('#projectPathDisplay');
+                const projectPathElement = window.MCPFeedback.Utils.safeQuerySelector('#sidebarProjectDir');
                 const projectPath = projectPathElement ? projectPathElement.getAttribute('data-full-path') : 'unknown';
                 
                 const welcomeText = `歡迎使用互動回饋終端
@@ -1465,7 +1284,16 @@
         if (commandInput) commandInput.disabled = false;
         if (runCommandBtn) {
             runCommandBtn.disabled = false;
-            runCommandBtn.textContent = '▶️ 執行';
+            runCommandBtn.textContent = '';
+            var playIcon = document.createElement('i');
+            playIcon.setAttribute('data-lucide', 'play');
+            playIcon.style.width = '14px';
+            playIcon.style.height = '14px';
+            runCommandBtn.appendChild(playIcon);
+            runCommandBtn.appendChild(document.createTextNode(' '));
+            var execText = window.i18nManager ? window.i18nManager.t('commands.execute') : 'Execute';
+            runCommandBtn.appendChild(document.createTextNode(execText));
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
     };
 
@@ -1516,7 +1344,7 @@
         if (!command) return;
         
         console.log('🚀 執行提交回饋後自動命令:', command);
-        this.appendCommandOutput('✅ [自動執行] $ ' + command + '\n');
+        this.appendCommandOutput('[Auto] $ ' + command + '\n');
         
         // 使用 WebSocket 發送命令
         if (this.webSocketManager && this.webSocketManager.isConnected) {
@@ -1537,7 +1365,11 @@
     FeedbackApp.prototype.updateSummaryStatus = function(message) {
         const summaryElements = document.querySelectorAll('.ai-summary-content');
         summaryElements.forEach(function(element) {
-            element.innerHTML = '<div style="padding: 16px; background: var(--success-color); color: white; border-radius: 6px; text-align: center;">✅ ' + message + '</div>';
+            element.textContent = '';
+            var div = document.createElement('div');
+            div.style.cssText = 'padding: 16px; background: var(--success-color); color: white; border-radius: 6px; text-align: center;';
+            div.textContent = message;
+            element.appendChild(div);
         });
     };
 
@@ -1620,7 +1452,7 @@
             testFeedbackCommand.addEventListener('click', function() {
                 const command = commandOnFeedbackSubmit ? commandOnFeedbackSubmit.value.trim() : '';
                 if (command) {
-                    self.testCommand(command, '✅ [測試] ');
+                    self.testCommand(command, '[Test] ');
                 } else {
                     window.MCPFeedback.Utils.showMessage('請先輸入命令', window.MCPFeedback.Utils.CONSTANTS.MESSAGE_WARNING);
                 }
@@ -1658,7 +1490,7 @@
                 command: command
             });
         } else {
-            this.appendCommandOutput('❌ WebSocket 未連接\n');
+            this.appendCommandOutput('[ERROR] WebSocket not connected\n');
         }
     };
 
@@ -1750,9 +1582,10 @@
 
                     this.isEnabled = true;
                     this.currentPromptId = promptId;
+                    this.totalSeconds = timeoutSeconds;
 
                     // 顯示倒數計時器
-                    self.showCountdownDisplay();
+                    self.showCountdownDisplay(timeoutSeconds);
 
                     // 創建倒數計時器
                     this.countdown = window.MCPFeedback.Utils.Time.createAutoSubmitCountdown(
@@ -2028,47 +1861,126 @@
     };
 
     /**
-     * 顯示倒數計時器
+     * Ring circumference constant: 2 * PI * 52 = 326.73
      */
-    FeedbackApp.prototype.showCountdownDisplay = function() {
-        const countdownDisplay = document.getElementById('countdownDisplay');
+    var RING_CIRCUMFERENCE = 2 * Math.PI * 52;
 
-        if (countdownDisplay) {
-            countdownDisplay.style.display = 'flex';
+    /**
+     * Update status ring to reflect feedbackState
+     */
+    FeedbackApp.prototype.updateStatusRing = function(state) {
+        var card = document.getElementById('statusRingCard');
+        if (!card) return;
+
+        // Remove all state classes
+        card.classList.remove('state-waiting', 'state-countdown', 'state-submitted');
+
+        var waitingEl = document.getElementById('ringStateWaiting');
+        var countdownEl = document.getElementById('ringStateCountdown');
+        var submittedEl = document.getElementById('ringStateSubmitted');
+        var progress = document.getElementById('ringProgress');
+
+        // Hide all states
+        if (waitingEl) waitingEl.style.display = 'none';
+        if (countdownEl) countdownEl.style.display = 'none';
+        if (submittedEl) submittedEl.style.display = 'none';
+
+        // Reset progress ring
+        if (progress) {
+            progress.setAttribute('stroke-dashoffset', '0');
+            progress.classList.remove('danger');
+        }
+
+        var Utils = window.MCPFeedback.Utils;
+        switch (state) {
+            case Utils.CONSTANTS.FEEDBACK_WAITING:
+                card.classList.add('state-waiting');
+                if (waitingEl) waitingEl.style.display = 'flex';
+                break;
+            case Utils.CONSTANTS.FEEDBACK_SUBMITTED:
+                card.classList.add('state-submitted');
+                if (submittedEl) submittedEl.style.display = 'flex';
+                break;
+            default:
+                card.classList.add('state-waiting');
+                if (waitingEl) waitingEl.style.display = 'flex';
+        }
+
+        if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+    };
+
+    /**
+     * Show countdown mode on the ring
+     */
+    FeedbackApp.prototype.showCountdownDisplay = function(totalSeconds) {
+        this._countdownTotal = totalSeconds || 30;
+
+        var card = document.getElementById('statusRingCard');
+        if (!card) return;
+
+        card.classList.remove('state-waiting', 'state-submitted');
+        card.classList.add('state-countdown');
+
+        var waitingEl = document.getElementById('ringStateWaiting');
+        var countdownEl = document.getElementById('ringStateCountdown');
+        var submittedEl = document.getElementById('ringStateSubmitted');
+        var pauseBtn = document.getElementById('countdownPauseBtn');
+
+        if (waitingEl) waitingEl.style.display = 'none';
+        if (submittedEl) submittedEl.style.display = 'none';
+        if (countdownEl) countdownEl.style.display = 'flex';
+        if (pauseBtn) pauseBtn.style.display = 'flex';
+
+        // Reset progress
+        var progress = document.getElementById('ringProgress');
+        if (progress) {
+            progress.setAttribute('stroke-dasharray', String(RING_CIRCUMFERENCE));
+            progress.setAttribute('stroke-dashoffset', '0');
+            progress.classList.remove('danger');
         }
     };
 
     /**
-     * 隱藏倒數計時器
+     * Hide countdown, revert to waiting state
      */
     FeedbackApp.prototype.hideCountdownDisplay = function() {
-        const countdownDisplay = document.getElementById('countdownDisplay');
+        var pauseBtn = document.getElementById('countdownPauseBtn');
+        if (pauseBtn) pauseBtn.style.display = 'none';
 
-        if (countdownDisplay) {
-            countdownDisplay.style.display = 'none';
-            // 重置暫停狀態
-            this.updateCountdownPauseState(false);
-        }
+        this.updateCountdownPauseState(false);
+
+        // Revert to current feedback state
+        var state = this.uiManager ? this.uiManager.getFeedbackState() : 'waiting';
+        this.updateStatusRing(state);
     };
 
     /**
-     * 更新倒數計時顯示
+     * Update countdown display with precise ring progress
      */
     FeedbackApp.prototype.updateCountdownDisplay = function(remainingSeconds) {
-        const countdownTimer = document.getElementById('countdownTimer');
+        var total = this._countdownTotal || 30;
+        var fraction = remainingSeconds / total; // 1.0 -> 0.0
 
-        const formattedTime = window.MCPFeedback.Utils.Time.formatAutoSubmitCountdown(remainingSeconds);
-
-        // 更新倒數計時器
-        if (countdownTimer) {
-            countdownTimer.textContent = formattedTime;
-
-            // 根據剩餘時間調整樣式
-            countdownTimer.className = 'countdown-timer';
+        // Update ring arc: offset from 0 (full) to circumference (empty)
+        var offset = RING_CIRCUMFERENCE * (1 - fraction);
+        var progress = document.getElementById('ringProgress');
+        if (progress) {
+            progress.setAttribute('stroke-dashoffset', String(offset));
             if (remainingSeconds <= 10) {
-                countdownTimer.classList.add('danger');
-            } else if (remainingSeconds <= 30) {
-                countdownTimer.classList.add('warning');
+                progress.classList.add('danger');
+            } else {
+                progress.classList.remove('danger');
+            }
+        }
+
+        // Update text
+        var timerEl = document.getElementById('countdownTimer');
+        if (timerEl) {
+            var formatted = window.MCPFeedback.Utils.Time.formatAutoSubmitCountdown(remainingSeconds);
+            timerEl.textContent = formatted;
+            timerEl.className = 'ring-time';
+            if (remainingSeconds <= 10) {
+                timerEl.classList.add('danger');
             }
         }
     };
@@ -2080,22 +1992,20 @@
         const statusElement = document.getElementById('autoSubmitStatus');
         if (!statusElement) return;
 
-        const statusIcon = statusElement.querySelector('span:first-child');
+        const statusIcon = statusElement.querySelector('i');
         const statusText = statusElement.querySelector('.button-text');
 
         if (status === 'enabled') {
-            // 直接設定 HTML 內容，就像提示詞按鈕一樣
-            if (statusIcon) statusIcon.innerHTML = '⏰';
+            if (statusIcon) { statusIcon.setAttribute('data-lucide', 'timer'); }
             if (statusText) {
                 const enabledText = window.i18nManager ?
                     window.i18nManager.t('autoSubmit.enabled', '已啟用') :
                     '已啟用';
-                statusText.textContent = `${enabledText} (${timeout}秒)`;
+                statusText.textContent = enabledText + ' (' + timeout + 's)';
             }
             statusElement.className = 'auto-submit-status-btn enabled';
         } else {
-            // 直接設定 HTML 內容，就像提示詞按鈕一樣
-            if (statusIcon) statusIcon.innerHTML = '⏸️';
+            if (statusIcon) { statusIcon.setAttribute('data-lucide', 'pause'); }
             if (statusText) {
                 const disabledText = window.i18nManager ?
                     window.i18nManager.t('autoSubmit.disabled', '已停用') :
@@ -2104,43 +2014,40 @@
             }
             statusElement.className = 'auto-submit-status-btn disabled';
         }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
     /**
      * 更新倒數計時器暫停狀態
      */
     FeedbackApp.prototype.updateCountdownPauseState = function(isPaused) {
-        const countdownDisplay = document.getElementById('countdownDisplay');
+        const card = document.getElementById('statusRingCard');
         const pauseBtn = document.getElementById('countdownPauseBtn');
-        
-        if (!countdownDisplay || !pauseBtn) return;
-        
-        // 更新暫停/恢復圖標
+
+        if (!card || !pauseBtn) return;
+
+        // Update pause/resume icons
         const pauseIcon = pauseBtn.querySelector('.pause-icon');
         const resumeIcon = pauseBtn.querySelector('.resume-icon');
-        
+
         if (isPaused) {
-            countdownDisplay.classList.add('paused');
+            card.classList.add('paused');
             if (pauseIcon) pauseIcon.style.display = 'none';
             if (resumeIcon) resumeIcon.style.display = 'inline';
-            
-            // 更新按鈕的 tooltip
+
             const resumeTitle = window.i18nManager ?
-                window.i18nManager.t('autoSubmit.resumeCountdown', '恢復倒數') :
-                '恢復倒數';
+                window.i18nManager.t('autoSubmit.resumeCountdown', 'Resume') :
+                'Resume';
             pauseBtn.setAttribute('title', resumeTitle);
-            pauseBtn.setAttribute('data-i18n-title', 'autoSubmit.resumeCountdown');
         } else {
-            countdownDisplay.classList.remove('paused');
+            card.classList.remove('paused');
             if (pauseIcon) pauseIcon.style.display = 'inline';
             if (resumeIcon) resumeIcon.style.display = 'none';
-            
-            // 更新按鈕的 tooltip
+
             const pauseTitle = window.i18nManager ?
-                window.i18nManager.t('autoSubmit.pauseCountdown', '暫停倒數') :
-                '暫停倒數';
+                window.i18nManager.t('autoSubmit.pauseCountdown', 'Pause') :
+                'Pause';
             pauseBtn.setAttribute('title', pauseTitle);
-            pauseBtn.setAttribute('data-i18n-title', 'autoSubmit.pauseCountdown');
         }
     };
 
@@ -2190,9 +2097,7 @@
             this.connectionMonitor.cleanup();
         }
 
-        if (this.sessionManager) {
-            this.sessionManager.cleanup();
-        }
+        // sessionManager removed in UI overhaul
 
         if (this.imageHandler) {
             this.imageHandler.cleanup();

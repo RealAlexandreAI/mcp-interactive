@@ -24,11 +24,11 @@
         options = options || {};
         
         // 從 i18nManager 獲取當前語言作為預設值
-        const defaultLanguage = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-TW';
+        const defaultLanguage = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-CN';
         
         // 預設設定
         this.defaultSettings = {
-            layoutMode: 'combined-vertical',
+            layoutMode: 'combined-horizontal',
             autoClose: false,
             language: defaultLanguage,  // 使用 i18nManager 的當前語言
             imageSizeLimit: 0,
@@ -36,14 +36,9 @@
             // 移除 activeTab - 頁籤切換無需持久化
             sessionPanelCollapsed: false,
             // 自動定時提交設定
-            autoSubmitEnabled: false,
-            autoSubmitTimeout: 30,
-            autoSubmitPromptId: null,
-            // 音效通知設定
-            audioNotificationEnabled: false,
-            audioNotificationVolume: 50,
-            selectedAudioId: 'default-beep',
-            customAudios: [],
+            autoSubmitEnabled: true,
+            autoSubmitTimeout: 45,
+            autoSubmitPromptId: 'builtin-ok',
             // 會話歷史設定
             sessionHistoryRetentionHours: 72,
             // 用戶訊息記錄設定
@@ -52,8 +47,8 @@
             // UI 元素尺寸設定
             combinedFeedbackTextHeight: 150, // combinedFeedbackText textarea 的高度（px）
             // 會話超時設定
-            sessionTimeoutEnabled: false,  // 預設關閉
-            sessionTimeoutSeconds: 3600,   // 預設 1 小時（秒）
+            sessionTimeoutEnabled: true,   // enabled by default
+            sessionTimeoutSeconds: 1800,   // 30 minutes
             // 自動執行命令設定
             autoCommandEnabled: true,      // 是否啟用自動執行命令
             commandOnNewSession: '',       // 新會話建立時執行的命令
@@ -115,7 +110,7 @@
      * 從伺服器載入設定
      */
     SettingsManager.prototype.loadFromServer = function() {
-        const lang = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-TW';
+        const lang = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-CN';
         return fetch('/api/load-settings?lang=' + lang)
             .then(function(response) {
                 if (response.ok) {
@@ -168,7 +163,7 @@
     SettingsManager.prototype._performServerSave = function() {
         const self = this;
 
-        const lang = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-TW';
+        const lang = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-CN';
         fetch('/api/save-settings?lang=' + lang, {
             method: 'POST',
             headers: {
@@ -543,22 +538,20 @@
         const statusElement = Utils.safeQuerySelector('#autoSubmitStatus');
         if (!statusElement) return;
 
-        const statusIcon = statusElement.querySelector('span:first-child');
+        const statusIcon = statusElement.querySelector('i');
         const statusText = statusElement.querySelector('.button-text');
 
         if (this.currentSettings.autoSubmitEnabled && this.currentSettings.autoSubmitPromptId) {
-            // 直接設定 HTML 內容，就像提示詞按鈕一樣
-            if (statusIcon) statusIcon.innerHTML = '⏰';
+            if (statusIcon) { statusIcon.setAttribute('data-lucide', 'timer'); }
             if (statusText) {
                 const enabledText = window.i18nManager ?
                     window.i18nManager.t('autoSubmit.enabled', '已啟用') :
                     '已啟用';
-                statusText.textContent = `${enabledText} (${this.currentSettings.autoSubmitTimeout}秒)`;
+                statusText.textContent = enabledText + ' (' + this.currentSettings.autoSubmitTimeout + 's)';
             }
             statusElement.className = 'auto-submit-status-btn enabled';
         } else {
-            // 直接設定 HTML 內容，就像提示詞按鈕一樣
-            if (statusIcon) statusIcon.innerHTML = '⏸️';
+            if (statusIcon) { statusIcon.setAttribute('data-lucide', 'pause'); }
             if (statusText) {
                 const disabledText = window.i18nManager ?
                     window.i18nManager.t('autoSubmit.disabled', '已停用') :
@@ -567,6 +560,7 @@
             }
             statusElement.className = 'auto-submit-status-btn disabled';
         }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
     /**
@@ -852,15 +846,8 @@
             sessionHistoryRetentionSelect.addEventListener('change', function(e) {
                 const hours = parseInt(e.target.value);
                 self.set('sessionHistoryRetentionHours', hours);
-                console.log('會話歷史保存期限已更新:', hours, '小時');
-
-                // 觸發清理過期會話
-                if (window.MCPFeedback && window.MCPFeedback.app && window.MCPFeedback.app.sessionManager) {
-                    const sessionManager = window.MCPFeedback.app.sessionManager;
-                    if (sessionManager.dataManager && sessionManager.dataManager.cleanupExpiredSessions) {
-                        sessionManager.dataManager.cleanupExpiredSessions();
-                    }
-                }
+                console.log('Session history retention updated:', hours, 'hours');
+                // SessionManager removed in UI overhaul - cleanup is no-op
             });
         }
 
@@ -868,46 +855,30 @@
         const exportHistoryBtn = Utils.safeQuerySelector('#exportSessionHistoryBtn');
         if (exportHistoryBtn) {
             exportHistoryBtn.addEventListener('click', function() {
-                if (window.MCPFeedback && window.MCPFeedback.SessionManager) {
-                    window.MCPFeedback.SessionManager.exportSessionHistory();
-                }
+                // SessionManager removed in UI overhaul - export is no-op
+                console.log('Session history export not available');
             });
         }
 
-        // 會話歷史清空按鈕
+        // Clear session history button
         const clearHistoryBtn = Utils.safeQuerySelector('#clearSessionHistoryBtn');
         if (clearHistoryBtn) {
             clearHistoryBtn.addEventListener('click', function() {
-                if (window.MCPFeedback && window.MCPFeedback.SessionManager) {
-                    window.MCPFeedback.SessionManager.clearSessionHistory();
-                }
+                // SessionManager removed in UI overhaul - clear is no-op
+                console.log('Session history clear not available');
             });
         }
 
-        // 清空用戶訊息記錄按鈕
+        // Clear user messages button
         const clearUserMessagesBtn = Utils.safeQuerySelector('#clearUserMessagesBtn');
         if (clearUserMessagesBtn) {
             clearUserMessagesBtn.addEventListener('click', function() {
-                const i18n = window.i18nManager;
-                const confirmMessage = i18n ?
-                    i18n.t('sessionHistory.userMessages.confirmClearAll') :
-                    '確定要清空所有會話的用戶訊息記錄嗎？此操作無法復原。';
-
-                if (confirm(confirmMessage)) {
-                    if (window.MCPFeedback && window.MCPFeedback.app && window.MCPFeedback.app.sessionManager) {
-                        const success = window.MCPFeedback.app.sessionManager.dataManager.clearAllUserMessages();
-                        if (success) {
-                            const successMessage = i18n ?
-                                i18n.t('sessionHistory.userMessages.clearSuccess') :
-                                '用戶訊息記錄已清空';
-                            alert(successMessage);
-                        }
-                    }
-                }
+                // SessionManager removed in UI overhaul - clear messages is no-op
+                console.log('User messages clear not available');
             });
         }
 
-        // 用戶訊息記錄啟用開關
+        // User message recording toggle
         const userMessageRecordingToggle = Utils.safeQuerySelector('#userMessageRecordingToggle');
         if (userMessageRecordingToggle) {
             userMessageRecordingToggle.addEventListener('change', function() {

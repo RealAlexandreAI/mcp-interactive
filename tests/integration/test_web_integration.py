@@ -158,10 +158,13 @@ class TestWebUISessionManagement:
         assert current_session.session_id == session_id_2
         assert current_session.summary == "第二個會話"
 
-        # 3. 測試會話狀態更新
+        # 3. Test session status advancement
         from mcp_feedback_enhanced.web.models import SessionStatus
 
-        current_session.update_status(SessionStatus.FEEDBACK_SUBMITTED, "已提交回饋")
+        # next_step: WAITING -> ACTIVE -> FEEDBACK_SUBMITTED
+        current_session.next_step("Session active")
+        assert current_session.status == SessionStatus.ACTIVE
+        current_session.next_step("Feedback submitted")
         assert current_session.status == SessionStatus.FEEDBACK_SUBMITTED
 
     @pytest.mark.asyncio

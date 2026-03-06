@@ -131,7 +131,11 @@ else:
 mcp: Any = FastMCP(SERVER_NAME)
 
 
+import functools
+
+
 # ===== 工具函數 =====
+@functools.cache
 def is_wsl_environment() -> bool:
     """
     檢測是否在 WSL (Windows Subsystem for Linux) 環境中運行
@@ -168,6 +172,7 @@ def is_wsl_environment() -> bool:
     return False
 
 
+@functools.cache
 def is_remote_environment() -> bool:
     """
     檢測是否在遠端環境中運行
@@ -557,38 +562,6 @@ async def launch_web_feedback_ui(project_dir: str, summary: str, timeout: int) -
             "interactive_feedback": user_error_msg,
             "images": [],
         }
-
-
-@mcp.tool()
-def get_system_info() -> str:
-    """
-    獲取系統環境資訊
-
-    Returns:
-        str: JSON 格式的系統資訊
-    """
-    is_remote = is_remote_environment()
-    is_wsl = is_wsl_environment()
-
-    system_info = {
-        "平台": sys.platform,
-        "Python 版本": sys.version.split()[0],
-        "WSL 環境": is_wsl,
-        "遠端環境": is_remote,
-        "介面類型": "Web UI",
-        "環境變數": {
-            "SSH_CONNECTION": os.getenv("SSH_CONNECTION"),
-            "SSH_CLIENT": os.getenv("SSH_CLIENT"),
-            "DISPLAY": os.getenv("DISPLAY"),
-            "VSCODE_INJECTION": os.getenv("VSCODE_INJECTION"),
-            "SESSIONNAME": os.getenv("SESSIONNAME"),
-            "WSL_DISTRO_NAME": os.getenv("WSL_DISTRO_NAME"),
-            "WSL_INTEROP": os.getenv("WSL_INTEROP"),
-            "WSLENV": os.getenv("WSLENV"),
-        },
-    }
-
-    return json.dumps(system_info, ensure_ascii=False, indent=2)
 
 
 # ===== 主程式入口 =====

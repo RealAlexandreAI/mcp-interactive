@@ -68,7 +68,7 @@
             <div class="prompt-management-section">
                 <div class="prompt-management-header">
                     <h4 class="prompt-management-title" data-i18n="prompts.management.title">
-                        📝 常用提示詞管理
+                        Prompts
                     </h4>
                     <button type="button" class="btn btn-primary prompt-add-btn" id="promptAddBtn">
                         <span data-i18n="prompts.management.addNew">新增提示詞</span>
@@ -153,7 +153,7 @@
     PromptSettingsUI.prototype.createEmptyStateHTML = function() {
         return `
             <div class="empty-state">
-                <div style="font-size: 48px; margin-bottom: 12px;">📝</div>
+                <div style="font-size: 48px; margin-bottom: 12px;"><i data-lucide="file-text" style="width: 48px; height: 48px; color: var(--text-tertiary);"></i></div>
                 <div data-i18n="prompts.management.emptyState">
                     尚未建立任何常用提示詞
                 </div>
@@ -168,8 +168,6 @@
      * 創建提示詞項目 HTML
      */
     PromptSettingsUI.prototype.createPromptItemHTML = function(prompt) {
-        const createdDate = this.formatDate(prompt.createdAt);
-        const lastUsedDate = prompt.lastUsedAt ? this.formatDate(prompt.lastUsedAt) : null;
         const truncatedContent = this.truncateText(prompt.content, 80);
         const isAutoSubmit = prompt.isAutoSubmit || false;
 
@@ -177,28 +175,24 @@
             <div class="prompt-settings-item ${isAutoSubmit ? 'auto-submit-prompt' : ''}" data-prompt-id="${prompt.id}">
                 <div class="prompt-settings-info">
                     <div class="prompt-settings-name">
-                        ${isAutoSubmit ? '<span class="auto-submit-badge" title="自動提交提示詞">⏰</span>' : ''}
+                        ${isAutoSubmit ? '<span class="auto-submit-badge" title="Auto Submit"><i data-lucide="timer" style="width:14px;height:14px;"></i></span>' : ''}
                         ${Utils.escapeHtml(prompt.name)}
+                        ${isAutoSubmit ? '<span class="auto-submit-status" data-i18n="prompts.management.autoSubmit">Auto</span>' : ''}
                     </div>
                     <div class="prompt-settings-content">${Utils.escapeHtml(truncatedContent)}</div>
-                    <div class="prompt-settings-meta">
-                        <span data-i18n="prompts.management.created">建立於</span>: ${createdDate}
-                        ${lastUsedDate ? `| <span data-i18n="prompts.management.lastUsed">最近使用</span>: ${lastUsedDate}` : ''}
-                        ${isAutoSubmit ? `| <span class="auto-submit-status" data-i18n="prompts.management.autoSubmit">自動提交</span>` : ''}
-                    </div>
                 </div>
                 <div class="prompt-settings-actions">
                     <button type="button" class="prompt-action-btn auto-submit-btn ${isAutoSubmit ? 'active' : ''}"
                             data-prompt-id="${prompt.id}"
-                            title="${isAutoSubmit ? '取消自動提交' : '設定為自動提交'}"
+                            title="${isAutoSubmit ? 'Cancel auto submit' : 'Set as auto submit'}"
                             data-i18n="${isAutoSubmit ? 'prompts.management.cancelAutoSubmit' : 'prompts.management.setAutoSubmit'}">
-                        ${isAutoSubmit ? '⏸️' : '⏰'}
+                        ${isAutoSubmit ? '<i data-lucide="pause" style="width:14px;height:14px;"></i>' : '<i data-lucide="timer" style="width:14px;height:14px;"></i>'}
                     </button>
                     <button type="button" class="prompt-action-btn edit-btn" data-prompt-id="${prompt.id}" data-i18n="prompts.management.edit">
-                        編輯
+                        Edit
                     </button>
                     <button type="button" class="prompt-action-btn delete-btn delete" data-prompt-id="${prompt.id}" data-i18n="prompts.management.delete">
-                        刪除
+                        Delete
                     </button>
                 </div>
             </div>

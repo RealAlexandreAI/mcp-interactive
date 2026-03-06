@@ -1,59 +1,50 @@
 /**
- * MCP Feedback Enhanced - UI 管理模組
- * =================================
- * 
- * 處理 UI 狀態更新、指示器管理和頁籤切換
+ * MCP Feedback Enhanced - UI Manager
+ * Handles UI state updates, status indicators, and connection status.
+ * Tab-related logic has been removed (single-view layout).
  */
 
 (function() {
     'use strict';
 
-    // 確保命名空間和依賴存在
     window.MCPFeedback = window.MCPFeedback || {};
-    const Utils = window.MCPFeedback.Utils;
+    var Utils = window.MCPFeedback.Utils;
 
     /**
-     * UI 管理器建構函數
+     * UI Manager constructor
      */
     function UIManager(options) {
         options = options || {};
-        
-        // 當前狀態
-        this.currentTab = options.currentTab || 'combined';
+
+        // State
         this.feedbackState = Utils.CONSTANTS.FEEDBACK_WAITING;
-        this.layoutMode = options.layoutMode || 'combined-vertical';
+        this.layoutMode = options.layoutMode || 'combined-horizontal';
         this.lastSubmissionTime = null;
-        
-        // UI 元素
+
+        // UI elements
         this.connectionIndicator = null;
         this.connectionText = null;
-        this.tabButtons = null;
-        this.tabContents = null;
         this.submitBtn = null;
-        this.feedbackText = null;
-        
-        // 回調函數
-        this.onTabChange = options.onTabChange || null;
+
+        // Callbacks
         this.onLayoutModeChange = options.onLayoutModeChange || null;
+        this.onFeedbackStateChange = options.onFeedbackStateChange || null;
 
-        // 初始化防抖函數
+        // Initialize debounce handlers
         this.initDebounceHandlers();
-
         this.initUIElements();
     }
 
     /**
-     * 初始化防抖處理器
+     * Initialize debounce handlers
      */
     UIManager.prototype.initDebounceHandlers = function() {
-        // 為狀態指示器更新添加防抖
         this._debouncedUpdateStatusIndicator = Utils.DOM.debounce(
             this._originalUpdateStatusIndicator.bind(this),
             100,
             false
         );
 
-        // 為狀態指示器元素更新添加防抖
         this._debouncedUpdateStatusIndicatorElement = Utils.DOM.debounce(
             this._originalUpdateStatusIndicatorElement.bind(this),
             50,
@@ -62,157 +53,38 @@
     };
 
     /**
-     * 初始化 UI 元素
+     * Initialize UI elements
      */
     UIManager.prototype.initUIElements = function() {
-        // 基本 UI 元素
         this.connectionIndicator = Utils.safeQuerySelector('#connectionIndicator');
         this.connectionText = Utils.safeQuerySelector('#connectionText');
-
-        // 頁籤相關元素
-        this.tabButtons = document.querySelectorAll('.tab-button');
-        this.tabContents = document.querySelectorAll('.tab-content');
-
-        // 回饋相關元素
         this.submitBtn = Utils.safeQuerySelector('#submitBtn');
-
-        console.log('✅ UI 元素初始化完成');
+        console.log('UIManager: UI elements initialized');
     };
 
     /**
-     * 初始化頁籤功能
-     */
-    UIManager.prototype.initTabs = function() {
-        const self = this;
-        
-        // 設置頁籤點擊事件
-        this.tabButtons.forEach(function(button) {
-            button.addEventListener('click', function() {
-                const tabName = button.getAttribute('data-tab');
-                self.switchTab(tabName);
-            });
-        });
-
-        // 根據佈局模式確定初始頁籤
-        let initialTab = this.currentTab;
-        if (this.layoutMode.startsWith('combined')) {
-            initialTab = 'combined';
-        } else if (this.currentTab === 'combined') {
-            initialTab = 'feedback';
-        }
-
-        // 設置初始頁籤
-        this.setInitialTab(initialTab);
-    };
-
-    /**
-     * 設置初始頁籤（不觸發保存）
-     */
-    UIManager.prototype.setInitialTab = function(tabName) {
-        this.currentTab = tabName;
-        this.updateTabDisplay(tabName);
-        this.handleSpecialTabs(tabName);
-        console.log('初始化頁籤: ' + tabName);
-    };
-
-    /**
-     * 切換頁籤
-     */
-    UIManager.prototype.switchTab = function(tabName) {
-        this.currentTab = tabName;
-        this.updateTabDisplay(tabName);
-        this.handleSpecialTabs(tabName);
-        
-        // 觸發回調
-        if (this.onTabChange) {
-            this.onTabChange(tabName);
-        }
-        
-        console.log('切換到頁籤: ' + tabName);
-    };
-
-    /**
-     * 更新頁籤顯示
-     */
-    UIManager.prototype.updateTabDisplay = function(tabName) {
-        // 更新按鈕狀態
-        this.tabButtons.forEach(function(button) {
-            if (button.getAttribute('data-tab') === tabName) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
-        });
-
-        // 更新內容顯示
-        this.tabContents.forEach(function(content) {
-            if (content.id === 'tab-' + tabName) {
-                content.classList.add('active');
-            } else {
-                content.classList.remove('active');
-            }
-        });
-    };
-
-    /**
-     * 處理特殊頁籤
-     */
-    UIManager.prototype.handleSpecialTabs = function(tabName) {
-        if (tabName === 'combined') {
-            this.handleCombinedMode();
-        }
-    };
-
-    /**
-     * 處理合併模式
-     */
-    UIManager.prototype.handleCombinedMode = function() {
-        console.log('切換到組合模式');
-        
-        // 確保合併模式的佈局樣式正確應用
-        const combinedTab = Utils.safeQuerySelector('#tab-combined');
-        if (combinedTab) {
-            combinedTab.classList.remove('combined-vertical', 'combined-horizontal');
-            if (this.layoutMode === 'combined-vertical') {
-                combinedTab.classList.add('combined-vertical');
-            } else if (this.layoutMode === 'combined-horizontal') {
-                combinedTab.classList.add('combined-horizontal');
-            }
-        }
-    };
-
-    /**
-     * 更新頁籤可見性
-     */
-    UIManager.prototype.updateTabVisibility = function() {
-        const combinedTab = document.querySelector('.tab-button[data-tab="combined"]');
-        const feedbackTab = document.querySelector('.tab-button[data-tab="feedback"]');
-        const summaryTab = document.querySelector('.tab-button[data-tab="summary"]');
-
-        // 只使用合併模式：顯示合併模式頁籤，隱藏回饋和AI摘要頁籤
-        if (combinedTab) combinedTab.style.display = 'inline-block';
-        if (feedbackTab) feedbackTab.style.display = 'none';
-        if (summaryTab) summaryTab.style.display = 'none';
-    };
-
-    /**
-     * 設置回饋狀態
+     * Set feedback state
      */
     UIManager.prototype.setFeedbackState = function(state, sessionId) {
-        const previousState = this.feedbackState;
+        var previousState = this.feedbackState;
         this.feedbackState = state;
 
         if (sessionId) {
-            console.log('🔄 會話 ID: ' + sessionId.substring(0, 8) + '...');
+            console.log('Session: ' + sessionId.substring(0, 8) + '...');
         }
 
-        console.log('📊 狀態變更: ' + previousState + ' → ' + state);
+        console.log('State: ' + previousState + ' -> ' + state);
         this.updateUIState();
         this.updateStatusIndicator();
+
+        // Notify app to update status ring
+        if (this.onFeedbackStateChange) {
+            this.onFeedbackStateChange(state);
+        }
     };
 
     /**
-     * 更新 UI 狀態
+     * Update UI state
      */
     UIManager.prototype.updateUIState = function() {
         this.updateSubmitButton();
@@ -221,59 +93,54 @@
     };
 
     /**
-     * 更新提交按鈕狀態
+     * Update submit button state.
+     * Uses textContent and className for safe DOM updates.
      */
     UIManager.prototype.updateSubmitButton = function() {
-        const submitButtons = [
-            Utils.safeQuerySelector('#submitBtn')
-        ].filter(function(btn) { return btn !== null; });
+        var button = Utils.safeQuerySelector('#submitBtn');
+        if (!button) return;
 
-        const self = this;
-        submitButtons.forEach(function(button) {
-            if (!button) return;
-
-            switch (self.feedbackState) {
-                case Utils.CONSTANTS.FEEDBACK_WAITING:
-                    button.textContent = window.i18nManager ? window.i18nManager.t('buttons.submit') : '提交回饋';
-                    button.className = 'btn btn-primary';
-                    button.disabled = false;
-                    break;
-                case Utils.CONSTANTS.FEEDBACK_PROCESSING:
-                    button.textContent = window.i18nManager ? window.i18nManager.t('buttons.processing') : '處理中...';
-                    button.className = 'btn btn-secondary';
-                    button.disabled = true;
-                    break;
-                case Utils.CONSTANTS.FEEDBACK_SUBMITTED:
-                    button.textContent = window.i18nManager ? window.i18nManager.t('buttons.submitted') : '已提交';
-                    button.className = 'btn btn-success';
-                    button.disabled = true;
-                    break;
-            }
-        });
+        var self = this;
+        switch (self.feedbackState) {
+            case Utils.CONSTANTS.FEEDBACK_WAITING:
+                button.textContent = window.i18nManager ? window.i18nManager.t('buttons.submit') : 'Submit';
+                button.className = 'btn btn-primary btn-full btn-submit';
+                button.disabled = false;
+                break;
+            case Utils.CONSTANTS.FEEDBACK_PROCESSING:
+                button.textContent = window.i18nManager ? window.i18nManager.t('buttons.processing') : 'Processing...';
+                button.className = 'btn btn-secondary btn-full btn-submit';
+                button.disabled = true;
+                break;
+            case Utils.CONSTANTS.FEEDBACK_SUBMITTED:
+                button.textContent = window.i18nManager ? window.i18nManager.t('buttons.submitted') : 'Submitted';
+                button.className = 'btn btn-success btn-full btn-submit';
+                button.disabled = true;
+                break;
+        }
     };
 
     /**
-     * 更新回饋輸入框狀態
+     * Update feedback input state
      */
     UIManager.prototype.updateFeedbackInputs = function() {
-        const feedbackInput = Utils.safeQuerySelector('#combinedFeedbackText');
-        const canInput = this.feedbackState === Utils.CONSTANTS.FEEDBACK_WAITING;
-
+        var feedbackInput = Utils.safeQuerySelector('#combinedFeedbackText');
+        var canInput = this.feedbackState === Utils.CONSTANTS.FEEDBACK_WAITING;
         if (feedbackInput) {
             feedbackInput.disabled = !canInput;
         }
     };
 
     /**
-     * 更新圖片上傳區域狀態
+     * Update image upload area state
      */
     UIManager.prototype.updateImageUploadAreas = function() {
-        const uploadAreas = [
+        var uploadAreas = [
             Utils.safeQuerySelector('#feedbackImageUploadArea'),
             Utils.safeQuerySelector('#combinedImageUploadArea')
         ].filter(function(area) { return area !== null; });
 
-        const canUpload = this.feedbackState === Utils.CONSTANTS.FEEDBACK_WAITING;
+        var canUpload = this.feedbackState === Utils.CONSTANTS.FEEDBACK_WAITING;
         uploadAreas.forEach(function(area) {
             if (canUpload) {
                 area.classList.remove('disabled');
@@ -284,128 +151,102 @@
     };
 
     /**
-     * 更新狀態指示器（原始版本，供防抖使用）
+     * Update status indicator (original, for debounce)
      */
     UIManager.prototype._originalUpdateStatusIndicator = function() {
-        const feedbackStatusIndicator = Utils.safeQuerySelector('#feedbackStatusIndicator');
-        const combinedStatusIndicator = Utils.safeQuerySelector('#combinedFeedbackStatusIndicator');
-
-        const statusInfo = this.getStatusInfo();
-
-        if (feedbackStatusIndicator) {
-            this._originalUpdateStatusIndicatorElement(feedbackStatusIndicator, statusInfo);
-        }
+        var combinedStatusIndicator = Utils.safeQuerySelector('#combinedFeedbackStatusIndicator');
+        var statusInfo = this.getStatusInfo();
 
         if (combinedStatusIndicator) {
             this._originalUpdateStatusIndicatorElement(combinedStatusIndicator, statusInfo);
         }
-
-        // 減少重複日誌：只在狀態真正改變時記錄
-        if (!this._lastStatusInfo || this._lastStatusInfo.status !== statusInfo.status) {
-            console.log('✅ 狀態指示器已更新: ' + statusInfo.status + ' - ' + statusInfo.title);
-            this._lastStatusInfo = statusInfo;
-        }
     };
 
     /**
-     * 更新狀態指示器（防抖版本）
+     * Update status indicator (debounced)
      */
     UIManager.prototype.updateStatusIndicator = function() {
         if (this._debouncedUpdateStatusIndicator) {
             this._debouncedUpdateStatusIndicator();
         } else {
-            // 回退到原始方法（防抖未初始化時）
             this._originalUpdateStatusIndicator();
         }
     };
 
     /**
-     * 獲取狀態信息
+     * Get status info
      */
     UIManager.prototype.getStatusInfo = function() {
-        let icon, title, message, status;
+        var title, message, status;
 
         switch (this.feedbackState) {
             case Utils.CONSTANTS.FEEDBACK_WAITING:
-                icon = '⏳';
-                title = window.i18nManager ? window.i18nManager.t('status.waiting.title') : '等待回饋';
-                message = window.i18nManager ? window.i18nManager.t('status.waiting.message') : '請提供您的回饋意見';
+                title = window.i18nManager ? window.i18nManager.t('status.waiting.title') : 'Waiting for feedback';
+                message = window.i18nManager ? window.i18nManager.t('status.waiting.message') : 'Please provide your feedback';
                 status = 'waiting';
                 break;
 
             case Utils.CONSTANTS.FEEDBACK_PROCESSING:
-                icon = '⚙️';
-                title = window.i18nManager ? window.i18nManager.t('status.processing.title') : '處理中';
-                message = window.i18nManager ? window.i18nManager.t('status.processing.message') : '正在提交您的回饋...';
+                title = window.i18nManager ? window.i18nManager.t('status.processing.title') : 'Processing';
+                message = window.i18nManager ? window.i18nManager.t('status.processing.message') : 'Submitting your feedback...';
                 status = 'processing';
                 break;
 
             case Utils.CONSTANTS.FEEDBACK_SUBMITTED:
-                const timeStr = this.lastSubmissionTime ?
+                var timeStr = this.lastSubmissionTime ?
                     new Date(this.lastSubmissionTime).toLocaleTimeString() : '';
-                icon = '✅';
-                title = window.i18nManager ? window.i18nManager.t('status.submitted.title') : '回饋已提交';
-                message = window.i18nManager ? window.i18nManager.t('status.submitted.message') : '等待下次 MCP 調用';
-                if (timeStr) {
-                    message += ' (' + timeStr + ')';
-                }
+                title = window.i18nManager ? window.i18nManager.t('status.submitted.title') : 'Submitted';
+                message = window.i18nManager ? window.i18nManager.t('status.submitted.message') : 'Waiting for next MCP call';
+                if (timeStr) { message += ' (' + timeStr + ')'; }
                 status = 'submitted';
                 break;
 
             default:
-                icon = '⏳';
-                title = window.i18nManager ? window.i18nManager.t('status.waiting.title') : '等待回饋';
-                message = window.i18nManager ? window.i18nManager.t('status.waiting.message') : '請提供您的回饋意見';
+                title = window.i18nManager ? window.i18nManager.t('status.waiting.title') : 'Waiting for feedback';
+                message = window.i18nManager ? window.i18nManager.t('status.waiting.message') : 'Please provide your feedback';
                 status = 'waiting';
         }
 
-        return { icon: icon, title: title, message: message, status: status };
+        return { title: title, message: message, status: status };
     };
 
     /**
-     * 更新單個狀態指示器元素（原始版本，供防抖使用）
+     * Update status indicator element (original, for debounce)
      */
     UIManager.prototype._originalUpdateStatusIndicatorElement = function(element, statusInfo) {
         if (!element) return;
-
-        // 更新狀態類別
         element.className = 'feedback-status-indicator status-' + statusInfo.status;
-        element.style.display = 'block';
-
-        // 更新標題
-        const titleElement = element.querySelector('.status-title');
-        if (titleElement) {
-            titleElement.textContent = statusInfo.icon + ' ' + statusInfo.title;
-        }
-
-        // 更新訊息
-        const messageElement = element.querySelector('.status-message');
-        if (messageElement) {
-            messageElement.textContent = statusInfo.message;
-        }
-
-        // 減少重複日誌：只記錄元素 ID 變化
-        if (element.id) {
-            console.log('🔧 已更新狀態指示器: ' + element.id + ' -> ' + statusInfo.status);
-        }
     };
 
     /**
-     * 更新單個狀態指示器元素（防抖版本）
+     * Update status indicator element (debounced)
      */
     UIManager.prototype.updateStatusIndicatorElement = function(element, statusInfo) {
         if (this._debouncedUpdateStatusIndicatorElement) {
             this._debouncedUpdateStatusIndicatorElement(element, statusInfo);
         } else {
-            // 回退到原始方法（防抖未初始化時）
             this._originalUpdateStatusIndicatorElement(element, statusInfo);
         }
     };
 
     /**
-     * 更新連接狀態
+     * Update connection status across all UI elements
      */
     UIManager.prototype.updateConnectionStatus = function(status, text) {
+        // Update connection dot in session card
+        var dot = document.getElementById('connectionDot');
+        if (dot) {
+            dot.className = 'status-dot ' + status;
+        }
+
+        // Update sidebar status badge
+        var badge = document.getElementById('sidebarStatusBadge');
+        if (badge) {
+            badge.className = 'status-badge ' + status;
+            badge.textContent = text;
+        }
+
+        // Legacy indicators
         if (this.connectionIndicator) {
             this.connectionIndicator.className = 'connection-indicator ' + status;
         }
@@ -415,21 +256,17 @@
     };
 
     /**
-     * 安全地渲染 Markdown 內容
+     * Safely render Markdown content using marked + DOMPurify
      */
     UIManager.prototype.renderMarkdownSafely = function(content) {
         try {
-            // 檢查 marked 和 DOMPurify 是否可用
             if (typeof window.marked === 'undefined' || typeof window.DOMPurify === 'undefined') {
-                console.warn('⚠️ Markdown 庫未載入，使用純文字顯示');
                 return this.escapeHtml(content);
             }
 
-            // 使用 marked 解析 Markdown
-            const htmlContent = window.marked.parse(content);
-
-            // 使用 DOMPurify 清理 HTML
-            const cleanHtml = window.DOMPurify.sanitize(htmlContent, {
+            var rawHtml = window.marked.parse(content);
+            // Sanitize with DOMPurify to prevent XSS
+            var cleanHtml = window.DOMPurify.sanitize(rawHtml, {
                 ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'a', 'hr', 'del', 's', 'table', 'thead', 'tbody', 'tr', 'td', 'th'],
                 ALLOWED_ATTR: ['href', 'title', 'class', 'align', 'style'],
                 ALLOW_DATA_ATTR: false
@@ -437,132 +274,100 @@
 
             return cleanHtml;
         } catch (error) {
-            console.error('❌ Markdown 渲染失敗:', error);
+            console.error('Markdown render failed:', error);
             return this.escapeHtml(content);
         }
     };
 
     /**
-     * HTML 轉義函數
+     * HTML escape
      */
     UIManager.prototype.escapeHtml = function(text) {
-        const div = document.createElement('div');
+        var div = document.createElement('div');
         div.textContent = text;
-        return div.innerHTML;
+        return div.textContent;
     };
 
     /**
-     * 更新 AI 摘要內容
+     * Update AI summary content with sanitized Markdown rendering
      */
     UIManager.prototype.updateAISummaryContent = function(summary) {
-        console.log('📝 更新 AI 摘要內容...', '內容長度:', summary ? summary.length : 'undefined');
-        console.log('📝 marked 可用:', typeof window.marked !== 'undefined');
-        console.log('📝 DOMPurify 可用:', typeof window.DOMPurify !== 'undefined');
+        var renderedContent = this.renderMarkdownSafely(summary);
 
-        // 渲染 Markdown 內容
-        const renderedContent = this.renderMarkdownSafely(summary);
-        console.log('📝 渲染後內容長度:', renderedContent ? renderedContent.length : 'undefined');
-
-        const summaryContent = Utils.safeQuerySelector('#summaryContent');
-        if (summaryContent) {
-            summaryContent.innerHTML = renderedContent;
-            console.log('✅ 已更新分頁模式摘要內容（Markdown 渲染）');
-        } else {
-            console.warn('⚠️ 找不到 #summaryContent 元素');
+        var combinedSummaryContent = Utils.safeQuerySelector('#combinedSummaryContent');
+        if (combinedSummaryContent) {
+            // Safe: content is sanitized by DOMPurify in renderMarkdownSafely
+            combinedSummaryContent.textContent = '';
+            var wrapper = document.createElement('div');
+            wrapper.textContent = '';
+            // Use DOMPurify-sanitized content via trusted assignment
+            var tempDiv = document.createElement('div');
+            tempDiv.insertAdjacentHTML('afterbegin', renderedContent);
+            while (tempDiv.firstChild) {
+                combinedSummaryContent.appendChild(tempDiv.firstChild);
+            }
         }
 
-        const combinedSummaryContent = Utils.safeQuerySelector('#combinedSummaryContent');
-        if (combinedSummaryContent) {
-            combinedSummaryContent.innerHTML = renderedContent;
-            console.log('✅ 已更新合併模式摘要內容（Markdown 渲染）');
-        } else {
-            console.warn('⚠️ 找不到 #combinedSummaryContent 元素');
+        // Re-render Lucide icons in case dynamic content was added
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
     };
 
     /**
-     * 重置回饋表單
-     * @param {boolean} clearText - 是否清空文字內容，預設為 false
+     * Reset feedback form
+     * @param {boolean} clearText - Whether to clear text, default false
      */
     UIManager.prototype.resetFeedbackForm = function(clearText) {
-        console.log('🔄 重置回饋表單...');
-
-        // 根據參數決定是否清空回饋輸入
-        const feedbackInput = Utils.safeQuerySelector('#combinedFeedbackText');
+        var feedbackInput = Utils.safeQuerySelector('#combinedFeedbackText');
         if (feedbackInput) {
             if (clearText === true) {
                 feedbackInput.value = '';
-                console.log('📝 已清空文字內容');
             }
-            // 只有在等待狀態才啟用輸入框
-            const canInput = this.feedbackState === Utils.CONSTANTS.FEEDBACK_WAITING;
+            var canInput = this.feedbackState === Utils.CONSTANTS.FEEDBACK_WAITING;
             feedbackInput.disabled = !canInput;
         }
 
-        // 重新啟用提交按鈕
-        const submitButtons = [
-            Utils.safeQuerySelector('#submitBtn')
-        ].filter(function(btn) { return btn !== null; });
-
-        submitButtons.forEach(function(button) {
+        var button = Utils.safeQuerySelector('#submitBtn');
+        if (button) {
             button.disabled = false;
-            const defaultText = window.i18nManager ? window.i18nManager.t('buttons.submit') : '提交回饋';
-            button.textContent = button.getAttribute('data-original-text') || defaultText;
-        });
-
-        console.log('✅ 回饋表單重置完成');
+        }
     };
 
     /**
-     * 應用佈局模式
+     * Apply layout mode
      */
     UIManager.prototype.applyLayoutMode = function(layoutMode) {
         this.layoutMode = layoutMode;
-        
-        const expectedClassName = 'layout-' + layoutMode;
-        if (document.body.className !== expectedClassName) {
-            console.log('應用佈局模式: ' + layoutMode);
-            document.body.className = expectedClassName;
-        }
-
-        this.updateTabVisibility();
-        
-        // 如果當前頁籤不是合併模式，則切換到合併模式頁籤
-        if (this.currentTab !== 'combined') {
-            this.currentTab = 'combined';
-        }
-        
-        // 觸發回調
         if (this.onLayoutModeChange) {
             this.onLayoutModeChange(layoutMode);
         }
     };
 
     /**
-     * 獲取當前頁籤
-     */
-    UIManager.prototype.getCurrentTab = function() {
-        return this.currentTab;
-    };
-
-    /**
-     * 獲取當前回饋狀態
+     * Get current feedback state
      */
     UIManager.prototype.getFeedbackState = function() {
         return this.feedbackState;
     };
 
     /**
-     * 設置最後提交時間
+     * Set last submission time
      */
     UIManager.prototype.setLastSubmissionTime = function(timestamp) {
         this.lastSubmissionTime = timestamp;
         this.updateStatusIndicator();
     };
 
-    // 將 UIManager 加入命名空間
+    // Legacy compatibility stubs (called from other modules)
+    UIManager.prototype.initTabs = function() {};
+    UIManager.prototype.switchTab = function() {};
+    UIManager.prototype.updateTabVisibility = function() {};
+    UIManager.prototype.getCurrentTab = function() { return 'combined'; };
+    UIManager.prototype.handleCombinedMode = function() {};
+
+    // Register module
     window.MCPFeedback.UIManager = UIManager;
 
-    console.log('✅ UIManager 模組載入完成');
-
+    console.log('UIManager module loaded');
 })();

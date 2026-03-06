@@ -219,7 +219,7 @@
             const success = await this.notificationManager.enable();
             
             if (success) {
-                this.showMessage(this.t('notification.enabled', '通知已啟用 ✅'), 'success');
+                this.showMessage(this.t('notification.enabled', '通知已啟用'), 'success');
                 this.updateUI();
             } else {
                 // 權限被拒絕或其他問題
@@ -272,19 +272,19 @@
         
         const statusMessages = {
             'granted': {
-                icon: '✅',
+                icon: '',
                 text: this.t('notification.permissionGranted', '已授權'),
                 class: 'status-granted',
                 i18nKey: 'notification.permissionGranted'
             },
             'denied': {
-                icon: '❌',
+                icon: '',
                 text: this.t('notification.permissionDeniedStatus', '已拒絕（請在瀏覽器設定中修改）'),
                 class: 'status-denied',
                 i18nKey: 'notification.permissionDeniedStatus'
             },
             'default': {
-                icon: '⏸',
+                icon: '',
                 text: this.t('notification.permissionDefault', '尚未設定'),
                 class: 'status-default',
                 i18nKey: 'notification.permissionDefault'

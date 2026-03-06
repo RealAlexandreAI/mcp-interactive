@@ -99,7 +99,7 @@ class MemoryMonitor:
 
         # 數據存儲
         self.snapshots: deque = deque(maxlen=max_snapshots)
-        self.alerts: list[MemoryAlert] = []
+        self.alerts: deque[MemoryAlert] = deque(maxlen=100)
         self.max_alerts = 100
 
         # 回調函數
@@ -216,8 +216,10 @@ class MemoryMonitor:
             process_memory = self.process.memory_info()
             process_percent = self.process.memory_percent()
 
-            # Python 垃圾回收信息
-            gc_objects = len(gc.get_objects())
+            # Python 垃圾回收信息 (use gc.get_count() instead of gc.get_objects() to avoid
+            # allocating a huge temporary list of all tracked objects every 30s)
+            gc_counts = gc.get_count()
+            gc_objects = sum(gc_counts)
 
             return MemorySnapshot(
                 timestamp=datetime.now(),
@@ -279,12 +281,8 @@ class MemoryMonitor:
 
     def _handle_alert(self, alert: MemoryAlert):
         """處理內存警告"""
-        # 添加到警告列表
+        # 添加到警告列表 (deque with maxlen auto-trims)
         self.alerts.append(alert)
-
-        # 限制警告數量
-        if len(self.alerts) > self.max_alerts:
-            self.alerts = self.alerts[-self.max_alerts :]
 
         # 調用警告回調
         for callback in self.alert_callbacks:
@@ -323,14 +321,11 @@ class MemoryMonitor:
         # 調用清理回調（強制模式）
         for callback in self.cleanup_callbacks:
             try:
-                # 修復 unreachable 錯誤 - 簡化邏輯，移除不可達的 else 分支
-                # 嘗試傳遞 force 參數
-                import inspect
-
-                sig = inspect.signature(callback)
-                if "force" in sig.parameters:
+                # Try calling with force=True; fall back to no-arg call if it fails.
+                # This avoids expensive inspect.signature() on the emergency path.
+                try:
                     callback(force=True)
-                else:
+                except TypeError:
                     callback()
             except Exception as e:
                 debug_log(f"緊急清理回調執行失敗: {e}")
@@ -425,7 +420,7 @@ class MemoryMonitor:
 
     def get_recent_alerts(self, limit: int = 10) -> list[MemoryAlert]:
         """獲取最近的警告"""
-        return self.alerts[-limit:] if self.alerts else []
+        return list(self.alerts)[-limit:] if self.alerts else []
 
     def _get_memory_status(self, usage_percent: float) -> str:
         """獲取內存狀態描述"""

@@ -322,7 +322,7 @@
 
     // 從 API 載入日誌等級
     function loadLogLevelFromAPI() {
-        const lang = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-TW';
+        const lang = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-CN';
         fetch('/api/log-level?lang=' + lang)
             .then(function(response) {
                 if (response.ok) {
@@ -344,7 +344,7 @@
 
     // 保存日誌等級到 API
     function saveLogLevelToAPI(logLevel) {
-        const lang = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-TW';
+        const lang = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-CN';
         fetch('/api/log-level?lang=' + lang, {
             method: 'POST',
             headers: {

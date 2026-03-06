@@ -16,7 +16,7 @@ class I18nManager {
     getDefaultLanguage() {
         // 1. 先檢查本地儲存的設定
         const savedLanguage = localStorage.getItem('language');
-        if (savedLanguage && ['zh-TW', 'zh-CN', 'en'].includes(savedLanguage)) {
+        if (savedLanguage && ['zh-CN', 'en'].includes(savedLanguage)) {
             console.log('🌐 使用儲存的語言設定:', savedLanguage);
             return savedLanguage;
         }
@@ -25,12 +25,8 @@ class I18nManager {
         const browserLang = navigator.language || navigator.userLanguage;
         console.log('🌐 瀏覽器語言:', browserLang);
         
-        if (browserLang.startsWith('zh-TW') || browserLang.includes('Hant')) {
-            console.log('🌐 偵測到繁體中文環境');
-            return 'zh-TW';
-        }
-        if (browserLang.startsWith('zh') || browserLang.includes('Hans')) {
-            console.log('🌐 偵測到簡體中文環境');
+        if (browserLang.startsWith('zh')) {
+            console.log('🌐 偵測到中文環境');
             return 'zh-CN';
         }
         if (browserLang.startsWith('en')) {
@@ -38,9 +34,9 @@ class I18nManager {
             return 'en';
         }
         
-        // 3. 預設使用繁體中文
-        console.log('🌐 使用預設語言: zh-TW');
-        return 'zh-TW';
+        // 3. Default to Simplified Chinese
+        console.log('🌐 使用預設語言: zh-CN');
+        return 'zh-CN';
     }
 
     async init() {
@@ -74,8 +70,8 @@ class I18nManager {
                 
                 // 檢查當前語言是否有翻譯數據
                 if (!this.translations[this.currentLanguage] || Object.keys(this.translations[this.currentLanguage]).length === 0) {
-                    console.warn(`當前語言 ${this.currentLanguage} 沒有翻譯數據，回退到 zh-TW`);
-                    this.currentLanguage = 'zh-TW';
+                    console.warn(`当前语言 ${this.currentLanguage} 没有翻译数据，回退到 zh-CN`);
+                    this.currentLanguage = 'zh-CN';
                 }
             })
             .catch(error => {
@@ -88,25 +84,23 @@ class I18nManager {
     }
 
     getMinimalFallbackTranslations() {
-        // 最小的回退翻譯，只包含關鍵項目
         return {
-            'zh-TW': {
+            'zh-CN': {
                 'app': {
                     'title': 'MCP Feedback Enhanced',
-                    'projectDirectory': '專案目錄'
+                    'projectDirectory': '项目目录'
                 },
                 'tabs': {
-                    'feedback': '💬 回饋',
-                    'summary': '📋 AI 摘要',
-                    'command': '⚡ 命令',
-                    'settings': '⚙️ 設定'
+                    'feedback': '回馈',
+                    'summary': 'AI 摘要',
+                    'settings': '设置'
                 },
                 'buttons': {
-                    'cancel': '❌ 取消',
-                    'submit': '✅ 提交回饋'
+                    'cancel': '取消',
+                    'submit': '提交回馈'
                 },
                 'settings': {
-                    'language': '語言'
+                    'language': '语言'
                 }
             }
         };
@@ -206,9 +200,6 @@ class I18nManager {
         // 更新動態內容
         this.updateDynamicContent();
 
-        // 更新音效選擇器翻譯
-        this.updateAudioSelectTranslations();
-
         console.log('翻譯已應用:', this.currentLanguage);
     }
 
@@ -254,28 +245,7 @@ class I18nManager {
     }
 
     updateSessionManagementContent() {
-        // 更新會話管理面板中的動態文字
-        if (window.feedbackApp && window.feedbackApp.sessionManager) {
-            // 觸發會話管理器重新渲染，這會使用最新的翻譯
-            if (typeof window.feedbackApp.sessionManager.updateDisplay === 'function') {
-                window.feedbackApp.sessionManager.updateDisplay();
-            }
-
-            // 重新渲染統計資訊以更新時間單位
-            if (window.feedbackApp.sessionManager.dataManager &&
-                window.feedbackApp.sessionManager.uiRenderer) {
-                const stats = window.feedbackApp.sessionManager.dataManager.getStats();
-                window.feedbackApp.sessionManager.uiRenderer.renderStats(stats);
-                console.log('🌐 已更新統計資訊的語言顯示');
-                
-                // 重新渲染會話歷史以更新所有動態創建的元素
-                const sessionHistory = window.feedbackApp.sessionManager.dataManager.getSessionHistory();
-                window.feedbackApp.sessionManager.uiRenderer.renderSessionHistory(sessionHistory);
-                console.log('🌐 已更新會話歷史的語言顯示');
-            }
-        }
-
-        // 更新狀態徽章文字
+        // Update status badge text
         const statusBadges = document.querySelectorAll('.status-badge');
         statusBadges.forEach(badge => {
             const statusClass = Array.from(badge.classList).find(cls =>
@@ -351,15 +321,6 @@ class I18nManager {
                 }
             });
             // 事件監聽器由 SettingsManager 統一處理，避免重複綁定
-        }
-    }
-
-    updateAudioSelectTranslations() {
-        // 更新音效設定區域的所有翻譯
-        if (window.feedbackApp && window.feedbackApp.audioSettingsUI) {
-            if (typeof window.feedbackApp.audioSettingsUI.updateTranslations === 'function') {
-                window.feedbackApp.audioSettingsUI.updateTranslations();
-            }
         }
     }
 

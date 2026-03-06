@@ -22,6 +22,33 @@ from ..constants import get_message_code as get_msg_code
 if TYPE_CHECKING:
     from ..main import WebUIManager
 
+# Translation data loaded fresh each request during development
+# In production, consider caching with a version key
+
+
+def _load_translations() -> dict:
+    """Load translation data from JSON files."""
+    translations = {}
+    web_locales_dir = Path(__file__).parent.parent / "locales"
+    supported_languages = ["zh-CN", "en"]
+
+    for lang_code in supported_languages:
+        lang_dir = web_locales_dir / lang_code
+        translation_file = lang_dir / "translation.json"
+        try:
+            if translation_file.exists():
+                with open(translation_file, encoding="utf-8") as f:
+                    translations[lang_code] = json.load(f)
+                    debug_log(f"成功載入 Web 翻譯: {lang_code}")
+            else:
+                debug_log(f"Web 翻譯檔案不存在: {translation_file}")
+                translations[lang_code] = {}
+        except Exception as e:
+            debug_log(f"載入 Web 翻譯檔案失敗 {lang_code}: {e}")
+            translations[lang_code] = {}
+
+    return translations
+
 
 def load_user_layout_settings() -> str:
     """載入用戶的佈局模式設定"""
@@ -33,16 +60,16 @@ def load_user_layout_settings() -> str:
         if settings_file.exists():
             with open(settings_file, encoding="utf-8") as f:
                 settings = json.load(f)
-                layout_mode = settings.get("layoutMode", "combined-vertical")
+                layout_mode = settings.get("layoutMode", "combined-horizontal")
                 debug_log(f"從設定檔案載入佈局模式: {layout_mode}")
                 # 修復 no-any-return 錯誤 - 確保返回 str 類型
                 return str(layout_mode)
         else:
-            debug_log("設定檔案不存在，使用預設佈局模式: combined-vertical")
-            return "combined-vertical"
+            debug_log("設定檔案不存在，使用預設佈局模式: combined-horizontal")
+            return "combined-horizontal"
     except Exception as e:
-        debug_log(f"載入佈局設定失敗: {e}，使用預設佈局模式: combined-vertical")
-        return "combined-vertical"
+        debug_log(f"載入佈局設定失敗: {e}，使用預設佈局模式: combined-horizontal")
+        return "combined-horizontal"
 
 
 # 使用統一的訊息代碼系統
@@ -90,31 +117,8 @@ def setup_routes(manager: "WebUIManager"):
 
     @manager.app.get("/api/translations")
     async def get_translations():
-        """獲取翻譯數據 - 從 Web 專用翻譯檔案載入"""
-        translations = {}
-
-        # 獲取 Web 翻譯檔案目錄
-        web_locales_dir = Path(__file__).parent.parent / "locales"
-        supported_languages = ["zh-TW", "zh-CN", "en"]
-
-        for lang_code in supported_languages:
-            lang_dir = web_locales_dir / lang_code
-            translation_file = lang_dir / "translation.json"
-
-            try:
-                if translation_file.exists():
-                    with open(translation_file, encoding="utf-8") as f:
-                        lang_data = json.load(f)
-                        translations[lang_code] = lang_data
-                        debug_log(f"成功載入 Web 翻譯: {lang_code}")
-                else:
-                    debug_log(f"Web 翻譯檔案不存在: {translation_file}")
-                    translations[lang_code] = {}
-            except Exception as e:
-                debug_log(f"載入 Web 翻譯檔案失敗 {lang_code}: {e}")
-                translations[lang_code] = {}
-
-        debug_log(f"Web 翻譯 API 返回 {len(translations)} 種語言的數據")
+        """獲取翻譯數據 - 從緩存返回"""
+        translations = _load_translations()
         return JSONResponse(content=translations)
 
     @manager.app.get("/api/session-status")
@@ -127,7 +131,7 @@ def setup_routes(manager: "WebUIManager"):
             request.headers.get("Accept-Language", "zh-TW").split(",")[0].split("-")[0]
         )
         if lang == "zh":
-            lang = "zh-TW"
+            lang = "zh-CN"
 
         if not current_session:
             return JSONResponse(
@@ -256,7 +260,7 @@ def setup_routes(manager: "WebUIManager"):
             )
 
     @manager.app.websocket("/ws")
-    async def websocket_endpoint(websocket: WebSocket, lang: str = "zh-TW"):
+    async def websocket_endpoint(websocket: WebSocket, lang: str = "zh-CN"):
         """WebSocket 端點 - 重構後移除 session_id 依賴"""
         # 獲取當前活躍會話
         session = manager.get_current_session()
@@ -645,8 +649,9 @@ async def handle_websocket_message(manager: "WebUIManager", session, data: dict)
     elif message_type == "heartbeat":
         # WebSocket 心跳處理（簡化版）
         # 更新心跳時間
-        session.last_heartbeat = time.time()
-        session.last_activity = time.time()
+        now = time.time()
+        session.last_heartbeat = now
+        session.last_activity = now
 
         # 發送心跳回應
         if session.websocket:

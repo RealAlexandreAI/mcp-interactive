@@ -221,12 +221,7 @@
 
                         // 8. 初始化圖片處理器
                         self.imageHandler = new window.MCPFeedback.ImageHandler({
-                            imageSizeLimit: settings.imageSizeLimit,
-                            enableBase64Detail: settings.enableBase64Detail,
-                            layoutMode: settings.layoutMode,
-                            onSettingsChange: function() {
-                                self.saveImageSettings();
-                            }
+                            layoutMode: settings.layoutMode
                         });
 
                         // 9. 初始化提示詞管理器
@@ -311,10 +306,7 @@
                         var feedbackData = {
                             feedback: 'OK',
                             images: [],
-                            settings: {
-                                image_size_limit: self.imageHandler ? self.imageHandler.imageSizeLimit : 0,
-                                enable_base64_detail: self.imageHandler ? self.imageHandler.enableBase64Detail : false
-                            }
+                            settings: {}
                         };
                         self.submitFeedbackInternal(feedbackData);
                     } else {
@@ -472,18 +464,6 @@
     };
 
     /**
-     * 保存圖片設定
-     */
-    FeedbackApp.prototype.saveImageSettings = function() {
-        if (this.imageHandler && this.settingsManager) {
-            this.settingsManager.setMultiple({
-                imageSizeLimit: this.imageHandler.imageSizeLimit,
-                enableBase64Detail: this.imageHandler.enableBase64Detail
-            });
-        }
-    };
-
-    /**
      * 初始化提示詞管理器
      */
     FeedbackApp.prototype.initializePromptManagers = function() {
@@ -565,7 +545,7 @@
                     this.notificationSettings.initialize();
                     console.log('✅ 通知設定 UI 初始化完成');
                 } else {
-                    console.error('❌ 找不到通知設定容器元素 notificationSettingsContainer');
+                    console.log('ℹ️ 通知設定容器未找到，跳過通知 UI 初始化');
                 }
             } else {
                 console.warn('⚠️ NotificationSettings 模組未載入');
@@ -1072,10 +1052,7 @@
         return {
             feedback: feedback,
             images: images,
-            settings: {
-                image_size_limit: this.imageHandler ? this.imageHandler.imageSizeLimit : 0,
-                enable_base64_detail: this.imageHandler ? this.imageHandler.enableBase64Detail : false
-            }
+            settings: {}
         };
     };
 

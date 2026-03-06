@@ -31,8 +31,8 @@
             layoutMode: 'combined-horizontal',
             autoClose: false,
             language: defaultLanguage,  // 使用 i18nManager 的當前語言
-            imageSizeLimit: 0,
-            enableBase64Detail: false,
+            imageSizeLimit: 0,           // kept for backward compat (not exposed in UI)
+            enableBase64Detail: false,   // kept for backward compat (not exposed in UI)
             // 移除 activeTab - 頁籤切換無需持久化
             sessionPanelCollapsed: false,
             // 自動定時提交設定
@@ -407,9 +407,6 @@
         
         // 應用語言設定
         this.applyLanguageSettings();
-        
-        // 應用圖片設定
-        this.applyImageSettings();
 
         // 應用自動提交設定
         this.applyAutoSubmitSettingsToUI();
@@ -475,28 +472,6 @@
         languageOptions.forEach(function(option) {
             option.classList.toggle('active', option.getAttribute('data-lang') === this.currentSettings.language);
         }.bind(this));
-    };
-
-    /**
-     * 應用圖片設定
-     */
-    SettingsManager.prototype.applyImageSettings = function() {
-        // 更新所有圖片大小限制選擇器（包括設定頁籤中的）
-        const imageSizeLimitSelects = document.querySelectorAll('[id$="ImageSizeLimit"]');
-        imageSizeLimitSelects.forEach(function(select) {
-            select.value = this.currentSettings.imageSizeLimit.toString();
-        }.bind(this));
-
-        // 更新所有 Base64 相容模式複選框（包括設定頁籤中的）
-        const enableBase64DetailCheckboxes = document.querySelectorAll('[id$="EnableBase64Detail"]');
-        enableBase64DetailCheckboxes.forEach(function(checkbox) {
-            checkbox.checked = this.currentSettings.enableBase64Detail;
-        }.bind(this));
-
-        console.log('圖片設定已應用到 UI:', {
-            imageSizeLimit: this.currentSettings.imageSizeLimit,
-            enableBase64Detail: this.currentSettings.enableBase64Detail
-        });
     };
 
     /**
@@ -699,26 +674,6 @@
                 self.set('language', lang);
             });
         });
-
-        // 圖片設定 - 大小限制選擇器
-        const settingsImageSizeLimit = Utils.safeQuerySelector('#settingsImageSizeLimit');
-        if (settingsImageSizeLimit) {
-            settingsImageSizeLimit.addEventListener('change', function(e) {
-                const value = parseInt(e.target.value);
-                self.set('imageSizeLimit', value);
-                console.log('圖片大小限制已更新:', value);
-            });
-        }
-
-        // 圖片設定 - Base64 相容模式切換器
-        const settingsEnableBase64Detail = Utils.safeQuerySelector('#settingsEnableBase64Detail');
-        if (settingsEnableBase64Detail) {
-            settingsEnableBase64Detail.addEventListener('change', function(e) {
-                const value = e.target.checked;
-                self.set('enableBase64Detail', value);
-                console.log('Base64 相容模式已更新:', value);
-            });
-        }
 
         // 自動提交功能啟用開關
         const autoSubmitToggle = Utils.safeQuerySelector('#autoSubmitToggle');

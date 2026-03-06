@@ -61,7 +61,7 @@ class CleanupReason(Enum):
 
 
 # 常數定義
-MAX_IMAGE_SIZE = 1 * 1024 * 1024  # 1MB 圖片大小限制
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB safety cap (frontend compresses to ~1MB)
 SUPPORTED_IMAGE_TYPES = {
     "image/png",
     "image/jpeg",
@@ -82,7 +82,6 @@ _IMAGE_MAGIC = (
     (b"\xff\xd8\xff", "jpeg"),
     (b"GIF87a", "gif"),
     (b"GIF89a", "gif"),
-    (b"RIFF", "webp"),  # RIFF....WEBP (need extra check)
     (b"BM", "bmp"),
 )
 
@@ -92,6 +91,9 @@ def _validate_image_bytes(data: bytes) -> bool:
     for magic, _ in _IMAGE_MAGIC:
         if data.startswith(magic):
             return True
+    # WebP: must start with RIFF and have WEBP at offset 8
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return True
     return False
 
 
@@ -652,18 +654,15 @@ class WebFeedbackSession:
         """
         processed_images = []
 
-        # 從設定中獲取圖片大小限制，如果沒有設定則使用預設值
-        size_limit = self.settings.get("image_size_limit", MAX_IMAGE_SIZE)
-
         for img in images:
             try:
                 if not all(key in img for key in ["name", "data", "size"]):
                     continue
 
-                # 檢查文件大小（只有當限制大於0時才檢查）
-                if size_limit > 0 and img["size"] > size_limit:
+                # Safety cap check
+                if img["size"] > MAX_IMAGE_SIZE:
                     debug_log(
-                        f"圖片 {img['name']} 超過大小限制 ({size_limit} bytes)，跳過"
+                        f"圖片 {img['name']} 超過大小限制 ({MAX_IMAGE_SIZE} bytes)，跳過"
                     )
                     continue
 

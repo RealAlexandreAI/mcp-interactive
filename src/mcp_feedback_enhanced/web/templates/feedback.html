@@ -12,7 +12,6 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="stylesheet" href="/static/css/prompt-management.css">
-    <link rel="stylesheet" href="/static/css/notification-settings.css">
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -214,14 +213,6 @@
                         <i data-lucide="timer"></i>
                         <span data-i18n="autoSubmit.title">Auto Submit</span>
                     </button>
-                    <button class="settings-tab" data-tab="notifications">
-                        <i data-lucide="bell"></i>
-                        <span data-i18n="notification.title">Notifications</span>
-                    </button>
-                    <button class="settings-tab" data-tab="session">
-                        <i data-lucide="archive"></i>
-                        <span data-i18n="sessionHistory.management.title">Session</span>
-                    </button>
                     <button class="settings-tab" data-tab="prompts">
                         <i data-lucide="file-text"></i>
                         <span data-i18n="prompts.management.title">Prompts</span>
@@ -251,45 +242,6 @@
                                         <option value="zh-CN" data-i18n="languages.zh-CN">简体中文</option>
                                         <option value="en" data-i18n="languages.en">English</option>
                                     </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Image settings -->
-                    <div class="settings-card">
-                        <div class="settings-card-header">
-                            <h3 class="settings-card-title">
-                                <i data-lucide="image"></i>
-                                <span data-i18n="images.settings.title">Image Settings</span>
-                            </h3>
-                        </div>
-                        <div class="settings-card-body">
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <div class="setting-label" data-i18n="images.settings.sizeLimit">Size Limit</div>
-                                    <div class="setting-description" data-i18n="images.settings.sizeLimitDesc">Max upload size</div>
-                                </div>
-                                <div class="image-size-limit-selector">
-                                    <select id="settingsImageSizeLimit" class="image-size-limit-select">
-                                        <option value="0" data-i18n="images.settings.sizeLimitOptions.unlimited">Unlimited</option>
-                                        <option value="1048576" data-i18n="images.settings.sizeLimitOptions.1mb">1MB</option>
-                                        <option value="3145728" data-i18n="images.settings.sizeLimitOptions.3mb">3MB</option>
-                                        <option value="5242880" data-i18n="images.settings.sizeLimitOptions.5mb">5MB</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <div class="setting-label" data-i18n="images.settings.base64Detail">Base64 Mode</div>
-                                    <div class="setting-description" data-i18n="images.settings.base64DetailHelp">Include full base64 data for AI model compatibility</div>
-                                    <div class="setting-warning" data-i18n="images.settings.base64Warning">Increases transfer size</div>
-                                </div>
-                                <div class="base64-toggle-container">
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="settingsEnableBase64Detail" class="toggle-input">
-                                        <span class="toggle-slider"></span>
-                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -398,78 +350,6 @@
                                         <i data-lucide="pause" style="width: 13px; height: 13px;"></i>
                                         <span class="button-text" data-i18n="autoSubmit.disabled">Disabled</span>
                                     </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab: Notifications -->
-                <div class="settings-tab-panel" data-panel="notifications">
-                    <div class="settings-card">
-                        <div class="settings-card-header">
-                            <h3 class="settings-card-title">
-                                <i data-lucide="bell"></i>
-                                <span data-i18n="notification.title">Browser Notifications</span>
-                            </h3>
-                        </div>
-                        <div class="settings-card-body" id="notificationSettingsContainer"></div>
-                    </div>
-                </div>
-
-                <!-- Tab: Session History -->
-                <div class="settings-tab-panel" data-panel="session">
-                    <div class="settings-card">
-                        <div class="settings-card-body">
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <div class="setting-label" data-i18n="sessionHistory.management.retentionPeriod">Retention</div>
-                                    <div class="setting-description" data-i18n="sessionHistory.management.description">Local session history management</div>
-                                </div>
-                                <div class="setting-control">
-                                    <select id="sessionHistoryRetentionHours" class="form-select" style="width: 130px;">
-                                        <option value="24" data-i18n="sessionHistory.retention.24hours">24 hours</option>
-                                        <option value="72" data-i18n="sessionHistory.retention.72hours">72 hours</option>
-                                        <option value="168" data-i18n="sessionHistory.retention.168hours">7 days</option>
-                                        <option value="720" data-i18n="sessionHistory.retention.720hours">30 days</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <div class="setting-label" data-i18n="sessionHistory.userMessages.title">Message Recording</div>
-                                    <div class="setting-description" data-i18n="sessionHistory.userMessages.description">Record user feedback in session history</div>
-                                </div>
-                                <div class="setting-control">
-                                    <div class="toggle-container">
-                                        <label class="toggle-switch">
-                                            <input type="checkbox" id="userMessageRecordingToggle" class="toggle-input">
-                                            <span class="toggle-slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <div class="setting-label" data-i18n="sessionHistory.userMessages.privacyLevel">Privacy Level</div>
-                                    <div class="setting-description" id="userMessagePrivacyDescription" data-i18n="sessionHistory.userMessages.privacyDescription.full">Full message recording</div>
-                                </div>
-                                <div class="setting-control">
-                                    <select id="userMessagePrivacyLevel" class="form-select" style="width: 120px;">
-                                        <option value="full" data-i18n="sessionHistory.userMessages.privacyLevels.full">Full</option>
-                                        <option value="basic" data-i18n="sessionHistory.userMessages.privacyLevels.basic">Basic</option>
-                                        <option value="disabled" data-i18n="sessionHistory.userMessages.privacyLevels.disabled">Disabled</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="setting-item" style="border-bottom: none;">
-                                <div class="setting-info">
-                                    <div class="setting-label" data-i18n="sessionHistory.management.export">Data Management</div>
-                                </div>
-                                <div class="setting-control" style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                    <button id="exportSessionHistoryBtn" class="btn-small" data-i18n="sessionHistory.management.exportAll">Export</button>
-                                    <button id="clearUserMessagesBtn" class="btn-small" style="color: var(--warning-color);" data-i18n="sessionHistory.userMessages.clearAll">Clear Messages</button>
-                                    <button id="clearSessionHistoryBtn" class="btn-small" style="color: var(--error-color);" data-i18n="sessionHistory.management.clear">Clear All</button>
                                 </div>
                             </div>
                         </div>

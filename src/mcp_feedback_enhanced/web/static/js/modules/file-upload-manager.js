@@ -11,15 +11,16 @@
         window.MCPFeedback = {};
     }
 
+    // Compression threshold: images larger than this will be auto-compressed
+    var COMPRESS_THRESHOLD = 1 * 1024 * 1024; // 1MB
+
     /**
      * 檔案上傳管理器建構函數
      */
     function FileUploadManager(options) {
         options = options || {};
-        
+
         // 配置選項
-        this.maxFileSize = options.maxFileSize || 0; // 0 表示無限制
-        this.enableBase64Detail = options.enableBase64Detail || false;
         this.acceptedTypes = options.acceptedTypes || 'image/*';
         this.maxFiles = options.maxFiles || 10;
         
@@ -285,20 +286,6 @@
                 continue;
             }
 
-            // 檢查檔案大小
-            if (this.maxFileSize > 0 && file.size > this.maxFileSize) {
-                const sizeLimit = this.formatFileSize(this.maxFileSize);
-                console.warn('⚠️ 檔案過大:', file.name, '超過限制', sizeLimit);
-                const message = window.i18nManager ?
-                    window.i18nManager.t('fileUpload.fileSizeExceeded', {
-                        limit: sizeLimit,
-                        filename: file.name
-                    }) :
-                    '圖片大小超過限制 (' + sizeLimit + '): ' + file.name;
-                this.showMessage(message, 'warning');
-                continue;
-            }
-
             // 檢查檔案數量限制
             if (this.files.length + validFiles.length >= this.maxFiles) {
                 console.warn('⚠️ 檔案數量超過限制:', this.maxFiles);
@@ -319,32 +306,60 @@
     };
 
     /**
-     * 添加檔案到列表
+     * 添加檔案到列表（with auto-compression for images > 1MB）
      */
     FileUploadManager.prototype.addFiles = function(files) {
-        const promises = files.map(file => this.fileToBase64(file));
-        
-        const self = this;
-        Promise.all(promises)
-            .then(function(base64Results) {
-                base64Results.forEach(function(base64, index) {
-                    const file = files[index];
-                    const fileData = {
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        data: base64,
-                        timestamp: Date.now()
-                    };
-                    
+        var self = this;
+
+        var processOne = function(file) {
+            return self.fileToBase64(file).then(function(base64) {
+                var originalSize = file.size;
+
+                // Auto-compress if file exceeds threshold
+                if (originalSize > COMPRESS_THRESHOLD) {
+                    return self.compressImage(base64, file.type, COMPRESS_THRESHOLD).then(function(result) {
+                        if (result.compressed) {
+                            var origStr = self.formatFileSize(originalSize);
+                            var newStr = self.formatFileSize(result.size);
+                            var msg = window.i18nManager
+                                ? window.i18nManager.t('fileUpload.compressed', {
+                                    original: origStr, compressed: newStr
+                                })
+                                : 'Image compressed: ' + origStr + ' → ' + newStr;
+                            self.showMessage(msg, 'info');
+                            console.log('🗜️ Compressed', file.name, origStr, '→', newStr);
+                        }
+                        return {
+                            name: file.name,
+                            size: result.size,
+                            type: result.mimeType,
+                            data: result.data,
+                            timestamp: Date.now()
+                        };
+                    });
+                }
+
+                return {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    data: base64,
+                    timestamp: Date.now()
+                };
+            });
+        };
+
+        Promise.all(files.map(processOne))
+            .then(function(fileDataList) {
+                fileDataList.forEach(function(fileData) {
                     self.files.push(fileData);
-                    console.log('✅ 檔案已添加:', file.name);
-                    
+                    console.log('✅ 檔案已添加:', fileData.name);
+
                     if (self.onFileAdd) {
                         self.onFileAdd(fileData);
                     }
                 });
-                
+
                 self.updateAllPreviews();
             })
             .catch(function(error) {
@@ -354,6 +369,66 @@
                     '檔案處理失敗，請重試';
                 self.showMessage(message, 'error');
             });
+    };
+
+    /**
+     * Compress an image using canvas API.
+     * Progressively reduces quality and dimensions until under maxBytes.
+     *
+     * @param {string} base64Data - raw base64 (no data URI prefix)
+     * @param {string} mimeType - original MIME type
+     * @param {number} maxBytes - target max size in bytes
+     * @returns {Promise<{data: string, size: number, mimeType: string, compressed: boolean}>}
+     */
+    FileUploadManager.prototype.compressImage = function(base64Data, mimeType, maxBytes) {
+        return new Promise(function(resolve) {
+            var img = new Image();
+
+            img.onload = function() {
+                var outputType = 'image/jpeg'; // re-encode everything as JPEG
+                var qualities = [0.85, 0.7, 0.5, 0.3];
+                var scale = 1.0;
+                var attempts = 0;
+                var maxAttempts = 12;
+
+                var tryCompress = function() {
+                    var w = Math.round(img.width * scale);
+                    var h = Math.round(img.height * scale);
+                    var canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    var qi = Math.min(attempts, qualities.length - 1);
+                    var quality = qualities[qi];
+                    var dataUrl = canvas.toDataURL(outputType, quality);
+                    var b64 = dataUrl.split(',')[1];
+                    var size = Math.round(b64.length * 3 / 4); // approximate byte size
+
+                    attempts++;
+
+                    if (size <= maxBytes || attempts >= maxAttempts) {
+                        resolve({ data: b64, size: size, mimeType: outputType, compressed: true });
+                    } else {
+                        // If we've tried all quality levels, start scaling down
+                        if (attempts >= qualities.length) {
+                            scale *= 0.75;
+                        }
+                        tryCompress();
+                    }
+                };
+
+                tryCompress();
+            };
+
+            img.onerror = function() {
+                // On failure, return original data uncompressed
+                resolve({ data: base64Data, size: Math.round(base64Data.length * 3 / 4), mimeType: mimeType, compressed: false });
+            };
+
+            img.src = 'data:' + mimeType + ';base64,' + base64Data;
+        });
     };
 
     /**
@@ -491,19 +566,6 @@
             console.log('[' + type.toUpperCase() + ']', message);
             alert(message);
         }
-    };
-
-    /**
-     * 更新設定
-     */
-    FileUploadManager.prototype.updateSettings = function(settings) {
-        this.maxFileSize = settings.imageSizeLimit || 0;
-        this.enableBase64Detail = settings.enableBase64Detail || false;
-
-        console.log('⚙️ FileUploadManager 設定已更新:', {
-            maxFileSize: this.maxFileSize,
-            enableBase64Detail: this.enableBase64Detail
-        });
     };
 
     /**

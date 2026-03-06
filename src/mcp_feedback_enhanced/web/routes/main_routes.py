@@ -365,7 +365,7 @@ def setup_routes(manager: "WebUIManager"):
             "layoutMode", "language", "logLevel", "theme",
             "notificationEnabled", "notificationVolume", "notificationSound",
             "autoSubmit", "autoSubmitDelay", "showTimestamp",
-            "sessionHistoryRetention", "imageSizeLimit", "imageQuality",
+            "sessionHistoryRetention", "imageQuality",
             "fontSize", "fontFamily", "promptTemplates",
             "sessionTimeout", "sessionTimeoutEnabled",
         }

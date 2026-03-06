@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import psutil
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.gzip import GZipMiddleware
@@ -32,6 +33,10 @@ from .utils.compression_config import get_compression_manager
 from .utils.port_manager import PortManager
 
 
+# Reusable psutil.Process for the current process
+_current_process = psutil.Process()
+
+
 class WebUIManager:
     """Web UI 管理器 - 重構為單一活躍會話模式"""
 
@@ -46,7 +51,7 @@ class WebUIManager:
             debug_log(f"未設定 MCP_WEB_HOST 環境變數，使用預設主機 {self.host}")
 
         # 確定偏好端口：環境變數 > 參數 > 預設值 8765
-        preferred_port = 8765
+        preferred_port = 9766
 
         # 檢查環境變數 MCP_WEB_PORT
         env_port = os.getenv("MCP_WEB_PORT")
@@ -784,9 +789,6 @@ class WebUIManager:
             # 發送刷新通知
             await self.current_session.websocket.send_json(refresh_message)
             debug_log(f"已向現有標籤頁發送刷新通知: {self.current_session.session_id}")
-
-            # 簡單等待一下讓消息發送完成
-            await asyncio.sleep(0.2)
             debug_log("刷新通知發送完成")
             return True
 
@@ -821,18 +823,17 @@ class WebUIManager:
                 # 檢查連接是否已關閉
                 if hasattr(websocket, "client_state"):
                     try:
-                        # 嘗試從 starlette 導入（FastAPI 基於 Starlette）
-                        import starlette.websockets  # type: ignore[import-not-found]
+                        from starlette.websockets import (
+                            WebSocketState,  # type: ignore[import-not-found]
+                        )
 
-                        if hasattr(starlette.websockets, "WebSocketState"):
-                            WebSocketState = starlette.websockets.WebSocketState
-                            if websocket.client_state != WebSocketState.CONNECTED:
-                                debug_log(
-                                    f"準確檢測：WebSocket 狀態不是 CONNECTED，而是 {websocket.client_state}"
-                                )
-                                # 清理死連接
-                                self.current_session.websocket = None
-                                return False
+                        if websocket.client_state != WebSocketState.CONNECTED:
+                            debug_log(
+                                f"準確檢測：WebSocket 狀態不是 CONNECTED，而是 {websocket.client_state}"
+                            )
+                            # 清理死連接
+                            self.current_session.websocket = None
+                            return False
                     except ImportError:
                         # 如果導入失敗，使用替代方法
                         debug_log("無法導入 WebSocketState，使用替代方法檢測連接")
@@ -1027,13 +1028,10 @@ class WebUIManager:
 
         # 計算內存使用（如果可能）
         try:
-            import psutil
-
-            process = psutil.Process()
             stats["memory_usage_mb"] = round(
-                process.memory_info().rss / (1024 * 1024), 2
+                _current_process.memory_info().rss / (1024 * 1024), 2
             )
-        except:
+        except Exception:
             pass
 
         return stats

@@ -130,7 +130,7 @@ def test_web_ui_simple():
         os.environ["MCP_TEST_MODE"] = "true"
         os.environ["MCP_WEB_HOST"] = "127.0.0.1"
         # 設置更高的端口範圍避免系統保留端口
-        os.environ["MCP_WEB_PORT"] = "9765"
+        os.environ["MCP_WEB_PORT"] = "9766"
 
         print("🔧 創建 Web UI 管理器...")
         manager = WebUIManager()  # 使用環境變數控制主機和端口

@@ -69,12 +69,16 @@ class TestMCPBasicWorkflow:
             # 驗證結果格式
             assert isinstance(result, dict)
 
-            # 由於是自動化測試環境，預期會超時或返回默認回應
+            # In automated test environment, expect timeout or default response
             if "error" in result:
-                # 超時是預期的行為
+                # Timeout is expected behavior
                 assert "超時" in result["error"] or "timeout" in result["error"].lower()
+            elif "content" in result:
+                # MCP structured response - check for timeout message
+                content_text = str(result.get("content", ""))
+                assert "timeout" in content_text.lower() or TestUtils.validate_web_response(result)
             else:
-                # 或者返回了默認的回應
+                # Or returned a default web response
                 assert TestUtils.validate_web_response(result)
 
         finally:

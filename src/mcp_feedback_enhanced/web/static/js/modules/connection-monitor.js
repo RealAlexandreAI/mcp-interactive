@@ -312,13 +312,9 @@
             }
         }
         
-        // 更新統計面板中的延遲顯示
-        const statsLatency = document.getElementById('statsLatency');
-        if (statsLatency) {
-            statsLatency.textContent = this.currentLatency > 0 ? this.currentLatency + 'ms' : '--ms';
-        }
-        
-        // 更新連線時間
+        // Stats panel elements removed in UI overhaul
+
+        // Update connection time
         let connectionTimeStr = '--:--';
         if (this.connectionStartTime) {
             const duration = Math.floor((Date.now() - this.connectionStartTime) / 1000);
@@ -326,53 +322,22 @@
             const seconds = duration % 60;
             connectionTimeStr = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
         }
-        
+
         if (this.connectionTimeDisplay) {
-            const connectionTimeLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.connectionTime') : '連線時間';
+            const connectionTimeLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.connectionTime') : 'Connection Time';
             this.connectionTimeDisplay.textContent = connectionTimeLabel + ': ' + connectionTimeStr;
         }
-        
-        // 更新統計面板中的連線時間
-        const statsConnectionTime = document.getElementById('statsConnectionTime');
-        if (statsConnectionTime) {
-            statsConnectionTime.textContent = connectionTimeStr;
-        }
-        
-        // 更新重連次數
+
+        // Update reconnect count
         if (this.reconnectCountDisplay) {
-            const reconnectLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.reconnectCount') : '重連';
-            const timesLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.times') : '次';
+            const reconnectLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.reconnectCount') : 'Reconnect';
+            const timesLabel = window.i18nManager ? window.i18nManager.t('connectionMonitor.times') : 'times';
             this.reconnectCountDisplay.textContent = reconnectLabel + ': ' + this.reconnectCount + ' ' + timesLabel;
         }
-        
-        // 更新統計面板中的重連次數
-        const statsReconnectCount = document.getElementById('statsReconnectCount');
-        if (statsReconnectCount) {
-            statsReconnectCount.textContent = this.reconnectCount.toString();
-        }
-        
-        // 更新訊息計數
+
+        // Update message count
         if (this.messageCountDisplay) {
             this.messageCountDisplay.textContent = this.messageCount;
-        }
-        
-        // 更新統計面板中的訊息計數
-        const statsMessageCount = document.getElementById('statsMessageCount');
-        if (statsMessageCount) {
-            statsMessageCount.textContent = this.messageCount.toString();
-        }
-        
-        // 更新統計面板中的會話數和狀態
-        const sessionCount = document.getElementById('sessionCount');
-        const statsSessionCount = document.getElementById('statsSessionCount');
-        if (sessionCount && statsSessionCount) {
-            statsSessionCount.textContent = sessionCount.textContent;
-        }
-        
-        const sessionStatusText = document.getElementById('sessionStatusText');
-        const statsSessionStatus = document.getElementById('statsSessionStatus');
-        if (sessionStatusText && statsSessionStatus) {
-            statsSessionStatus.textContent = sessionStatusText.textContent;
         }
     };
 

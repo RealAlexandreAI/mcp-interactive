@@ -84,7 +84,7 @@
             }
 
             // 添加語言參數到 WebSocket URL
-            const language = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-TW';
+            const language = window.i18nManager ? window.i18nManager.getCurrentLanguage() : 'zh-CN';
             const wsUrlWithLang = wsUrl + (wsUrl.includes('?') ? '&' : '?') + 'lang=' + language;
             this.websocket = new WebSocket(wsUrlWithLang);
             this.setupWebSocketEvents();

@@ -22,9 +22,20 @@
         // 設定管理器引用
         this.settingsManager = options.settingsManager || null;
         
-        // 預設提示詞設定
+        // Default prompt settings with built-in "OK" prompt
         this.defaultPromptSettings = {
-            prompts: [],
+            prompts: [
+                {
+                    id: 'builtin-ok',
+                    name: 'OK',
+                    content: 'OK',
+                    createdAt: new Date(0).toISOString(),
+                    lastUsedAt: null,
+                    usageCount: 0,
+                    isBuiltIn: true,
+                    isAutoSubmit: true
+                }
+            ],
             lastUsedPromptId: null,
             promptCounter: 0
         };
@@ -144,20 +155,23 @@
      * 合併提示詞設定
      */
     PromptManager.prototype.mergePromptSettings = function(defaultSettings, userSettings) {
-        const merged = Utils.deepClone(defaultSettings);
-        
+        var merged = Utils.deepClone(defaultSettings);
+
         if (userSettings.prompts && Array.isArray(userSettings.prompts)) {
-            merged.prompts = userSettings.prompts;
+            // Ensure built-in prompts are always present
+            var builtInPrompts = defaultSettings.prompts.filter(function(p) { return p.isBuiltIn; });
+            var userPrompts = userSettings.prompts.filter(function(p) { return !p.isBuiltIn; });
+            merged.prompts = builtInPrompts.concat(userPrompts);
         }
-        
+
         if (userSettings.lastUsedPromptId) {
             merged.lastUsedPromptId = userSettings.lastUsedPromptId;
         }
-        
+
         if (typeof userSettings.promptCounter === 'number') {
             merged.promptCounter = userSettings.promptCounter;
         }
-        
+
         return merged;
     };
 

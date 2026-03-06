@@ -169,7 +169,7 @@ class ErrorHandler:
             return get_i18n_manager().get_current_language()
         except Exception:
             # 回退到環境變數或默認語言
-            return os.getenv("MCP_LANGUAGE", "zh-TW")
+            return os.getenv("MCP_LANGUAGE", "zh-CN")
 
     @staticmethod
     def get_i18n_error_message(error_type: ErrorType) -> str:

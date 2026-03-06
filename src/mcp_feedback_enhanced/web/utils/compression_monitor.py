@@ -8,6 +8,7 @@
 """
 
 import threading
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
@@ -46,7 +47,7 @@ class CompressionMonitor:
 
     def __init__(self, max_metrics: int = 1000):
         self.max_metrics = max_metrics
-        self.metrics: list[CompressionMetrics] = []
+        self.metrics: deque[CompressionMetrics] = deque(maxlen=max_metrics)
         self.lock = threading.Lock()
         self._start_time = datetime.now()
 
@@ -84,10 +85,7 @@ class CompressionMonitor:
 
         with self.lock:
             self.metrics.append(metric)
-
-            # 限制記錄數量
-            if len(self.metrics) > self.max_metrics:
-                self.metrics = self.metrics[-self.max_metrics :]
+            # deque with maxlen auto-trims, no manual trimming needed
 
             # 更新路徑統計
             self._update_path_stats(metric)
@@ -227,7 +225,7 @@ class CompressionMonitor:
     def get_recent_metrics(self, limit: int = 100) -> list[CompressionMetrics]:
         """獲取最近的指標數據"""
         with self.lock:
-            return self.metrics[-limit:] if self.metrics else []
+            return list(self.metrics)[-limit:] if self.metrics else []
 
     def reset_stats(self):
         """重置統計數據"""

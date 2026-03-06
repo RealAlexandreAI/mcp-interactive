@@ -12,23 +12,23 @@
         "updateFailed": "更新内容失败，请手动刷新页面以查看新的 AI 工作摘要"
     },
     "tabs": {
-        "summary": "📋 AI 总结",
-        "commands": "⚡ 命令",
-        "command": "⚡ 命令",
-        "sessions": "📋 会话管理",
-        "settings": "⚙️ 设置",
-        "combined": "📝 工作区",
-        "about": "ℹ️ 关于"
+        "summary": "AI 总结",
+        "commands": "命令",
+        "command": "命令",
+        "sessions": "会话管理",
+        "settings": "设置",
+        "combined": "工作区",
+        "about": "关于"
     },
     "feedback": {
-        "title": "💬 提供反馈",
+        "title": "提供反馈",
         "description": "请提供您对 AI 工作成果的反馈意见。您可以输入文字反馈并上传相关图片。",
         "textLabel": "文字反馈",
         "placeholder": "请在这里输入您的反馈...",
-        "detailedPlaceholder": "请在这里输入您的反馈...\n\n💡 小提示：\n• 按 Ctrl+Enter/Cmd+Enter (支持数字键盘) 可快速提交\n• 按 Ctrl+I/Cmd+I 可聚焦输入框\n• 按 Ctrl+V/Cmd+V 可直接粘贴剪贴板图片",
+        "detailedPlaceholder": "请在这里输入您的反馈...\n\n小提示：\n• 按 Ctrl+Enter/Cmd+Enter (支持数字键盘) 可快速提交\n• 按 Ctrl+I/Cmd+I 可聚焦输入框\n• 按 Ctrl+V/Cmd+V 可直接粘贴剪贴板图片",
         "imageLabel": "图片附件（可选）",
-        "imageUploadText": "📎 点击选择图片或拖放图片到此处\n支持 PNG、JPG、JPEG、GIF、BMP、WebP 等格式",
-        "submit": "✅ 提交反馈",
+        "imageUploadText": "点击选择图片或拖放图片到此处\n支持 PNG、JPG、JPEG、GIF、BMP、WebP 等格式",
+        "submit": "提交反馈",
         "uploading": "上传中...",
         "dragdrop": "拖放图片到这里或点击上传",
         "selectfiles": "选择文件",
@@ -54,7 +54,7 @@
         "provideTextOrImage": "请提供反馈文字或上传图片"
     },
     "summary": {
-        "title": "📋 AI 工作摘要",
+        "title": "AI 工作摘要",
         "description": "以下是 AI 助手完成的工作摘要，请仔细查看并提供您的反馈意见。",
         "placeholder": "AI 工作摘要将在这里显示...",
         "empty": "目前没有摘要内容",
@@ -62,12 +62,12 @@
         "refresh": "刷新"
     },
     "commands": {
-        "title": "⚡ 命令执行",
+        "title": "命令执行",
         "description": "在此执行命令来验证结果或收集更多信息。命令将在项目目录中执行。",
         "inputLabel": "命令输入",
         "placeholder": "输入要执行的命令...",
-        "execute": "▶️ 执行",
-        "runButton": "▶️ 执行",
+        "execute": "执行",
+        "runButton": "执行",
         "clear": "清除",
         "output": "命令输出",
         "outputLabel": "命令输出",
@@ -81,11 +81,11 @@
         "executing": "正在执行..."
     },
     "command": {
-        "title": "⚡ 命令执行",
+        "title": "命令执行",
         "inputLabel": "命令输入",
         "placeholder": "输入要执行的命令...",
-        "execute": "▶️ 执行",
-        "runButton": "▶️ 执行",
+        "execute": "执行",
+        "runButton": "执行",
         "clear": "清除",
         "output": "命令输出",
         "running": "执行中...",
@@ -93,7 +93,7 @@
         "error": "执行错误",
         "history": "命令历史",
         "autoCommand": {
-            "title": "🤖 自动执行命令设置",
+            "title": "自动执行命令设置",
             "description": "设置在特定时机自动执行的命令",
             "enabled": "启用自动执行命令",
             "onNewSession": "新会话建立时执行",
@@ -105,20 +105,20 @@
             "help": "这些命令会在对应的时机自动执行。留空表示不执行任何命令。"
         },
         "autoSettings": {
-            "exampleNewSession": "💡 示例：pwd, git status, ls -la",
-            "exampleFeedback": "💡 示例：date, echo \"Done\", git log -1"
+            "exampleNewSession": "示例：pwd, git status, ls -la",
+            "exampleFeedback": "示例：date, echo \"Done\", git log -1"
         }
     },
     "combined": {
-        "summaryTitle": "📋 AI 工作摘要",
-        "feedbackTitle": "💬 提供反馈"
+        "summaryTitle": "AI 响应",
+        "feedbackTitle": "提供反馈"
     },
     "settingsUI": {
-        "title": "⚙️ 设定",
-        "language": "🌍 语言",
+        "title": "设定",
+        "language": "语言",
         "currentLanguage": "当前语言",
         "languageDesc": "选择界面显示语言",
-        "interface": "🎨 界面设定",
+        "interface": "界面设定",
         "layoutMode": "界面布局模式",
         "layoutModeDesc": "选择 AI 摘要和反馈输入的显示方式",
         "combinedVertical": "垂直布局",
@@ -129,7 +129,7 @@
         "autoCloseDesc": "提交回馈后自动关闭页面",
         "theme": "主题",
         "notifications": "通知",
-        "advanced": "🔧 进阶设定",
+        "advanced": "进阶设定",
         "save": "储存设定",
         "reset": "重置设定",
         "resetDesc": "清除所有已保存的设定，恢复到预设状态",
@@ -140,7 +140,7 @@
         "autorefresh": "自动重新整理",
         "debug": "除错模式",
         "autoCommitNoPrompt": "请先选择一个提示词作为自动提交内容",
-        "sessionTimeoutTitle": "⏱️ 会话超时设置",
+        "sessionTimeoutTitle": "会话超时设置",
         "sessionTimeoutEnable": "启用会话超时",
         "sessionTimeoutEnableDesc": "启用后，会话将在指定时间后自动关闭",
         "sessionTimeoutDuration": "超时时间（秒）",
@@ -210,8 +210,8 @@
     },
     "buttons": {
         "ok": "确定",
-        "cancel": "❌ 取消",
-        "submit": "✅ 提交反馈",
+        "cancel": "取消",
+        "submit": "提交反馈",
         "processing": "处理中...",
         "submitted": "已提交",
         "retry": "重试",
@@ -220,7 +220,7 @@
         "download": "下载"
     },
     "sessionTimeout": {
-        "timeout": "⏰ 会话已超时，界面将自动关闭",
+        "timeout": "会话已超时，界面将自动关闭",
         "timeoutWarning": "会话即将超时",
         "timeoutDescription": "由于长时间无响应，会话已超时。界面将在 3 秒后自动关闭。",
         "closing": "正在关闭...",
@@ -273,7 +273,7 @@
     },
     "sessionHistory": {
         "management": {
-            "title": "📚 会话历史管理",
+            "title": "会话历史管理",
             "retentionPeriod": "保存期限",
             "retentionHours": "小时",
             "export": "导出",
@@ -367,12 +367,12 @@
     },
 
     "dynamic": {
-        "aiSummary": "测试 Web UI 功能\n\n🎯 **功能测试项目：**\n- Web UI 服务器启动和运行\n- WebSocket 实时通讯\n- 反馈提交功能\n- 图片上传和预览\n- 命令执行功能\n- 智能 Ctrl+V 图片粘贴\n- 多语言界面功能\n\n📋 **测试步骤：**\n1. 测试图片上传（拖拽、选择文件、剪贴板）\n2. 在文本框内按 Ctrl+V 测试智能粘贴\n3. 尝试切换语言（繁中/简中/英文）\n4. 测试命令执行功能\n5. 提交反馈和图片\n\n请测试这些功能并提供反馈！",
+        "aiSummary": "测试 Web UI 功能\n\n**功能测试项目：**\n- Web UI 服务器启动和运行\n- WebSocket 实时通讯\n- 反馈提交功能\n- 图片上传和预览\n- 命令执行功能\n- 智能 Ctrl+V 图片粘贴\n- 多语言界面功能\n\n**测试步骤：**\n1. 测试图片上传（拖拽、选择文件、剪贴板）\n2. 在文本框内按 Ctrl+V 测试智能粘贴\n3. 尝试切换语言（繁中/简中/英文）\n4. 测试命令执行功能\n5. 提交反馈和图片\n\n请测试这些功能并提供反馈！",
         "terminalWelcome": "欢迎使用交互反馈终端\n========================================\n项目目录: {sessionId}\n输入命令后按 Enter 或点击执行按钮\n支持的命令: ls, dir, pwd, cat, type 等\n\n$ "
     },
     "prompts": {
         "management": {
-            "title": "📝 常用提示词管理",
+            "title": "常用提示词管理",
             "description": "管理您的常用提示词模板，可在反馈输入时快速选用",
             "addNew": "新增提示词",
             "edit": "编辑",
@@ -421,7 +421,7 @@
         }
     },
     "about": {
-        "title": "ℹ️ 关于",
+        "title": "关于",
         "description": "一个强大的 MCP 服务器，为 AI 辅助开发工具提供人在回路的互动反馈功能。支持 Web UI 界面，并具备图片上传、命令执行、多语言等丰富功能。",
         "appInfo": "应用程序信息",
         "version": "版本",
@@ -437,7 +437,7 @@
     },
     "images": {
         "settings": {
-            "title": "🖼️ 图片设置",
+            "title": "图片设置",
             "sizeLimit": "图片大小限制",
             "sizeLimitDesc": "设定上传图片的最大文件大小限制",
             "sizeLimitOptions": {
@@ -448,15 +448,15 @@
             },
             "base64Detail": "Base64 兼容模式",
             "base64DetailHelp": "启用后会在文本中包含完整的 Base64 图片数据，提升与某些 AI 模型的兼容性",
-            "base64Warning": "⚠️ 会增加传输量",
-            "compatibilityHint": "💡 图片无法正确识别？",
+            "base64Warning": "会增加传输量",
+            "compatibilityHint": "图片无法正确识别？",
             "enableBase64Hint": "尝试启用 Base64 兼容模式"
         },
         "sizeLimitExceeded": "图片 {filename} 大小为 {size}，超过 {limit} 限制！",
         "sizeLimitExceededAdvice": "建议使用图片编辑软件压缩后再上传，或调整图片大小限制设置。"
     },
     "autoSubmit": {
-        "title": "⏰ 自动定时提交",
+        "title": "自动定时提交",
         "enable": "启用自动提交",
         "enableDesc": "启用后将在指定时间自动提交选定的提示词内容",
         "timeout": "倒数时间（秒）",
@@ -476,7 +476,7 @@
     },
     "audio": {
         "notification": {
-            "title": "🔊 音效通知设定",
+            "title": "音效通知设定",
             "description": "设定会话更新时的音效通知",
             "enabled": "启用音效通知",
             "enabledDesc": "启用后将在有新会话更新时播放音效通知",
@@ -517,7 +517,7 @@
         "title": "浏览器通知",
         "settingLabel": "浏览器通知",
         "description": "新会话建立时通知（仅在后台运行时）",
-        "enabled": "通知已启用 ✅",
+        "enabled": "通知已启用 ",
         "disabled": "通知已关闭",
         "permissionRequired": "需要通知权限才能启用此功能",
         "permissionDenied": "浏览器已封锁通知，请在浏览器设置中允许",

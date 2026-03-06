@@ -71,7 +71,7 @@ class TestData:
     ]
 
     # 支援的語言列表
-    SUPPORTED_LANGUAGES: List[str] = ["zh-TW", "zh-CN", "en"]
+    SUPPORTED_LANGUAGES: List[str] = ["zh-CN", "en"]
 
     # 測試環境變數
     TEST_ENV_VARS: Dict[str, str] = {
@@ -92,7 +92,7 @@ class TestData:
             "retry_count": 3
         },
         "i18n": {
-            "default_language": "zh-TW",
+            "default_language": "zh-CN",
             "fallback_language": "en"
         }
     }

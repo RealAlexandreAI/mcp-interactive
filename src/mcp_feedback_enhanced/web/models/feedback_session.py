@@ -11,6 +11,7 @@ Web 回饋會話模型
 
 import asyncio
 import base64
+import os
 import shlex
 import subprocess
 import threading
@@ -21,12 +22,17 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+import psutil
 from fastapi import WebSocket
 
 from ...debug import web_debug_log as debug_log
 from ...utils.error_handler import ErrorHandler, ErrorType
 from ...utils.resource_manager import get_resource_manager, register_process
 from ..constants import get_message_code
+
+
+# Reusable psutil.Process for the current process (avoids repeated construction)
+_current_process = psutil.Process()
 
 
 class SessionStatus(Enum):
@@ -535,8 +541,10 @@ class WebFeedbackSession:
         self.settings = settings or {}
         self.images = self._process_images(images)
 
-        # 進入下一步：等待中 → 已提交反饋
-        self.next_step("已送出反饋，等待下次 MCP 調用")
+        # Submit feedback: advance to FEEDBACK_SUBMITTED
+        # (WAITING -> ACTIVE -> FEEDBACK_SUBMITTED)
+        self.next_step()  # WAITING -> ACTIVE
+        self.next_step("Feedback submitted, waiting for next MCP call")  # ACTIVE -> FEEDBACK_SUBMITTED
 
         self.feedback_completed.set()
 
@@ -553,8 +561,6 @@ class WebFeedbackSession:
                 )
 
                 # 檢查是否為桌面模式，如果是則立即關閉桌面應用程式
-                import os
-
                 if os.environ.get("MCP_DESKTOP_MODE", "").lower() == "true":
                     debug_log("桌面模式：反饋提交後立即關閉桌面應用程式")
 
@@ -575,8 +581,6 @@ class WebFeedbackSession:
 
     def add_user_message(self, message_data: dict[str, Any]) -> None:
         """添加用戶消息記錄"""
-        import time
-
         # 創建用戶消息記錄
         user_message = {
             "timestamp": int(time.time() * 1000),  # 毫秒時間戳
@@ -784,11 +788,8 @@ class WebFeedbackSession:
         try:
             # 記錄清理前的內存使用（如果可能）
             try:
-                import psutil
-
-                process = psutil.Process()
-                memory_before = process.memory_info().rss
-            except:
+                memory_before = _current_process.memory_info().rss
+            except Exception:
                 pass
 
             # 1. 取消自動清理定時器
@@ -892,11 +893,8 @@ class WebFeedbackSession:
             cleanup_duration = time.time() - cleanup_start_time
             memory_after = 0
             try:
-                import psutil
-
-                process = psutil.Process()
-                memory_after = process.memory_info().rss
-            except:
+                memory_after = _current_process.memory_info().rss
+            except Exception:
                 pass
 
             memory_freed = max(0, memory_before - memory_after)
@@ -959,11 +957,8 @@ class WebFeedbackSession:
         try:
             # 記錄清理前的內存使用
             try:
-                import psutil
-
-                process = psutil.Process()
-                memory_before = process.memory_info().rss
-            except:
+                memory_before = _current_process.memory_info().rss
+            except Exception:
                 pass
 
             # 1. 取消自動清理定時器
@@ -1029,11 +1024,8 @@ class WebFeedbackSession:
             cleanup_duration = time.time() - cleanup_start_time
             memory_after = 0
             try:
-                import psutil
-
-                process = psutil.Process()
-                memory_after = process.memory_info().rss
-            except:
+                memory_after = _current_process.memory_info().rss
+            except Exception:
                 pass
 
             memory_freed = max(0, memory_before - memory_after)

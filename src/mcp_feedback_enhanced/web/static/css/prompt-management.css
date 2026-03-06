@@ -13,14 +13,15 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    background: oklch(0.05 0.01 285 / 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10000;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-normal, 250ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 .modal-overlay.show {
@@ -32,17 +33,19 @@
 }
 
 .modal-container {
-    background: var(--bg-primary);
+    background: var(--frost-bg-deep, oklch(0.08 0.02 165 / 0.62));
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-lg, 14px);
+    box-shadow: var(--shadow-xl, 0 16px 48px rgba(0, 0, 0, 0.4));
+    backdrop-filter: blur(16px) saturate(1.6);
+    -webkit-backdrop-filter: blur(16px) saturate(1.6);
     max-width: 500px;
     width: 90%;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
-    transform: scale(0.9) translateY(20px);
-    transition: transform 0.3s ease;
+    transform: scale(0.95) translateY(12px);
+    transition: transform var(--duration-normal, 250ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
 }
 
 .modal-container.modal-large {
@@ -60,7 +63,7 @@
     padding: 16px 20px;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg, 14px) var(--radius-lg, 14px) 0 0;
 }
 
 .modal-title {
@@ -160,9 +163,9 @@
 
 .prompt-item:hover {
     border-color: var(--accent-color);
-    background: rgba(0, 122, 204, 0.05);
+    background: var(--accent-subtle);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.1);
+    box-shadow: 0 2px 8px var(--accent-muted);
 }
 
 .prompt-item-header {
@@ -249,8 +252,8 @@
 }
 
 .prompt-settings-item:hover {
-    border-color: rgba(0, 122, 204, 0.5);
-    background: rgba(0, 122, 204, 0.05);
+    border-color: var(--accent-muted);
+    background: var(--accent-subtle);
 }
 
 .prompt-settings-info {
@@ -303,13 +306,13 @@
 .prompt-action-btn:hover {
     border-color: var(--accent-color);
     color: var(--accent-color);
-    background: rgba(0, 122, 204, 0.1);
+    background: var(--accent-subtle);
 }
 
 .prompt-action-btn.delete:hover {
-    border-color: #dc3545;
-    color: #dc3545;
-    background: rgba(220, 53, 69, 0.1);
+    border-color: var(--error-color);
+    color: var(--error-color);
+    background: oklch(0.65 0.2 25 / 0.1);
 }
 
 /* ===== input-group 按鈕樣式 ===== */
@@ -338,7 +341,7 @@
 
 .prompt-input-btn:hover {
     border-color: var(--accent-color);
-    background: rgba(0, 122, 204, 0.1);
+    background: var(--accent-subtle);
     color: var(--accent-color);
 }
 
@@ -440,7 +443,7 @@
 /* 自動提交提示詞項目特殊樣式 */
 .prompt-settings-item.auto-submit-prompt {
     border-left: 4px solid var(--accent-color);
-    background: rgba(0, 122, 204, 0.05);
+    background: var(--accent-subtle);
     position: relative;
 }
 
@@ -475,7 +478,7 @@
     color: var(--accent-color);
     font-weight: 500;
     font-size: 11px;
-    background: rgba(0, 122, 204, 0.1);
+    background: var(--accent-subtle);
     padding: 2px 6px;
     border-radius: 3px;
     margin-left: 8px;
@@ -505,7 +508,7 @@
 .prompt-action-btn.auto-submit-btn:not(.active):hover {
     border-color: var(--accent-color);
     color: var(--accent-color);
-    background: rgba(0, 122, 204, 0.1);
+    background: var(--accent-subtle);
 }
 
 /* 提示詞名稱中的自動提交標示 */
@@ -523,8 +526,8 @@
 /* 自動提交提示詞的懸停效果 */
 .prompt-settings-item.auto-submit-prompt:hover {
     border-color: var(--accent-color);
-    background: rgba(0, 122, 204, 0.1);
-    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.2);
+    background: var(--accent-muted);
+    box-shadow: 0 2px 8px var(--accent-muted);
 }
 
 /* 自動提交提示詞的動畫效果 */
@@ -534,10 +537,10 @@
 
 @keyframes autoSubmitGlow {
     from {
-        box-shadow: 0 0 5px rgba(0, 122, 204, 0.3);
+        box-shadow: 0 0 5px var(--accent-muted);
     }
     to {
-        box-shadow: 0 0 15px rgba(0, 122, 204, 0.5);
+        box-shadow: 0 0 15px var(--accent-muted);
     }
 }
 
@@ -548,19 +551,4 @@
     }
 }
 
-/* ===== 深色主題適配 ===== */
-
-@media (prefers-color-scheme: dark) {
-    .modal-overlay {
-        background: rgba(0, 0, 0, 0.7);
-    }
-
-    .prompt-item:hover,
-    .prompt-settings-item:hover {
-        background: rgba(0, 122, 204, 0.1);
-    }
-
-    .auto-submit-badge {
-        box-shadow: 0 0 8px rgba(0, 122, 204, 0.4);
-    }
-}
+/* Dark theme is always active, no media query needed */

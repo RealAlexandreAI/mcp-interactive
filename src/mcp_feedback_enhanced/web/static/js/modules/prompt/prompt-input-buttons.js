@@ -76,8 +76,8 @@
      * 綁定已存在的按鈕
      */
     PromptInputButtons.prototype.bindExistingButtons = function(container, index) {
-        // 查找已存在的按鈕容器
-        const inputGroup = container.closest('.input-group') || container;
+        // Search for button container: try .input-group parent first, then parent element
+        const inputGroup = container.closest('.input-group') || container.parentElement || container;
         const buttonContainer = inputGroup.querySelector('.prompt-input-buttons');
 
         if (!buttonContainer) {
@@ -87,16 +87,11 @@
 
         // 獲取按鈕引用
         const selectBtn = buttonContainer.querySelector('.select-prompt-btn');
-        const lastUsedBtn = buttonContainer.querySelector('.last-prompt-btn');
 
-        if (selectBtn && lastUsedBtn) {
+        if (selectBtn) {
             // 設置正確的 data-container-index
             selectBtn.setAttribute('data-container-index', index);
-            lastUsedBtn.setAttribute('data-container-index', index);
-
             this.selectButtons.push(selectBtn);
-            this.lastUsedButtons.push(lastUsedBtn);
-
             console.log('✅ 成功綁定提示詞按鈕，容器索引:', index);
         } else {
             console.warn('⚠️ 找不到提示詞按鈕元素:', container);

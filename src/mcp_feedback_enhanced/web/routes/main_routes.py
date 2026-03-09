@@ -721,6 +721,22 @@ async def handle_websocket_message(manager: "WebUIManager", session, data: dict)
         else:
             session.update_timeout_settings(enabled=False)
 
+    elif message_type == "pause_timeout":
+        # Pause user timeout timer (e.g. when auto-submit is paused)
+        debug_log(f"收到暫停超時請求: {session.session_id}")
+        if session.user_timeout_timer:
+            session.user_timeout_timer.cancel()
+            session.user_timeout_timer = None
+            debug_log("用戶超時計時器已暫停")
+
+    elif message_type == "resume_timeout":
+        # Resume user timeout timer
+        debug_log(f"收到恢復超時請求: {session.session_id}")
+        if session.user_timeout_enabled and session.user_timeout_seconds > 0:
+            session.update_timeout_settings(
+                enabled=True, timeout_seconds=session.user_timeout_seconds
+            )
+
     else:
         debug_log(f"未知的消息類型: {message_type}")
 

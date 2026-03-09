@@ -570,9 +570,11 @@ async def launch_web_feedback_ui(
         debug_log(f"[DEBUG] Server address: {feedback_url}")
 
         # Poll-based wait: check session.feedback_completed periodically
-        # while sending progress heartbeats to keep MCP host alive.
+        # while sending heartbeats to keep MCP host alive.
         poll_interval = 2  # seconds between polls
+        heartbeat_interval = 5  # seconds between heartbeats
         elapsed = 0
+        last_heartbeat = 0
         actual_timeout = timeout - 5 if timeout > 30 else max(timeout - 1, 5)
 
         debug_log(
@@ -616,16 +618,25 @@ async def launch_web_feedback_ui(
 
             elapsed += poll_interval
 
-            # Send progress heartbeat to MCP host
-            if ctx is not None:
+            # Send heartbeat to MCP host to prevent idle timeout
+            if ctx is not None and (elapsed - last_heartbeat) >= heartbeat_interval:
+                last_heartbeat = elapsed
                 try:
+                    # Progress notification (requires progressToken from host)
                     await ctx.report_progress(
                         progress=elapsed,
                         total=actual_timeout,
                         message="Waiting for user feedback...",
                     )
                 except Exception:
-                    pass  # progress reporting is best-effort
+                    pass
+                try:
+                    # Log notification (always works, no token needed)
+                    await ctx.info(
+                        f"Waiting for user feedback... ({elapsed}s / {actual_timeout}s)"
+                    )
+                except Exception:
+                    pass
 
         # Timed out
         debug_log(

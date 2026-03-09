@@ -532,14 +532,11 @@ async def launch_web_feedback_ui(
     """
     啟動 Web UI 收集回饋，支援自訂超時時間
 
-    Sends periodic MCP progress notifications to prevent the MCP host from
-    triggering an idle timeout while waiting for user input.
-
     Args:
         project_dir: 專案目錄路徑
         summary: AI 工作摘要
         timeout: 超時時間（秒）
-        ctx: FastMCP Context for progress reporting
+        ctx: FastMCP Context for heartbeat reporting
 
     Returns:
         dict: 收集到的回饋資料
@@ -547,108 +544,50 @@ async def launch_web_feedback_ui(
     debug_log(f"啟動 Web UI 介面，超時時間: {timeout} 秒")
 
     try:
-        from .web.main import get_web_ui_manager
+        from .web import launch_web_feedback_ui as web_launch
 
-        # Set up the session and UI (replicating web_launch init without await)
-        manager = get_web_ui_manager()
-        manager.create_session(project_dir, summary)
-        session = manager.get_current_session()
-
-        if session is None:
-            raise RuntimeError("Failed to create feedback session")
-
-        # Ensure server is running
-        if manager.server_thread is None or not manager.server_thread.is_alive():
-            manager.start_server()
-
-        # Build URL and open browser
-        feedback_url = f"http://{manager.host}:{manager.port}"
-        has_active_tabs = await manager.smart_open_browser(feedback_url)
-        if has_active_tabs:
-            debug_log("Detected active tabs, session update sent")
-
-        debug_log(f"[DEBUG] Server address: {feedback_url}")
-
-        # Poll-based wait: check session.feedback_completed periodically
-        # while sending heartbeats to keep MCP host alive.
-        poll_interval = 2  # seconds between polls
-        heartbeat_interval = 5  # seconds between heartbeats
-        elapsed = 0
-        last_heartbeat = 0
-        actual_timeout = timeout - 5 if timeout > 30 else max(timeout - 1, 5)
-
-        debug_log(
-            f"Session {session.session_id} waiting for feedback, "
-            f"timeout: {actual_timeout}s (original: {timeout}s)"
-        )
-
+        # Start a background heartbeat task to prevent MCP host idle timeout.
+        # Sends periodic notifications so the MCP host knows we're still alive.
         import asyncio
 
-        loop = asyncio.get_running_loop()
+        heartbeat_task = None
+        if ctx is not None:
+            async def send_heartbeats():
+                elapsed = 0
+                while True:
+                    await asyncio.sleep(5)
+                    elapsed += 5
+                    try:
+                        await ctx.report_progress(
+                            progress=elapsed, total=timeout,
+                            message="Waiting for user feedback...",
+                        )
+                    except Exception:
+                        pass
+                    try:
+                        await ctx.info(
+                            f"Waiting for user feedback... ({elapsed}s)"
+                        )
+                    except Exception:
+                        pass
 
-        while elapsed < actual_timeout:
-            # Check if feedback has been submitted (non-blocking to asyncio)
-            completed = await loop.run_in_executor(
-                None, session.feedback_completed.wait, poll_interval
-            )
+            heartbeat_task = asyncio.create_task(send_heartbeats())
+            debug_log("Heartbeat task started")
+        else:
+            debug_log("No ctx available, heartbeat disabled")
 
-            if completed:
-                # Check user-configured timeout
-                if (
-                    session.status.value == "timeout"
-                    and session.user_timeout_enabled
-                ):
-                    debug_log(
-                        f"Session {session.session_id} ended by user timeout"
-                    )
-                    await session._cleanup_resources_on_timeout()
-                    raise TimeoutError(
-                        "Session closed by user-configured timeout"
-                    )
-
-                debug_log(
-                    f"Session {session.session_id} received user feedback"
-                )
-                return {
-                    "logs": "\n".join(session.command_logs),
-                    "interactive_feedback": session.feedback_result or "",
-                    "images": session.images,
-                    "settings": session.settings,
-                }
-
-            elapsed += poll_interval
-
-            # Send heartbeat to MCP host to prevent idle timeout
-            if ctx is not None and (elapsed - last_heartbeat) >= heartbeat_interval:
-                last_heartbeat = elapsed
+        try:
+            # Delegate to the original web launch (preserves all existing logic)
+            return await web_launch(project_dir, summary, timeout)
+        finally:
+            if heartbeat_task is not None:
+                heartbeat_task.cancel()
                 try:
-                    # Progress notification (requires progressToken from host)
-                    await ctx.report_progress(
-                        progress=elapsed,
-                        total=actual_timeout,
-                        message="Waiting for user feedback...",
-                    )
-                except Exception:
+                    await heartbeat_task
+                except asyncio.CancelledError:
                     pass
-                try:
-                    # Log notification (always works, no token needed)
-                    await ctx.info(
-                        f"Waiting for user feedback... ({elapsed}s / {actual_timeout}s)"
-                    )
-                except Exception:
-                    pass
-
-        # Timed out
-        debug_log(
-            f"Session {session.session_id} timed out after {actual_timeout}s"
-        )
-        await session._cleanup_resources_on_timeout()
-        raise TimeoutError(
-            f"等待用戶回饋超時（{actual_timeout}秒），介面已自動關閉"
-        )
 
     except ImportError as e:
-        # 使用統一錯誤處理
         error_id = ErrorHandler.log_error_with_context(
             e,
             context={"operation": "Web UI 模組導入", "module": "web"},

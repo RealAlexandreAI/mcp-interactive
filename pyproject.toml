@@ -1,6 +1,6 @@
 [project]
 name = "mcp-interactive"
-version = "0.1.4"
+version = "0.1.5"
 description = "MCP server for interactive feedback collection in AI-assisted development workflows."
 readme = "README.md"
 requires-python = ">=3.11"

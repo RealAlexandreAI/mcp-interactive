@@ -17,7 +17,7 @@ MCP Interactive Feedback Enhanced
 - 重構的模組化架構
 """
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 __author__ = "Minidoracat"
 __email__ = "minidora0702@gmail.com"
 

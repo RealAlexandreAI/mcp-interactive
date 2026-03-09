@@ -135,25 +135,36 @@ class SimpleMCPClient:
         self.stdin.flush()
 
     async def _read_response(self, timeout: int = 30) -> dict[str, Any] | None:
-        """讀取回應"""
+        """Read a JSON-RPC response, skipping any notification messages."""
         if not self.stdout:
             raise RuntimeError("stdout 不可用")
 
-        try:
-            # 使用 asyncio 超時
-            response_line = await asyncio.wait_for(
-                asyncio.to_thread(self.stdout.readline), timeout=timeout
-            )
+        import time
 
-            if response_line:
-                response_data = json.loads(response_line.strip())
-                # 修復 no-any-return 錯誤 - 確保返回明確類型
-                return (
-                    dict(response_data)
-                    if isinstance(response_data, dict)
-                    else response_data
+        deadline = time.monotonic() + timeout
+
+        try:
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError("Read response timed out")
+
+                response_line = await asyncio.wait_for(
+                    asyncio.to_thread(self.stdout.readline), timeout=remaining
                 )
-            return None
+
+                if not response_line:
+                    return None
+
+                response_data = json.loads(response_line.strip())
+                if not isinstance(response_data, dict):
+                    return response_data
+
+                # Skip JSON-RPC notifications (no "id" field)
+                if "id" not in response_data and "method" in response_data:
+                    continue
+
+                return dict(response_data)
 
         except TimeoutError:
             raise

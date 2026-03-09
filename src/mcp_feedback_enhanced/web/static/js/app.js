@@ -1092,6 +1092,15 @@
             });
 
             if (success) {
+                // Copy feedback text to clipboard for user convenience
+                if (feedbackData.feedback && navigator.clipboard) {
+                    navigator.clipboard.writeText(feedbackData.feedback).then(function() {
+                        console.log('📋 Feedback copied to clipboard');
+                    }).catch(function() {
+                        // Clipboard write may fail in non-secure contexts, ignore silently
+                    });
+                }
+
                 // 重置表單狀態但保留文字內容
                 if (this.uiManager) {
                     this.uiManager.resetFeedbackForm(false);  // false 表示不清空文字
@@ -1602,6 +1611,11 @@
                     if (this.countdown && this.countdown.pause) {
                         this.countdown.pause();
                         self.updateCountdownPauseState(true);
+                        // Pause both frontend and backend session timeout
+                        if (self.webSocketManager) {
+                            self.webSocketManager.stopSessionTimeout();
+                            self.webSocketManager.send({ type: 'pause_timeout' });
+                        }
                         console.log('⏸ 自動提交倒數計時已暫停');
                     }
                 },
@@ -1611,6 +1625,11 @@
                     if (this.countdown && this.countdown.resume) {
                         this.countdown.resume();
                         self.updateCountdownPauseState(false);
+                        // Resume both frontend and backend session timeout
+                        if (self.webSocketManager) {
+                            self.webSocketManager.resetSessionTimeout();
+                            self.webSocketManager.send({ type: 'resume_timeout' });
+                        }
                         console.log('▶ 自動提交倒數計時已恢復');
                     }
                 },

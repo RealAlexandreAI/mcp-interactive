@@ -30,7 +30,7 @@ import os
 import sys
 from typing import Annotated, Any
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from fastmcp.utilities.types import Image as MCPImage
 from mcp.types import TextContent
 from pydantic import Field
@@ -438,6 +438,7 @@ async def interactive_feedback(
         str, Field(description="AI 工作完成的摘要說明")
     ] = "我已完成了您請求的任務。",
     timeout: Annotated[int, Field(description="等待用戶回饋的超時時間（秒）")] = 600,
+    ctx: Context | None = None,
 ) -> list:
     """Interactive feedback collection tool for LLM agents.
 
@@ -472,7 +473,7 @@ async def interactive_feedback(
         # 使用 Web 模式
         debug_log("回饋模式: web")
 
-        result = await launch_web_feedback_ui(project_directory, summary, timeout)
+        result = await launch_web_feedback_ui(project_directory, summary, timeout, ctx)
 
         # 處理取消情況
         if not result:
@@ -525,14 +526,20 @@ async def interactive_feedback(
         return [TextContent(type="text", text=user_error_msg)]
 
 
-async def launch_web_feedback_ui(project_dir: str, summary: str, timeout: int) -> dict:
+async def launch_web_feedback_ui(
+    project_dir: str, summary: str, timeout: int, ctx: Context | None = None
+) -> dict:
     """
     啟動 Web UI 收集回饋，支援自訂超時時間
+
+    Sends periodic MCP progress notifications to prevent the MCP host from
+    triggering an idle timeout while waiting for user input.
 
     Args:
         project_dir: 專案目錄路徑
         summary: AI 工作摘要
         timeout: 超時時間（秒）
+        ctx: FastMCP Context for progress reporting
 
     Returns:
         dict: 收集到的回饋資料
@@ -540,11 +547,95 @@ async def launch_web_feedback_ui(project_dir: str, summary: str, timeout: int) -
     debug_log(f"啟動 Web UI 介面，超時時間: {timeout} 秒")
 
     try:
-        # 使用新的 web 模組
-        from .web import launch_web_feedback_ui as web_launch
+        from .web.main import get_web_ui_manager
 
-        # 傳遞 timeout 參數給 Web UI
-        return await web_launch(project_dir, summary, timeout)
+        # Set up the session and UI (replicating web_launch init without await)
+        manager = get_web_ui_manager()
+        manager.create_session(project_dir, summary)
+        session = manager.get_current_session()
+
+        if session is None:
+            raise RuntimeError("Failed to create feedback session")
+
+        # Ensure server is running
+        if manager.server_thread is None or not manager.server_thread.is_alive():
+            manager.start_server()
+
+        # Build URL and open browser
+        feedback_url = f"http://{manager.host}:{manager.port}"
+        has_active_tabs = await manager.smart_open_browser(feedback_url)
+        if has_active_tabs:
+            debug_log("Detected active tabs, session update sent")
+
+        debug_log(f"[DEBUG] Server address: {feedback_url}")
+
+        # Poll-based wait: check session.feedback_completed periodically
+        # while sending progress heartbeats to keep MCP host alive.
+        poll_interval = 2  # seconds between polls
+        elapsed = 0
+        actual_timeout = timeout - 5 if timeout > 30 else max(timeout - 1, 5)
+
+        debug_log(
+            f"Session {session.session_id} waiting for feedback, "
+            f"timeout: {actual_timeout}s (original: {timeout}s)"
+        )
+
+        import asyncio
+
+        loop = asyncio.get_running_loop()
+
+        while elapsed < actual_timeout:
+            # Check if feedback has been submitted (non-blocking to asyncio)
+            completed = await loop.run_in_executor(
+                None, session.feedback_completed.wait, poll_interval
+            )
+
+            if completed:
+                # Check user-configured timeout
+                if (
+                    session.status.value == "timeout"
+                    and session.user_timeout_enabled
+                ):
+                    debug_log(
+                        f"Session {session.session_id} ended by user timeout"
+                    )
+                    await session._cleanup_resources_on_timeout()
+                    raise TimeoutError(
+                        "Session closed by user-configured timeout"
+                    )
+
+                debug_log(
+                    f"Session {session.session_id} received user feedback"
+                )
+                return {
+                    "logs": "\n".join(session.command_logs),
+                    "interactive_feedback": session.feedback_result or "",
+                    "images": session.images,
+                    "settings": session.settings,
+                }
+
+            elapsed += poll_interval
+
+            # Send progress heartbeat to MCP host
+            if ctx is not None:
+                try:
+                    await ctx.report_progress(
+                        progress=elapsed,
+                        total=actual_timeout,
+                        message="Waiting for user feedback...",
+                    )
+                except Exception:
+                    pass  # progress reporting is best-effort
+
+        # Timed out
+        debug_log(
+            f"Session {session.session_id} timed out after {actual_timeout}s"
+        )
+        await session._cleanup_resources_on_timeout()
+        raise TimeoutError(
+            f"等待用戶回饋超時（{actual_timeout}秒），介面已自動關閉"
+        )
+
     except ImportError as e:
         # 使用統一錯誤處理
         error_id = ErrorHandler.log_error_with_context(

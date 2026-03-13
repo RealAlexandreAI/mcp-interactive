@@ -50,9 +50,12 @@
         // 應用程式狀態
         this.isInitialized = false;
         this.pendingSubmission = null;
+        this.appState = window.MCPFeedback.AppState ? new window.MCPFeedback.AppState() : null;
+        this.eventDispatcher = window.MCPFeedback.EventDispatcher ? new window.MCPFeedback.EventDispatcher() : null;
 
         // 初始化防抖函數
         this.initDebounceHandlers();
+        this.registerWebSocketHandlers();
 
         console.log('🚀 FeedbackApp 建構函數初始化完成');
     }
@@ -88,6 +91,45 @@
             100,
             false
         );
+    };
+
+    /**
+     * 註冊 WebSocket 消息分發器
+     */
+    FeedbackApp.prototype.registerWebSocketHandlers = function() {
+        if (!this.eventDispatcher) return;
+
+        this.eventDispatcher.on('command_output', function(data) {
+            this.appendCommandOutput(data.output);
+        }.bind(this));
+        this.eventDispatcher.on('command_complete', function(data) {
+            this.appendCommandOutput('\n[命令完成，退出碼: ' + data.exit_code + ']\n');
+            this.enableCommandInput();
+        }.bind(this));
+        this.eventDispatcher.on('command_error', function(data) {
+            this.appendCommandOutput('\n[錯誤: ' + data.error + ']\n');
+            this.enableCommandInput();
+        }.bind(this));
+        this.eventDispatcher.on('feedback_received', this.handleFeedbackReceived.bind(this));
+        this.eventDispatcher.on('status_update', function(data) {
+            this.handleStatusUpdate(data.status_info);
+        }.bind(this));
+        this.eventDispatcher.on('session_updated', function(data) {
+            if (data.messageCode && window.i18nManager) {
+                const message = window.i18nManager.t(data.messageCode);
+                window.MCPFeedback.Utils.showMessage(
+                    message,
+                    window.MCPFeedback.Utils.CONSTANTS.MESSAGE_SUCCESS
+                );
+            }
+            this.handleSessionUpdated(data);
+        }.bind(this));
+        this.eventDispatcher.on('desktop_close_request', this.handleDesktopCloseRequest.bind(this));
+        this.eventDispatcher.on('notification', function(data) {
+            if (data.code === 'session.feedbackSubmitted' || data.code === 'FEEDBACK_SUBMITTED' || data.code === 201) {
+                this.handleFeedbackReceived(data);
+            }
+        }.bind(this));
     };
 
     /**
@@ -201,6 +243,7 @@
                         self.webSocketManager = new window.MCPFeedback.WebSocketManager({
                             tabManager: self.tabManager,
                             connectionMonitor: self.connectionMonitor,
+                            appState: self.appState,
                             onOpen: function() {
                                 self.handleWebSocketOpen();
                             },
@@ -604,6 +647,9 @@
      */
     FeedbackApp.prototype.handleWebSocketOpen = function() {
         console.log('🔗 WebSocket 連接已開啟');
+        if (this.appState && this.appState.patch) {
+            this.appState.patch({ connection: { status: 'connected' } });
+        }
 
         // 如果有待處理的提交，處理它
         if (this.pendingSubmission) {
@@ -618,6 +664,10 @@
      */
     FeedbackApp.prototype._originalHandleWebSocketMessage = function(data) {
         console.log('📨 處理 WebSocket 訊息:', data);
+
+        if (this.eventDispatcher && this.eventDispatcher.emit(data.type, data)) {
+            return;
+        }
 
         switch (data.type) {
             case 'command_output':
@@ -684,6 +734,9 @@
      */
     FeedbackApp.prototype.handleWebSocketClose = function(event) {
         console.log('🔗 WebSocket 連接已關閉');
+        if (this.appState && this.appState.patch) {
+            this.appState.patch({ connection: { status: 'disconnected', text: event && event.reason ? event.reason : '' } });
+        }
 
         // 重置回饋狀態，避免卡在處理狀態
         if (this.uiManager && this.uiManager.getFeedbackState() === window.MCPFeedback.Utils.CONSTANTS.FEEDBACK_PROCESSING) {
@@ -849,6 +902,9 @@
                 console.log('📋 Session ID changed: ' + this.currentSessionId + ' -> ' + newSessionId);
             }
             this.currentSessionId = newSessionId;
+            if (this.appState && this.appState.patch) {
+                this.appState.patch({ session: { id: newSessionId } });
+            }
 
             // 檢查當前狀態，只有在非已提交狀態時才重置
             const currentState = this.uiManager.getFeedbackState();
@@ -927,6 +983,11 @@
         if (sessionId) {
             this.currentSessionId = sessionId;
             console.log('🔄 更新當前會話ID:', sessionId.substring(0, 8) + '...');
+            if (this.appState && this.appState.patch) {
+                this.appState.patch({
+                    session: { id: sessionId, status: statusInfo.status || 'unknown' }
+                });
+            }
         }
 
         // 刷新會話列表以顯示最新狀態

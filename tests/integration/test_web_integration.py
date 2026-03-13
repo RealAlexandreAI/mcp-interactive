@@ -11,6 +11,8 @@ import pytest
 from tests.fixtures.test_data import TestData
 from tests.helpers.test_utils import TestUtils
 
+pytestmark = [pytest.mark.integration, pytest.mark.web]
+
 
 class TestWebUIIntegration:
     """Web UI 集成測試"""

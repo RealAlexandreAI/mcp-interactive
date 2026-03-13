@@ -10,6 +10,8 @@ import pytest
 from tests.fixtures.test_data import TestData
 from tests.helpers.test_utils import TestUtils
 
+pytestmark = [pytest.mark.unit, pytest.mark.web]
+
 
 class TestWebUIManager:
     """Web UI 管理器測試"""

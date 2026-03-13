@@ -215,6 +215,12 @@ class WebFeedbackSession:
         self.user_timeout_enabled = False
         self.user_timeout_seconds = 3600  # 預設 1 小時
         self.user_timeout_timer: threading.Timer | None = None
+        self.user_timeout_deadline: float | None = None
+        self.user_timeout_remaining: float = 0.0
+
+        # MCP wait_for_feedback 超時計時控制（可被前端暫停/恢復）
+        self._timeout_control_lock = threading.Lock()
+        self._wait_timeout_paused = False
 
         # 確保臨時目錄存在
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -483,27 +489,89 @@ class WebFeedbackSession:
         debug_log(f"更新會話超時設定: enabled={enabled}, seconds={timeout_seconds}")
 
         # 先停止現有的計時器
-        if self.user_timeout_timer:
-            self.user_timeout_timer.cancel()
-            self.user_timeout_timer = None
+        self._cancel_user_timeout_timer(reset_remaining=True)
 
         self.user_timeout_enabled = enabled
         self.user_timeout_seconds = timeout_seconds
 
         # 如果啟用且會話還在等待中，啟動計時器
         if enabled and self.status == SessionStatus.WAITING:
+            self._start_user_timeout_timer(timeout_seconds)
 
-            def timeout_handler():
-                debug_log(f"用戶設定的超時已到: {self.session_id}")
-                # 設置超時標誌
-                self.status = SessionStatus.TIMEOUT
-                self.status_message = "用戶設定的會話超時"
-                # 設置完成事件，讓 wait_for_feedback 結束等待
-                self.feedback_completed.set()
+    def _start_user_timeout_timer(self, timeout_seconds: float):
+        """啟動（或重啟）用戶超時計時器。"""
+        if timeout_seconds <= 0:
+            return
 
-            self.user_timeout_timer = threading.Timer(timeout_seconds, timeout_handler)
-            self.user_timeout_timer.start()
-            debug_log(f"已啟動用戶超時計時器: {timeout_seconds}秒")
+        self._cancel_user_timeout_timer(reset_remaining=False)
+
+        def timeout_handler():
+            debug_log(f"用戶設定的超時已到: {self.session_id}")
+            # 設置超時標誌
+            self.status = SessionStatus.TIMEOUT
+            self.status_message = "用戶設定的會話超時"
+            # 設置完成事件，讓 wait_for_feedback 結束等待
+            self.feedback_completed.set()
+
+        self.user_timeout_remaining = timeout_seconds
+        self.user_timeout_deadline = time.monotonic() + timeout_seconds
+        self.user_timeout_timer = threading.Timer(timeout_seconds, timeout_handler)
+        self.user_timeout_timer.start()
+        debug_log(f"已啟動用戶超時計時器: {timeout_seconds:.2f}秒")
+
+    def _cancel_user_timeout_timer(self, reset_remaining: bool):
+        """停止用戶超時計時器並按需重置剩餘時間。"""
+        if self.user_timeout_timer:
+            self.user_timeout_timer.cancel()
+            self.user_timeout_timer = None
+        self.user_timeout_deadline = None
+        if reset_remaining:
+            self.user_timeout_remaining = 0.0
+
+    def pause_timeout_timers(self):
+        """暫停 MCP 等待超時 + 用戶超時計時器。"""
+        with self._timeout_control_lock:
+            if self._wait_timeout_paused:
+                return
+            self._wait_timeout_paused = True
+
+            # 暫停用戶超時計時器並保存剩餘時間
+            if self.user_timeout_deadline is not None:
+                self.user_timeout_remaining = max(
+                    0.0, self.user_timeout_deadline - time.monotonic()
+                )
+            self._cancel_user_timeout_timer(reset_remaining=False)
+
+        debug_log(
+            f"會話 {self.session_id} 超時計時已暫停，剩餘: {self.user_timeout_remaining:.2f}秒"
+        )
+
+    def resume_timeout_timers(self):
+        """恢復 MCP 等待超時 + 用戶超時計時器。"""
+        should_restart_user_timeout = False
+        remaining = 0.0
+
+        with self._timeout_control_lock:
+            if not self._wait_timeout_paused:
+                return
+            self._wait_timeout_paused = False
+
+            should_restart_user_timeout = (
+                self.user_timeout_enabled
+                and self.status == SessionStatus.WAITING
+                and self.user_timeout_remaining > 0
+            )
+            remaining = self.user_timeout_remaining
+
+        if should_restart_user_timeout:
+            self._start_user_timeout_timer(remaining)
+
+        debug_log(f"會話 {self.session_id} 超時計時已恢復")
+
+    def is_wait_timeout_paused(self) -> bool:
+        """檢查 MCP wait_for_feedback 超時計時是否處於暫停狀態。"""
+        with self._timeout_control_lock:
+            return self._wait_timeout_paused
 
     async def wait_for_feedback(self, timeout: int = 600) -> dict[str, Any]:
         """
@@ -527,11 +595,32 @@ class WebFeedbackSession:
             )
 
             loop = asyncio.get_running_loop()
+            remaining_timeout = float(actual_timeout)
+            wait_slice_seconds = 0.25
+            completed = False
 
-            def wait_in_thread():
-                return self.feedback_completed.wait(actual_timeout)
+            # 使用分片等待，讓「暫停超時計時」可以即時生效
+            while remaining_timeout > 0:
+                if self.feedback_completed.is_set():
+                    completed = True
+                    break
 
-            completed = await loop.run_in_executor(None, wait_in_thread)
+                if self.is_wait_timeout_paused():
+                    await asyncio.sleep(0.1)
+                    continue
+
+                step = min(wait_slice_seconds, remaining_timeout)
+                step_start = time.monotonic()
+
+                def wait_in_thread():
+                    return self.feedback_completed.wait(step)
+
+                completed = await loop.run_in_executor(None, wait_in_thread)
+                if completed:
+                    break
+
+                elapsed = max(0.0, time.monotonic() - step_start)
+                remaining_timeout -= min(elapsed, step)
 
             if completed:
                 # 檢查是否是用戶設定的超時
@@ -849,9 +938,10 @@ class WebFeedbackSession:
 
             # 1.5. 取消用戶超時計時器
             if self.user_timeout_timer:
-                self.user_timeout_timer.cancel()
-                self.user_timeout_timer = None
                 resources_cleaned += 1
+            self._cancel_user_timeout_timer(reset_remaining=True)
+            with self._timeout_control_lock:
+                self._wait_timeout_paused = False
 
             # 2. 關閉 WebSocket 連接
             if self.websocket:
@@ -1015,6 +1105,13 @@ class WebFeedbackSession:
                 self.cleanup_timer.cancel()
                 self.cleanup_timer = None
                 resources_cleaned += 1
+
+            # 1.5. 取消用戶超時計時器
+            if self.user_timeout_timer:
+                resources_cleaned += 1
+            self._cancel_user_timeout_timer(reset_remaining=True)
+            with self._timeout_control_lock:
+                self._wait_timeout_paused = False
 
             # 2. 清理進程
             if self.process:

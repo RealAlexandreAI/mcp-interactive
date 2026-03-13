@@ -7,7 +7,6 @@
 """
 
 import json
-import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,6 +16,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from ... import __version__
 from ...debug import web_debug_log as debug_log
 from ..constants import get_message_code as get_msg_code
+from ..services import SessionService, SettingsService, handle_session_message
 
 
 if TYPE_CHECKING:
@@ -57,28 +57,6 @@ def _load_translations() -> dict:
     return translations
 
 
-def load_user_layout_settings() -> str:
-    """載入用戶的佈局模式設定"""
-    try:
-        # 使用統一的設定檔案路徑
-        config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
-        settings_file = config_dir / "ui_settings.json"
-
-        if settings_file.exists():
-            with open(settings_file, encoding="utf-8") as f:
-                settings = json.load(f)
-                layout_mode = settings.get("layoutMode", "combined-horizontal")
-                debug_log(f"從設定檔案載入佈局模式: {layout_mode}")
-                # 修復 no-any-return 錯誤 - 確保返回 str 類型
-                return str(layout_mode)
-        else:
-            debug_log("設定檔案不存在，使用預設佈局模式: combined-horizontal")
-            return "combined-horizontal"
-    except Exception as e:
-        debug_log(f"載入佈局設定失敗: {e}，使用預設佈局模式: combined-horizontal")
-        return "combined-horizontal"
-
-
 # 使用統一的訊息代碼系統
 # 從 ..constants 導入的 get_msg_code 函數會處理所有訊息代碼
 # 舊的 key 會自動映射到新的常量
@@ -86,6 +64,8 @@ def load_user_layout_settings() -> str:
 
 def setup_routes(manager: "WebUIManager"):
     """設置路由"""
+    settings_service = SettingsService()
+    session_service = SessionService()
 
     @manager.app.get("/", response_class=HTMLResponse)
     async def index(request: Request):
@@ -107,7 +87,12 @@ def setup_routes(manager: "WebUIManager"):
 
         # 有活躍會話時顯示回饋頁面
         # 載入用戶的佈局模式設定
-        layout_mode = load_user_layout_settings()
+        try:
+            layout_mode = settings_service.load_layout_mode()
+            debug_log(f"從設定檔案載入佈局模式: {layout_mode}")
+        except Exception as e:
+            debug_log(f"載入佈局設定失敗: {e}，使用預設佈局模式: combined-horizontal")
+            layout_mode = "combined-horizontal"
 
         return manager.templates.TemplateResponse(
             "feedback.html",
@@ -133,13 +118,6 @@ def setup_routes(manager: "WebUIManager"):
         """獲取當前會話狀態"""
         current_session = manager.get_current_session()
 
-        # 從請求頭獲取客戶端語言
-        lang = (
-            request.headers.get("Accept-Language", "zh-TW").split(",")[0].split("-")[0]
-        )
-        if lang == "zh":
-            lang = "zh-CN"
-
         if not current_session:
             return JSONResponse(
                 content={
@@ -149,24 +127,12 @@ def setup_routes(manager: "WebUIManager"):
                 }
             )
 
-        return JSONResponse(
-            content={
-                "has_session": True,
-                "status": "active",
-                "session_info": {
-                    "project_directory": current_session.project_directory,
-                    "summary": current_session.summary,
-                    "feedback_completed": current_session.feedback_completed.is_set(),
-                },
-            }
-        )
+        return JSONResponse(content=session_service.build_session_status_payload(current_session))
 
     @manager.app.get("/api/current-session")
     async def get_current_session(request: Request):
         """獲取當前會話詳細信息"""
         current_session = manager.get_current_session()
-
-        # 從查詢參數獲取語言，如果沒有則從會話獲取，最後使用默認值
 
         if not current_session:
             return JSONResponse(
@@ -178,14 +144,7 @@ def setup_routes(manager: "WebUIManager"):
             )
 
         return JSONResponse(
-            content={
-                "session_id": current_session.session_id,
-                "project_directory": current_session.project_directory,
-                "summary": current_session.summary,
-                "feedback_completed": current_session.feedback_completed.is_set(),
-                "command_logs": list(current_session.command_logs),
-                "images_count": len(current_session.images),
-            }
+            content=session_service.build_current_session_payload(current_session)
         )
 
     @manager.app.get("/api/all-sessions")
@@ -193,30 +152,9 @@ def setup_routes(manager: "WebUIManager"):
         """獲取所有會話的實時狀態"""
 
         try:
-            sessions_data = []
-
-            # 獲取所有會話的實時狀態
-            for session_id, session in manager.sessions.items():
-                session_info = {
-                    "session_id": session.session_id,
-                    "project_directory": session.project_directory,
-                    "summary": session.summary,
-                    "status": session.status.value,
-                    "status_message": session.status_message,
-                    "created_at": int(session.created_at * 1000),  # 轉換為毫秒
-                    "last_activity": int(session.last_activity * 1000),
-                    "feedback_completed": session.feedback_completed.is_set(),
-                    "has_websocket": session.websocket is not None,
-                    "is_current": session == manager.current_session,
-                    "user_messages": list(session.user_messages),  # 包含用戶消息記錄
-                }
-                sessions_data.append(session_info)
-
-            # 按創建時間排序（最新的在前）
-            sessions_data.sort(key=lambda x: x["created_at"], reverse=True)
-
-            debug_log(f"返回 {len(sessions_data)} 個會話的實時狀態")
-            return JSONResponse(content={"sessions": sessions_data})
+            payload = session_service.build_all_sessions_payload(manager)
+            debug_log(f"返回 {len(payload['sessions'])} 個會話的實時狀態")
+            return JSONResponse(content=payload)
 
         except Exception as e:
             debug_log(f"獲取所有會話狀態失敗: {e}")
@@ -379,19 +317,8 @@ def setup_routes(manager: "WebUIManager"):
                     content={"status": "error", "message": "Invalid settings format"},
                 )
 
-            # Filter to allowed keys only
-            sanitized = {k: v for k, v in data.items() if k in _ALLOWED_SETTINGS_KEYS}
-
-            # 使用統一的設定檔案路徑
-            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
-            config_dir.mkdir(parents=True, exist_ok=True)
-            settings_file = config_dir / "ui_settings.json"
-
-            # 保存設定到檔案
-            with open(settings_file, "w", encoding="utf-8") as f:
-                json.dump(sanitized, f, ensure_ascii=False, indent=2)
-
-            debug_log(f"設定已保存到: {settings_file}")
+            settings_service.save_settings(data, _ALLOWED_SETTINGS_KEYS)
+            debug_log(f"設定已保存到: {settings_service.settings_file}")
 
             return JSONResponse(
                 content={
@@ -416,15 +343,9 @@ def setup_routes(manager: "WebUIManager"):
         """從檔案載入設定"""
 
         try:
-            # 使用統一的設定檔案路徑
-            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
-            settings_file = config_dir / "ui_settings.json"
-
-            if settings_file.exists():
-                with open(settings_file, encoding="utf-8") as f:
-                    settings = json.load(f)
-
-                debug_log(f"設定已從檔案載入: {settings_file}")
+            settings = settings_service.load_settings()
+            if settings:
+                debug_log(f"設定已從檔案載入: {settings_service.settings_file}")
                 return JSONResponse(content=settings)
             debug_log("設定檔案不存在，返回空設定")
             return JSONResponse(content={})
@@ -445,13 +366,8 @@ def setup_routes(manager: "WebUIManager"):
         """清除設定檔案"""
 
         try:
-            # 使用統一的設定檔案路徑
-            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
-            settings_file = config_dir / "ui_settings.json"
-
-            if settings_file.exists():
-                settings_file.unlink()
-                debug_log(f"設定檔案已刪除: {settings_file}")
+            if settings_service.clear_settings():
+                debug_log(f"設定檔案已刪除: {settings_service.settings_file}")
             else:
                 debug_log("設定檔案不存在，無需刪除")
 
@@ -478,33 +394,12 @@ def setup_routes(manager: "WebUIManager"):
         """從檔案載入會話歷史"""
 
         try:
-            # 使用統一的設定檔案路徑
-            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
-            history_file = config_dir / "session_history.json"
-
-            if history_file.exists():
-                with open(history_file, encoding="utf-8") as f:
-                    history_data = json.load(f)
-
-                debug_log(f"會話歷史已從檔案載入: {history_file}")
-
-                # 確保資料格式相容性
-                if isinstance(history_data, dict):
-                    # 新格式：包含版本資訊和其他元資料
-                    sessions = history_data.get("sessions", [])
-                    last_cleanup = history_data.get("lastCleanup", 0)
-                else:
-                    # 舊格式：直接是會話陣列（向後相容）
-                    sessions = history_data if isinstance(history_data, list) else []
-                    last_cleanup = 0
-
-                # 回傳會話歷史資料
-                return JSONResponse(
-                    content={"sessions": sessions, "lastCleanup": last_cleanup}
-                )
-
-            debug_log("會話歷史檔案不存在，返回空歷史")
-            return JSONResponse(content={"sessions": [], "lastCleanup": 0})
+            payload = settings_service.load_session_history()
+            if payload["sessions"] or payload["lastCleanup"] != 0:
+                debug_log(f"會話歷史已從檔案載入: {settings_service.history_file}")
+            else:
+                debug_log("會話歷史檔案不存在，返回空歷史")
+            return JSONResponse(content=payload)
 
         except Exception as e:
             debug_log(f"載入會話歷史失敗: {e}")
@@ -524,25 +419,8 @@ def setup_routes(manager: "WebUIManager"):
         try:
             data = await request.json()
 
-            # 使用統一的設定檔案路徑
-            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
-            config_dir.mkdir(parents=True, exist_ok=True)
-            history_file = config_dir / "session_history.json"
-
-            # 建立新格式的資料結構
-            history_data = {
-                "version": "1.0",
-                "sessions": data.get("sessions", []),
-                "lastCleanup": data.get("lastCleanup", 0),
-                "savedAt": int(time.time() * 1000),  # 當前時間戳
-            }
-
-            # 保存會話歷史到檔案
-            with open(history_file, "w", encoding="utf-8") as f:
-                json.dump(history_data, f, ensure_ascii=False, indent=2)
-
-            debug_log(f"會話歷史已保存到: {history_file}")
-            session_count = len(history_data["sessions"])
+            session_count = settings_service.save_session_history(data)
+            debug_log(f"會話歷史已保存到: {settings_service.history_file}")
             debug_log(f"保存了 {session_count} 個會話記錄")
 
             return JSONResponse(
@@ -569,21 +447,9 @@ def setup_routes(manager: "WebUIManager"):
         """獲取日誌等級設定"""
 
         try:
-            # 使用統一的設定檔案路徑
-            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
-            settings_file = config_dir / "ui_settings.json"
-
-            if settings_file.exists():
-                with open(settings_file, encoding="utf-8") as f:
-                    settings_data = json.load(f)
-                    log_level = settings_data.get("logLevel", "INFO")
-                    debug_log(f"從設定檔案載入日誌等級: {log_level}")
-                    return JSONResponse(content={"logLevel": log_level})
-            else:
-                # 預設日誌等級
-                default_log_level = "INFO"
-                debug_log(f"使用預設日誌等級: {default_log_level}")
-                return JSONResponse(content={"logLevel": default_log_level})
+            log_level = settings_service.get_log_level("INFO")
+            debug_log(f"從設定檔案載入日誌等級: {log_level}")
+            return JSONResponse(content={"logLevel": log_level})
 
         except Exception as e:
             debug_log(f"獲取日誌等級失敗: {e}")
@@ -612,24 +478,7 @@ def setup_routes(manager: "WebUIManager"):
                     },
                 )
 
-            # 使用統一的設定檔案路徑
-            config_dir = Path.home() / ".config" / "mcp-feedback-enhanced"
-            config_dir.mkdir(parents=True, exist_ok=True)
-            settings_file = config_dir / "ui_settings.json"
-
-            # 載入現有設定或創建新設定
-            settings_data = {}
-            if settings_file.exists():
-                with open(settings_file, encoding="utf-8") as f:
-                    settings_data = json.load(f)
-
-            # 更新日誌等級
-            settings_data["logLevel"] = log_level
-
-            # 保存設定到檔案
-            with open(settings_file, "w", encoding="utf-8") as f:
-                json.dump(settings_data, f, ensure_ascii=False, indent=2)
-
+            settings_service.set_log_level(log_level)
             debug_log(f"日誌等級已設定為: {log_level}")
 
             return JSONResponse(
@@ -654,91 +503,8 @@ def setup_routes(manager: "WebUIManager"):
 
 async def handle_websocket_message(manager: "WebUIManager", session, data: dict):
     """處理 WebSocket 消息"""
-    message_type = data.get("type")
-
-    if message_type == "submit_feedback":
-        # 提交回饋
-        feedback = data.get("feedback", "")
-        images = data.get("images", [])
-        settings = data.get("settings", {})
-        await session.submit_feedback(feedback, images, settings)
-
-    elif message_type == "run_command":
-        # 執行命令
-        command = data.get("command", "")
-        if command.strip():
-            await session.run_command(command)
-
-    elif message_type == "get_status":
-        # 獲取會話狀態
-        if session.websocket:
-            try:
-                await session.websocket.send_json(
-                    {"type": "status_update", "status_info": session.get_status_info()}
-                )
-            except Exception as e:
-                debug_log(f"發送狀態更新失敗: {e}")
-
-    elif message_type == "heartbeat":
-        # WebSocket 心跳處理（簡化版）
-        # 更新心跳時間
-        now = time.time()
-        session.last_heartbeat = now
-        session.last_activity = now
-
-        # 發送心跳回應
-        if session.websocket:
-            try:
-                await session.websocket.send_json(
-                    {
-                        "type": "heartbeat_response",
-                        "timestamp": data.get("timestamp", 0),
-                    }
-                )
-            except Exception as e:
-                debug_log(f"發送心跳回應失敗: {e}")
-
-    elif message_type == "user_timeout":
-        # 用戶設置的超時已到
-        debug_log(f"收到用戶超時通知: {session.session_id}")
-        # 清理會話資源
-        await session._cleanup_resources_on_timeout()
-        # 重構：不再自動停止服務器，保持服務器運行以支援持久性
-
-    elif message_type == "pong":
-        # 處理來自前端的 pong 回應（用於連接檢測）
-        debug_log(f"收到 pong 回應，時間戳: {data.get('timestamp', 'N/A')}")
-        # 可以在這裡記錄延遲或更新連接狀態
-
-    elif message_type == "update_timeout_settings":
-        # 處理超時設定更新
-        settings = data.get("settings", {})
-        debug_log(f"收到超時設定更新: {settings}")
-        if settings.get("enabled"):
-            session.update_timeout_settings(
-                enabled=True, timeout_seconds=settings.get("seconds", 3600)
-            )
-        else:
-            session.update_timeout_settings(enabled=False)
-
-    elif message_type == "pause_timeout":
-        # Pause user timeout timer (e.g. when auto-submit is paused)
-        debug_log(f"收到暫停超時請求: {session.session_id}")
-        if session.user_timeout_timer:
-            session.user_timeout_timer.cancel()
-            session.user_timeout_timer = None
-            debug_log("用戶超時計時器已暫停")
-
-    elif message_type == "resume_timeout":
-        # Resume user timeout timer
-        debug_log(f"收到恢復超時請求: {session.session_id}")
-        if session.user_timeout_enabled and session.user_timeout_seconds > 0:
-            session.update_timeout_settings(
-                enabled=True, timeout_seconds=session.user_timeout_seconds
-            )
-
-    else:
-        debug_log(f"未知的消息類型: {message_type}")
+    _ = manager  # keep signature for backward compatibility
+    await handle_session_message(session, data)
 
 
 async def _delayed_server_stop(manager: "WebUIManager"):

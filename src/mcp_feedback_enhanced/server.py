@@ -30,8 +30,12 @@ import os
 import sys
 from typing import Annotated, Any
 
-from fastmcp import FastMCP, Context
-from fastmcp.utilities.types import Image as MCPImage
+try:
+    from mcp.server.fastmcp import Context, FastMCP
+    from mcp.server.fastmcp.utilities.types import Image as MCPImage
+except ImportError:  # Backward compatibility for older runtime environments
+    from fastmcp import Context, FastMCP
+    from fastmcp.utilities.types import Image as MCPImage
 from mcp.types import TextContent
 from pydantic import Field
 

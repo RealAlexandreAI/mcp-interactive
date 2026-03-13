@@ -39,6 +39,7 @@
 
         // 連線監控器引用
         this.connectionMonitor = options.connectionMonitor || null;
+        this.appState = options.appState || null;
 
         // 待處理的提交
         this.pendingSubmission = null;
@@ -127,6 +128,11 @@
         this.connectionReady = false; // 等待連接確認
         const connectedMessage = window.i18nManager ? window.i18nManager.t('connectionMonitor.connected') : '已連接';
         this.updateConnectionStatus('connected', connectedMessage);
+        if (this.appState && this.appState.patch) {
+            this.appState.patch({
+                connection: { status: 'connected', text: connectedMessage }
+            });
+        }
         console.log('WebSocket 連接已建立');
 
         // 重置重連計數器和延遲
@@ -181,6 +187,11 @@
         this.isConnected = false;
         this.connectionReady = false;
         console.log('WebSocket 連接已關閉, code:', event.code, 'reason:', event.reason);
+        if (this.appState && this.appState.patch) {
+            this.appState.patch({
+                connection: { status: 'disconnected', text: event.reason || '' }
+            });
+        }
 
         // 停止心跳
         this.stopHeartbeat();
@@ -399,6 +410,9 @@
      * 更新連接狀態
      */
     WebSocketManager.prototype.updateConnectionStatus = function(status, text) {
+        if (this.appState && this.appState.patch) {
+            this.appState.patch({ connection: { status: status, text: text || '' } });
+        }
         if (this.onConnectionStatusChange) {
             this.onConnectionStatusChange(status, text);
         }

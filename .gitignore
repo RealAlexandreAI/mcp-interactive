@@ -83,3 +83,6 @@ src-tauri/target/release/bundle/
 
 # Local issue-tracking notes
 issues/
+
+# Local Shannon history artifacts
+.shannon/

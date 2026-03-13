@@ -1,0 +1,36 @@
+{
+  "snapshots": [
+    {
+      "id": "2aafd873-e893-4bf8-b42b-7d9916a27f47",
+      "file_path": "src/mcp_feedback_enhanced/server.py",
+      "timestamp": 1772710897714,
+      "trigger": "file_watcher",
+      "size": 22931,
+      "blob_name": "2aafd873.blob"
+    },
+    {
+      "id": "0ada4655-b4a7-478b-bbcb-10bd839e5efe",
+      "file_path": "src/mcp_feedback_enhanced/server.py",
+      "timestamp": 1772710899595,
+      "trigger": "file_watcher",
+      "size": 22984,
+      "blob_name": "0ada4655.blob"
+    },
+    {
+      "id": "8b865841-0e0e-4041-a19e-ad94f35b87d2",
+      "file_path": "src/mcp_feedback_enhanced/server.py",
+      "timestamp": 1772777409805,
+      "trigger": "file_watcher",
+      "size": 22931,
+      "blob_name": "8b865841.blob"
+    },
+    {
+      "id": "fb2b0198-f613-4282-9f77-3fc7fb0cb73d",
+      "file_path": "src/mcp_feedback_enhanced/server.py",
+      "timestamp": 1772777419018,
+      "trigger": "file_watcher",
+      "size": 22984,
+      "blob_name": "fb2b0198.blob"
+    }
+  ]
+}

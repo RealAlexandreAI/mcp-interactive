@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "3abcc2e0-a7ac-49cb-a4cb-dd1aad476dc9",
+      "file_path": "src/mcp_feedback_enhanced/web/static/css/prompt-management.css",
+      "timestamp": 1772777409757,
+      "trigger": "file_watcher",
+      "size": 11426,
+      "blob_name": "3abcc2e0.blob"
+    },
+    {
+      "id": "63aeae15-e118-4939-b557-7d4b1fc7f0c8",
+      "file_path": "src/mcp_feedback_enhanced/web/static/css/prompt-management.css",
+      "timestamp": 1772777418983,
+      "trigger": "file_watcher",
+      "size": 11531,
+      "blob_name": "63aeae15.blob"
+    }
+  ]
+}

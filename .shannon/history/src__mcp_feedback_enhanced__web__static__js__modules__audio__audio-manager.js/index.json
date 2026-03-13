@@ -1,0 +1,12 @@
+{
+  "snapshots": [
+    {
+      "id": "e1e1ccbb-9bab-4bb5-953f-eaacd97bb75b",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/audio/audio-manager.js",
+      "timestamp": 1772777409782,
+      "trigger": "file_watcher",
+      "size": 20640,
+      "blob_name": "e1e1ccbb.blob"
+    }
+  ]
+}

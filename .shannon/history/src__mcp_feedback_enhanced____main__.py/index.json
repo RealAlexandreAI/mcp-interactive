@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "5608b703-6cb5-4ec7-8b7b-82e20f2d076b",
+      "file_path": "src/mcp_feedback_enhanced/__main__.py",
+      "timestamp": 1772777409770,
+      "trigger": "file_watcher",
+      "size": 13859,
+      "blob_name": "5608b703.blob"
+    },
+    {
+      "id": "9ff88fba-68ea-40e4-bdc4-bb44d286ea4e",
+      "file_path": "src/mcp_feedback_enhanced/__main__.py",
+      "timestamp": 1772777418990,
+      "trigger": "file_watcher",
+      "size": 13859,
+      "blob_name": "9ff88fba.blob"
+    }
+  ]
+}

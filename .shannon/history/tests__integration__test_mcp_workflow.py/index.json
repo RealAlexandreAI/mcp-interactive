@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "bbf4bec9-c581-406c-885b-40703d65d00c",
+      "file_path": "tests/integration/test_mcp_workflow.py",
+      "timestamp": 1772777409796,
+      "trigger": "file_watcher",
+      "size": 8771,
+      "blob_name": "bbf4bec9.blob"
+    },
+    {
+      "id": "ef26bc3f-2ce9-40f0-81a8-be6c43d3cd66",
+      "file_path": "tests/integration/test_mcp_workflow.py",
+      "timestamp": 1772777419006,
+      "trigger": "file_watcher",
+      "size": 9045,
+      "blob_name": "ef26bc3f.blob"
+    }
+  ]
+}

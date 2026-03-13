@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "3ce2df70-6cbb-4b84-8991-faea18290e85",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/websocket-manager.js",
+      "timestamp": 1772777409791,
+      "trigger": "file_watcher",
+      "size": 21365,
+      "blob_name": "3ce2df70.blob"
+    },
+    {
+      "id": "f43d77d5-68a1-4445-9aa7-ed4856a47cab",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/websocket-manager.js",
+      "timestamp": 1772777418999,
+      "trigger": "file_watcher",
+      "size": 21365,
+      "blob_name": "f43d77d5.blob"
+    }
+  ]
+}

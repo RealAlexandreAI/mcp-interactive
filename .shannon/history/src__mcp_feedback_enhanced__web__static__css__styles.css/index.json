@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "cbd8dc12-493d-48c8-828f-28ac2bb0dd87",
+      "file_path": "src/mcp_feedback_enhanced/web/static/css/styles.css",
+      "timestamp": 1772777409774,
+      "trigger": "file_watcher",
+      "size": 47412,
+      "blob_name": "cbd8dc12.blob"
+    },
+    {
+      "id": "fd52c406-1bd2-496e-8f25-0501314dd472",
+      "file_path": "src/mcp_feedback_enhanced/web/static/css/styles.css",
+      "timestamp": 1772777418995,
+      "trigger": "file_watcher",
+      "size": 37166,
+      "blob_name": "fd52c406.blob"
+    }
+  ]
+}

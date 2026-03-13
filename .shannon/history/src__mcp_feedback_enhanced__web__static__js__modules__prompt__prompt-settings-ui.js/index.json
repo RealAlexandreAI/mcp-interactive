@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "b1c28705-7b5a-48ee-ab65-00114eb94986",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/prompt/prompt-settings-ui.js",
+      "timestamp": 1772777409800,
+      "trigger": "file_watcher",
+      "size": 20061,
+      "blob_name": "b1c28705.blob"
+    },
+    {
+      "id": "b2080882-5166-405f-b26d-747f1aca0446",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/prompt/prompt-settings-ui.js",
+      "timestamp": 1772777419013,
+      "trigger": "file_watcher",
+      "size": 19800,
+      "blob_name": "b2080882.blob"
+    }
+  ]
+}

@@ -85,3 +85,6 @@ yarn.lock
 # Temporary build files
 *.tmp
 *.temp
+
+# Local issue-tracking notes
+issues/

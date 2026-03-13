@@ -1,0 +1,36 @@
+{
+  "snapshots": [
+    {
+      "id": "31b141fe-dd82-4c93-9f34-5c443633f452",
+      "file_path": "src/mcp_feedback_enhanced/web/utils/compression_monitor.py",
+      "timestamp": 1772710897688,
+      "trigger": "file_watcher",
+      "size": 11203,
+      "blob_name": "31b141fe.blob"
+    },
+    {
+      "id": "b4bc656a-6e0e-4a47-9c3b-317741f7df7a",
+      "file_path": "src/mcp_feedback_enhanced/web/utils/compression_monitor.py",
+      "timestamp": 1772710899588,
+      "trigger": "file_watcher",
+      "size": 11181,
+      "blob_name": "b4bc656a.blob"
+    },
+    {
+      "id": "7791c39a-76eb-4a02-8edd-54908047402b",
+      "file_path": "src/mcp_feedback_enhanced/web/utils/compression_monitor.py",
+      "timestamp": 1772777409812,
+      "trigger": "file_watcher",
+      "size": 11203,
+      "blob_name": "7791c39a.blob"
+    },
+    {
+      "id": "fb969eb4-b766-4d74-9fcb-7037c1b6c181",
+      "file_path": "src/mcp_feedback_enhanced/web/utils/compression_monitor.py",
+      "timestamp": 1772777419028,
+      "trigger": "file_watcher",
+      "size": 11181,
+      "blob_name": "fb969eb4.blob"
+    }
+  ]
+}

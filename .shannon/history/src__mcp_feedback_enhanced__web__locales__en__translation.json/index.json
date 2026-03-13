@@ -1,0 +1,36 @@
+{
+  "snapshots": [
+    {
+      "id": "05060c69-4dc9-4c26-a04c-0bc2ff024ec0",
+      "file_path": "src/mcp_feedback_enhanced/web/locales/en/translation.json",
+      "timestamp": 1772765284009,
+      "trigger": "file_watcher",
+      "size": 30162,
+      "blob_name": "05060c69.blob"
+    },
+    {
+      "id": "9a9a9b85-b700-4eb3-ab54-91270d2d22a2",
+      "file_path": "src/mcp_feedback_enhanced/web/locales/en/translation.json",
+      "timestamp": 1772765309726,
+      "trigger": "file_watcher",
+      "size": 30049,
+      "blob_name": "9a9a9b85.blob"
+    },
+    {
+      "id": "1d87b278-f336-4672-ac73-eff989ace3a0",
+      "file_path": "src/mcp_feedback_enhanced/web/locales/en/translation.json",
+      "timestamp": 1772777409811,
+      "trigger": "file_watcher",
+      "size": 30268,
+      "blob_name": "1d87b278.blob"
+    },
+    {
+      "id": "d32ca97c-fdd9-470a-b38f-16998c31e473",
+      "file_path": "src/mcp_feedback_enhanced/web/locales/en/translation.json",
+      "timestamp": 1772777419026,
+      "trigger": "file_watcher",
+      "size": 30034,
+      "blob_name": "d32ca97c.blob"
+    }
+  ]
+}

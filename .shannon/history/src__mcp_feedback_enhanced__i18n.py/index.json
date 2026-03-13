@@ -1,0 +1,36 @@
+{
+  "snapshots": [
+    {
+      "id": "f166b944-77e5-4b2e-8faa-92c0c142f139",
+      "file_path": "src/mcp_feedback_enhanced/i18n.py",
+      "timestamp": 1772710897709,
+      "trigger": "file_watcher",
+      "size": 14008,
+      "blob_name": "f166b944.blob"
+    },
+    {
+      "id": "0176bb02-d467-441f-aed5-8088fa05457c",
+      "file_path": "src/mcp_feedback_enhanced/i18n.py",
+      "timestamp": 1772710899593,
+      "trigger": "file_watcher",
+      "size": 13793,
+      "blob_name": "0176bb02.blob"
+    },
+    {
+      "id": "f9b66d0c-4782-41aa-8c3f-19eeb65132cb",
+      "file_path": "src/mcp_feedback_enhanced/i18n.py",
+      "timestamp": 1772777409797,
+      "trigger": "file_watcher",
+      "size": 14008,
+      "blob_name": "f9b66d0c.blob"
+    },
+    {
+      "id": "71710eb3-14c1-48f3-9d36-5e5fd4239685",
+      "file_path": "src/mcp_feedback_enhanced/i18n.py",
+      "timestamp": 1772777419007,
+      "trigger": "file_watcher",
+      "size": 13273,
+      "blob_name": "71710eb3.blob"
+    }
+  ]
+}

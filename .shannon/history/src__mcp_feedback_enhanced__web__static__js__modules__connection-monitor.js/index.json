@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "d07e8e8e-063e-46b0-be05-6a6079476c3c",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/connection-monitor.js",
+      "timestamp": 1772777409762,
+      "trigger": "file_watcher",
+      "size": 14796,
+      "blob_name": "d07e8e8e.blob"
+    },
+    {
+      "id": "5bf2cfe1-cb9b-452c-acad-3457de428a09",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/connection-monitor.js",
+      "timestamp": 1772777418985,
+      "trigger": "file_watcher",
+      "size": 13156,
+      "blob_name": "5bf2cfe1.blob"
+    }
+  ]
+}

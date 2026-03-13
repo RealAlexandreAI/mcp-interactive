@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "b02f2e7b-b86f-4d6c-8349-63fc3045e8b6",
+      "file_path": "src/mcp_feedback_enhanced/web/static/css/notification-settings.css",
+      "timestamp": 1772777409755,
+      "trigger": "file_watcher",
+      "size": 2931,
+      "blob_name": "b02f2e7b.blob"
+    },
+    {
+      "id": "ec9c8147-ea45-4ae2-9dc3-1a933d5314b6",
+      "file_path": "src/mcp_feedback_enhanced/web/static/css/notification-settings.css",
+      "timestamp": 1772777418982,
+      "trigger": "file_watcher",
+      "size": 2329,
+      "blob_name": "ec9c8147.blob"
+    }
+  ]
+}

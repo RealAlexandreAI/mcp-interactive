@@ -1,0 +1,12 @@
+{
+  "snapshots": [
+    {
+      "id": "40070fc1-b598-4780-9d99-3ba10b068f6d",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/session/session-details-modal.js",
+      "timestamp": 1772777409760,
+      "trigger": "file_watcher",
+      "size": 22774,
+      "blob_name": "40070fc1.blob"
+    }
+  ]
+}

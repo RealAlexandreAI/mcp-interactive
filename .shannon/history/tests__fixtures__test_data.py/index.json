@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "63a9bb83-d0d2-4dfc-b644-99a63a0af1f6",
+      "file_path": "tests/fixtures/test_data.py",
+      "timestamp": 1772777409802,
+      "trigger": "file_watcher",
+      "size": 7333,
+      "blob_name": "63a9bb83.blob"
+    },
+    {
+      "id": "c858a77e-1f60-4e63-8f03-5e4b46260893",
+      "file_path": "tests/fixtures/test_data.py",
+      "timestamp": 1772777419016,
+      "trigger": "file_watcher",
+      "size": 7324,
+      "blob_name": "c858a77e.blob"
+    }
+  ]
+}

@@ -77,11 +77,9 @@ src-tauri/gen/
 src-tauri/target/bundle/
 src-tauri/target/release/bundle/
 
-# Node.js (if using Tauri with frontend framework)
-node_modules/
-package-lock.json
-yarn.lock
-
 # Temporary build files
 *.tmp
 *.temp
+
+# Local issue-tracking notes
+issues/

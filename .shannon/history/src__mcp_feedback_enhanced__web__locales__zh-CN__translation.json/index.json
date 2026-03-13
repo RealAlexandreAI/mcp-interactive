@@ -1,0 +1,36 @@
+{
+  "snapshots": [
+    {
+      "id": "dbacf03d-8e47-44f5-9ec1-54373be12a36",
+      "file_path": "src/mcp_feedback_enhanced/web/locales/zh-CN/translation.json",
+      "timestamp": 1772765284011,
+      "trigger": "file_watcher",
+      "size": 27985,
+      "blob_name": "dbacf03d.blob"
+    },
+    {
+      "id": "007220ab-4aad-4927-ab29-ad5f32feaac3",
+      "file_path": "src/mcp_feedback_enhanced/web/locales/zh-CN/translation.json",
+      "timestamp": 1772765309727,
+      "trigger": "file_watcher",
+      "size": 27872,
+      "blob_name": "007220ab.blob"
+    },
+    {
+      "id": "089b54da-713e-47c7-8af1-88d119d7a293",
+      "file_path": "src/mcp_feedback_enhanced/web/locales/zh-CN/translation.json",
+      "timestamp": 1772777409799,
+      "trigger": "file_watcher",
+      "size": 28085,
+      "blob_name": "089b54da.blob"
+    },
+    {
+      "id": "7db51aaa-5cdd-4604-be8e-1c2ca455783b",
+      "file_path": "src/mcp_feedback_enhanced/web/locales/zh-CN/translation.json",
+      "timestamp": 1772777419010,
+      "trigger": "file_watcher",
+      "size": 27857,
+      "blob_name": "7db51aaa.blob"
+    }
+  ]
+}

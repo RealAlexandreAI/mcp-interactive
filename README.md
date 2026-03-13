@@ -70,6 +70,7 @@ uv sync
 # 测试
 make test          # 单元测试
 make test-web      # Web UI 测试
+uv run python scripts/mcp_stdio_smoke.py  # MCP stdio 握手烟测（initialize/list/call）
 
 # 代码检查
 make check         # 完整检查（lint + format + type）

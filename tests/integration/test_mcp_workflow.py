@@ -11,6 +11,8 @@ from tests.fixtures.test_data import TestData
 from tests.helpers.mcp_client import MCPWorkflowTester, SimpleMCPClient
 from tests.helpers.test_utils import TestUtils
 
+pytestmark = [pytest.mark.integration, pytest.mark.mcp]
+
 
 class TestMCPBasicWorkflow:
     """MCP 基本工作流程測試"""

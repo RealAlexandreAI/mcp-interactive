@@ -1,0 +1,36 @@
+{
+  "snapshots": [
+    {
+      "id": "3819a1cf-16c9-445b-a961-5a7a62157897",
+      "file_path": "src-tauri/Cargo.toml",
+      "timestamp": 1772710897704,
+      "trigger": "file_watcher",
+      "size": 1254,
+      "blob_name": "3819a1cf.blob"
+    },
+    {
+      "id": "edd29b07-b531-4b57-9aaf-bb214b156da9",
+      "file_path": "src-tauri/Cargo.toml",
+      "timestamp": 1772710899589,
+      "trigger": "file_watcher",
+      "size": 1254,
+      "blob_name": "edd29b07.blob"
+    },
+    {
+      "id": "e3b7044d-1fb1-48e4-9988-4a00167631d2",
+      "file_path": "src-tauri/Cargo.toml",
+      "timestamp": 1772777409773,
+      "trigger": "file_watcher",
+      "size": 1254,
+      "blob_name": "e3b7044d.blob"
+    },
+    {
+      "id": "9b285989-8817-4c83-adcd-252d4556a38f",
+      "file_path": "src-tauri/Cargo.toml",
+      "timestamp": 1772777418993,
+      "trigger": "file_watcher",
+      "size": 1254,
+      "blob_name": "9b285989.blob"
+    }
+  ]
+}

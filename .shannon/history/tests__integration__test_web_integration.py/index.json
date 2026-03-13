@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "b74c6e48-e1bb-4911-b69e-361264f0393e",
+      "file_path": "tests/integration/test_web_integration.py",
+      "timestamp": 1772777409765,
+      "trigger": "file_watcher",
+      "size": 12041,
+      "blob_name": "b74c6e48.blob"
+    },
+    {
+      "id": "6c144566-952b-495e-bcd9-72e9725d335b",
+      "file_path": "tests/integration/test_web_integration.py",
+      "timestamp": 1772777418986,
+      "trigger": "file_watcher",
+      "size": 12188,
+      "blob_name": "6c144566.blob"
+    }
+  ]
+}

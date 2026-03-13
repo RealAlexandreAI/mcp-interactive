@@ -1,0 +1,12 @@
+{
+  "snapshots": [
+    {
+      "id": "acb0c841-8f15-47ca-9586-d013d204ff08",
+      "file_path": "src/mcp_feedback_enhanced/web/static/css/audio-management.css",
+      "timestamp": 1772777409810,
+      "trigger": "file_watcher",
+      "size": 10589,
+      "blob_name": "acb0c841.blob"
+    }
+  ]
+}

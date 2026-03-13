@@ -1,0 +1,12 @@
+{
+  "snapshots": [
+    {
+      "id": "6506e52d-b471-41e4-8d80-56c7d5bc0d88",
+      "file_path": "src/mcp_feedback_enhanced/web/locales/zh-TW/translation.json",
+      "timestamp": 1772777409805,
+      "trigger": "file_watcher",
+      "size": 29530,
+      "blob_name": "6506e52d.blob"
+    }
+  ]
+}

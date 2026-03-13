@@ -1,0 +1,12 @@
+{
+  "snapshots": [
+    {
+      "id": "36d4b019-a1b5-4144-a898-fee4f00a8735",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/audio/audio-settings-ui.js",
+      "timestamp": 1772777409793,
+      "trigger": "file_watcher",
+      "size": 27596,
+      "blob_name": "36d4b019.blob"
+    }
+  ]
+}

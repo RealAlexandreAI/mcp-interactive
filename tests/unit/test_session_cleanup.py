@@ -24,6 +24,8 @@ from mcp_feedback_enhanced.web.utils.session_cleanup_manager import (
     SessionCleanupManager,
 )
 
+pytestmark = [pytest.mark.unit]
+
 
 class TestWebFeedbackSessionCleanup:
     """測試 WebFeedbackSession 清理功能"""
@@ -177,6 +179,24 @@ class TestWebFeedbackSessionCleanup:
         stats = self.session.get_cleanup_stats()
         assert stats["cleanup_count"] == 1
         assert stats["cleanup_reason"] == CleanupReason.TIMEOUT.value
+
+    @pytest.mark.asyncio
+    async def test_wait_for_feedback_timeout_can_be_paused_and_resumed(self):
+        """暫停超時計時時，不應觸發 MCP 等待超時；恢復後才會超時。"""
+        wait_task = asyncio.create_task(self.session.wait_for_feedback(timeout=6))
+
+        # 先等待一小段時間，確保 wait_for_feedback 已開始
+        await asyncio.sleep(1.0)
+        self.session.pause_timeout_timers()
+
+        # 暫停期間等待超過原始超時，不應該超時結束
+        await asyncio.sleep(5.5)
+        assert not wait_task.done()
+
+        # 恢復後，剩餘時間會繼續倒數，最終應超時
+        self.session.resume_timeout_timers()
+        with pytest.raises(TimeoutError):
+            await asyncio.wait_for(wait_task, timeout=6.0)
 
     def test_status_update_resets_timer(self):
         """Test that timer resets when session reaches FEEDBACK_SUBMITTED"""

@@ -1,0 +1,36 @@
+{
+  "snapshots": [
+    {
+      "id": "e55f5a74-b5a0-423a-b2f6-732286be5470",
+      "file_path": "pyproject.toml",
+      "timestamp": 1772710897707,
+      "trigger": "file_watcher",
+      "size": 9409,
+      "blob_name": "e55f5a74.blob"
+    },
+    {
+      "id": "8ee5252f-71a3-4362-80f9-577b6f387e82",
+      "file_path": "pyproject.toml",
+      "timestamp": 1772710899591,
+      "trigger": "file_watcher",
+      "size": 9417,
+      "blob_name": "8ee5252f.blob"
+    },
+    {
+      "id": "8bf6bfab-63f2-4d6a-b323-49c8094479de",
+      "file_path": "pyproject.toml",
+      "timestamp": 1772777409798,
+      "trigger": "file_watcher",
+      "size": 9409,
+      "blob_name": "8bf6bfab.blob"
+    },
+    {
+      "id": "fd349ec1-fbff-491f-a921-8463090a326b",
+      "file_path": "pyproject.toml",
+      "timestamp": 1772777419008,
+      "trigger": "file_watcher",
+      "size": 9417,
+      "blob_name": "fd349ec1.blob"
+    }
+  ]
+}

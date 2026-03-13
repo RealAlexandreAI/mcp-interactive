@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+    <link rel="apple-touch-icon" href="/static/icon.svg">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/prompt-management.css">
+    <link rel="stylesheet" href="/static/css/notification-settings.css">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+    <!-- ===== Top Bar ===== -->
+    <header class="top-bar">
+        <div class="top-bar-title">
+            <i data-lucide="message-square-code"></i>
+            <span>MCP Interactive</span>
+        </div>
+
+        <div class="top-bar-meta"></div>
+
+        <!-- Top-right action buttons -->
+        <div class="top-bar-actions">
+            <button class="top-bar-btn" id="openSettingsBtn" title="Settings" data-i18n-title="tabs.settings">
+                <i data-lucide="settings"></i>
+            </button>
+            <button class="top-bar-btn" id="openAboutBtn" title="About" data-i18n-title="tabs.about">
+                <i data-lucide="info"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== Three-Column Workspace ===== -->
+    <div class="workspace">
+        <!-- Col 1: AI Summary (50%) -->
+        <div class="col-summary">
+            <div class="summary-card">
+                <div class="summary-header">
+                    <i data-lucide="file-text"></i>
+                    <span data-i18n="combined.summaryTitle">AI Response</span>
+                </div>
+                <div class="summary-body" id="combinedSummaryContent" data-dynamic-content="aiSummary">{{ summary }}</div>
+            </div>
+        </div>
+
+        <!-- Col 2: Feedback Input (30%) -->
+        <div class="col-feedback">
+            <div class="feedback-card">
+                <div class="feedback-header">
+                    <i data-lucide="message-circle"></i>
+                    <span data-i18n="combined.feedbackTitle">Feedback</span>
+                </div>
+                <div class="feedback-body">
+                    <!-- Status indicator - breathing bar -->
+                    <div id="combinedFeedbackStatusIndicator" class="feedback-status-indicator status-waiting">
+                        <span class="status-title"></span>
+                        <span class="status-message"></span>
+                    </div>
+
+                    <!-- Textarea -->
+                    <textarea
+                        id="combinedFeedbackText"
+                        class="feedback-textarea"
+                        data-i18n-placeholder="feedback.detailedPlaceholder"
+                        placeholder="Type your feedback here... (Ctrl+Enter to submit)"
+                    ></textarea>
+
+                    <!-- Prompt quick-action buttons -->
+                    <div class="prompt-input-buttons" id="combinedPromptButtons">
+                        <button type="button" class="prompt-input-btn ok-quick-btn" id="okQuickBtn" title="Quick reply OK">
+                            <i data-lucide="check"></i>
+                            <span class="button-text">OK</span>
+                        </button>
+                        <button type="button" class="prompt-input-btn select-prompt-btn" data-container-index="1">
+                            <i data-lucide="file-text"></i>
+                            <span class="button-text" data-i18n="prompts.buttons.selectPrompt">Templates</span>
+                        </button>
+                    </div>
+
+                    <!-- Image upload (compact) -->
+                    {% set id_prefix = "combined" %}
+                    {% set min_height = "60px" %}
+                    {% include 'components/image-upload.html' %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Col 3: Actions + Status (20%) -->
+        <div class="col-actions">
+            <!-- Status ring: waiting / countdown -->
+            <div class="status-ring-card" id="statusRingCard">
+                <div class="status-ring-visual">
+                    <svg class="ring-svg" viewBox="0 0 120 120" id="statusRingSvg">
+                        <!-- Background track -->
+                        <circle class="ring-track" cx="60" cy="60" r="52" />
+                        <!-- Progress arc (countdown mode) -->
+                        <circle class="ring-progress" cx="60" cy="60" r="52" id="ringProgress"
+                                stroke-dasharray="326.73" stroke-dashoffset="0" />
+                        <!-- Breathing glow (waiting mode) -->
+                        <circle class="ring-glow" cx="60" cy="60" r="52" id="ringGlow" />
+                    </svg>
+                    <div class="ring-center">
+                        <!-- Waiting state -->
+                        <div class="ring-state ring-state-waiting" id="ringStateWaiting">
+                            <i data-lucide="hourglass" class="ring-icon"></i>
+                            <span class="ring-label" data-i18n="status.waiting.title">Waiting</span>
+                        </div>
+                        <!-- Countdown state -->
+                        <div class="ring-state ring-state-countdown" id="ringStateCountdown" style="display: none;">
+                            <span class="ring-time" id="countdownTimer">--:--</span>
+                            <span class="ring-label" data-i18n="autoSubmit.countdownLabel">Auto Submit</span>
+                        </div>
+                        <!-- Submitted state -->
+                        <div class="ring-state ring-state-submitted" id="ringStateSubmitted" style="display: none;">
+                            <i data-lucide="check-circle" class="ring-icon"></i>
+                            <span class="ring-label" data-i18n="status.submitted.title">Submitted</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Pause button (only visible during countdown) -->
+                <button id="countdownPauseBtn" class="btn btn-countdown-pause" style="display: none;"
+                        data-i18n-title="autoSubmit.pauseCountdown" title="Pause">
+                    <span class="pause-icon"><i data-lucide="pause"></i> <span data-i18n="autoSubmit.pauseCountdown">Pause</span></span>
+                    <span class="resume-icon" style="display: none;"><i data-lucide="play"></i> <span data-i18n="autoSubmit.resumeCountdown">Resume</span></span>
+                </button>
+            </div>
+
+            <!-- Hidden container for legacy countdownDisplay ID -->
+            <div id="countdownDisplay" style="display: none;"></div>
+
+            <!-- Session timeout countdown -->
+            <div id="sessionTimeoutDisplay" class="countdown-card countdown-card-muted" style="display: none;">
+                <div class="countdown-card-header">
+                    <i data-lucide="clock"></i>
+                    <span class="timeout-label" data-i18n="sessionTimeout.label">Session Timeout</span>
+                </div>
+                <div class="countdown-card-body">
+                    <span id="sessionTimeoutTimer" class="countdown-timer-lg">--:--</span>
+                </div>
+            </div>
+
+            <!-- Submit button -->
+            <div class="action-card">
+                <button id="submitBtn" class="btn btn-primary btn-full btn-submit" data-i18n="buttons.submit">
+                    <i data-lucide="send"></i>
+                    Submit Feedback
+                </button>
+            </div>
+
+            <!-- Session info -->
+            <div class="session-card">
+                <div class="session-card-header">
+                    <i data-lucide="activity"></i>
+                    <span data-i18n="sessionManagement.currentSession">Session Info</span>
+                </div>
+                <div class="session-info-list">
+                    <div class="session-info-item" id="connectionStatusMinimal">
+                        <span class="session-info-value" id="sidebarConnectionStatus">
+                            <span class="status-dot connected" id="connectionDot"></span>
+                            <span class="status-badge connected" id="sidebarStatusBadge" data-i18n="connectionMonitor.connected">Connected</span>
+                        </span>
+                    </div>
+                    <div class="session-info-item">
+                        <i data-lucide="hash"></i>
+                        <span class="session-info-label">Session ID</span>
+                        <span class="session-info-value clickable" id="sidebarSessionId"
+                              data-full-id="{{ session_id if session_id else 'loading' }}"
+                              data-i18n-title="app.clickToCopySessionId"
+                              title="Click to copy session ID">{{ session_id[:12] if session_id else '--' }}...</span>
+                    </div>
+                    <div class="session-info-item">
+                        <i data-lucide="folder"></i>
+                        <span class="session-info-label" data-i18n="app.projectDirectory">Directory</span>
+                        <span class="session-info-value clickable" id="sidebarProjectDir"
+                              data-full-path="{{ project_directory }}"
+                              data-i18n-title="app.clickToCopyPath"
+                              title="Click to copy path">{{ project_directory }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Settings Modal ===== -->
+    <div class="modal-backdrop" id="settingsModal">
+        <div class="modal modal-wide">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="settings"></i>
+                    <span data-i18n="tabs.settings">Settings</span>
+                </div>
+                <button class="modal-close" id="closeSettingsBtn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- Settings layout: left tabs + right content -->
+            <div class="settings-layout">
+                <!-- Left: vertical tabs -->
+                <nav class="settings-nav">
+                    <button class="settings-tab active" data-tab="general">
+                        <i data-lucide="sliders-horizontal"></i>
+                        <span data-i18n="settingsUI.general">General</span>
+                    </button>
+                    <button class="settings-tab" data-tab="autosubmit">
+                        <i data-lucide="timer"></i>
+                        <span data-i18n="autoSubmit.title">Auto Submit</span>
+                    </button>
+                    <button class="settings-tab" data-tab="notifications">
+                        <i data-lucide="bell"></i>
+                        <span data-i18n="notification.title">Notifications</span>
+                    </button>
+                    <button class="settings-tab" data-tab="session">
+                        <i data-lucide="archive"></i>
+                        <span data-i18n="sessionHistory.management.title">Session</span>
+                    </button>
+                    <button class="settings-tab" data-tab="prompts">
+                        <i data-lucide="file-text"></i>
+                        <span data-i18n="prompts.management.title">Prompts</span>
+                    </button>
+                </nav>
+
+                <!-- Right: tab content -->
+                <div class="settings-content">
+                <!-- Tab: General -->
+                <div class="settings-tab-panel active" data-panel="general">
+                    <!-- Language -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i data-lucide="globe"></i>
+                                <span data-i18n="settingsUI.language">Language</span>
+                            </h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="settingsUI.currentLanguage">Language</div>
+                                    <div class="setting-description" data-i18n="settingsUI.languageDesc">Choose display language</div>
+                                </div>
+                                <div class="language-selector-dropdown">
+                                    <select id="settingsLanguageSelect" class="language-setting-select">
+                                        <option value="zh-CN" data-i18n="languages.zh-CN">简体中文</option>
+                                        <option value="en" data-i18n="languages.en">English</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image settings -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i data-lucide="image"></i>
+                                <span data-i18n="images.settings.title">Image Settings</span>
+                            </h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="images.settings.sizeLimit">Size Limit</div>
+                                    <div class="setting-description" data-i18n="images.settings.sizeLimitDesc">Max upload size</div>
+                                </div>
+                                <div class="image-size-limit-selector">
+                                    <select id="settingsImageSizeLimit" class="image-size-limit-select">
+                                        <option value="0" data-i18n="images.settings.sizeLimitOptions.unlimited">Unlimited</option>
+                                        <option value="1048576" data-i18n="images.settings.sizeLimitOptions.1mb">1MB</option>
+                                        <option value="3145728" data-i18n="images.settings.sizeLimitOptions.3mb">3MB</option>
+                                        <option value="5242880" data-i18n="images.settings.sizeLimitOptions.5mb">5MB</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="images.settings.base64Detail">Base64 Mode</div>
+                                    <div class="setting-description" data-i18n="images.settings.base64DetailHelp">Include full base64 data for AI model compatibility</div>
+                                    <div class="setting-warning" data-i18n="images.settings.base64Warning">Increases transfer size</div>
+                                </div>
+                                <div class="base64-toggle-container">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="settingsEnableBase64Detail" class="toggle-input">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Session timeout -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i data-lucide="clock"></i>
+                                <span data-i18n="settingsUI.sessionTimeoutTitle">Session Timeout</span>
+                            </h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="settingsUI.sessionTimeoutEnable">Enable Timeout</div>
+                                    <div class="setting-description" data-i18n="settingsUI.sessionTimeoutEnableDesc">Auto-close session after timeout</div>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="sessionTimeoutEnabled" class="toggle-input">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="settingsUI.sessionTimeoutDuration">Duration (sec)</div>
+                                    <div class="setting-description" data-i18n="settingsUI.sessionTimeoutDurationDesc">300-86400 seconds</div>
+                                </div>
+                                <div class="setting-control">
+                                    <input type="number" id="sessionTimeoutSeconds" min="300" max="86400" value="3600"
+                                           class="form-input" style="width: 100px;">
+                                    <span class="input-suffix" data-i18n="settingsUI.sessionTimeoutSeconds">sec</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reset -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i data-lucide="wrench"></i>
+                                <span data-i18n="settingsUI.advanced">Advanced</span>
+                            </h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="setting-item" style="border-bottom: none;">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="settingsUI.reset">Reset Settings</div>
+                                    <div class="setting-description" data-i18n="settingsUI.resetDesc">Restore all settings to defaults</div>
+                                </div>
+                                <button id="resetSettingsBtn" class="btn-small" style="color: var(--error-color);">
+                                    <span data-i18n="settingsUI.reset">Reset</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Auto Submit -->
+                <div class="settings-tab-panel" data-panel="autosubmit">
+                    <div class="settings-card">
+                        <div class="settings-card-body">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="autoSubmit.enable">Enable</div>
+                                    <div class="setting-description" data-i18n="autoSubmit.enableDesc">Auto-submit prompt after countdown</div>
+                                </div>
+                                <div class="setting-control">
+                                    <button type="button" id="autoSubmitToggle" class="toggle-btn" data-i18n-aria-label="aria.toggleAutoSubmit">
+                                        <span class="toggle-slider"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="autoSubmit.timeout">Countdown (sec)</div>
+                                    <div class="setting-description" data-i18n="autoSubmit.timeoutDesc">1-86400 seconds</div>
+                                </div>
+                                <div class="setting-control">
+                                    <input type="number" id="autoSubmitTimeout" min="1" max="86400" value="30"
+                                           class="form-input" style="width: 100px;">
+                                    <span class="input-suffix" data-i18n="autoSubmit.seconds">sec</span>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="autoSubmit.prompt">Prompt</div>
+                                    <div class="setting-description" data-i18n="autoSubmit.promptDesc">Select prompt for auto-submit</div>
+                                </div>
+                                <div class="setting-control">
+                                    <select id="autoSubmitPromptSelect" class="form-select" style="width: 160px;">
+                                        <option value="" data-i18n="autoSubmit.selectPrompt">Select...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="autoSubmit.status">Status</div>
+                                </div>
+                                <div class="setting-control">
+                                    <button type="button" id="autoSubmitStatus" class="auto-submit-status-btn" disabled>
+                                        <i data-lucide="pause" style="width: 13px; height: 13px;"></i>
+                                        <span class="button-text" data-i18n="autoSubmit.disabled">Disabled</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Notifications -->
+                <div class="settings-tab-panel" data-panel="notifications">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i data-lucide="bell"></i>
+                                <span data-i18n="notification.title">Browser Notifications</span>
+                            </h3>
+                        </div>
+                        <div class="settings-card-body" id="notificationSettingsContainer"></div>
+                    </div>
+                </div>
+
+                <!-- Tab: Session History -->
+                <div class="settings-tab-panel" data-panel="session">
+                    <div class="settings-card">
+                        <div class="settings-card-body">
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="sessionHistory.management.retentionPeriod">Retention</div>
+                                    <div class="setting-description" data-i18n="sessionHistory.management.description">Local session history management</div>
+                                </div>
+                                <div class="setting-control">
+                                    <select id="sessionHistoryRetentionHours" class="form-select" style="width: 130px;">
+                                        <option value="24" data-i18n="sessionHistory.retention.24hours">24 hours</option>
+                                        <option value="72" data-i18n="sessionHistory.retention.72hours">72 hours</option>
+                                        <option value="168" data-i18n="sessionHistory.retention.168hours">7 days</option>
+                                        <option value="720" data-i18n="sessionHistory.retention.720hours">30 days</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="sessionHistory.userMessages.title">Message Recording</div>
+                                    <div class="setting-description" data-i18n="sessionHistory.userMessages.description">Record user feedback in session history</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle-container">
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="userMessageRecordingToggle" class="toggle-input">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="sessionHistory.userMessages.privacyLevel">Privacy Level</div>
+                                    <div class="setting-description" id="userMessagePrivacyDescription" data-i18n="sessionHistory.userMessages.privacyDescription.full">Full message recording</div>
+                                </div>
+                                <div class="setting-control">
+                                    <select id="userMessagePrivacyLevel" class="form-select" style="width: 120px;">
+                                        <option value="full" data-i18n="sessionHistory.userMessages.privacyLevels.full">Full</option>
+                                        <option value="basic" data-i18n="sessionHistory.userMessages.privacyLevels.basic">Basic</option>
+                                        <option value="disabled" data-i18n="sessionHistory.userMessages.privacyLevels.disabled">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="setting-item" style="border-bottom: none;">
+                                <div class="setting-info">
+                                    <div class="setting-label" data-i18n="sessionHistory.management.export">Data Management</div>
+                                </div>
+                                <div class="setting-control" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <button id="exportSessionHistoryBtn" class="btn-small" data-i18n="sessionHistory.management.exportAll">Export</button>
+                                    <button id="clearUserMessagesBtn" class="btn-small" style="color: var(--warning-color);" data-i18n="sessionHistory.userMessages.clearAll">Clear Messages</button>
+                                    <button id="clearSessionHistoryBtn" class="btn-small" style="color: var(--error-color);" data-i18n="sessionHistory.management.clear">Clear All</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Prompts -->
+                <div class="settings-tab-panel" data-panel="prompts">
+                    <div class="settings-card">
+                        <div class="settings-card-body" id="promptManagementContainer"></div>
+                    </div>
+                </div>
+            </div><!-- /settings-content -->
+            </div><!-- /settings-layout -->
+        </div><!-- /modal -->
+    </div><!-- /modal-backdrop -->
+
+    <!-- ===== About Modal ===== -->
+    <div class="modal-backdrop" id="aboutModal">
+        <div class="modal" style="max-width: 480px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i data-lucide="info"></i>
+                    <span>About</span>
+                </div>
+                <button class="modal-close" id="closeAboutBtn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-size: 18px; font-weight: 700; color: var(--text-primary);">MCP Feedback Enhanced</span>
+                    <span class="about-version">v{{ version }}</span>
+                </div>
+
+                <p class="about-description" data-i18n="about.description"></p>
+
+                <div style="margin: 16px 0;">
+                    <button class="btn btn-secondary" onclick="window.open('https://github.com/slahser/mcp-feedback-enhanced', '_blank')" style="font-size: 13px;">
+                        <i data-lucide="github"></i>
+                        <span data-i18n="about.visitGithub">GitHub</span>
+                    </button>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="heart" style="width: 14px; height: 14px; color: var(--accent-color);"></i>
+                        <span data-i18n="about.thanks">Credits</span>
+                    </div>
+                    <div class="about-credits">本项目 fork 自 Minidoracat/mcp-feedback-enhanced，感谢 Minidoracat 大幅扩展了项目功能，新增了 Web UI 界面、图片支持、多语言能力以及许多其他改进功能。
+
+感谢原作者 Fábio Ferreira (@fabiomlferreira) 创建了原始的 interactive-feedback-mcp 项目。
+
+同时感谢 sanshao85 的 mcp-feedback-collector 项目提供的 UI 设计灵感。
+
+开源协作让技术变得更美好！</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Scripts ===== -->
+    <!-- Markdown support -->
+    <script src="/static/js/vendor/marked.min.js"></script>
+    <script src="/static/js/vendor/purify.min.js"></script>
+    <script src="/static/js/i18n.js?v=2025010510"></script>
+
+    <!-- Core modules -->
+    <script src="/static/js/modules/logger.js?v=2025010510"></script>
+
+    <!-- Utility modules -->
+    <script src="/static/js/modules/utils/dom-utils.js?v=2025010510"></script>
+    <script src="/static/js/modules/utils/time-utils.js?v=2025010510"></script>
+    <script src="/static/js/modules/utils/status-utils.js?v=2025010510"></script>
+
+    <!-- Prompt modules -->
+    <script src="/static/js/modules/prompt/prompt-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/prompt/prompt-modal.js?v=2025010510"></script>
+    <script src="/static/js/modules/prompt/prompt-settings-ui.js?v=2025010510"></script>
+    <script src="/static/js/modules/prompt/prompt-input-buttons.js?v=2025010510"></script>
+
+    <!-- Notification modules -->
+    <script src="/static/js/modules/notification/notification-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/notification/notification-settings.js?v=2025010510"></script>
+
+    <!-- Other modules -->
+    <script src="/static/js/modules/utils.js?v=2025010510"></script>
+    <script src="/static/js/modules/tab-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/websocket-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/connection-monitor.js?v=2025010510"></script>
+    <script src="/static/js/modules/file-upload-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/image-handler.js?v=2025010510"></script>
+    <script src="/static/js/modules/settings-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/ui-manager.js?v=2025010510"></script>
+    <script src="/static/js/modules/textarea-height-manager.js?v=2025010510"></script>
+
+    <!-- Main app -->
+    <script src="/static/js/app.js?v=2025010510"></script>
+    <script>
+        async function initializeApp() {
+            var sessionId = '{{ session_id }}';
+
+            // Wait for Markdown libs
+            if (typeof window.marked === 'undefined' || typeof window.DOMPurify === 'undefined') {
+                setTimeout(initializeApp, 100);
+                return;
+            }
+
+            // Wait for core modules (removed SessionManager requirement)
+            var requiredModules = [
+                'MCPFeedback',
+                'MCPFeedback.Logger',
+                'MCPFeedback.Utils',
+                'MCPFeedback.DOMUtils',
+                'MCPFeedback.TimeUtils',
+                'MCPFeedback.StatusUtils',
+                'MCPFeedback.ConnectionMonitor',
+                'MCPFeedback.FeedbackApp'
+            ];
+
+            var missingModules = requiredModules.filter(function(modulePath) {
+                var parts = modulePath.split('.');
+                var current = window;
+                for (var i = 0; i < parts.length; i++) {
+                    if (!current[parts[i]]) return true;
+                    current = current[parts[i]];
+                }
+                return false;
+            });
+
+            if (missingModules.length > 0) {
+                setTimeout(initializeApp, 100);
+                return;
+            }
+
+            try {
+                var logger = window.MCPFeedback.logger;
+                logger.info('Initializing app...');
+
+                // Initialize i18n
+                if (window.i18nManager) {
+                    await window.i18nManager.init();
+                }
+
+                // Initialize FeedbackApp
+                window.feedbackApp = new window.MCPFeedback.FeedbackApp(sessionId);
+                await window.feedbackApp.init();
+
+                // Global reference
+                window.MCPFeedback.app = window.feedbackApp;
+
+                // Render Markdown for initial summary
+                setTimeout(function() {
+                    if (window.feedbackApp && window.feedbackApp.uiManager) {
+                        var summaryEl = document.getElementById('combinedSummaryContent');
+                        if (summaryEl && summaryEl.textContent) {
+                            window.feedbackApp.uiManager.updateAISummaryContent(summaryEl.textContent);
+                        }
+                    }
+                }, 100);
+
+                // Initialize Lucide icons
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+
+                // Setup modal toggles
+                setupModals();
+
+                logger.info('App initialized');
+            } catch (error) {
+                console.error('App init failed:', error);
+            }
+        }
+
+        function setupModals() {
+            // Settings modal
+            var openSettings = document.getElementById('openSettingsBtn');
+            var closeSettings = document.getElementById('closeSettingsBtn');
+            var settingsModal = document.getElementById('settingsModal');
+
+            if (openSettings && settingsModal) {
+                openSettings.addEventListener('click', function() {
+                    settingsModal.classList.add('active');
+                    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+                });
+            }
+            if (closeSettings && settingsModal) {
+                closeSettings.addEventListener('click', function() {
+                    settingsModal.classList.remove('active');
+                });
+            }
+
+            // Settings tab switching
+            var tabs = document.querySelectorAll('.settings-tab');
+            var panels = document.querySelectorAll('.settings-tab-panel');
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    var target = tab.getAttribute('data-tab');
+                    tabs.forEach(function(t) { t.classList.remove('active'); });
+                    panels.forEach(function(p) { p.classList.remove('active'); });
+                    tab.classList.add('active');
+                    var panel = document.querySelector('.settings-tab-panel[data-panel="' + target + '"]');
+                    if (panel) { panel.classList.add('active'); }
+                    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+                });
+            });
+
+            // About modal
+            var openAbout = document.getElementById('openAboutBtn');
+            var closeAbout = document.getElementById('closeAboutBtn');
+            var aboutModal = document.getElementById('aboutModal');
+
+            if (openAbout && aboutModal) {
+                openAbout.addEventListener('click', function() {
+                    aboutModal.classList.add('active');
+                });
+            }
+            if (closeAbout && aboutModal) {
+                closeAbout.addEventListener('click', function() {
+                    aboutModal.classList.remove('active');
+                });
+            }
+
+            // Close modals on backdrop click
+            [settingsModal, aboutModal].forEach(function(modal) {
+                if (modal) {
+                    modal.addEventListener('click', function(e) {
+                        if (e.target === modal) {
+                            modal.classList.remove('active');
+                        }
+                    });
+                }
+            });
+
+            // Close modals on Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (settingsModal) settingsModal.classList.remove('active');
+                    if (aboutModal) aboutModal.classList.remove('active');
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+    </script>
+</body>
+</html>

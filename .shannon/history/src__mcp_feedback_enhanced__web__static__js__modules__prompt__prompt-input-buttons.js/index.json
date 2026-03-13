@@ -1,0 +1,20 @@
+{
+  "snapshots": [
+    {
+      "id": "bc2a11da-bdf4-4888-bc9f-65c854e42de3",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/prompt/prompt-input-buttons.js",
+      "timestamp": 1772777409814,
+      "trigger": "file_watcher",
+      "size": 14316,
+      "blob_name": "bc2a11da.blob"
+    },
+    {
+      "id": "ee9de608-8b0a-4fec-ae86-f79e629fdb90",
+      "file_path": "src/mcp_feedback_enhanced/web/static/js/modules/prompt/prompt-input-buttons.js",
+      "timestamp": 1772777419030,
+      "trigger": "file_watcher",
+      "size": 14175,
+      "blob_name": "ee9de608.blob"
+    }
+  ]
+}

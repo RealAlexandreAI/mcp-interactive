@@ -1,6 +1,6 @@
 [project]
 name = "mcp-interactive"
-version = "0.1.6"
+version = "0.1.7"
 description = "MCP server for interactive feedback collection in AI-assisted development workflows."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -79,6 +79,7 @@ dev-dependencies = [
     "maturin>=1.12.6",
     "setuptools-rust>=1.12.0",
     "pillow>=12.1.1",
+    "mcp[cli]>=1.26.0",
 ]
 
 # ===== Ruff 配置 =====

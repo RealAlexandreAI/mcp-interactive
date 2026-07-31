@@ -2,6 +2,21 @@
 
 This document records all version updates for **MCP Feedback Enhanced**.
 
+## [v0.1.7] - 2026-07-31 - Compatibility Fixes
+
+### 🌟 Version Highlights
+Fixed template rendering crash on starlette >= 1.0 (TemplateResponse signature change) and added missing mcp[cli] dev dependency so the MCP stdio smoke test runs.
+
+### 🐛 Bug Fixes
+- Web UI: migrate `TemplateResponse(name, context)` to new `TemplateResponse(request, name, context)` signature required by starlette >= 1.0; fixes 500 on `/` and all web routes
+- Dev tooling: add `mcp[cli]` (typer) to dev dependencies; `uv run mcp run ... --transport stdio` now works
+
+### ✅ Verification
+- 151 tests pass (was 5 failing)
+- MCP stdio smoke test passes (initialize / tools/list / tools/call)
+
+---
+
 ## [v2.5.6] - 2025-06-21 - Settings Save Mechanism Optimization & Interface Enhancement
 
 ### 🌟 Version Highlights

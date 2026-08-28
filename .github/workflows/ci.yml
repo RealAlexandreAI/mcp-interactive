@@ -32,3 +32,27 @@ jobs:
 
       - name: Run stable unit test
         run: uv run pytest -q tests/unit/test_port_manager.py
+
+  cargo-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev
+
+      - name: Cargo check
+        working-directory: src-tauri
+        run: cargo check --bin mcp-feedback-enhanced-desktop

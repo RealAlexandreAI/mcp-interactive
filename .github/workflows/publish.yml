@@ -40,7 +40,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v10.1.0
       with:
         version: "latest"
 
@@ -475,7 +475,7 @@ jobs:
         git push origin "v${{ steps.bump_version.outputs.new }}"
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3.0.3
       with:
         tag_name: "v${{ steps.bump_version.outputs.new }}"
         name: "Release v${{ steps.bump_version.outputs.new }}"

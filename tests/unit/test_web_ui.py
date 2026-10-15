@@ -228,7 +228,6 @@ class TestWebUIUtilities:
         """測試 Web 回應驗證"""
         # 測試有效回應
         valid_response = {
-            "command_logs": "test logs",
             "interactive_feedback": "test feedback",
             "images": [],
         }
@@ -236,7 +235,7 @@ class TestWebUIUtilities:
 
         # 測試無效回應
         invalid_response = {
-            "command_logs": "test logs"
+            "images": []
             # 缺少必要字段
         }
         assert TestUtils.validate_web_response(invalid_response) == False

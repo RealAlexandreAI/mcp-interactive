@@ -19,11 +19,6 @@ async def handle_session_message(session, data: dict[str, Any]) -> None:
         settings = data.get("settings", {})
         await session.submit_feedback(feedback, images, settings)
 
-    elif message_type == "run_command":
-        command = data.get("command", "")
-        if command.strip():
-            await session.run_command(command)
-
     elif message_type == "get_status":
         if session.websocket:
             try:

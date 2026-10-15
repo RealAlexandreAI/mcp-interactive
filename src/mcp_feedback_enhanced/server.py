@@ -11,7 +11,6 @@ MCP Feedback Enhanced 伺服器主要模組
 - 環境檢測 (SSH Remote, WSL, Local)
 - 國際化支援
 - 圖片處理與上傳
-- 命令執行與結果展示
 - 專案目錄管理
 
 主要 MCP 工具：
@@ -289,10 +288,6 @@ def create_feedback_text(feedback_data: dict) -> str:
     if feedback_data.get("interactive_feedback"):
         text_parts.append(f"=== 用戶回饋 ===\n{feedback_data['interactive_feedback']}")
 
-    # 命令執行日誌
-    if feedback_data.get("command_logs"):
-        text_parts.append(f"=== 命令執行日誌 ===\n{feedback_data['command_logs']}")
-
     # 圖片附件概要
     if feedback_data.get("images"):
         images = feedback_data["images"]
@@ -557,11 +552,7 @@ async def interactive_feedback(
         feedback_items = []
 
         # 添加文字回饋
-        if (
-            result.get("interactive_feedback")
-            or result.get("command_logs")
-            or result.get("images")
-        ):
+        if result.get("interactive_feedback") or result.get("images"):
             feedback_text = create_feedback_text(result)
             feedback_items.append(TextContent(type="text", text=feedback_text))
             debug_log("文字回饋已添加")
@@ -670,7 +661,6 @@ async def launch_web_feedback_ui(
         debug_log(f"Web UI 模組導入失敗 [錯誤ID: {error_id}]: {e}")
 
         return {
-            "command_logs": "",
             "interactive_feedback": user_error_msg,
             "images": [],
         }
@@ -683,10 +673,9 @@ def main():
     此工具使用 Web UI 介面收集用戶回饋，支援智能環境檢測。
 
     用戶可以：
-    1. 執行命令來驗證結果
-    2. 提供文字回饋
-    3. 上傳圖片作為回饋
-    4. 查看 AI 的工作摘要
+    1. 提供文字回饋
+    2. 上傳圖片作為回饋
+    3. 查看 AI 的工作摘要
 
     調試模式：
     - 設置環境變數 MCP_DEBUG=true 可啟用詳細調試輸出

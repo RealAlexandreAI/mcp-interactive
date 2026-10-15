@@ -434,6 +434,65 @@ def process_images(images_data: list[dict]) -> list[MCPImage]:
     return mcp_images
 
 
+DEFAULT_FEEDBACK_TIMEOUT = 600
+MIN_FEEDBACK_TIMEOUT = 60
+MAX_FEEDBACK_TIMEOUT = 86400
+
+def resolve_feedback_timeout(requested: object) -> int:
+    """把呼叫端傳入的 timeout 鉗制到可用範圍
+
+    不使用 pydantic 的 ge/le 驗證，因為那會讓整個 tool call 直接失敗；
+    對 human-in-the-loop 工具來說，讓流程以安全值繼續比中斷更有用（見 #212）。
+
+    參數型別刻意放寬為 object：這個值來自外部 MCP 客戶端，
+    不同客戶端與 FastMCP 版本的轉換行為未必一致，因此在此一併容錯。
+
+    Args:
+        requested: 呼叫端傳入的秒數（容忍非數值型別）
+
+    Returns:
+        int: 鉗制後的秒數
+    """
+    try:
+        value = int(requested)  # type: ignore[call-overload]
+    except (TypeError, ValueError):
+        debug_log(
+            f"timeout 值無法解析（{requested!r}），改用預設 {DEFAULT_FEEDBACK_TIMEOUT} 秒"
+        )
+        return DEFAULT_FEEDBACK_TIMEOUT
+
+    if value < MIN_FEEDBACK_TIMEOUT:
+        debug_log(
+            f"timeout={value} 秒過短，使用者來不及回饋，"
+            f"已提升至 {MIN_FEEDBACK_TIMEOUT} 秒（見 issue #212）"
+        )
+        return MIN_FEEDBACK_TIMEOUT
+
+    if value > MAX_FEEDBACK_TIMEOUT:
+        debug_log(f"timeout={value} 秒過長，已限制為 {MAX_FEEDBACK_TIMEOUT} 秒")
+        return MAX_FEEDBACK_TIMEOUT
+
+    return value
+
+
+
+def no_response_text(reason: str) -> str:
+    """使用者沒有回應時回給 AI 的文字（#125）
+
+    舊版走 ErrorHandler，回傳「操作超時／增加超時時間設置」這類一般錯誤，
+    客戶端會當成可重試的失敗再次呼叫本工具；使用者不在時就成了無限循環。
+    這裡改為明確的結束指令，讓對話能收尾。
+    """
+    return (
+        f"使用者未回應（{reason}）。\n"
+        "請視為使用者已離開：直接結束本次任務並輸出最終總結，"
+        "不要再次呼叫 interactive_feedback 等待回饋。\n"
+        f"(No user response: {reason}. Treat the user as away — "
+        "finish the task now and do NOT call interactive_feedback again.)"
+    )
+
+
+
 # ===== MCP 工具定義 =====
 @mcp.tool()
 async def interactive_feedback(
@@ -477,7 +536,15 @@ async def interactive_feedback(
         # 使用 Web 模式
         debug_log("回饋模式: web")
 
-        result = await launch_web_feedback_ui(project_directory, summary, timeout, ctx)
+        effective_timeout = resolve_feedback_timeout(timeout)
+        try:
+            result = await launch_web_feedback_ui(
+                project_directory, summary, effective_timeout, ctx
+            )
+        except TimeoutError as e:
+            # Wait timed out or user closed UI — normal "no feedback" outcome (#125/#162)
+            debug_log(f"未取得使用者回饋: {e}")
+            return [TextContent(type="text", text=no_response_text(str(e)))]
 
         # 處理取消情況
         if not result:

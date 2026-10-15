@@ -155,33 +155,47 @@ class TestI18NEnvironmentIntegration:
 
         # 保存原始環境變數
         original_env = {}
-        env_vars = ["LANG", "LANGUAGE", "LC_ALL", "LC_MESSAGES"]
+        env_vars = [
+            "LANG",
+            "LANGUAGE",
+            "LC_ALL",
+            "LC_MESSAGES",
+            "MCP_LANGUAGE",
+            "MCP_TEST_MODE",
+        ]
         for var in env_vars:
             original_env[var] = os.environ.get(var)
 
         try:
             # 測試不同的環境設置
             test_cases = [
+                {"MCP_LANGUAGE": "zh-TW", "expected": "zh-TW"},
                 {"MCP_LANGUAGE": "zh-CN", "expected": "zh-CN"},
                 {"MCP_LANGUAGE": "en", "expected": "en"},
+                {"LANG": "zh_TW.UTF-8", "expected": "zh-TW"},
                 {"LANG": "zh_CN.UTF-8", "expected": "zh-CN"},
                 {"LANG": "en_US.UTF-8", "expected": "en"},
-                {"LANG": "ja_JP.UTF-8", "expected": "zh-CN"},  # Unsupported lang falls back to zh-CN
+                {
+                    "LANG": "ja_JP.UTF-8",
+                    "expected": "zh-TW",
+                },  # 不支援的語言回退到預設（繁中）
+                # MCP_LANGUAGE 是強制指定，必須壓過介面保存的設定（#189）
+                {"saved": "zh-TW", "MCP_LANGUAGE": "zh-CN", "expected": "zh-CN"},
+                # 沒有 MCP_LANGUAGE 時，介面保存的設定仍高於 LANG
+                {"saved": "en", "LANG": "zh_TW.UTF-8", "expected": "en"},
             ]
 
             for test_case in test_cases:
                 # 清理環境變數
                 for var in env_vars:
                     os.environ.pop(var, None)
-                # 也清理 MCP_LANGUAGE
-                os.environ.pop("MCP_LANGUAGE", None)
 
                 # 設置測試模式，禁用系統語言檢測
                 os.environ["MCP_TEST_MODE"] = "true"
 
                 # 設置測試環境
                 for key, value in test_case.items():
-                    if key != "expected":
+                    if key not in ("expected", "saved"):
                         os.environ[key] = value
 
                 # 創建新的管理器實例，並清理可能的保存設定
@@ -192,6 +206,8 @@ class TestI18NEnvironmentIntegration:
                     # 臨時修改配置文件路徑，避免使用真實的用戶配置
                     manager = I18nManager()
                     manager._config_file = Path(temp_dir) / "test_language.json"
+                    if "saved" in test_case:
+                        manager.save_language(test_case["saved"])
 
                     # 修復 attr-defined 錯誤 - 使用正確的方法名
                     detected = manager._detect_language()
@@ -214,9 +230,12 @@ class TestI18NEnvironmentIntegration:
                     os.environ.pop(var, None)
 
     def test_i18n_with_web_ui_manager(self, web_ui_manager, i18n_manager):
-        """Test that I18N works independently since translations moved to frontend"""
-        # WebUIManager no longer holds i18n directly (moved to frontend)
-        # Verify i18n_manager works independently
+        """測試 I18N 與 WebUIManager 的集成"""
+        # 驗證 WebUIManager 使用了 I18N 管理器
+        assert hasattr(web_ui_manager, "i18n")
+        assert web_ui_manager.i18n is not None
+
+        # 測試語言切換對 WebUIManager 的影響
         original_lang = i18n_manager.get_current_language()
 
         for lang in TestData.SUPPORTED_LANGUAGES:
@@ -224,9 +243,10 @@ class TestI18NEnvironmentIntegration:
                 success = i18n_manager.set_language(lang)
                 assert success == True
 
-                current_lang = i18n_manager.get_current_language()
+                # WebUIManager 應該能夠訪問當前語言設置
+                current_lang = web_ui_manager.i18n.get_current_language()
                 assert current_lang == lang
                 break
 
-        # Restore original language
+        # 恢復原始語言
         i18n_manager.set_language(original_lang)

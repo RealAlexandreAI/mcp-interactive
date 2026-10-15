@@ -2,6 +2,149 @@
 
 本文件记录了 **MCP Feedback Enhanced** 的所有版本更新内容。
 
+## [v2.8.1] - 2026-09-07 - 桌面回退的收尾修正
+
+### 🌟 版本亮点
+- stderr 提示改为受保护写入，且 `sys.stderr` 为 None 时绝不改写 stdout（MCP 协议通道）。
+- 桌面壳只在非零退出时才算启动失败，用户自己关窗不再被降级成 Web；失败原因会打印给用户。
+
+### 🐛 问题修复
+- **降级提示改为受保护的 stderr 写入**：v2.8.0 新增的两处 `sys.stderr.write` 是 request path 上第一个未包 try/except 的 stderr 输出；宿主已关闭 stderr pipe（EPIPE）时会让整个 tool call 以异常结束，且 `MCP_DESKTOP_MODE` 来不及清掉、下次调用重演。改用与 `debug_log` 同样静默失败的 `user_notice`，并把桌面启动失败的原因（exit code、stderr 尾段）一并打印给用户——Defender 隔离、glibc、Gatekeeper 三者处置完全不同，没有原因就无法反馈。
+- **只有非零退出才算启动失败**：v2.8.0 把观察期内任何退出都当失败，用户在窗口出现后两秒内自己关掉（exit 0）也会被降级成 Web、与 v2.7.2 的关窗收尾语义冲突。现在 exit 0 沿用既有语义。
+- **`sys.stderr` 为 None 时不再改写 stdout**：`print(file=sys.stderr)` 在 pythonw 或宿主关闭 stderr 时会退回 `sys.stdout`——那是 MCP 协议通道，一行提示就足以让客户端解析失败。`debug_log` 与 `user_notice` 改共用 `_write_stderr`，先抓住 stream、None 即返回。
+- **stderr 尾段读取加上限**：native 可能把 stderr 写端留给 WebView 等后代进程，`read()` 会等到它们全部关闭；改用 `communicate(timeout=1)`，超时只报 exit code。
+
+### 🔧 其他变更
+- README 三语：「安装为应用」段落的「每次调用仍会打开系统浏览器标签页」不符实际（标签页保持连接时会重用），改为「关掉应用窗口后下次调用会打开在普通浏览器标签页」；「随即退出」改为「随即出错退出」。
+
+### ✅ 测试
+- `test_desktop_fallback.py` —— stderr 断言改在 `MCP_DEBUG=false` 下执行（conftest 默认开 debug，原测试在退回只打印 debug log 时仍会通过）；早退测试改用临时目录的假 binary，不再依赖入库的真 binary；新增：后代握着 stderr 不卡住、exit 0 不算失败、两份 launcher 字节一致（`build_desktop.py` 复制曾让两份漂移）。
+- `test_user_notice.py` —— `sys.stderr` 为 None 时 stdout 必须为空（`debug_log` 与 `user_notice` 皆测）、`user_notice` 不受 `MCP_DEBUG` 影响、stderr 已关闭时不抛出。
+
+---
+
+## [v2.8.0] - 2026-09-07 - 桌面应用程序进入仅维护状态
+
+### 🌟 版本亮点
+- 桌面应用程序（Tauri 壳）自本版起 **maintenance-only**：不再新增功能，只修安全问题与完全无法启动的兼容性问题，预计 v3 移除；binary 仍随本版发布，想继续使用请在 IDE 的 MCP 配置固定版本（见 README「桌面应用程序维护状态」）。
+- 桌面壳启动不了时（被杀毒隔离、glibc 太旧、Gatekeeper 拦下、启动后随即退出）不再空等到超时：本 process 自动改走浏览器，并把网址打印到 stderr。
+
+### 🐛 问题修复
+- **桌面模式的浏览器回退从未生效**：`launch_desktop_app` 失败时调用的 `open_browser` 会因为同一个 `MCP_DESKTOP_MODE` 环境变量而直接跳过，用户面前什么都没有，只能等到 timeout 收到「用户未回应」。现在改在唯一的分流点处理：桌面启动失败 → 清掉本 process 的 `MCP_DESKTOP_MODE` → 走既有 `smart_open_browser`（含活跃标签页检测与会话更新通知），之后每次调用都直接走 Web，不会再试桌面、再开新标签页；重启 MCP 服务器会重新读 IDE 配置再试桌面。
+- **native 启动后随即退出现在算启动失败**：两份 Python launcher 原本只 `Popen` 再等两秒，不看退出码，被 Defender 隔离或缺 glibc 时仍报告「启动成功」。现在观察期内退出即失败（附 exit code 与 stderr 尾段），交给上述回退。
+- **浏览器也打不开时不再静默**：`webbrowser.open` 返回 False（例如无桌面环境的 SSH 主机）或 WSL 三种打开方式全失败时，无条件把网址打印到 stderr，让用户能手动打开；不再只在 `MCP_DEBUG=true` 时可见。
+
+### 🔧 其他变更
+- `build-desktop.yml` 的触发路径排除 `src-tauri/python/**`：纯 Python launcher 变更不再触发四平台 native 重建与 binary 提交。
+- 两份 launcher（`src/mcp_feedback_enhanced/desktop_app/` 与 `src-tauri/python/`）同步为同一份；`build_desktop.py` 复制时不会再把发布版退回旧写法。
+- README 三语新增「桌面应用程序维护状态」与迁移说明；SECURITY.md 新增桌面组件维护范围，支持版本表区分「最新 2.x」与「固定的旧版不回补修正」。
+- 本版**不**改 Rust、不改 native binary、不改 `/ws` 的桌面 WebView Origin 白名单、不改 renovate 配置。
+
+### ✅ 测试
+- `test_desktop_fallback.py` —— 桌面模块缺失时真的把网址交给浏览器并离开桌面模式、第二次调用重用既有标签页而非重试桌面、桌面健康时完全不碰浏览器、native 随即退出视为失败、浏览器打不开时网址打印到 stderr。测试只拦最底层的 `webbrowser.open`，保留真实的桌面模式判断，修正前四项确认失败。
+
+---
+
+## [v2.7.2] - 2026-09-07 - 无人回应时明确收尾
+
+### 🌟 版本亮点
+- 等待超时或用户关闭界面时，工具改为返回明确的「用户未回应，请结束任务」指令，工具描述的使用规则同步允许在此情况停止调用，客户端不再把它当一般错误无限重试（#125）。
+- 用户关掉反馈标签页／窗口后，75 秒内未重新连接即结束等待，不再空等到 timeout（默认 10 分钟）才回应（#162）。
+
+### 🐛 问题修复
+- **超时返回改为结束指令**（[#125](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/125)）：旧版把 `TimeoutError` 交给 `ErrorHandler`，返回给模型的是「操作超时／增加超时时间设置／稍后重试」——客户端照做就是再调用一次本工具，用户不在时形成死循环。现在超时（或下述的用户关闭界面）返回「用户未回应（原因）。请视为用户已离开：直接结束本次任务并输出最终总结，不要再次调用 interactive_feedback」，附英文对照；工具描述的 USAGE RULES 也把「用户未回应」列为可停止调用的条件，避免描述与返回互相矛盾。只有等待本身的 `TimeoutError` 走这条路——取得反馈之后的存档／图片处理若抛出 `TimeoutError`（含 `OSError` 的 ETIMEDOUT），仍视为错误，不会把已到手的反馈说成没回应。
+- **关闭界面即结束等待**（[#162](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/162)）：旧版前端关闭时只清理本地资源，后端不知情，`wait_for_feedback` 一直等到 timeout。现在会话登记的 WebSocket 断开后启动 75 秒宽限计时器，期间重新连上（F5、短暂断线、另一个标签页）即取消，逾期未重连才视为用户关闭界面。75 秒的依据：后端只登记最新一条连接，旧标签页要等下一次应用层心跳（60 秒）才会被判定失效并重连，宽限必须大于「一次心跳周期 + 首次重连」，否则「开两个标签页、关掉后开的那个」会把还在的用户判成离开。这只保证正常网络下的路径；首次重连就失败而走完整个退避序列（1+2+4+8+16 秒 + jitter，再 31-36 秒）会超过宽限，视同断线收尾。提交反馈与放弃等待在同一把 lock 下线性化：`Timer.cancel()` 拦不住已开始的回调，故回调以身份比对作废；提交是原子写入，等待端读到反馈就是完整反馈（不会文字有了、图片还没处理完），反馈送达一律为准。从未有前端连上的情况（例如没开浏览器）维持原本的 timeout 行为。
+- 前端「会话超时」通知（`user_timeout`）现在会先写明原因，返回给 AI 的文字不再是默认的「等待用户反馈」。
+
+### ⚠️ 行为变更
+- 任何超过 75 秒的 WebSocket 中断——笔记本休眠、浏览器丢弃后台标签页、SSH 转发断线——现在都会以「用户已关闭反馈界面」结束等待，而不是等到 timeout。这是刻意的取舍：关掉窗口却让 AI 空等十分钟，比偶尔提早收尾更常见也更恼人。
+
+### ✅ 测试
+- `test_feedback_timeout.py` —— 超时返回必含结束指令且不再建议重试；取得反馈后的 `TimeoutError` 不得被当成没回应；工具描述允许在没回应时停止；断线宽限：在宽限内（而非 timeout）结束等待、期间重连不结束、已有反馈时不启动、回调写入 TIMEOUT 后才送达的反馈仍为准、回调在提交写到一半时到期不得返回半套反馈；`/ws` 端点的接线（登记连接断开启动宽限、重连取消）以 `TestClient.websocket_connect` 覆盖。
+- 以真实 MCP stdio round-trip 加 Chromium 验证：打开界面 → F5 → 仍在等待 → 关闭标签页 → 宽限到期后收到结束指令；无前端连接时超时同样收到结束指令。
+
+---
+
+## [v2.7.1] - 2026-09-06 - MCP_LANGUAGE 优先级与 Linux 桌面兼容性
+
+### 🌟 版本亮点
+- `MCP_LANGUAGE` 真正成为强制指定——不再被界面中先前保存的语言覆盖（#189）。
+- Linux 桌面 binary 可在 Ubuntu 22.04 / Debian 12 以上运行（glibc 需求由 2.39 降至 2.34，#165）。
+
+### 🐛 问题修复
+- **`MCP_LANGUAGE` 改为最高优先**（[#189](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/189)）：README 把它描述为「强制指定界面语言」，但检测顺序却让界面中保存的语言排在它前面，设了 `MCP_LANGUAGE=zh-CN` 仍会显示繁中。顺序对调；设置环境变量后，界面中的语言选择只在当次会话生效。
+- **Linux 桌面 binary 改在 ubuntu-22.04 构建**（[#165](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/165)）：原本在 ubuntu-latest 构建的文件需要 `GLIBC_2.39`，只能在 Ubuntu 24.04+ 运行；重建后最高需求降为 `GLIBC_2.34`。
+- **修正桌面 binary 提交流程在单平台构建时失效**：`download-artifact` 只有单一 artifact 时不会创建子目录，原本靠目录名识别平台的复制步骤会报告 0/4 并跳过提交。改为以最终文件名上传与搜索。
+
+### 🔧 其他变更
+- 修正 renovate 配置警告（`vulnerabilityAlerts.prPriority` 不合法，改以 `isVulnerabilityAlert` packageRule 表达）。
+- 依赖下限一次提高到 OSV 记录的最后漏洞修补版本（aiohttp 3.14.3、starlette 1.3.1、jinja2 3.1.6、tauri 2.11.1、tokio 1.44.2 等），实际锁定版本不变；renovate 改用 `rangeStrategy=widen`，范围内的更新不再逐个 patch 提高下限。
+
+---
+
+## [v2.7.0] - 2026-09-06 - 升级至 fastmcp 4 / mcp 2
+
+### 🌟 版本亮点
+- 升级至 fastmcp 4.x 与 MCP Python SDK 2.x；服务端对旧协议客户端保持兼容，工具与返回格式不变。
+- 修正 `ResourceManager` 临时文件清理的边界条件，消除一个随机失败的测试。
+
+### 🔧 其他变更
+- **升级 `fastmcp` 至 4.x、`mcp` 至 2.x**（取代 renovate [#239](https://github.com/Minidoracat/mcp-feedback-enhanced/pull/239)、[#240](https://github.com/Minidoracat/mcp-feedback-enhanced/pull/240)）：mcp 1.x 与 fastmcp 3.x 已进入仅收安全修补的维护模式。fastmcp 4 依赖 `mcp>=2,<3`，两者必须一起升级 —— 只合并其中一个会让依赖无法解析、包装不起来（与 #213/#217/#221/#228 同类问题）。服务端代码只需把 `ImageContent` 的构造参数改为 mcp 2 的正式字段名 `mime_type`；wire 格式仍为 `mimeType`。以 stdio 实测 `list_tools`／`get_system_info`，旧协议（2024-11-05）客户端的集成测试全部通过。
+- **修正 `ResourceManager.cleanup_temp_files` 的年龄边界**：`file_age > max_age` 改为 `>=`。`cleanup_all` 以 `max_age=0` 表示「清理所有文件」，但刚创建的文件在 Windows 时间精度下年龄恰为 0，会被漏掉。
+
+### ✅ 测试
+- `test_image_content.py` —— 不再绑定 mcp 1 的内部模块名与 snake_case 之前的 `model_dump()` 字段；改以 `type(...) is ImageContent` 与 `model_dump(by_alias=True)` 验证 wire 契约。
+
+---
+
+## [v2.6.2] - 2026-08-25 - timeout 钳制与工具返回契约
+
+### 🐛 问题修复
+- **钳制 `interactive_feedback` 的 timeout**（[#212](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/212)）：客户端有时会传入不合理的小值 —— 报告中 Cursor 传过 `timeout=1`，用户还没看清界面就「操作超时」。现在服务端会钳制到 60–86400 秒。选择钳制而非 pydantic 的 `ge`/`le` 验证，是因为验证失败会让整个 tool call 中断；对 human-in-the-loop 工具来说，以安全值继续比中断更有用。
+- **修正 `wait_for_feedback` 的提前结束逻辑**：旧版对 `timeout <= 30` 使用 `max(timeout - 1, 5)`，在 `timeout=1` 时反而把等待「延长」到 5 秒，与提前结束、避免与 MCP 层超时竞争的本意相反。
+
+### 🔧 其他变更
+- **精确声明工具返回类型**（由裸 `list` 改为 `list[TextContent | ImageContent]`），与 [#234](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/234) 相关。模糊的 `list` 让 FastMCP 无法判断内容类型，只能生成 wrap-result 的 `outputSchema`（`{"result": {"type": "array"}}` 加上 `x-fastmcp-wrap-result`），并把 content blocks 额外包成 `structuredContent`。声明精确类型后 FastMCP 正确识别为 content blocks，该 schema 消失。
+  - 这**不等于** #234 报告的违规已重现。实测 FastMCP 3.4.7 下，修复前后 `interactive_feedback` 与 `get_system_info` 的 `CallToolResult` 都含 schema 要求的 `content` 字段。完整调查说明留在该 issue。
+
+### ✅ 测试
+- `test_feedback_timeout.py` —— 钳制边界、坏类型容错、margin 不得延长等待
+- `test_tool_contract.py` —— 守住返回注解，避免退回裸 `list`
+
+---
+
+## [v2.6.1] - 2026-08-25 - 安全修复与维护恢复
+
+### 🌟 版本亮点
+移除已知的命令执行风险，并修复让新安装完全无法使用的兼容性问题。项目恢复维护，目前范围聚焦在「安全 + 装了就坏的兼容性」。
+
+### 🔒 安全修复
+- **移除命令执行功能**（[#219](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/219)）：旧版可通过**未认证**的 WebSocket `/ws` 端点发送 `run_command` 消息并执行任意程序。原本的防护是 shell metacharacter blocklist，但因为使用 `shell=False`，metacharacter 本来就不是风险点——`cat`、`curl`、`wget`、`python`、`powershell` 等可直接执行。且自动执行命令功能**默认为启用**。
+  - 此功能已**完整移除**（后端处理器、session 方法、前端 UI、设置项、i18n 文案），而非加强 blocklist。blocklist 无法安全地允许任意可执行文件。
+  - 新增 `tests/unit/test_no_command_execution.py` 防止重新引入。
+  - 影响版本：**2.6.0 及之前所有版本**。请升级。
+- **修复 Cross-Site WebSocket Hijacking（CSWSH）**：私下报告的 `GHSA-cmr5-gpm3-79vf`（critical）与 `GHSA-2wx7-r4rh-f663`（high）。浏览器开启 WebSocket **不受 same-origin policy 限制**，因此恶意网页可让用户的浏览器连上 `ws://127.0.0.1:<port>/ws` 并发送消息 —— 旧版 `/ws` 接受任何 Origin 就直接 `accept()`，配合上述 `run_command` 可升级为远程代码执行；绑定 loopback 并不能防止这点，因为浏览器本身就在本机。
+  - 修复采两层独立防御：(1) 命令执行已完全移除，升级路径消失；(2) `/ws` 在 `accept()` **之前**验证 Origin，仅允许本服务端口上的 loopback 来源、绑定主机自身、以及桌面 WebView scheme；未带 Origin 的非浏览器客户端（如桌面应用）仍放行，因为跨站页面无法移除该 header。
+  - 跨站连接在握手完成前即以 HTTP 403 拒绝。`tests/unit/test_websocket_origin.py` 使用报告者 PoC 中的实际来源作为测试用例。
+  - 感谢两位报告者提供详尽分析与可运行的 PoC。
+
+### 🐛 问题修复
+- **修复 Web UI 直接返回 500**（[#213](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/213)、[#217](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/217)、[#221](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/221)、[#228](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/228)）：新版 Starlette 变更 `TemplateResponse` 签名，旧调用方式会抛出 `TypeError: unhashable type: 'dict'`，导致以 `uvx @latest` 安装的用户完全无法打开页面。感谢 [#220](https://github.com/Minidoracat/mcp-feedback-enhanced/pull/220)（[#214](https://github.com/Minidoracat/mcp-feedback-enhanced/pull/214)、[#215](https://github.com/Minidoracat/mcp-feedback-enhanced/pull/215)、[#216](https://github.com/Minidoracat/mcp-feedback-enhanced/pull/216) 亦报告同一问题）。
+- **修复 `session_id` 未带入 template**：`feedback.html` 需要它初始化前端，但 context 从未提供。
+- **修复图片序列化错误**（[#154](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/154)、[#168](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/168)、[#180](https://github.com/Minidoracat/mcp-feedback-enhanced/issues/180) 等）：改用标准 `mcp.types.ImageContent`。旧实现返回 `fastmcp.utilities.types.Image`，在 FastMCP 3.x 会失败于 `Output validation error: outputSchema defined but no structured output returned`。已用真实 MCP round-trip 验证 PNG/JPEG/GIF/WebP。感谢 [#171](https://github.com/Minidoracat/mcp-feedback-enhanced/pull/171)。
+
+### 🔧 其他变更
+- **依赖加上版本上限**：避免上游破坏性变更再次让安装失效。`starlette` 改为显式直接依赖。
+- **文档修正**：移除「大幅节省平台成本」宣称（Cursor 已改为 token 计费，前提不成立）；`MCP_WEB_HOST=0.0.0.0` 不再作为推荐方案，改标示安全警告并建议 SSH 端口转发。
+- 新增 [SECURITY.md](../SECURITY.md)：维护范围、已知风险、报告渠道。
+
+### ⚠️ 已知未修问题
+以下为既有限制，不在目前的维护范围内：
+- Web UI 与 WebSocket **无认证机制**、无 Origin 验证
+- 会话状态流转、i18n 环境检测、cleanup timer 相关的既有测试失败
+
+---
+
 ## [v2.6.0] - 2025-06-28 - 智能会话管理与自动化功能强化
 
 ### 🌟 版本亮点

@@ -27,82 +27,11 @@ from .debug import i18n_debug_log as debug_log
 class I18nManager:
     """國際化管理器 - 新架構版本"""
 
-    # Legacy key -> new key mapping (class-level constant, created once)
-    _LEGACY_MAPPING: dict[str, str] = {
-        # 應用程式
-        "app_title": "app.title",
-        "project_directory": "app.projectDirectory",
-        "language": "app.language",
-        "settings": "app.settings",
-        # 分頁
-        "feedback_tab": "tabs.feedback",
-        "command_tab": "tabs.command",
-        "images_tab": "tabs.images",
-        # 回饋
-        "feedback_title": "feedback.title",
-        "feedback_description": "feedback.description",
-        "feedback_placeholder": "feedback.placeholder",
-        # 命令
-        "command_title": "command.title",
-        "command_description": "command.description",
-        "command_placeholder": "command.placeholder",
-        "command_output": "command.output",
-        # 圖片
-        "images_title": "images.title",
-        "images_select": "images.select",
-        "images_paste": "images.paste",
-        "images_clear": "images.clear",
-        "images_status": "images.status",
-        "images_status_with_size": "images.statusWithSize",
-        "images_drag_hint": "images.dragHint",
-        "images_delete_confirm": "images.deleteConfirm",
-        "images_delete_title": "images.deleteTitle",
-        "images_size_warning": "images.sizeWarning",
-        "images_format_error": "images.formatError",
-        # 按鈕
-        "submit": "buttons.submit",
-        "cancel": "buttons.cancel",
-        "close": "buttons.close",
-        "clear": "buttons.clear",
-        "btn_submit_feedback": "buttons.submitFeedback",
-        "btn_cancel": "buttons.cancel",
-        "btn_select_files": "buttons.selectFiles",
-        "btn_paste_clipboard": "buttons.pasteClipboard",
-        "btn_clear_all": "buttons.clearAll",
-        "btn_run_command": "buttons.runCommand",
-        # 狀態
-        "feedback_submitted": "status.feedbackSubmitted",
-        "feedback_cancelled": "status.feedbackCancelled",
-        "timeout_message": "status.timeoutMessage",
-        "error_occurred": "status.errorOccurred",
-        "loading": "status.loading",
-        "connecting": "status.connecting",
-        "connected": "status.connected",
-        "disconnected": "status.disconnected",
-        "uploading": "status.uploading",
-        "upload_success": "status.uploadSuccess",
-        "upload_failed": "status.uploadFailed",
-        "command_running": "status.commandRunning",
-        "command_finished": "status.commandFinished",
-        "paste_success": "status.pasteSuccess",
-        "paste_failed": "status.pasteFailed",
-        "invalid_file_type": "status.invalidFileType",
-        "file_too_large": "status.fileTooLarge",
-        # 其他
-        "ai_summary": "aiSummary",
-        "language_selector": "languageSelector",
-        "language_zh_tw": "languageNames.zhTw",
-        "language_en": "languageNames.en",
-        "language_zh_cn": "languageNames.zhCn",
-        # 測試
-        "test_web_ui_summary": "test.webUiSummary",
-    }
-
     def __init__(self):
         self._current_language = None
         self._translations = {}
-        self._supported_languages = ["zh-CN", "en"]
-        self._fallback_language = "zh-CN"
+        self._supported_languages = ["zh-CN", "zh-TW", "en"]
+        self._fallback_language = "zh-TW"
         self._config_file = self._get_config_file_path()
         self._locales_dir = Path(__file__).parent / "web" / "locales"
 
@@ -144,21 +73,23 @@ class I18nManager:
 
     def _detect_language(self) -> str:
         """自動偵測語言"""
-        # 1. 優先使用用戶保存的語言設定
-        saved_lang = self._load_saved_language()
-        if saved_lang and saved_lang in self._supported_languages:
-            return saved_lang
-
-        # 2. 檢查環境變數
+        # 1. MCP_LANGUAGE 是「強制指定」，優先於介面中保存的設定（見 #189）
         env_lang = os.getenv("MCP_LANGUAGE", "").strip()
         if env_lang and env_lang in self._supported_languages:
             return env_lang
+
+        # 2. 用戶在介面中保存的語言設定
+        saved_lang = self._load_saved_language()
+        if saved_lang and saved_lang in self._supported_languages:
+            return saved_lang
 
         # 3. 檢查其他環境變數（LANG, LC_ALL 等）
         for env_var in ["LANG", "LC_ALL", "LC_MESSAGES", "LANGUAGE"]:
             env_value = os.getenv(env_var, "").strip()
             if env_value:
-                if env_value.startswith("zh"):
+                if env_value.startswith("zh_TW") or env_value.startswith("zh_Hant"):
+                    return "zh-TW"
+                if env_value.startswith("zh_CN") or env_value.startswith("zh_Hans"):
                     return "zh-CN"
                 if env_value.startswith("en"):
                     return "en"
@@ -169,7 +100,13 @@ class I18nManager:
                 # 獲取系統語言
                 system_locale = locale.getdefaultlocale()[0]
                 if system_locale:
-                    if system_locale.startswith("zh"):
+                    if system_locale.startswith("zh_TW") or system_locale.startswith(
+                        "zh_Hant"
+                    ):
+                        return "zh-TW"
+                    if system_locale.startswith("zh_CN") or system_locale.startswith(
+                        "zh_Hans"
+                    ):
                         return "zh-CN"
                     if system_locale.startswith("en"):
                         return "en"
@@ -202,7 +139,7 @@ class I18nManager:
 
     def get_current_language(self) -> str:
         """獲取當前語言"""
-        return self._current_language or "zh-CN"
+        return self._current_language or "zh-TW"
 
     def set_language(self, language: str) -> bool:
         """設定語言"""
@@ -277,8 +214,72 @@ class I18nManager:
         self, translations: dict[str, Any], key: str
     ) -> str | None:
         """獲取舊格式翻譯的兼容方法"""
+        # 舊鍵到新鍵的映射
+        legacy_mapping = {
+            # 應用程式
+            "app_title": "app.title",
+            "project_directory": "app.projectDirectory",
+            "language": "app.language",
+            "settings": "app.settings",
+            # 分頁
+            "feedback_tab": "tabs.feedback",
+            "images_tab": "tabs.images",
+            # 回饋
+            "feedback_title": "feedback.title",
+            "feedback_description": "feedback.description",
+            "feedback_placeholder": "feedback.placeholder",
+            # 圖片
+            "images_title": "images.title",
+            "images_select": "images.select",
+            "images_paste": "images.paste",
+            "images_clear": "images.clear",
+            "images_status": "images.status",
+            "images_status_with_size": "images.statusWithSize",
+            "images_drag_hint": "images.dragHint",
+            "images_delete_confirm": "images.deleteConfirm",
+            "images_delete_title": "images.deleteTitle",
+            "images_size_warning": "images.sizeWarning",
+            "images_format_error": "images.formatError",
+            # 按鈕
+            "submit": "buttons.submit",
+            "cancel": "buttons.cancel",
+            "close": "buttons.close",
+            "clear": "buttons.clear",
+            "btn_submit_feedback": "buttons.submitFeedback",
+            "btn_cancel": "buttons.cancel",
+            "btn_select_files": "buttons.selectFiles",
+            "btn_paste_clipboard": "buttons.pasteClipboard",
+            "btn_clear_all": "buttons.clearAll",
+            # 狀態
+            "feedback_submitted": "status.feedbackSubmitted",
+            "feedback_cancelled": "status.feedbackCancelled",
+            "timeout_message": "status.timeoutMessage",
+            "error_occurred": "status.errorOccurred",
+            "loading": "status.loading",
+            "connecting": "status.connecting",
+            "connected": "status.connected",
+            "disconnected": "status.disconnected",
+            "uploading": "status.uploading",
+            "upload_success": "status.uploadSuccess",
+            "upload_failed": "status.uploadFailed",
+            "command_running": "status.commandRunning",
+            "command_finished": "status.commandFinished",
+            "paste_success": "status.pasteSuccess",
+            "paste_failed": "status.pasteFailed",
+            "invalid_file_type": "status.invalidFileType",
+            "file_too_large": "status.fileTooLarge",
+            # 其他
+            "ai_summary": "aiSummary",
+            "language_selector": "languageSelector",
+            "language_zh_tw": "languageNames.zhTw",
+            "language_en": "languageNames.en",
+            "language_zh_cn": "languageNames.zhCn",
+            # 測試
+            "test_web_ui_summary": "test.webUiSummary",
+        }
+
         # 檢查是否有對應的新鍵
-        new_key = self._LEGACY_MAPPING.get(key)
+        new_key = legacy_mapping.get(key)
         if new_key:
             return self._get_nested_value(translations, new_key)
 
@@ -291,7 +292,9 @@ class I18nManager:
 
         # 根據語言代碼構建鍵值
         lang_key = None
-        if language_code == "zh-CN":
+        if language_code == "zh-TW":
+            lang_key = "languageNames.zhTw"
+        elif language_code == "zh-CN":
             lang_key = "languageNames.zhCn"
         elif language_code == "en":
             lang_key = "languageNames.en"

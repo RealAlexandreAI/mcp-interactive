@@ -4,37 +4,24 @@ Web 回饋會話模型
 ===============
 
 管理 Web 回饋會話的資料和邏輯。
-
-注意：此文件中的 subprocess 調用已經過安全處理，使用 shlex.split() 解析命令
-並禁用 shell=True 以防止命令注入攻擊。
 """
 
 import asyncio
 import base64
-import os
-import shlex
-import subprocess
 import threading
 import time
-from collections import deque
 from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
-import psutil
 from fastapi import WebSocket
-from starlette.websockets import WebSocketState
 
 from ...debug import web_debug_log as debug_log
 from ...utils.error_handler import ErrorHandler, ErrorType
-from ...utils.resource_manager import get_resource_manager, register_process
+from ...utils.resource_manager import get_resource_manager
 from ..constants import get_message_code
-
-
-# Reusable psutil.Process for the current process (avoids repeated construction)
-_current_process = psutil.Process()
 
 
 class SessionStatus(Enum):
@@ -61,7 +48,7 @@ class CleanupReason(Enum):
 
 
 # 常數定義
-MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB safety cap (frontend compresses to ~1MB)
+MAX_IMAGE_SIZE = 1 * 1024 * 1024  # 1MB 圖片大小限制
 SUPPORTED_IMAGE_TYPES = {
     "image/png",
     "image/jpeg",
@@ -72,91 +59,16 @@ SUPPORTED_IMAGE_TYPES = {
 }
 TEMP_DIR = Path.home() / ".cache" / "interactive-feedback-mcp-web"
 
+# 最後一條登記的前端連線斷開後，等多久才把會話視為「使用者已關閉介面」（#162）。
+# 後端只登記最新的一條 WebSocket：舊分頁的連線要等它下一次應用層心跳
+# （websocket-manager.js，60 秒）才會被判定失效並重連，寬限必須大於「一次心跳
+# 週期 + 首次重連」，否則「開兩個分頁、關掉後開的那個」會把還在的使用者判成離開。
+# 75 秒只保證正常網路下的這條路徑；首次重連就失敗而走完整個退避序列
+# （1+2+4+8+16 秒 + jitter，再 31-36 秒）會超過寬限，那種情況視同斷線收尾。
+CLIENT_DISCONNECT_GRACE_SECONDS = 75
+
 # 訊息代碼現在從統一的常量文件導入
 # 使用 get_message_code 函數來獲取訊息代碼
-
-
-# Image magic bytes for content-type validation
-_IMAGE_MAGIC = (
-    (b"\x89PNG\r\n\x1a\n", "png"),
-    (b"\xff\xd8\xff", "jpeg"),
-    (b"GIF87a", "gif"),
-    (b"GIF89a", "gif"),
-    (b"BM", "bmp"),
-)
-
-
-def _validate_image_bytes(data: bytes) -> bool:
-    """Return True if *data* starts with a recognised image magic signature."""
-    for magic, _ in _IMAGE_MAGIC:
-        if data.startswith(magic):
-            return True
-    # WebP: must start with RIFF and have WEBP at offset 8
-    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
-        return True
-    return False
-
-
-def _safe_parse_command(command: str) -> list[str]:
-    """
-    安全解析命令字符串，避免 shell 注入攻擊
-
-    Security note: The primary defense is shell=False in subprocess.Popen,
-    which prevents shell interpretation entirely.  This blacklist is a
-    secondary layer that blocks common dangerous patterns but is NOT a
-    complete security boundary.  Do not rely on it as the sole protection.
-
-    Args:
-        command: 命令字符串
-
-    Returns:
-        list[str]: 解析後的命令參數列表
-
-    Raises:
-        ValueError: 如果命令包含不安全的字符
-    """
-    try:
-        # Reject control characters (newlines, carriage returns, null bytes)
-        # that can act as command separators on Unix systems
-        for ch in ("\n", "\r", "\x00"):
-            if ch in command:
-                raise ValueError(f"命令包含不安全的控制字符: {ch!r}")
-
-        # 使用 shlex 安全解析命令
-        parsed = shlex.split(command)
-
-        # 基本安全檢查：禁止某些危險字符和命令
-        dangerous_patterns = [
-            ";",
-            "&&",
-            "||",
-            "|",
-            ">",
-            "<",
-            "`",
-            "$(",
-            "${",
-            "rm -rf",
-            "del /f",
-            "format",
-            "fdisk",
-            "mkfs",
-            "dd if=",
-        ]
-
-        command_lower = command.lower()
-        for pattern in dangerous_patterns:
-            if pattern in command_lower:
-                raise ValueError(f"命令包含不安全的模式: {pattern}")
-
-        if not parsed:
-            raise ValueError("空命令")
-
-        return parsed
-
-    except Exception as e:
-        debug_log(f"命令解析失敗: {e}")
-        raise ValueError(f"無法安全解析命令: {e}") from e
 
 
 class WebFeedbackSession:
@@ -178,9 +90,7 @@ class WebFeedbackSession:
         self.images: list[dict] = []
         self.settings: dict[str, Any] = {}  # 圖片設定
         self.feedback_completed = threading.Event()
-        self.process: subprocess.Popen | None = None
-        self.command_logs: deque[str] = deque(maxlen=10000)
-        self.user_messages: deque[dict] = deque(maxlen=100)
+        self.user_messages: list[dict] = []  # 用戶消息記錄
         self._cleanup_done = False  # 防止重複清理
         # 移除語言設定，改由前端處理
 
@@ -215,12 +125,13 @@ class WebFeedbackSession:
         self.user_timeout_enabled = False
         self.user_timeout_seconds = 3600  # 預設 1 小時
         self.user_timeout_timer: threading.Timer | None = None
-        self.user_timeout_deadline: float | None = None
-        self.user_timeout_remaining: float = 0.0
 
-        # MCP wait_for_feedback 超時計時控制（可被前端暫停/恢復）
-        self._timeout_control_lock = threading.Lock()
-        self._wait_timeout_paused = False
+        # 前端斷線後的寬限計時器；期間若重新連上就取消（#162）
+        self.disconnect_timer: threading.Timer | None = None
+        # 序列化「回饋提交」與「放棄等待」兩種結果的決定：submit_feedback 的寫入、
+        # 計時器回呼的放棄、wait_for_feedback 的讀取都在此 lock 內，避免回呼
+        # 在提交寫到一半時插入，讓等待端拿到文字有了、圖片還沒的半套回饋。
+        self._outcome_lock = threading.Lock()
 
         # 確保臨時目錄存在
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -401,19 +312,16 @@ class WebFeedbackSession:
             try:
                 if not self._cleanup_done and self.is_expired():
                     debug_log(f"會話 {self.session_id} 觸發自動清理（過期）")
-                    try:
-                        loop = asyncio.get_running_loop()
-                    except RuntimeError:
-                        loop = None
+                    # 使用異步方式執行清理
+                    import asyncio
 
-                    if loop and loop.is_running():
-                        # Schedule coroutine from this background thread
-                        asyncio.run_coroutine_threadsafe(
-                            self._cleanup_resources_enhanced(CleanupReason.EXPIRED),
-                            loop,
+                    try:
+                        loop = asyncio.get_event_loop()
+                        loop.create_task(
+                            self._cleanup_resources_enhanced(CleanupReason.EXPIRED)
                         )
-                    else:
-                        # No running event loop, use sync cleanup
+                    except RuntimeError:
+                        # 如果沒有事件循環，使用同步清理
                         self._cleanup_sync_enhanced(CleanupReason.EXPIRED)
                 else:
                     # 如果還沒過期，重新安排定時器
@@ -471,8 +379,6 @@ class WebFeedbackSession:
                 "is_active": self.is_active(),
                 "status": self.status.value,
                 "has_websocket": self.websocket is not None,
-                "has_process": self.process is not None,
-                "command_logs_count": len(self.command_logs),
                 "images_count": len(self.images),
             }
         )
@@ -489,89 +395,78 @@ class WebFeedbackSession:
         debug_log(f"更新會話超時設定: enabled={enabled}, seconds={timeout_seconds}")
 
         # 先停止現有的計時器
-        self._cancel_user_timeout_timer(reset_remaining=True)
+        if self.user_timeout_timer:
+            self.user_timeout_timer.cancel()
+            self.user_timeout_timer = None
 
         self.user_timeout_enabled = enabled
         self.user_timeout_seconds = timeout_seconds
 
         # 如果啟用且會話還在等待中，啟動計時器
         if enabled and self.status == SessionStatus.WAITING:
-            self._start_user_timeout_timer(timeout_seconds)
 
-    def _start_user_timeout_timer(self, timeout_seconds: float):
-        """啟動（或重啟）用戶超時計時器。"""
-        if timeout_seconds <= 0:
+            def timeout_handler():
+                with self._outcome_lock:
+                    if self.feedback_completed.is_set():
+                        return
+                    debug_log(f"用戶設定的超時已到: {self.session_id}")
+                    self.status = SessionStatus.TIMEOUT
+                    self.status_message = "用戶設定的會話超時"
+                    # 設置完成事件，讓 wait_for_feedback 結束等待
+                    self.feedback_completed.set()
+
+            self.user_timeout_timer = threading.Timer(timeout_seconds, timeout_handler)
+            self.user_timeout_timer.start()
+            debug_log(f"已啟動用戶超時計時器: {timeout_seconds}秒")
+
+    def _cancel_disconnect_timer(self) -> None:
+        with self._outcome_lock:
+            if self.disconnect_timer:
+                self.disconnect_timer.cancel()
+                self.disconnect_timer = None
+
+    def on_client_connected(self) -> None:
+        """前端建立連線：取消斷線寬限計時器"""
+        if self.disconnect_timer:
+            self._cancel_disconnect_timer()
+            debug_log(f"會話 {self.session_id} 前端已重新連線，取消斷線寬限")
+
+    def on_client_disconnected(self) -> None:
+        """前端斷線：啟動寬限計時器，到期仍無連線則視為使用者關閉了介面
+
+        舊版在使用者關掉分頁／視窗後，會一直等到 timeout（預設 600 秒）
+        才回應 AI，期間整個對話卡住（#162）。
+        """
+        if self.feedback_completed.is_set():
             return
 
-        self._cancel_user_timeout_timer(reset_remaining=False)
-
-        def timeout_handler():
-            debug_log(f"用戶設定的超時已到: {self.session_id}")
-            # 設置超時標誌
-            self.status = SessionStatus.TIMEOUT
-            self.status_message = "用戶設定的會話超時"
-            # 設置完成事件，讓 wait_for_feedback 結束等待
-            self.feedback_completed.set()
-
-        self.user_timeout_remaining = timeout_seconds
-        self.user_timeout_deadline = time.monotonic() + timeout_seconds
-        self.user_timeout_timer = threading.Timer(timeout_seconds, timeout_handler)
-        self.user_timeout_timer.start()
-        debug_log(f"已啟動用戶超時計時器: {timeout_seconds:.2f}秒")
-
-    def _cancel_user_timeout_timer(self, reset_remaining: bool):
-        """停止用戶超時計時器並按需重置剩餘時間。"""
-        if self.user_timeout_timer:
-            self.user_timeout_timer.cancel()
-            self.user_timeout_timer = None
-        self.user_timeout_deadline = None
-        if reset_remaining:
-            self.user_timeout_remaining = 0.0
-
-    def pause_timeout_timers(self):
-        """暫停 MCP 等待超時 + 用戶超時計時器。"""
-        with self._timeout_control_lock:
-            if self._wait_timeout_paused:
-                return
-            self._wait_timeout_paused = True
-
-            # 暫停用戶超時計時器並保存剩餘時間
-            if self.user_timeout_deadline is not None:
-                self.user_timeout_remaining = max(
-                    0.0, self.user_timeout_deadline - time.monotonic()
+        def give_up():
+            # Timer.cancel() 攔不住已開始執行的回呼：在 lock 內以身分比對確認
+            # 這個計時器仍是現役的；被重連或清理取消過的就直接作廢。
+            with self._outcome_lock:
+                if (
+                    self.disconnect_timer is not timer
+                    or self.feedback_completed.is_set()
+                ):
+                    return
+                self.disconnect_timer = None
+                debug_log(
+                    f"會話 {self.session_id} 前端斷線超過 {CLIENT_DISCONNECT_GRACE_SECONDS} 秒，視為使用者關閉介面"
                 )
-            self._cancel_user_timeout_timer(reset_remaining=False)
+                self.status = SessionStatus.TIMEOUT
+                self.status_message = "使用者已關閉回饋介面"
+                self.feedback_completed.set()
 
+        timer = threading.Timer(CLIENT_DISCONNECT_GRACE_SECONDS, give_up)
+        timer.daemon = True
+        with self._outcome_lock:
+            if self.disconnect_timer:
+                self.disconnect_timer.cancel()
+            self.disconnect_timer = timer
+            timer.start()
         debug_log(
-            f"會話 {self.session_id} 超時計時已暫停，剩餘: {self.user_timeout_remaining:.2f}秒"
+            f"會話 {self.session_id} 前端斷線，{CLIENT_DISCONNECT_GRACE_SECONDS} 秒內未重連將結束等待"
         )
-
-    def resume_timeout_timers(self):
-        """恢復 MCP 等待超時 + 用戶超時計時器。"""
-        should_restart_user_timeout = False
-        remaining = 0.0
-
-        with self._timeout_control_lock:
-            if not self._wait_timeout_paused:
-                return
-            self._wait_timeout_paused = False
-
-            should_restart_user_timeout = (
-                self.user_timeout_enabled
-                and self.status == SessionStatus.WAITING
-                and self.user_timeout_remaining > 0
-            )
-            remaining = self.user_timeout_remaining
-
-        if should_restart_user_timeout:
-            self._start_user_timeout_timer(remaining)
-
-        debug_log(f"會話 {self.session_id} 超時計時已恢復")
-
-    def is_wait_timeout_paused(self) -> bool:
-        """檢查 MCP wait_for_feedback 超時計時是否處於暫停狀態。"""
-        with self._timeout_control_lock:
-            return self._wait_timeout_paused
 
     async def wait_for_feedback(self, timeout: int = 600) -> dict[str, Any]:
         """
@@ -584,54 +479,41 @@ class WebFeedbackSession:
             dict: 回饋結果
         """
         try:
-            # 使用比 MCP 超時稍短的時間（提前處理，避免邊界競爭）
-            # 對於短超時（<30秒），提前1秒；對於長超時，提前5秒
-            if timeout <= 30:
-                actual_timeout = max(timeout - 1, 5)  # 短超時提前1秒，最少5秒
-            else:
-                actual_timeout = timeout - 5  # 長超時提前5秒
+            # 比呼叫端的超時稍早結束，避免與 MCP 層的超時競爭。
+            # 短超時只讓 1 秒，長超時讓 5 秒；下限為 1 秒 ——
+            # 舊版對 timeout<=30 用 max(timeout-1, 5)，在 timeout=1 時反而「延長」到 5 秒，
+            # 與提前結束的本意相反（見 #212）。
+            margin = 5 if timeout > 30 else 1
+            actual_timeout = max(timeout - margin, 1)
             debug_log(
                 f"會話 {self.session_id} 開始等待回饋，超時時間: {actual_timeout} 秒（原始: {timeout} 秒）"
             )
 
-            loop = asyncio.get_running_loop()
-            remaining_timeout = float(actual_timeout)
-            wait_slice_seconds = 0.25
-            completed = False
+            loop = asyncio.get_event_loop()
 
-            # 使用分片等待，讓「暫停超時計時」可以即時生效
-            while remaining_timeout > 0:
-                if self.feedback_completed.is_set():
-                    completed = True
-                    break
+            def wait_in_thread():
+                return self.feedback_completed.wait(actual_timeout)
 
-                if self.is_wait_timeout_paused():
-                    await asyncio.sleep(0.1)
-                    continue
-
-                step = min(wait_slice_seconds, remaining_timeout)
-                step_start = time.monotonic()
-
-                def wait_in_thread():
-                    return self.feedback_completed.wait(step)
-
-                completed = await loop.run_in_executor(None, wait_in_thread)
-                if completed:
-                    break
-
-                elapsed = max(0.0, time.monotonic() - step_start)
-                remaining_timeout -= min(elapsed, step)
+            completed = await loop.run_in_executor(None, wait_in_thread)
 
             if completed:
-                # 檢查是否是用戶設定的超時
-                if self.status == SessionStatus.TIMEOUT and self.user_timeout_enabled:
-                    debug_log(f"會話 {self.session_id} 因用戶設定超時而結束")
+                # 未收到回饋就被叫醒：使用者設定的超時、或使用者關閉了介面。
+                # 在 lock 內讀：提交是原子寫入，讀到 feedback_result 就是完整回饋；
+                # 回呼即使在提交後才把狀態寫成 TIMEOUT，也以回饋為準。
+                with self._outcome_lock:
+                    gave_up = (
+                        self.status == SessionStatus.TIMEOUT
+                        and self.feedback_result is None
+                    )
+                if gave_up:
+                    debug_log(
+                        f"會話 {self.session_id} 未取得回饋即結束: {self.status_message}"
+                    )
                     await self._cleanup_resources_on_timeout()
-                    raise TimeoutError("會話已因用戶設定的超時而關閉")
+                    raise TimeoutError(self.status_message)
 
                 debug_log(f"會話 {self.session_id} 收到用戶回饋")
                 return {
-                    "logs": "\n".join(self.command_logs),
                     "interactive_feedback": self.feedback_result or "",
                     "images": self.images,
                     "settings": self.settings,
@@ -665,17 +547,18 @@ class WebFeedbackSession:
             images: 圖片列表
             settings: 圖片設定（可選）
         """
-        self.feedback_result = feedback[:65536] if feedback else feedback
-        # 先設置設定，再處理圖片（因為處理圖片時需要用到設定）
-        self.settings = settings or {}
-        self.images = self._process_images(images)
+        # 整段寫入在 outcome lock 內原子完成：等待端要嘛看到完整回饋，
+        # 要嘛什麼都沒看到，不會拿到文字有了、圖片還沒處理完的半套。
+        with self._outcome_lock:
+            # 先設置設定，再處理圖片（因為處理圖片時需要用到設定）
+            self.settings = settings or {}
+            self.images = self._process_images(images)
+            self.feedback_result = feedback
 
-        # Submit feedback: advance to FEEDBACK_SUBMITTED
-        # (WAITING -> ACTIVE -> FEEDBACK_SUBMITTED)
-        self.next_step()  # WAITING -> ACTIVE
-        self.next_step("Feedback submitted, waiting for next MCP call")  # ACTIVE -> FEEDBACK_SUBMITTED
+            # 進入下一步：等待中 → 已提交反饋
+            self.next_step("已送出反饋，等待下次 MCP 調用")
 
-        self.feedback_completed.set()
+            self.feedback_completed.set()
 
         # 發送反饋已收到的消息給前端
         if self.websocket:
@@ -690,6 +573,8 @@ class WebFeedbackSession:
                 )
 
                 # 檢查是否為桌面模式，如果是則立即關閉桌面應用程式
+                import os
+
                 if os.environ.get("MCP_DESKTOP_MODE", "").lower() == "true":
                     debug_log("桌面模式：反饋提交後立即關閉桌面應用程式")
 
@@ -710,18 +595,13 @@ class WebFeedbackSession:
 
     def add_user_message(self, message_data: dict[str, Any]) -> None:
         """添加用戶消息記錄"""
-        # Store metadata only — strip full image data to prevent memory bloat
-        raw_images = message_data.get("images", [])
-        image_meta = [
-            {"name": img.get("name", "unknown"), "size": img.get("size", 0)}
-            for img in raw_images
-        ]
+        import time
 
+        # 創建用戶消息記錄
         user_message = {
             "timestamp": int(time.time() * 1000),  # 毫秒時間戳
             "content": message_data.get("content", ""),
-            "images_meta": image_meta,
-            "images_count": len(raw_images),
+            "images": message_data.get("images", []),
             "submission_method": message_data.get("submission_method", "manual"),
             "type": "feedback",
         }
@@ -743,15 +623,18 @@ class WebFeedbackSession:
         """
         processed_images = []
 
+        # 從設定中獲取圖片大小限制，如果沒有設定則使用預設值
+        size_limit = self.settings.get("image_size_limit", MAX_IMAGE_SIZE)
+
         for img in images:
             try:
                 if not all(key in img for key in ["name", "data", "size"]):
                     continue
 
-                # Safety cap check
-                if img["size"] > MAX_IMAGE_SIZE:
+                # 檢查文件大小（只有當限制大於0時才檢查）
+                if size_limit > 0 and img["size"] > size_limit:
                     debug_log(
-                        f"圖片 {img['name']} 超過大小限制 ({MAX_IMAGE_SIZE} bytes)，跳過"
+                        f"圖片 {img['name']} 超過大小限制 ({size_limit} bytes)，跳過"
                     )
                     continue
 
@@ -767,11 +650,6 @@ class WebFeedbackSession:
 
                 if len(image_bytes) == 0:
                     debug_log(f"圖片 {img['name']} 數據為空，跳過")
-                    continue
-
-                # Validate image content by checking magic bytes
-                if not _validate_image_bytes(image_bytes):
-                    debug_log(f"圖片 {img['name']} magic bytes 驗證失敗，跳過")
                     continue
 
                 processed_images.append(
@@ -791,115 +669,6 @@ class WebFeedbackSession:
                 continue
 
         return processed_images
-
-    def add_log(self, log_entry: str):
-        """添加命令日誌"""
-        self.command_logs.append(log_entry)
-
-    async def run_command(self, command: str):
-        """執行命令並透過 WebSocket 發送輸出（安全版本）"""
-        if self.process:
-            # 終止現有進程
-            try:
-                self.process.terminate()
-                self.process.wait(timeout=5)
-            except:
-                try:
-                    self.process.kill()
-                except:
-                    pass
-            self.process = None
-
-        try:
-            debug_log(f"執行命令: {command}")
-
-            # 安全解析命令
-            try:
-                parsed_command = _safe_parse_command(command)
-            except ValueError as e:
-                error_msg = f"命令安全檢查失敗: {e}"
-                debug_log(error_msg)
-                if self.websocket:
-                    await self.websocket.send_json(
-                        {"type": "command_error", "error": error_msg}
-                    )
-                return
-
-            # 使用安全的方式執行命令（不使用 shell=True）
-            self.process = subprocess.Popen(
-                parsed_command,
-                shell=False,  # 安全：不使用 shell
-                cwd=self.project_directory,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                universal_newlines=True,
-            )
-
-            # 註冊進程到資源管理器
-            register_process(
-                self.process,
-                description=f"WebFeedbackSession-{self.session_id}-command",
-                auto_cleanup=True,
-            )
-
-            # 在背景線程中讀取輸出
-            async def read_output():
-                loop = asyncio.get_running_loop()
-                try:
-                    # 使用線程池執行器來處理阻塞的讀取操作
-                    def read_line():
-                        if self.process and self.process.stdout:
-                            return self.process.stdout.readline()
-                        return ""
-
-                    while True:
-                        line = await loop.run_in_executor(None, read_line)
-                        if not line:
-                            break
-
-                        self.add_log(line.rstrip())
-                        if self.websocket:
-                            try:
-                                await self.websocket.send_json(
-                                    {"type": "command_output", "output": line}
-                                )
-                            except Exception as e:
-                                debug_log(f"WebSocket 發送失敗: {e}")
-                                break
-
-                except Exception as e:
-                    debug_log(f"讀取命令輸出錯誤: {e}")
-                finally:
-                    # 等待進程完成
-                    if self.process:
-                        exit_code = self.process.wait()
-
-                        # 從資源管理器取消註冊進程
-                        self.resource_manager.unregister_process(self.process.pid)
-
-                        # 發送命令完成信號
-                        if self.websocket:
-                            try:
-                                await self.websocket.send_json(
-                                    {"type": "command_complete", "exit_code": exit_code}
-                                )
-                            except Exception as e:
-                                debug_log(f"發送完成信號失敗: {e}")
-
-            # 啟動異步任務讀取輸出
-            asyncio.create_task(read_output())
-
-        except Exception as e:
-            debug_log(f"執行命令錯誤: {e}")
-            if self.websocket:
-                try:
-                    await self.websocket.send_json(
-                        {"type": "command_error", "error": str(e)}
-                    )
-                except:
-                    pass
 
     async def _cleanup_resources_on_timeout(self):
         """超時時清理所有資源（保持向後兼容）"""
@@ -926,8 +695,11 @@ class WebFeedbackSession:
         try:
             # 記錄清理前的內存使用（如果可能）
             try:
-                memory_before = _current_process.memory_info().rss
-            except Exception:
+                import psutil
+
+                process = psutil.Process()
+                memory_before = process.memory_info().rss
+            except:
                 pass
 
             # 1. 取消自動清理定時器
@@ -938,10 +710,14 @@ class WebFeedbackSession:
 
             # 1.5. 取消用戶超時計時器
             if self.user_timeout_timer:
+                self.user_timeout_timer.cancel()
+                self.user_timeout_timer = None
                 resources_cleaned += 1
-            self._cancel_user_timeout_timer(reset_remaining=True)
-            with self._timeout_control_lock:
-                self._wait_timeout_paused = False
+
+            # 1.6. 取消斷線寬限計時器
+            if self.disconnect_timer:
+                self._cancel_disconnect_timer()
+                resources_cleaned += 1
 
             # 2. 關閉 WebSocket 連接
             if self.websocket:
@@ -977,38 +753,20 @@ class WebFeedbackSession:
                 finally:
                     self.websocket = None
 
-            # 3. 終止正在運行的命令進程
-            if self.process:
-                try:
-                    self.process.terminate()
-                    try:
-                        self.process.wait(timeout=3)
-                        debug_log(f"會話 {self.session_id} 命令進程已正常終止")
-                    except subprocess.TimeoutExpired:
-                        self.process.kill()
-                        debug_log(f"會話 {self.session_id} 命令進程已強制終止")
-                    resources_cleaned += 1
-                except Exception as e:
-                    debug_log(f"終止命令進程時發生錯誤: {e}")
-                finally:
-                    self.process = None
-
-            # 4. 設置完成事件（防止其他地方還在等待）
+            # 3. 設置完成事件（防止其他地方還在等待）
             self.feedback_completed.set()
 
-            # 5. 清理臨時數據
-            logs_count = len(self.command_logs)
+            # 4. 清理臨時數據
             images_count = len(self.images)
 
-            self.command_logs.clear()
             self.images.clear()
             self.settings.clear()
 
-            if logs_count > 0 or images_count > 0:
-                resources_cleaned += logs_count + images_count
-                debug_log(f"清理了 {logs_count} 條日誌和 {images_count} 張圖片")
+            if images_count > 0:
+                resources_cleaned += images_count
+                debug_log(f"清理了 {images_count} 張圖片")
 
-            # 6. 更新會話狀態
+            # 5. 更新會話狀態
             if reason == CleanupReason.EXPIRED:
                 self.status = SessionStatus.EXPIRED
             elif reason == CleanupReason.TIMEOUT:
@@ -1018,7 +776,7 @@ class WebFeedbackSession:
             else:
                 self.status = SessionStatus.COMPLETED
 
-            # 7. 調用清理回調函數
+            # 6. 調用清理回調函數
             for callback in self.cleanup_callbacks:
                 try:
                     if asyncio.iscoroutinefunction(callback):
@@ -1028,12 +786,15 @@ class WebFeedbackSession:
                 except Exception as e:
                     debug_log(f"清理回調執行失敗: {e}")
 
-            # 8. 計算清理效果
+            # 7. 計算清理效果
             cleanup_duration = time.time() - cleanup_start_time
             memory_after = 0
             try:
-                memory_after = _current_process.memory_info().rss
-            except Exception:
+                import psutil
+
+                process = psutil.Process()
+                memory_after = process.memory_info().rss
+            except:
                 pass
 
             memory_freed = max(0, memory_before - memory_after)
@@ -1096,8 +857,11 @@ class WebFeedbackSession:
         try:
             # 記錄清理前的內存使用
             try:
-                memory_before = _current_process.memory_info().rss
-            except Exception:
+                import psutil
+
+                process = psutil.Process()
+                memory_before = process.memory_info().rss
+            except:
                 pass
 
             # 1. 取消自動清理定時器
@@ -1106,46 +870,23 @@ class WebFeedbackSession:
                 self.cleanup_timer = None
                 resources_cleaned += 1
 
-            # 1.5. 取消用戶超時計時器
-            if self.user_timeout_timer:
+            if self.disconnect_timer:
+                self._cancel_disconnect_timer()
                 resources_cleaned += 1
-            self._cancel_user_timeout_timer(reset_remaining=True)
-            with self._timeout_control_lock:
-                self._wait_timeout_paused = False
 
-            # 2. 清理進程
-            if self.process:
-                try:
-                    self.process.terminate()
-                    self.process.wait(timeout=5)
-                    debug_log(f"會話 {self.session_id} 命令進程已正常終止")
-                    resources_cleaned += 1
-                except:
-                    try:
-                        self.process.kill()
-                        debug_log(f"會話 {self.session_id} 命令進程已強制終止")
-                        resources_cleaned += 1
-                    except:
-                        pass
-                self.process = None
-
-            # 3. 清理臨時數據
-            logs_count = len(self.command_logs)
+            # 2. 清理臨時數據
             images_count = len(self.images)
 
-            self.command_logs.clear()
             if not preserve_websocket:
                 self.images.clear()
                 self.settings.clear()
                 resources_cleaned += images_count
 
-            resources_cleaned += logs_count
-
-            # 4. 設置完成事件
+            # 3. 設置完成事件
             if not preserve_websocket:
                 self.feedback_completed.set()
 
-            # 5. 更新狀態
+            # 4. 更新狀態
             if not preserve_websocket:
                 if reason == CleanupReason.EXPIRED:
                     self.status = SessionStatus.EXPIRED
@@ -1158,7 +899,7 @@ class WebFeedbackSession:
 
                 self._cleanup_done = True
 
-            # 6. 調用清理回調函數（同步版本）
+            # 5. 調用清理回調函數（同步版本）
             for callback in self.cleanup_callbacks:
                 try:
                     if not asyncio.iscoroutinefunction(callback):
@@ -1166,12 +907,15 @@ class WebFeedbackSession:
                 except Exception as e:
                     debug_log(f"同步清理回調執行失敗: {e}")
 
-            # 7. 計算清理效果
+            # 6. 計算清理效果
             cleanup_duration = time.time() - cleanup_start_time
             memory_after = 0
             try:
-                memory_after = _current_process.memory_info().rss
-            except Exception:
+                import psutil
+
+                process = psutil.Process()
+                memory_after = process.memory_info().rss
+            except:
                 pass
 
             memory_freed = max(0, memory_before - memory_after)
@@ -1221,7 +965,7 @@ class WebFeedbackSession:
             # 檢查連接狀態
             if (
                 hasattr(self.websocket, "client_state")
-                and self.websocket.client_state == WebSocketState.DISCONNECTED
+                and self.websocket.client_state.DISCONNECTED
             ):
                 debug_log("WebSocket 已斷開，跳過關閉操作")
                 return

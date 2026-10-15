@@ -48,11 +48,7 @@
             combinedFeedbackTextHeight: 150, // combinedFeedbackText textarea 的高度（px）
             // 會話超時設定
             sessionTimeoutEnabled: true,   // enabled by default
-            sessionTimeoutSeconds: 1800,   // 30 minutes
-            // 自動執行命令設定
-            autoCommandEnabled: true,      // 是否啟用自動執行命令
-            commandOnNewSession: '',       // 新會話建立時執行的命令
-            commandOnFeedbackSubmit: ''    // 提交回饋後執行的命令
+            sessionTimeoutSeconds: 1800    // 30 minutes
         };
         
         // 當前設定

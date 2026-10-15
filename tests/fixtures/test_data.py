@@ -92,7 +92,6 @@ class MockResponses:
     def successful_feedback_response() -> dict[str, Any]:
         """成功的回饋回應"""
         return {
-            "command_logs": "$ echo 'test'\ntest\n",
             "interactive_feedback": "用戶確認：功能正常運作",
             "images": [],
         }
@@ -101,7 +100,6 @@ class MockResponses:
     def feedback_with_images_response() -> dict[str, Any]:
         """包含圖片的回饋回應"""
         return {
-            "command_logs": "",
             "interactive_feedback": "請查看附加的截圖",
             "images": [
                 {
@@ -116,7 +114,6 @@ class MockResponses:
     def timeout_response() -> dict[str, Any]:
         """超時回應"""
         return {
-            "command_logs": "",
             "interactive_feedback": "用戶回饋超時，使用默認行為",
             "images": [],
         }
@@ -126,7 +123,6 @@ class MockResponses:
         """錯誤回應"""
         return {
             "error": error_message,
-            "command_logs": "",
             "interactive_feedback": "",
             "images": [],
         }

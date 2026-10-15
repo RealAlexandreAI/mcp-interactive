@@ -75,7 +75,7 @@ class TestUtils:
     @staticmethod
     def validate_web_response(response_data: dict[str, Any]) -> bool:
         """驗證 Web 回應格式"""
-        required_fields = ["command_logs", "interactive_feedback", "images"]
+        required_fields = ["interactive_feedback", "images"]
         return all(field in response_data for field in required_fields)
 
     @staticmethod

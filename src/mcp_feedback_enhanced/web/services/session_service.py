@@ -34,7 +34,6 @@ class SessionService:
             "project_directory": current_session.project_directory,
             "summary": current_session.summary,
             "feedback_completed": current_session.feedback_completed.is_set(),
-            "command_logs": list(current_session.command_logs),
             "images_count": len(current_session.images),
         }
 

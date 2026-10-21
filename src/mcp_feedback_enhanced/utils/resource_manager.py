@@ -478,6 +478,13 @@ class ResourceManager:
                     try:
                         import psutil
 
+                        # 註冊的是裸 PID 時無從判斷它是不是自己。cleanup_all
+                        # 由 atexit 觸發，若把自身 PID 也終止，進程會以 SIGTERM
+                        # 收場：測試全部通過卻報 exit 143。
+                        if pid == os.getpid():
+                            processes_to_remove.append(pid)
+                            continue
+
                         if psutil.pid_exists(pid):
                             proc = psutil.Process(pid)
                             if force:

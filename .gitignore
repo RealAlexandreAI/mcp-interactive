@@ -62,8 +62,6 @@ src-tauri/target/release/bundle/
 *.temp
 # Local issue-tracking notes
 issues/
-# Local Shannon history artifacts
-.shannon/
 # Temporary ad-hoc test scripts at repo root only.
 # Must not match the tests/ suite — regression tests belong in the repo.
 /test_*.py
@@ -71,8 +69,3 @@ issues/
 node_modules/
 package-lock.json
 yarn.lock
-.claude/
-.gitnexus/
-AGENTS.md
-CLAUDE.md
-.omc/

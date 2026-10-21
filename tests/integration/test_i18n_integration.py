@@ -169,18 +169,18 @@ class TestI18NEnvironmentIntegration:
         try:
             # 測試不同的環境設置
             test_cases = [
-                {"MCP_LANGUAGE": "zh-TW", "expected": "zh-TW"},
+                {"MCP_LANGUAGE": "zh-TW", "expected": "zh-CN"},  # 繁体请求回落到简体
                 {"MCP_LANGUAGE": "zh-CN", "expected": "zh-CN"},
                 {"MCP_LANGUAGE": "en", "expected": "en"},
-                {"LANG": "zh_TW.UTF-8", "expected": "zh-TW"},
+                {"LANG": "zh_TW.UTF-8", "expected": "zh-CN"},
                 {"LANG": "zh_CN.UTF-8", "expected": "zh-CN"},
                 {"LANG": "en_US.UTF-8", "expected": "en"},
                 {
                     "LANG": "ja_JP.UTF-8",
-                    "expected": "zh-TW",
-                },  # 不支援的語言回退到預設（繁中）
+                    "expected": "zh-CN",
+                },  # 不支援的語言回退到預設（简体中文）
                 # MCP_LANGUAGE 是強制指定，必須壓過介面保存的設定（#189）
-                {"saved": "zh-TW", "MCP_LANGUAGE": "zh-CN", "expected": "zh-CN"},
+                {"saved": "en", "MCP_LANGUAGE": "zh-CN", "expected": "zh-CN"},
                 # 沒有 MCP_LANGUAGE 時，介面保存的設定仍高於 LANG
                 {"saved": "en", "LANG": "zh_TW.UTF-8", "expected": "en"},
             ]
@@ -230,23 +230,14 @@ class TestI18NEnvironmentIntegration:
                     os.environ.pop(var, None)
 
     def test_i18n_with_web_ui_manager(self, web_ui_manager, i18n_manager):
-        """測試 I18N 與 WebUIManager 的集成"""
-        # 驗證 WebUIManager 使用了 I18N 管理器
-        assert hasattr(web_ui_manager, "i18n")
-        assert web_ui_manager.i18n is not None
+        """WebUIManager 不再持有 i18n；翻译由前端自行加载"""
+        # WebUIManager 曾把 i18n 管理器挂在实例上，后来翻译整体移到前端
+        # （web/main.py 的 _preload_i18n_async 现在是个空壳）。这里固定住新契约：
+        # 服务端不再提供语言状态，语言选择只发生在前端。
+        assert not hasattr(web_ui_manager, "i18n")
 
-        # 測試語言切換對 WebUIManager 的影響
-        original_lang = i18n_manager.get_current_language()
-
+        # 独立的 I18N 管理器仍然可用，且只认得本 fork 提供的两种语言
         for lang in TestData.SUPPORTED_LANGUAGES:
-            if lang != original_lang:
-                success = i18n_manager.set_language(lang)
-                assert success == True
-
-                # WebUIManager 應該能夠訪問當前語言設置
-                current_lang = web_ui_manager.i18n.get_current_language()
-                assert current_lang == lang
-                break
-
-        # 恢復原始語言
-        i18n_manager.set_language(original_lang)
+            assert i18n_manager.set_language(lang) is True
+            assert i18n_manager.get_current_language() == lang
+        assert TestData.SUPPORTED_LANGUAGES == ["zh-CN", "en"]

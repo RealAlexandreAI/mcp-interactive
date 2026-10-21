@@ -51,52 +51,42 @@ class ErrorHandler:
     # 錯誤類型到用戶友好信息的映射
     _ERROR_MESSAGES = {
         ErrorType.NETWORK: {
-            "zh-TW": "網絡連接出現問題",
             "zh-CN": "网络连接出现问题",
             "en": "Network connection issue",
         },
         ErrorType.FILE_IO: {
-            "zh-TW": "文件讀寫出現問題",
             "zh-CN": "文件读写出现问题",
             "en": "File read/write issue",
         },
         ErrorType.PROCESS: {
-            "zh-TW": "進程執行出現問題",
             "zh-CN": "进程执行出现问题",
             "en": "Process execution issue",
         },
         ErrorType.TIMEOUT: {
-            "zh-TW": "操作超時",
             "zh-CN": "操作超时",
             "en": "Operation timeout",
         },
         ErrorType.USER_CANCEL: {
-            "zh-TW": "用戶取消了操作",
             "zh-CN": "用户取消了操作",
             "en": "User cancelled the operation",
         },
         ErrorType.SYSTEM: {
-            "zh-TW": "系統出現問題",
             "zh-CN": "系统出现问题",
             "en": "System issue",
         },
         ErrorType.PERMISSION: {
-            "zh-TW": "權限不足",
             "zh-CN": "权限不足",
             "en": "Insufficient permissions",
         },
         ErrorType.VALIDATION: {
-            "zh-TW": "數據驗證失敗",
             "zh-CN": "数据验证失败",
             "en": "Data validation failed",
         },
         ErrorType.DEPENDENCY: {
-            "zh-TW": "依賴組件出現問題",
             "zh-CN": "依赖组件出现问题",
             "en": "Dependency issue",
         },
         ErrorType.CONFIGURATION: {
-            "zh-TW": "配置出現問題",
             "zh-CN": "配置出现问题",
             "en": "Configuration issue",
         },
@@ -105,7 +95,6 @@ class ErrorHandler:
     # 錯誤解決建議
     _ERROR_SOLUTIONS = {
         ErrorType.NETWORK: {
-            "zh-TW": ["檢查網絡連接是否正常", "確認防火牆設置", "嘗試重新啟動應用程序"],
             "zh-CN": ["检查网络连接是否正常", "确认防火墙设置", "尝试重新启动应用程序"],
             "en": [
                 "Check network connection",
@@ -114,7 +103,6 @@ class ErrorHandler:
             ],
         },
         ErrorType.FILE_IO: {
-            "zh-TW": ["檢查文件是否存在", "確認文件權限", "檢查磁盤空間是否足夠"],
             "zh-CN": ["检查文件是否存在", "确认文件权限", "检查磁盘空间是否足够"],
             "en": [
                 "Check if file exists",
@@ -123,11 +111,6 @@ class ErrorHandler:
             ],
         },
         ErrorType.PROCESS: {
-            "zh-TW": [
-                "檢查進程是否正在運行",
-                "確認系統資源是否足夠",
-                "嘗試重新啟動相關服務",
-            ],
             "zh-CN": [
                 "检查进程是否正在运行",
                 "确认系统资源是否足够",
@@ -140,7 +123,6 @@ class ErrorHandler:
             ],
         },
         ErrorType.TIMEOUT: {
-            "zh-TW": ["增加超時時間設置", "檢查網絡延遲", "稍後重試操作"],
             "zh-CN": ["增加超时时间设置", "检查网络延迟", "稍后重试操作"],
             "en": [
                 "Increase timeout settings",
@@ -149,7 +131,6 @@ class ErrorHandler:
             ],
         },
         ErrorType.PERMISSION: {
-            "zh-TW": ["以管理員身份運行", "檢查文件/目錄權限", "聯繫系統管理員"],
             "zh-CN": ["以管理员身份运行", "检查文件/目录权限", "联系系统管理员"],
             "en": [
                 "Run as administrator",
@@ -189,7 +170,7 @@ class ErrorHandler:
             language = ErrorHandler.get_current_language()
             error_messages = ErrorHandler._ERROR_MESSAGES.get(error_type, {})
             return error_messages.get(
-                language, error_messages.get("zh-TW", "發生未知錯誤")
+                language, error_messages.get("zh-CN", "系統出現未知錯誤")
             )
 
     @staticmethod
@@ -217,7 +198,7 @@ class ErrorHandler:
             # 回退到內建映射
             language = ErrorHandler.get_current_language()
             solutions_dict = ErrorHandler._ERROR_SOLUTIONS.get(error_type, {})
-            return solutions_dict.get(language, solutions_dict.get("zh-TW", []))
+            return solutions_dict.get(language, solutions_dict.get("zh-CN", []))
 
     @staticmethod
     def classify_error(error: Exception) -> ErrorType:

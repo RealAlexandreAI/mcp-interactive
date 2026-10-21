@@ -4,9 +4,13 @@ I18N 核心功能測試
 """
 
 import os
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
+from mcp_feedback_enhanced.i18n import I18nManager
 from tests.fixtures.test_data import TestData
 
 
@@ -202,34 +206,24 @@ class TestI18NEnvironmentDetection:
     """I18N 環境檢測測試"""
 
     def test_language_detection_from_env(self, i18n_manager):
-        """測試從環境變數檢測語言"""
-        original_lang = os.environ.get("LANG")
-        original_language = os.environ.get("LANGUAGE")
+        """繁體 locale 統一落到 zh-CN：本 fork 只提供简体中文与英文"""
+        # 檢測依次看 MCP_LANGUAGE、介面保存值、LANG/LC_ALL/LC_MESSAGES/LANGUAGE。
+        # 三者都要隔離：其餘環境變數決定 runner 的 locale，而保存值落在 $HOME
+        # 下的一份 language.json 裡。只設 LANG 的話，這條斷言測的是機器而不是代碼。
+        with tempfile.TemporaryDirectory() as home, \
+                patch.dict(os.environ, {}, clear=False), \
+                patch("pathlib.Path.home", return_value=Path(home)):
+            for key in ("MCP_LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANGUAGE"):
+                os.environ.pop(key, None)
 
-        try:
-            # 測試設置環境變數
             os.environ["LANG"] = "zh_TW.UTF-8"
+            assert I18nManager()._detect_language() == "zh-CN"
 
-            # 重新創建 I18N 管理器來測試環境檢測
-            from mcp_feedback_enhanced.i18n import I18nManager
+            os.environ["LANG"] = "zh_CN.UTF-8"
+            assert I18nManager()._detect_language() == "zh-CN"
 
-            test_manager = I18nManager()
-
-            # 應該檢測到繁體中文
-            detected_lang = test_manager._detect_language()
-            assert detected_lang in ["zh-TW", "zh-CN", "en"]  # 應該是支援的語言之一
-
-        finally:
-            # 恢復環境變數
-            if original_lang is not None:
-                os.environ["LANG"] = original_lang
-            else:
-                os.environ.pop("LANG", None)
-
-            if original_language is not None:
-                os.environ["LANGUAGE"] = original_language
-            else:
-                os.environ.pop("LANGUAGE", None)
+            os.environ["LANG"] = "en_US.UTF-8"
+            assert I18nManager()._detect_language() == "en"
 
     def test_fallback_to_default_language(self, i18n_manager):
         """測試回退到默認語言"""

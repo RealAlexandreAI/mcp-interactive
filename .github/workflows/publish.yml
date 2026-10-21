@@ -26,6 +26,13 @@ on:
         required: false
         type: string
 
+# This job bumps the version and pushes a commit. Two dispatches running at
+# once would both bump from the same base and publish the same version twice;
+# queue them instead of cancelling, since each release is wanted.
+concurrency:
+  group: publish-pypi
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest

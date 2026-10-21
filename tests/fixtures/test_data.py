@@ -81,7 +81,7 @@ class TestData:
             "timeout": 30,
         },
         "mcp": {"timeout": 60, "retry_count": 3},
-        "i18n": {"default_language": "zh-TW", "fallback_language": "en"},
+        "i18n": {"default_language": "zh-CN", "fallback_language": "en"},
     }
 
 

@@ -197,7 +197,7 @@ class TestErrorHandler:
         assert len(language) > 0
 
         # 測試語言代碼格式
-        assert language in ["zh-TW", "zh-CN", "en"] or "-" in language
+        assert language in ["zh-CN", "en"] or "-" in language
 
     def test_i18n_integration(self):
         """測試國際化系統集成"""

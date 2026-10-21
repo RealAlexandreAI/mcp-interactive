@@ -138,7 +138,7 @@ def setup_routes(manager: "WebUIManager"):
 
         # 獲取 Web 翻譯檔案目錄
         web_locales_dir = Path(__file__).parent.parent / "locales"
-        supported_languages = ["zh-TW", "zh-CN", "en"]
+        supported_languages = ["zh-CN", "en"]
 
         for lang_code in supported_languages:
             lang_dir = web_locales_dir / lang_code
@@ -167,10 +167,10 @@ def setup_routes(manager: "WebUIManager"):
 
         # 從請求頭獲取客戶端語言
         lang = (
-            request.headers.get("Accept-Language", "zh-TW").split(",")[0].split("-")[0]
+            request.headers.get("Accept-Language", "zh-CN").split(",")[0].split("-")[0]
         )
         if lang == "zh":
-            lang = "zh-TW"
+            lang = "zh-CN"
 
         if not current_session:
             return JSONResponse(
@@ -298,7 +298,7 @@ def setup_routes(manager: "WebUIManager"):
             )
 
     @manager.app.websocket("/ws")
-    async def websocket_endpoint(websocket: WebSocket, lang: str = "zh-TW"):
+    async def websocket_endpoint(websocket: WebSocket, lang: str = "zh-CN"):
         """WebSocket 端點 - 重構後移除 session_id 依賴"""
         # 先驗證 Origin，避免惡意網頁從使用者瀏覽器劫持此連線（CSWSH）
         origin = websocket.headers.get("origin", "")

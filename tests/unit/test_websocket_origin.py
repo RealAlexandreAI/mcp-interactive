@@ -69,14 +69,6 @@ class TestAllowsLegitimateOrigin:
         """非瀏覽器客戶端（桌面應用、CLI）不會帶 Origin"""
         assert is_allowed_origin("", HOST, PORT) is True
 
-    @pytest.mark.parametrize(
-        "origin",
-        ["tauri://localhost", "https://tauri.localhost", "http://tauri.localhost"],
-    )
-    def test_desktop_webview_origin_allowed(self, origin):
-        """Tauri WebView 依平台使用不同的自訂 scheme"""
-        assert is_allowed_origin(origin, HOST, PORT) is True
-
     def test_matching_bound_host_allowed(self):
         """綁定到具體 LAN 位址時，該位址自身應被允許"""
         assert (

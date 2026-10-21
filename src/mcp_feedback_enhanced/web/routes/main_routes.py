@@ -48,16 +48,8 @@ def load_user_layout_settings() -> str:
 
 # 瀏覽器不受 same-origin policy 限制地開啟 WebSocket，因此 /ws 必須自行驗證 Origin，
 # 否則惡意網頁可從使用者瀏覽器連上本機服務（Cross-Site WebSocket Hijacking）。
-# 桌面應用與非瀏覽器客戶端不會送 Origin，這種情況放行。
+# 非瀏覽器客戶端（CLI 工具）不會送 Origin，這種情況放行。
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1", "[::1]"})
-# Tauri WebView 依平台使用不同的自訂 scheme
-_DESKTOP_ORIGINS = frozenset(
-    {
-        "tauri://localhost",
-        "https://tauri.localhost",
-        "http://tauri.localhost",
-    }
-)
 
 
 def is_allowed_origin(origin: str, host: str, port: int) -> bool:
@@ -71,11 +63,8 @@ def is_allowed_origin(origin: str, host: str, port: int) -> bool:
     Returns:
         bool: True 表示允許連線
     """
-    # 非瀏覽器客戶端（桌面應用、CLI 工具）不會帶 Origin
+    # 非瀏覽器客戶端（CLI 工具）不會帶 Origin
     if not origin:
-        return True
-
-    if origin in _DESKTOP_ORIGINS:
         return True
 
     parts = urlsplit(origin)

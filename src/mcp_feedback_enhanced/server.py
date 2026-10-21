@@ -27,15 +27,15 @@ import io
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Annotated, Any
+
 
 try:
     from mcp.server.fastmcp import Context, FastMCP
-    from mcp.server.fastmcp.utilities.types import Image as MCPImage
 except ImportError:  # Backward compatibility for older runtime environments
     from fastmcp import Context, FastMCP
-    from fastmcp.utilities.types import Image as MCPImage
-from mcp.types import TextContent
+from mcp.types import ImageContent, TextContent
 from pydantic import Field
 
 # 導入統一的調試功能
@@ -364,17 +364,23 @@ def create_feedback_text(feedback_data: dict) -> str:
     return "\n\n".join(text_parts) if text_parts else "用戶未提供任何回饋內容。"
 
 
-def process_images(images_data: list[dict]) -> list[MCPImage]:
+def process_images(images_data: list[dict]) -> list[ImageContent]:
     """
-    處理圖片資料，轉換為 MCP 圖片對象
+    處理圖片資料，轉換為標準 MCP ImageContent 物件
 
     Args:
         images_data: 圖片資料列表
 
     Returns:
-        List[MCPImage]: MCP 圖片對象列表
+        list[ImageContent]: 標準 MCP ImageContent 物件列表
     """
-    mcp_images = []
+    mime_types = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+    }
+    image_contents = []
 
     for i, img in enumerate(images_data, 1):
         try:
@@ -382,39 +388,37 @@ def process_images(images_data: list[dict]) -> list[MCPImage]:
                 debug_log(f"圖片 {i} 沒有資料，跳過")
                 continue
 
-            # 檢查數據類型並相應處理
+            # 統一解碼為 bytes，同時驗證來自 Web UI 的資料
             if isinstance(img["data"], bytes):
-                # 如果是原始 bytes 數據，直接使用
                 image_bytes = img["data"]
-                debug_log(
-                    f"圖片 {i} 使用原始 bytes 數據，大小: {len(image_bytes)} bytes"
-                )
             elif isinstance(img["data"], str):
-                # 如果是 base64 字符串，進行解碼
-                image_bytes = base64.b64decode(img["data"])
-                debug_log(f"圖片 {i} 從 base64 解碼，大小: {len(image_bytes)} bytes")
+                image_bytes = base64.b64decode(img["data"], validate=True)
             else:
                 debug_log(f"圖片 {i} 數據類型不支援: {type(img['data'])}")
                 continue
 
-            if len(image_bytes) == 0:
+            if not image_bytes:
                 debug_log(f"圖片 {i} 數據為空，跳過")
                 continue
 
-            # 根據文件名推斷格式
+            # 依副檔名推斷 MIME 類型，預設 PNG
             file_name = img.get("name", "image.png")
-            if file_name.lower().endswith((".jpg", ".jpeg")):
-                image_format = "jpeg"
-            elif file_name.lower().endswith(".gif"):
-                image_format = "gif"
-            else:
-                image_format = "png"  # 默認使用 PNG
+            suffix = Path(file_name).suffix.lower()
+            mime_type = mime_types.get(suffix, "image/png")
 
-            # 創建 MCPImage 對象
-            mcp_image = MCPImage(data=image_bytes, format=image_format)
-            mcp_images.append(mcp_image)
+            # 重新編碼，確保輸出為乾淨的 base64 字串
+            image_contents.append(
+                ImageContent(
+                    type="image",
+                    data=base64.b64encode(image_bytes).decode("ascii"),
+                    mimeType=mime_type,
+                )
+            )
 
-            debug_log(f"圖片 {i} ({file_name}) 處理成功，格式: {image_format}")
+            debug_log(
+                f"圖片 {i} ({file_name}) 處理成功，"
+                f"MIME: {mime_type}，大小: {len(image_bytes)} bytes"
+            )
 
         except Exception as e:
             # 使用統一錯誤處理（不影響 JSON RPC）
@@ -425,13 +429,14 @@ def process_images(images_data: list[dict]) -> list[MCPImage]:
             )
             debug_log(f"圖片 {i} 處理失敗 [錯誤ID: {error_id}]: {e}")
 
-    debug_log(f"共處理 {len(mcp_images)} 張圖片")
-    return mcp_images
+    debug_log(f"共處理 {len(image_contents)} 張圖片")
+    return image_contents
 
 
 DEFAULT_FEEDBACK_TIMEOUT = 600
 MIN_FEEDBACK_TIMEOUT = 60
 MAX_FEEDBACK_TIMEOUT = 86400
+
 
 def resolve_feedback_timeout(requested: object) -> int:
     """把呼叫端傳入的 timeout 鉗制到可用範圍
@@ -470,7 +475,6 @@ def resolve_feedback_timeout(requested: object) -> int:
     return value
 
 
-
 def no_response_text(reason: str) -> str:
     """使用者沒有回應時回給 AI 的文字（#125）
 
@@ -487,7 +491,6 @@ def no_response_text(reason: str) -> str:
     )
 
 
-
 # ===== MCP 工具定義 =====
 @mcp.tool()
 async def interactive_feedback(
@@ -497,23 +500,24 @@ async def interactive_feedback(
     ] = "我已完成了您請求的任務。",
     timeout: Annotated[int, Field(description="等待用戶回饋的超時時間（秒）")] = 600,
     ctx: Context | None = None,
-) -> list:
+) -> list[TextContent | ImageContent]:
     """Interactive feedback collection tool for LLM agents.
 
     USAGE RULES:
     1. During any process, task, or conversation, whether asking, replying, or completing phased tasks, you must call this tool to ask for feedback.
-    2. Unless receiving termination instructions, all steps must repeatedly call this tool.
+    2. Unless receiving termination instructions, or this tool returns a "no user response" result, all steps must repeatedly call this tool.
     3. Whenever user feedback is received, if the feedback content is not empty, you must call this tool again and adjust behavior based on the feedback content.
-    4. Only when the user explicitly indicates "end" or "no more interaction needed" can you stop calling this tool, and the process is considered complete.
+    4. You can stop calling this tool, and the process is considered complete, when the user explicitly indicates "end" or "no more interaction needed", or when this tool returns a "no user response" result (the wait timed out or the user closed the feedback UI) — in that case finish the task and do NOT call this tool again.
     5. You should summarize what have done, and provide project directory through args to let user know what you have done to provide feedback for next step.
 
     Args:
         project_directory: Project directory path for context
         summary: Summary of AI work completed for user review
-        timeout: Timeout in seconds for waiting user feedback (default: 600 seconds)
+        timeout: Timeout in seconds for waiting user feedback.
+            Clamped server-side to a usable range; see resolve_feedback_timeout.
 
     Returns:
-        list: List containing TextContent and MCPImage objects representing user feedback
+        list: List containing TextContent and ImageContent objects representing user feedback
     """
     # 環境偵測
     is_remote = is_remote_environment()
@@ -606,14 +610,15 @@ async def launch_web_feedback_ui(
     debug_log(f"啟動 Web UI 介面，超時時間: {timeout} 秒")
 
     try:
-        from .web import launch_web_feedback_ui as web_launch
-
         # Start a background heartbeat task to prevent MCP host idle timeout.
         # Sends periodic notifications so the MCP host knows we're still alive.
         import asyncio
 
+        from .web import launch_web_feedback_ui as web_launch
+
         heartbeat_task = None
         if ctx is not None:
+
             async def send_heartbeats():
                 elapsed = 0
                 while True:
@@ -621,15 +626,14 @@ async def launch_web_feedback_ui(
                     elapsed += 5
                     try:
                         await ctx.report_progress(
-                            progress=elapsed, total=timeout,
+                            progress=elapsed,
+                            total=timeout,
                             message="Waiting for user feedback...",
                         )
                     except Exception:
                         pass
                     try:
-                        await ctx.info(
-                            f"Waiting for user feedback... ({elapsed}s)"
-                        )
+                        await ctx.info(f"Waiting for user feedback... ({elapsed}s)")
                     except Exception:
                         pass
 

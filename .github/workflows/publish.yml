@@ -1,6 +1,21 @@
 name: Auto Release to PyPI
 
 on:
+  workflow_call:
+    inputs:
+      version_type:
+        required: false
+        type: string
+        default: 'patch'
+      custom_version:
+        required: false
+        type: string
+      include_desktop:
+        required: true
+        type: boolean
+      desktop_build_run_id:
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       version_type:
@@ -29,6 +44,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
       id-token: write
@@ -40,15 +56,12 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v10.1.0
+      uses: astral-sh/setup-uv@v10.3.0
       with:
         version: "latest"
 
     - name: Set up Python
       run: uv python install
-
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
 
     - name: Install dependencies
       run: |
@@ -76,7 +89,7 @@ jobs:
     - name: Determine new version
       id: bump_version
       run: |
-        CUSTOM_VERSION="${{ github.event.inputs.custom_version }}"
+        CUSTOM_VERSION="${{ inputs.custom_version }}"
 
         if [ -n "$CUSTOM_VERSION" ]; then
           echo "🎯 Using custom version: $CUSTOM_VERSION"
@@ -96,8 +109,8 @@ jobs:
           NEW_VERSION="$CUSTOM_VERSION"
           echo "✅ Set custom version: $NEW_VERSION"
         else
-          echo "🔄 Using automatic version bump: ${{ github.event.inputs.version_type }}"
-          uv run bump2version --allow-dirty ${{ github.event.inputs.version_type }}
+          echo "🔄 Using automatic version bump: ${{ inputs.version_type }}"
+          uv run bump2version --allow-dirty ${{ inputs.version_type }}
           NEW_VERSION=$(grep '^version =' pyproject.toml | cut -d'"' -f2)
           echo "✅ Bumped version to: $NEW_VERSION"
         fi
@@ -270,13 +283,13 @@ jobs:
 
     - name: Commit version bump
       run: |
-        CUSTOM_VERSION="${{ github.event.inputs.custom_version }}"
+        CUSTOM_VERSION="${{ inputs.custom_version }}"
         VERSION_METHOD=""
 
         if [ -n "$CUSTOM_VERSION" ]; then
           VERSION_METHOD="Custom version specified: $CUSTOM_VERSION"
         else
-          VERSION_METHOD="Auto-bumped (${{ github.event.inputs.version_type }})"
+          VERSION_METHOD="Auto-bumped (${{ inputs.version_type }})"
         fi
 
         git add .
@@ -288,15 +301,15 @@ jobs:
         git tag "v${{ steps.bump_version.outputs.new }}"
 
     - name: Check desktop build availability
-      if: ${{ github.event.inputs.include_desktop == 'true' }}
+      if: ${{ inputs.include_desktop }}
       id: check_desktop
       run: |
         echo "🔍 檢查桌面應用構建可用性..."
 
         # 如果指定了 run_id，使用指定的構建
-        if [ -n "${{ github.event.inputs.desktop_build_run_id }}" ]; then
-          echo "🎯 使用指定的構建 Run ID: ${{ github.event.inputs.desktop_build_run_id }}"
-          echo "run_id=${{ github.event.inputs.desktop_build_run_id }}" >> $GITHUB_OUTPUT
+        if [ -n "${{ inputs.desktop_build_run_id }}" ]; then
+          echo "🎯 使用指定的構建 Run ID: ${{ inputs.desktop_build_run_id }}"
+          echo "run_id=${{ inputs.desktop_build_run_id }}" >> $GITHUB_OUTPUT
         else
           echo "🔍 查找最新的成功桌面構建..."
 
@@ -318,7 +331,7 @@ jobs:
         fi
 
     - name: Check desktop applications in Git
-      if: ${{ github.event.inputs.include_desktop == 'true' }}
+      if: ${{ inputs.include_desktop }}
       run: |
         echo "🔍 檢查 Git 中的桌面應用程式二進制檔案..."
 
@@ -351,7 +364,7 @@ jobs:
         fi
 
     - name: Validate desktop binaries
-      if: ${{ github.event.inputs.include_desktop == 'true' }}
+      if: ${{ inputs.include_desktop }}
       run: |
         echo "🔍 驗證桌面應用二進制文件..."
 
@@ -414,7 +427,7 @@ jobs:
         fi
 
     - name: Skip desktop applications
-      if: ${{ github.event.inputs.include_desktop != 'true' }}
+      if: ${{ !inputs.include_desktop }}
       run: |
         echo "⏭️ 跳過桌面應用，僅發佈 Web 版本"
         echo "💡 用戶將只能使用 Web 模式，無法使用桌面模式"
@@ -427,7 +440,7 @@ jobs:
         mkdir -p src/mcp_feedback_enhanced/desktop_release
 
         # 如果沒有包含桌面應用，創建一個說明文件
-        if [ "${{ github.event.inputs.include_desktop }}" != "true" ] || [ ! -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop.exe" ]; then
+        if [ "${{ inputs.include_desktop }}" != "true" ] || [ ! -f "src/mcp_feedback_enhanced/desktop_release/mcp-feedback-enhanced-desktop.exe" ]; then
           echo "🔍 桌面應用未包含，創建說明文件..."
           cat > src/mcp_feedback_enhanced/desktop_release/README.md << 'EOF'
         # 桌面應用程式
@@ -496,7 +509,7 @@ jobs:
         echo ""
 
         # 顯示桌面應用狀態
-        if [ "${{ github.event.inputs.include_desktop }}" = "true" ]; then
+        if [ "${{ inputs.include_desktop }}" = "true" ]; then
           echo "🖥️ 桌面應用狀態："
           if [ -d "src/mcp_feedback_enhanced/desktop_release" ] && [ -n "$(ls -A src/mcp_feedback_enhanced/desktop_release 2>/dev/null)" ]; then
             echo "  ✅ 桌面應用已包含在發佈中"
@@ -544,7 +557,7 @@ jobs:
         echo "  - Check the release on GitHub"
         echo "  - Verify the package on PyPI"
         echo "  - Test installation with: uvx mcp-feedback-enhanced@v${{ steps.bump_version.outputs.new }}"
-        if [ "${{ github.event.inputs.include_desktop }}" = "true" ]; then
+        if [ "${{ inputs.include_desktop }}" = "true" ]; then
           echo "  - Test desktop mode with: uvx mcp-feedback-enhanced@v${{ steps.bump_version.outputs.new }} test --desktop"
         fi
         echo ""

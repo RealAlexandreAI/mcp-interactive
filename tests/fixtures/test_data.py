@@ -64,7 +64,7 @@ class TestData:
     ]
 
     # 支援的語言列表
-    SUPPORTED_LANGUAGES: list[str] = ["zh-TW", "zh-CN", "en"]
+    SUPPORTED_LANGUAGES: list[str] = ["zh-CN", "en"]
 
     # 測試環境變數
     TEST_ENV_VARS: dict[str, str] = {

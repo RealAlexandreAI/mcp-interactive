@@ -58,7 +58,8 @@ class CompressionMonitor:
         # 內容類型統計
         self.content_type_stats: dict[str, dict] = {}
 
-    def record_request(
+    # The positional order mirrors the call site in the request hook.
+    def record_request(  # noqa: PLR0917
         self,
         path: str,
         original_size: int,

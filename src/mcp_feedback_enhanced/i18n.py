@@ -30,8 +30,8 @@ class I18nManager:
     def __init__(self):
         self._current_language = None
         self._translations = {}
-        self._supported_languages = ["zh-CN", "zh-TW", "en"]
-        self._fallback_language = "zh-TW"
+        self._supported_languages = ["zh-CN", "en"]
+        self._fallback_language = "zh-CN"
         self._config_file = self._get_config_file_path()
         self._locales_dir = Path(__file__).parent / "web" / "locales"
 
@@ -87,9 +87,11 @@ class I18nManager:
         for env_var in ["LANG", "LC_ALL", "LC_MESSAGES", "LANGUAGE"]:
             env_value = os.getenv(env_var, "").strip()
             if env_value:
-                if env_value.startswith("zh_TW") or env_value.startswith("zh_Hant"):
-                    return "zh-TW"
                 if env_value.startswith("zh_CN") or env_value.startswith("zh_Hans"):
+                    return "zh-CN"
+                # Traditional Chinese locales fall back to zh-CN: this fork
+                # ships only zh-CN and en (02c7cd9 removed the zh-TW locale).
+                if env_value.startswith("zh_TW") or env_value.startswith("zh_Hant"):
                     return "zh-CN"
                 if env_value.startswith("en"):
                     return "en"
@@ -100,12 +102,12 @@ class I18nManager:
                 # 獲取系統語言
                 system_locale = locale.getdefaultlocale()[0]
                 if system_locale:
-                    if system_locale.startswith("zh_TW") or system_locale.startswith(
-                        "zh_Hant"
-                    ):
-                        return "zh-TW"
                     if system_locale.startswith("zh_CN") or system_locale.startswith(
                         "zh_Hans"
+                    ):
+                        return "zh-CN"
+                    if system_locale.startswith("zh_TW") or system_locale.startswith(
+                        "zh_Hant"
                     ):
                         return "zh-CN"
                     if system_locale.startswith("en"):
@@ -139,7 +141,7 @@ class I18nManager:
 
     def get_current_language(self) -> str:
         """獲取當前語言"""
-        return self._current_language or "zh-TW"
+        return self._current_language or "zh-CN"
 
     def set_language(self, language: str) -> bool:
         """設定語言"""
@@ -292,9 +294,7 @@ class I18nManager:
 
         # 根據語言代碼構建鍵值
         lang_key = None
-        if language_code == "zh-TW":
-            lang_key = "languageNames.zhTw"
-        elif language_code == "zh-CN":
+        if language_code == "zh-CN":
             lang_key = "languageNames.zhCn"
         elif language_code == "en":
             lang_key = "languageNames.en"

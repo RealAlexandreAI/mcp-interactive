@@ -963,7 +963,7 @@ class WebUIManager:
         cleaned_count = 0
 
         for i in range(max_cleanup):
-            session_id, session, priority = sessions_to_clean[i]
+            session_id, session, _priority = sessions_to_clean[i]
             try:
                 # 使用增強清理方法
                 session._cleanup_sync_enhanced(CleanupReason.MEMORY_PRESSURE)

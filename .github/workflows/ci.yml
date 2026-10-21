@@ -7,17 +7,24 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   basic-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.1.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           version: "latest"
 
@@ -30,5 +37,21 @@ jobs:
       - name: Verify CLI starts
         run: uv run python -m mcp_feedback_enhanced --help
 
-      - name: Run stable unit test
-        run: uv run pytest -q tests/unit/test_port_manager.py
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      # tests/conftest.py applies the `unit`/`integration` markers by directory,
+      # so this selects the whole tests/unit tree rather than the two files that
+      # happened to carry a pytestmark.
+      - name: Unit tests
+        run: uv run pytest -m "unit and not slow" -q
+
+      - name: Integration smoke tests
+        run: >
+          uv run pytest -m "integration and (mcp or web) and not slow"
+          tests/integration/test_mcp_workflow.py::TestMCPBasicWorkflow::test_mcp_initialization
+          tests/integration/test_web_integration.py::TestWebUIIntegration::test_websocket_connection
+          -q

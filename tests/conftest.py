@@ -106,6 +106,23 @@ def test_config() -> dict[str, Any]:
     }
 
 
+# Only two of the sixteen files under tests/unit/ carried `pytestmark`, so
+# `-m "unit"` selected 32 of 248 tests. Classify by directory instead, which
+# cannot drift as files are added.
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
+    root = Path(__file__).parent
+    for item in items:
+        path = Path(str(item.fspath))
+        if root / "unit" in path.parents and not item.get_closest_marker("unit"):
+            item.add_marker(pytest.mark.unit)
+        elif root / "integration" in path.parents and not item.get_closest_marker(
+            "integration"
+        ):
+            item.add_marker(pytest.mark.integration)
+
+
 @pytest.fixture(autouse=True)
 def setup_test_env():
     """自動設置測試環境"""

@@ -38,7 +38,7 @@ jobs:
     name: Build Desktop Applications
     uses: ./.github/workflows/build-desktop.yml
     with:
-      platforms: ${{ github.event.inputs.platforms }}
+      platforms: ${{ inputs.platforms }}
       upload_artifacts: true
 
   # 第二步：等待構建完成並檢查結果
@@ -46,6 +46,7 @@ jobs:
     name: Check Build Results
     needs: build-desktop
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       can_release: ${{ steps.check.outputs.can_release }}
       build_run_id: ${{ steps.check.outputs.build_run_id }}
@@ -74,11 +75,11 @@ jobs:
         echo "### ✅ 構建結果" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- **狀態**: 成功 ✅" >> $GITHUB_STEP_SUMMARY
-        echo "- **平台**: ${{ github.event.inputs.platforms }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **平台**: ${{ inputs.platforms }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 
-        if [ "${{ github.event.inputs.skip_release }}" = "true" ]; then
+        if [ "${{ inputs.skip_release }}" = "true" ]; then
           echo "### ⏭️ 跳過發佈" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "根據設置，已跳過自動發佈。" >> $GITHUB_STEP_SUMMARY
@@ -93,11 +94,11 @@ jobs:
   release:
     name: Auto Release to PyPI
     needs: [build-desktop, check-build]
-    if: ${{ needs.check-build.outputs.can_release == 'true' && github.event.inputs.skip_release != 'true' }}
+    if: ${{ needs.check-build.outputs.can_release == 'true' && !inputs.skip_release }}
     uses: ./.github/workflows/publish.yml
     with:
-      version_type: ${{ github.event.inputs.version_type }}
-      custom_version: ${{ github.event.inputs.custom_version }}
+      version_type: ${{ inputs.version_type }}
+      custom_version: ${{ inputs.custom_version }}
       include_desktop: true
       desktop_build_run_id: ${{ needs.check-build.outputs.build_run_id }}
     secrets: inherit
@@ -107,6 +108,7 @@ jobs:
     name: Workflow Summary
     needs: [build-desktop, check-build, release]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: always()
 
     steps:
@@ -126,7 +128,7 @@ jobs:
         # 發佈狀態
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 📦 發佈狀態" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ github.event.inputs.skip_release }}" = "true" ]; then
+        if [ "${{ inputs.skip_release }}" = "true" ]; then
           echo "- ⏭️ **已跳過** - 根據用戶設置跳過發佈" >> $GITHUB_STEP_SUMMARY
         elif [ "${{ needs.release.result }}" = "success" ]; then
           echo "- ✅ **成功** - 已發佈到 PyPI 和 GitHub Releases" >> $GITHUB_STEP_SUMMARY

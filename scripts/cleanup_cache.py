@@ -266,7 +266,7 @@ def force_clean_cache():
         print("✅ 強制清理成功")
     else:
         print("⚠️  標準清理仍然失敗，使用檔案級清理...")
-        cleaned_count, skipped_count, total_saved = clean_cache_selective(
+        cleaned_count, skipped_count, _total_saved = clean_cache_selective(
             cache_dir, dry_run=False
         )
         print(f"  清理檔案: {cleaned_count}, 跳過: {skipped_count}")

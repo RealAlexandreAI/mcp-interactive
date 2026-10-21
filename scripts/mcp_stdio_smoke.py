@@ -56,7 +56,9 @@ async def _read_jsonrpc_response(
         return None
 
 
-def _require_result(response: dict[str, Any] | list[Any] | None, step: str) -> dict[str, Any]:
+def _require_result(
+    response: dict[str, Any] | list[Any] | None, step: str
+) -> dict[str, Any]:
     if not isinstance(response, dict):
         raise RuntimeError(f"{step} returned non-dict response: {response!r}")
     if "error" in response:
@@ -142,14 +144,18 @@ async def run_smoke_test(project_directory: Path, call_timeout: int) -> int:
         process.stdin.flush()
         call_response = await _read_jsonrpc_response(process.stdout, timeout_seconds=20)
         if not isinstance(call_response, dict) or "id" not in call_response:
-            raise RuntimeError(f"tools/call returned invalid response: {call_response!r}")
+            raise RuntimeError(
+                f"tools/call returned invalid response: {call_response!r}"
+            )
         if "result" not in call_response and "error" not in call_response:
             raise RuntimeError(f"tools/call missing result/error: {call_response!r}")
         print("PASS tools/call (received JSON-RPC response)")
 
         server_info = init_response.get("result", {}).get("serverInfo", {})
         if server_info:
-            print(f"Server: {server_info.get('name', 'unknown')} {server_info.get('version', '')}".strip())
+            print(
+                f"Server: {server_info.get('name', 'unknown')} {server_info.get('version', '')}".strip()
+            )
         print("Smoke test passed.")
         return 0
 
@@ -175,9 +181,7 @@ async def run_smoke_test(project_directory: Path, call_timeout: int) -> int:
                 pass
 
 
-async def run_interactive_call_test(
-    project_directory: Path, call_timeout: int
-) -> int:
+async def run_interactive_call_test(project_directory: Path, call_timeout: int) -> int:
     cmd = [
         "uv",
         "run",
@@ -284,7 +288,9 @@ def main() -> int:
         print(f"Project directory does not exist: {project_directory}", file=sys.stderr)
         return 2
 
-    result = asyncio.run(run_smoke_test(project_directory, call_timeout=args.call_timeout))
+    result = asyncio.run(
+        run_smoke_test(project_directory, call_timeout=args.call_timeout)
+    )
     if result != 0:
         return result
     if args.exercise_interactive:

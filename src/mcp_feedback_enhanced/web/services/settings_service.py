@@ -13,7 +13,9 @@ class SettingsService:
     """Encapsulates local config/settings file operations."""
 
     def __init__(self, config_dir: Path | None = None):
-        self.config_dir = config_dir or (Path.home() / ".config" / "mcp-feedback-enhanced")
+        self.config_dir = config_dir or (
+            Path.home() / ".config" / "mcp-feedback-enhanced"
+        )
 
     @property
     def settings_file(self) -> Path:

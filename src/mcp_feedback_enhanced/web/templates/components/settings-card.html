@@ -1,0 +1,58 @@
+{#
+設定卡片組件
+============
+
+參數:
+- title: 卡片標題
+- icon: 標題圖標 (可選)
+- card_id: 卡片 ID (可選)
+- content: 卡片內容 (使用 caller() 傳入)
+
+使用方式:
+{% call settings_card(title="Settings") %}
+    <!-- 卡片內容 -->
+{% endcall %}
+#}
+
+{% macro settings_card(title, icon="", card_id="") %}
+<div class="settings-card"{% if card_id %} id="{{ card_id }}"{% endif %}>
+    <div class="settings-card-header">
+        <h3 class="settings-card-title">
+            {% if icon %}{{ icon }} {% endif %}{{ title }}
+        </h3>
+    </div>
+    <div class="settings-card-body">
+        {{ caller() }}
+    </div>
+</div>
+{% endmacro %}
+
+{#
+設定項目組件
+============
+
+參數:
+- label: 設定項目標籤
+- description: 設定項目描述
+- is_last: 是否為最後一個項目 (影響邊框顯示)
+- control: 控制元件內容 (使用 caller() 傳入)
+
+使用方式:
+{% call setting_item(label="自動關閉頁面", description="提交回饋後自動關閉頁面") %}
+    <div id="autoCloseToggle" class="toggle-switch active">
+        <div class="toggle-knob"></div>
+    </div>
+{% endcall %}
+#}
+
+{% macro setting_item(label, description="", is_last=false) %}
+<div class="setting-item"{% if is_last %} style="border-bottom: none;"{% endif %}>
+    <div class="setting-info">
+        <div class="setting-label">{{ label }}</div>
+        {% if description %}
+        <div class="setting-description">{{ description }}</div>
+        {% endif %}
+    </div>
+    {{ caller() }}
+</div>
+{% endmacro %}
